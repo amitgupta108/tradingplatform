@@ -1,0 +1,93 @@
+var mode = document.getElementById("modeselect").value;
+
+var instrumentMap = new Map();
+
+instrumentMap.set('NH', {
+  simStartTime: new Date("2025-07-01 13:15:00").getTime(),
+  fExpiry: "31JUL25",
+  oExpiry: "03JUL25",
+  oExpiryNxt: "10JUL25",
+  stockCode: 'NIFTY',
+  lscount: 10,
+  mode: mode === 'L' ? 1 : 0,
+  lotsize: 65,
+});
+
+instrumentMap.set('NL', {
+  simStartTime: Date.now(),
+  fExpiry: "30MAR26",
+  oExpiry: "24MAR26",
+  oExpiryNxt: "30MAR26",
+  stockCode: 'NIFTY',
+  exc: 'NSE',
+  lscount: 10,
+  mode: mode === 'L' ? 1 : 0,
+  lotsize: 65,
+});
+
+instrumentMap.set('ML',{
+  simStartTime: new Date(Date.now()),
+  fExpiry: "20APR26",
+  oExpiry: "16APR26",
+  oExpiryNxt: "14MAY26",
+  stockCode: 'CRUDEOIL',
+  exc: 'MCX',
+  lscount: 10,
+  mode: mode === 'L' ? 1 : 0,
+  lotsize: 100,
+});
+
+const lscount = 10 ;
+
+const chartOptions = {
+  width: 700, height: 780,
+  layout: {
+      textColor: 'black',
+      background: { type: 'solid', color: 'white'},
+  	},
+    crosshair: {
+      mode: 0, // CrosshairMode.Normal
+    },
+    timeScale: {		
+      minBarSpacing: 2,	
+      timeVisible: true,
+      secondsVisible: false,
+      tickMarkMaxCharacterLength: 5,
+	  },
+    rightPriceScale: {
+      visible: true,
+    },
+    leftPriceScale: {
+      visible: true,
+    },
+    handleScale: {
+      axisPressedMouseMove: {
+          time: true,
+          price: true,
+      },
+    },
+};
+
+const chart = LightweightCharts.createChart(document.getElementById('chart'), chartOptions);
+
+const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
+const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
+const IVSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
+const IVNxtSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(14, 122, 8)', lineWidth: 2 });
+chart.timeScale().fitContent();
+chart.timeScale().scrollToPosition(15);
+
+const chart2 = LightweightCharts.createChart(document.getElementById('chart2'), chartOptions);
+const peSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2});  
+const ceSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: 'rgb(242, 142, 44)', lineWidth: 2});
+const stratSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: 'rgb(225, 22, 22)', lineWidth: 2, title: 'QuaterDelta' });
+const nifty = chart2.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(12, 140, 14)', lineWidth: 2, title: 'Nifty' });  
+
+const urlParams = new URLSearchParams(window.location.search);
+const i = urlParams.get('instrument');
+const instrument = instrumentMap.get(i);
+const timerText = document.getElementById("timer");
+
+timerText.innerText = instrument.simStartTime;
+const uuid = crypto.randomUUID();
+var socket;

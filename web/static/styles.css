@@ -1,0 +1,359 @@
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 5px;
+}
+#container {
+    position: absolute; 
+    display: flex;
+    justify-content: space-around;
+    width: 99.5%; 
+    height: 99.5%;
+    border-radius: 5px;
+}
+
+#leftContainer {
+    border: 1px solid #4CAF50;
+    width: 50.5%;
+    height: 99.5%; 
+    border-radius: 5px;
+    vertical-align: auto;
+}  
+
+#rightContainer {
+    border: 1px solid #4CAF50;
+    width: 48.5%;
+    height: 99.5%; 
+    border-radius: 5px;
+    vertical-align: auto;
+} 
+
+#timerBar {
+    height: 3.5%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content:center;
+}
+
+#timer {
+    font-size: 13px;
+} 
+.tab-content {
+    display: none;
+    padding: 5px;
+    background-color: white;
+    border: 1px solid #4CAF50;
+    border-radius: 5px;
+    margin-top: 4px;
+    height: 34.5%;
+    width: 98%;
+    overflow-y:auto;
+}
+
+#optionChain {
+    border: 0px solid lightgray;
+    height: 100%;
+    width: 100%;
+}
+#futures {
+    border: 0px solid lightgray;
+    height: 3%;
+    width: 100%;
+}
+.tabs {
+    display: flex;
+    cursor: pointer;
+    background-color: #4CAF50;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 3.5%;
+    width: 100%;
+}
+#positions {
+    border: 0px solid lightgray;
+    width: 100%;
+    height:44%;
+    border-radius: 5px;
+    overflow-y:auto;
+}
+#bottomPanel {
+    display:flex;
+    border: 1px solid #4CAF50;
+    width: 98.5%;
+    height: 3.5%;
+    border-radius: 5px;
+    padding:4px;
+}
+
+#bottomButtons {
+    width: 53%;
+    height: 99%;
+}
+
+#bottomPLPanel {
+    display:flex;
+    width: 47%;
+    height: 99%;
+    border: 0px solid lightgray;
+    justify-content: flex-end;
+    justify-items: flex-end;
+    padding: 3px;
+}
+
+.plLabel {
+    width: 65px;
+    border: 0px solid lightgray;
+    text-align: right;
+    font-size: 14px;
+    vertical-align: top;
+    padding: 3px;
+}
+
+.plAmount {
+    width: 50px;
+    border: 0px solid lightgray;
+    text-align: left;
+    font-size: 14px;
+    vertical-align: top;
+    padding: 3px;
+}
+
+.chart-show {
+    display: block;
+    padding: 0px;
+    background-color: white;
+    border: 0px solid #4CAF50;
+    border-radius: 5px;
+    margin-top: 2px;
+    height: 95.6%;
+    width: 100%;
+}
+
+.chart-hide {
+    display: none;
+    padding: 0px;
+    background-color: white;
+    border: 0px solid #4CAF50;
+    border-radius: 5px;
+    margin-top: 2px;
+    height: 95.6%;
+    width: 100%;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 5px;
+    border-radius: 3px;
+}
+th, td {
+    padding: 4px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+td {
+    font-size: 12px;
+}
+th {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+}
+.secondTableHead {
+    background-color: #4cafaf;
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.thirdTableHead {
+    background-color: rebeccapurple;
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+tr {
+    background-color: #f2f2f2;
+    font-size: 12px;
+}
+tr:hover {
+    background-color: #ddd;
+}
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 6px 6px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+button:hover {
+    background-color: #45a049;
+}
+button:disabled {
+    color: grey;
+}
+
+label {
+    font-size: 12px;
+    vertical-align: middle;
+    justify-items: center;
+    justify-content: center;
+}
+
+.hoverDiv {
+    display: none;
+    height: 18px;
+    width: 96px;
+    border: 1px solid #ccc;
+    justify-items:stretch;
+    justify-content:space-between;
+}
+
+.topcontainer:hover .hoverDiv{
+    position:fixed;
+    z-index: 150;
+    display:flex;
+    justify-items:stretch;
+    justify-content:space-evenly;
+}
+
+.buy_button {
+    color: #00897b;
+    border-color: #00897b;
+    width: 15px;
+    height: 15px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    transition: all .2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    cursor: pointer;
+}
+
+.sell_button{
+    color: #d32f2f;
+    border-color: #d32f2f;
+    width: 15px;
+    height: 15px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all .2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    cursor: pointer;
+}
+
+.position {
+    color: rgb(56, 103, 224);
+    border-color:rgb(56, 103, 224);
+    border: 0px solid rgb(56, 103, 224);
+    border-radius: 2px;
+    font-size: 10px;
+    margin-right: 5px;
+    transition: all .2s ease-in-out;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+}
+
+.sell_position {
+    color: #d32f2f;
+    border-color: #d32f2f;
+    border: 0px solid #d32f2f;
+    border-radius: 2px;
+    font-size: 10px;
+    margin-left: 5px;
+    transition: all .2s ease-in-out;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+}
+
+select {
+    height: 20px;
+    padding: 2px;
+    border: 1px solid #4CAF50;
+    border-radius: 3px;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    font-size: 12px;
+    transition: border-color 0.3s;
+}
+select:hover {
+  border-color: #388e3c;
+}
+
+.tab {
+    flex: content;
+    padding: 4px;
+    text-align: center;
+    vertical-align: middle;
+    color: white;
+    transition: background-color 0.3s;
+    font-size: 15px;
+    justify-content:center;
+    display: flex;
+}
+
+.tab2 {
+    flex:content;
+    padding: 4px;
+    text-align: center;
+    color: white;
+    transition: background-color 0.3s;
+    font-size: 15px;
+    justify-content: center;
+    display: flex;
+}
+.tab:hover {
+    background-color: #45a049;
+}
+
+.active {
+    display:block;
+}
+.active-tab {
+    flex: content;
+    background-color: #1a9a20;
+    justify-content: center;
+    display: flex;
+    vertical-align: middle;
+}
+
+.tab-content2 {
+    display: none;
+    padding: 0px;
+    background-color: white;
+    border: 1px solid #4CAF50;
+    border-radius: 5px;
+    margin-top: 2px;
+    height: 95%;
+    width: 99%;
+}
+
+.tab-content2 {
+    display: none;
+    padding: 0px;
+    background-color: white;
+    border: 1px solid #4CAF50;
+    border-radius: 5px;
+    margin-top: 2px;
+    height: 95%;
+    width: 99%;
+}
+
