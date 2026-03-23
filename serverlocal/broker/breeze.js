@@ -9,17 +9,17 @@ function connect()
 }
 
 function onmessage(q){
-
+    console.log(JSON.stringify(q));
 }
 
 function subscribe(sublist, callback)
 {
-    client.subscribe_ltp(sublist, callback);
+    adapter.subscribe_ltp(sublist, callback);
 }
 
 function unsubscribe(sublist)
 {
-    client.unsubscribe_ltp(sublist);
+    adapter.unsubscribe_ltp(sublist);
 }
 
 function standardizeq(q) 
@@ -41,14 +41,14 @@ function standardizeq(q)
 
 function preU(p) {
     p.exchange = 'NSE';
-    return adapter.getHistoricalData(p, p.startTime, p.endTime, '5minute');
+    return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 }
 
 function preF(p) {
     p.expiry = p.fExpiry;
     p.type = "futures";
     p.exchange = 'NFO';
-    return adapter.getHistoricalData(p, p.startTime, p.endTime, '5minute');;
+    return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');;
 }
 
 function preD(p, uq) {
@@ -57,11 +57,11 @@ function preD(p, uq) {
 
     p.strike = Math.round(uq.close / 50 - 3) * 50;
     p.right = "Put";
-    var pQ = adapter.getHistoricalData(p, p.startTime, p.endTime, '5minute');
+    var pQ = adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 
     p.strike = Math.round(uq.close / 50 + 3) * 50;
     p.right = "Call";
-    var cQ = adapter.getHistoricalData(p, p.startTime, p.endTime, '5minute');
+    var cQ = adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 
     return [pQ, cQ];
 }

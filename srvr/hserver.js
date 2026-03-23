@@ -1,6 +1,28 @@
 
 const sutils = require('./serverutils');
-const utils = require('./utils');
+const utils = require('../common/utils');
+var BreezeConnect = require('breezeconnect').BreezeConnect;
+require('console-stamp')(console, '[HH:MM:ss.l]');
+
+var appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
+var appSecret = "232N14764_4+2H%V51H0^01003553o4=";
+var sessionId = "55076736";
+
+var breeze;
+var connected = false;
+
+function connect() {
+
+    breeze = new BreezeConnect({ "appKey": appKey });
+
+    breeze.generateSession(appSecret, sessionId)
+        .then((resp) => {
+            connected = true;
+            console.log("Session created");
+        }).catch((err) => {
+            console.log(err);
+        });
+}
 
 const streamers = new Array(4);
 const streamer1 = {speed: '1X', qsid: 0, state: 'stopped'};
@@ -18,7 +40,7 @@ const subsRequests = new Array(0);
 const usermap = new Map();
 const qStore = new Map();
 
-function startStreamerSR(speed){
+function startStreamer(speed){
     var stmr = utils.filter(streamers, {keys: [speed] })[0];
     
     if(stmr.state === 'stopped') {
@@ -34,7 +56,7 @@ function startStreamerSR(speed){
     }
 }
 
-function stopStreamerSR(speed){
+function stopStreamer(speed){
     var stmr = utils.filter(streamers, {keys: [speed] })[0];
     
     if(stmr.state === 'started') {
@@ -43,7 +65,7 @@ function stopStreamerSR(speed){
     }
 }
 
-function subscribeSR(request) {
+function subscribe(request) {
     var exReq = utils.filter(subsRequests, {keys: [request.user]})[0];
     if (exReq === undefined) {
         subsRequests.push(request);
@@ -54,14 +76,14 @@ function subscribeSR(request) {
     }
 }
 
-function unsubsribeSR(request) {
+function unsubsribe(request) {
     var exReq = utils.filter(subsRequests, {keys: [request.user]})[0];
     if (exReq !== undefined) {
         subsRequests.splice(subsRequests.indexOf(exReq), 1);
     }
 }   
 
-function dothingsSR(speed) 
+function dothings(speed) 
 {
     var reqs = utils.filter(subsRequests, {keys: [speed]});
     reqs.forEach((req) => {
@@ -86,8 +108,13 @@ function q(instrument, time)
     return idx > -1 ? st.quotes[idx] : undefined;
 }
 
-async function getHistoricalData(instrument, sTime, endTime, interval) {
-    
+async function getHistoricalData(instrument, sTime, endTime, interval) 
+{
+    if (!connected) {
+        console.error("Not connected to breeze");
+        return { status: -1};
+    }
+
     var b = { exchangeCode: instrument.exchange };
     b.interval = interval != undefined ? interval : '1second';
     b.stockCode = instrument.stockCode;
