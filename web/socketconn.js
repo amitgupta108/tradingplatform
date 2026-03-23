@@ -2,27 +2,15 @@ let serverTime = 0;
 var uQuoteGl;
 var orderresponses = new Array(0);
 
-function connect()
-{
-  socket = io(`https://localhost:${window.location.port}`, {
-    extraHeaders: {
-      "uid": uuid
-    },
-    timeout: 60000,
-    reconnectionDelay: 5000,
-    reconnectionDelayMax: 5000,
-  });
-  
-  rh(socket);
-}
-
-function emit(event, args)
-{
-  if(socket === undefined)
-    connect();
-  
-  socket.emit(event, args);
-}
+socket = io(`https://localhost:${window.location.port}`, {
+  extraHeaders: {
+    "uid": uuid
+  },
+  timeout: 60000,
+  reconnectionDelay: 5000,
+  reconnectionDelayMax: 5000,
+});
+rh(socket);
 
 function rh(socket)
 {

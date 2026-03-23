@@ -34,7 +34,7 @@ class Session
     {
         this.mode = p.mode;
         this.bserver = p.mode === 0 ? iBreeze : iKNeo;
-        this.bserver.connect(this.emitQuotes);
+        this.bserver.connect();
 
         for(var i = 0; i < this.st.length - 1; i++)
         {

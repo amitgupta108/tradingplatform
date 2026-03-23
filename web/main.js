@@ -2,6 +2,11 @@ let positions = new Array(0);
 let optionChains = new Array(0);
 let ordercounter = 1;
 
+function emit(event, args) {
+
+  socket.emit(event, args);
+}
+
 function loadPreData()
 {
   var ls = new Date(instrument.simStartTime);
@@ -13,6 +18,7 @@ function loadPreData()
 
   const p = {
     uid: uuid,
+    mode: mode,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     oExpiry: instrument.oExpiry,
