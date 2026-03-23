@@ -1,42 +1,41 @@
 const historyserver = require('../../srvr/hserver');
 
-var connected = false;
+var usercb = new Map();
 
-function connect(callback) {
-    historyserver.connect(callback);
-    connected = true;
+function connect(uid, time, callback) {
+    historyserver.connect(uid, time, onmessage);
+    usercb.set(uid, callback);
 }
 
 function getHistoricalQuotes(p, startTime, endTime, interval) {
     return historyserver.getHistoricalData(p, startTime, endTime, interval);
 }
 
-
-function subscribe_ltp(symbol) {
-    requests.forEach((request) => {
-        subslist.set(request.instrument.symbol, {
-            instrument: request.instrument,
-            toStream: request.toStream,
-            time: request.time,
-            callback: request.callback
+function subscribe(uid, instruments, action) 
+{
+    var requests = new Array(0);
+    instruments.forEach((inst) => {
+        requests.push({ key: uid,
+            instrument: inst
         });
     });
-
-    subslist.forEach((v, k) => {
-        if (v.toStream && (qStore.get(k) === undefined || qStore.get(k).quotes.length === 0)) {
-            qStore.set(k, { symbol: k, quotes: new Array(0), state: 'load requested', time: v.time });
-            qw(v.instrument, v.time);
-        }
-    });
+    if(action)
+        historyserver.subscribe(requests);
+    else
+        historyserver.unsubscribe(requests);
 }
 
-function onmessage(q) {
-    genericCallback(q);
+function onmessage(uid, q)
+{ 
+    var callbackfn = usercb.get(uid);
+    if(callbackfn !== undefined)    
+         callbackfn.call(this, q);
+    else
+        console.error("No callback found for user " + uid + " with quote " + JSON.stringify(q));
 }
-
 
 module.exports = {
     connect,
     getHistoricalQuotes,
-    subscribe_ltp,
+    subscribe
 };

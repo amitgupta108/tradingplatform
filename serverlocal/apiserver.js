@@ -1,44 +1,7 @@
-var https  = require('https');
-var express = require('express');
-var session = require('express-session');
-const fs = require('fs');
-const path = require('path');
-const { Server } = require("socket.io");
 const iBreeze = require('./broker/breeze');
 const Session = require('./session/session');
 const ordersocket = require('./broker/ordernotifier');
 require('console-stamp')(console, '[HH:MM:ss.l]');
-var port = 80;
-
-const es = session({secret: '***REMOVED***', 
-        resave: true,
-        saveUninitialized: true,});
-
-const app = express();
-app.use(express.static('web/'));
-app.use(express.json());
-app.use(es);
-
-const options = {
-    key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem')),
-};
-
-const httpsServer = https.createServer(options, app);
-httpsServer.listen(port, () => {
-    console.log(`Server running at https://localhost:${port}/`);
-});
-
-const io = new Server(httpsServer, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-    },
-    pingInterval: 30000,
-    pingTimeout: 30000
-});
-
-io.engine.use(es);
 
 io.on('connection', (s) => {
     console.log('socket connected ' + s.id);        
@@ -55,15 +18,8 @@ function setuser(uid, s)
 {
     var sn = Session.sn(uid);
     if(sn === undefined)
-    {
-        cg = {  
-            simTime: 0,
-            speed: 1,
-            interval: 990,
-            qsid: 0,
-        };
-        sn = new Session(uid, s, cg); 
-    } else {
+        sn = new Session(uid, s); 
+    else {
         if(!s.recovered)
             sn.s = s;
         s.emit('restored', uid);
@@ -87,11 +43,11 @@ async function handleMessage(sn, event, msg)
                 var prefq = iBreeze.preF(msg);
 
                 var uq = await preUq;
-                emit("futuresPreData", await prefq);
+                emit(sn.s, "futuresPreData", await prefq);
 
                 var preDq = iBreeze.preD(msg, uq[uq.length - 1]);
                 var pq = await preDq[0]; var cq = await preDq[1];
-                emit("qdeltastrikes", uq, pq, cq);
+                emit(sn.s, "qdeltastrikes", uq, pq, cq);
                 break;
             
             case 'startstream':
@@ -139,13 +95,11 @@ async function handleMessage(sn, event, msg)
                 console.log("Unknown event " + event);
         }
     } catch (error) {
-        console.log('Error ' + error);
+        console.log('Error ' + error.stack);
     }
 }
 
-function emit(event, args)
+function emit(s, event, args)
 {
-    if(socket === undefined)
-        connect();
-    socket.emit(event, args);
+    s.emit(event, args);
 }

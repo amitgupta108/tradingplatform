@@ -1,25 +1,19 @@
-const utils = require('../../common/utils');
 const adapter = require('../adapter/histadapter');
-
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-function connect()
+function connect(uid, time, callback)
 {
-    adapter.connect(onmessage);
+    adapter.connect(uid, time, callback);
 }
 
-function onmessage(q){
-    console.log(JSON.stringify(q));
+function subscribe(uid, instruments)
+{
+    adapter.subscribe(uid, instruments, true);
 }
 
-function subscribe(sublist, callback)
+function unsubscribe(uid, instruments)
 {
-    adapter.subscribe_ltp(sublist, callback);
-}
-
-function unsubscribe(sublist)
-{
-    adapter.unsubscribe_ltp(sublist);
+    adapter.subscribe(uid, instruments, false);
 }
 
 function standardizeq(q) 
@@ -27,7 +21,8 @@ function standardizeq(q)
     q['exchange'] = q['exchange_code'];
     q['type'] = q['product_type'];
 
-    q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+    if(q.exchange != 'NSE')
+        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
 
     if (q.type === 'Options')
         q.symbol = q.stock_code + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');

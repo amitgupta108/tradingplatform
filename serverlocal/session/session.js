@@ -9,15 +9,12 @@ class Session
     uid;    
     s;
     st;
-    mode;
     cb;
-    cg;
     bserver;
-    constructor(uid, s, cg)
+    constructor(uid, s)
     {
         this.uid = uid;
         this.s = s;
-        this.cg = cg;
         us.push(this);
         this.st = [
             {key: 'index', toStream: true, mt: false, streamState: 'initialized',},
@@ -27,14 +24,13 @@ class Session
             {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: false,
              symbol: 'INDVIX', mt: true, streamState: 'initialized', },
         ];
-    
+        this.cb = this.emitQuotes.bind(this);
     }
 
     ini(p) 
     {
-        this.mode = p.mode;
         this.bserver = p.mode === 0 ? iBreeze : iKNeo;
-        this.bserver.connect();
+        this.bserver.connect(this.uid, p.simStartTime, this.cb);
 
         for(var i = 0; i < this.st.length - 1; i++)
         {
@@ -98,7 +94,7 @@ class Session
         ost.streamState = 'ready to run';
         ost.strikes = sks;
         
-        ocqsub(this.st, ost.stockCode, ost.expiry, this.cb);
+        ocqsub(ost.stockCode, ost.expiry);
     }
 
     order(p)
@@ -106,25 +102,25 @@ class Session
         return this.bserver.order(p);
     }
 
-    ocqsub(st, stockCode, expiry, callback)
+    ocqsub(stockCode, expiry)
     {
-        var fst = utils.filter(st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
+        var fst = utils.filter(this.st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
         var sublist = utils.filter(fst, {toStream: [true]});
         var unsublist = utils.filter(fst, {toStream: [false]});
     
-        this.bserver.subscribe_ltp(sublist, callback);
+        this.bserver.subscribe(this.uid, sublist, this.cb);
         if(unsublist != 0)
-            this.bserver.unsubscribe_ltp(unsublist);
+            this.bserver.unsubscribe(this.uid, unsublist);
     }
     
     inqsub() {
         var fst = utils.filter(this.st, {keys: ['index', 'futures']});
-        this.bserver.subscribe(fst, this.emitQuotes);
+        this.bserver.subscribe(this.uid, fst);
     }
     
     unsuball() {
         var fst = utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt', 'vix']});
-        this.bserver.unsubscribe(fst);
+        this.bserver.unsubscribe(this.uid, fst);
     }
 
     lastuq(uq, lt)

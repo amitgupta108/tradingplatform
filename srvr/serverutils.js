@@ -33,8 +33,19 @@ function findQuote(q, lt)
     return quoteIndex;
 }
 
+function ISODate(datetime) {
+    return (new Date(datetime + 330 * 60 * 1000)).toISOString();
+}
+
+function formatExpiry(expiry) {
+    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
+
+    return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
+}
 
 module.exports = {
     findQuoteByTime,
     findQuote,
+    ISODate,
+    formatExpiry,
 };

@@ -1,0 +1,10 @@
+{
+    "debug.console.acceptSuggestionOnEnter": "on",
+    "debug.disassemblyView.showSourceCode": false,
+    "debug.terminal.clearBeforeReusing": true,
+    "launch": {
+        "inputs": [],
+        "configurations": [],
+        "compounds": []
+    }
+}
