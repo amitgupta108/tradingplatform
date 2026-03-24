@@ -42,6 +42,8 @@ class Session
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
                 this.st[i].n = i != 1? p.lscount : 0;
             }
+            if(p.mdoe === 0 && st[i].key === 'vix')
+                this.st[i].toStream = true;
         }
     }
 
@@ -114,13 +116,19 @@ class Session
     }
     
     inqsub() {
-        var fst = utils.filter(this.st, {keys: ['index', 'futures']});
-        this.bserver.subscribe(this.uid, fst);
+        var fst = utils.filter(this.st, {keys: ['index', 'futures', 'occrnt']});
+        fst.forEach((e) => e.toStream = true);
+
+        var sst = utils.filter(this.st, {keys: ['index', 'futures']});
+        this.bserver.subscribe(this.uid, sst);
     }
     
     unsuball() {
+        this.st.forEach((e) => e.toStream = false);
         var fst = utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt', 'vix']});
         this.bserver.unsubscribe(this.uid, fst);
+        var st = utils.filter(this.st, {keys: ['index']})[0];
+        st.uq = undefined;
     }
 
     lastuq(uq)
@@ -141,6 +149,10 @@ class Session
     emitQuotes(q)
     {
         try {
+            var fst = utils.filter(this.st, {symbol: [q.symbol]})[0];
+            if(fst === undefined || fst.toStream === false)
+                return;
+            
             var key = 'strikex';
             if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
             {

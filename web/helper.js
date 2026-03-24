@@ -53,8 +53,6 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
 function addRow(symbol) {
   const tblBody = document.getElementById("tblBody");
   var row = tblBody.getElementsByTagName('tr')[0];
-  row.cells[8].childNodes[1].childNodes[1].style.pointerEvents = 'auto';
-  row.cells[8].childNodes[1].childNodes[1].style.opacity = '1';
 
   var clone = row.cloneNode(true);
   clone.title = symbol;
