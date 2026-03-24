@@ -51,26 +51,9 @@ class OptionChain
     this.#rowfill(n, q, q.right);
   }
 
-  iv() {
-    return Math.round((this.#aiv[0] + this.#aiv[1])/2 *100)/100;
-  }
-
-  #civ(q)
-  {
-    if(q[q.length/2 - 1] != undefined)
-      this.#aiv[1] = Number(q[q.length/2 - 1].iv);
-
-    if(q[q.length/2] != undefined)
-      this.#aiv[0] = Number(q[q.length/2].iv);
-  }
-
   fill(q)
   {
-    for(var n = 0; n < q.length/2; n++) {
-      this.#rowfill(n, q[n+q.length/2], q.right);
-      this.#rowfill(n, q[n], q.right);
-    }
-    this.#rst(); this.#civ(q); 
+    this.#rst();
   }
 
   #rst(){
@@ -94,7 +77,7 @@ class OptionChain
     }
     var p = Position.findPositionRow(q.symbol);
     if(p != undefined && p.psize != 0)
-      this.#value(n, 'icon', rg, p.value('psize'), rg);
+      this.#value(n, 'icon', rg, p.value('unbookedQ'), rg);
     else
       this.#value(n, 'icon', rg, '');
   }

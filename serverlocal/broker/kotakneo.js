@@ -41,6 +41,18 @@ async function order(p)
     return response;
 }
 
+async function history(p)
+{
+    var response = await client.history({
+        exchange: 'NFO',
+        symbol: p.stockCode + p.fExpiry + 'FUT',
+        interval: '5m',
+        startDate: '2026-03-23',
+        endDate: '2026-03-24'
+    });
+    return response;
+}
+
 function subscribe(uid, sublist)
 {
     client.subscribe_ltp(sublist, onmessage);
@@ -69,4 +81,4 @@ function standardizeq(q)
     return q;
 } 
 
-export { connect, order, quotes, subscribe, unsubscribe, standardizeq };
+export { connect, order, quotes, subscribe, unsubscribe, standardizeq, history };

@@ -1,8 +1,8 @@
 const iBreeze = require('./broker/breeze');
+const iKNeo = require('./broker/kotakneo');
 const Session = require('./session/session');
 const ordersocket = require('./broker/ordernotifier');
 require('console-stamp')(console, '[HH:MM:ss.l]');
-
 
 async function handleMessage(sn, event, msg)
 {
@@ -10,21 +10,30 @@ async function handleMessage(sn, event, msg)
         switch(event)
         {
             case 'restored':
-                if (response.continue === true)
+                if (msg.continue === true)
                     sn.inqsub();
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var preUq = iBreeze.preU(msg);
-                var prefq = iBreeze.preF(msg);
+                if(msg.mode === 1)
+                {
+                    iKNeo.connect(msg.uid, msg.simStartTime, sn.cb);
+                    var prefq = await iKNeo.history(msg);
+                    emit(sn.s, "futuresPreData", prefq);
+                }
+                else
+                {
+                    var preUq = iBreeze.preU(msg);
+                    var prefq = iBreeze.preF(msg);
 
-                var uq = await preUq;
-                emit(sn.s, "futuresPreData", await prefq);
+                    var uq = await preUq;
+                    emit(sn.s, "futuresPreData", await prefq);
 
-                var preDq = iBreeze.preD(msg, uq[uq.length - 1]);
-                var pq = await preDq[0]; var cq = await preDq[1];
-                emit(sn.s, "qdeltastrikes", uq, pq, cq);
+                    //var preDq = iBreeze.preD(msg, uq[uq.length - 1]);
+                    //var pq = await preDq[0]; var cq = await preDq[1];
+                    //emit(sn.s, "qdeltastrikes", uq, pq, cq);
+                }
                 break;
             
             case 'startstream':
@@ -58,6 +67,7 @@ async function handleMessage(sn, event, msg)
             case 'ocnxt':
                 sn.st[4].toStream = a === 'start' ? true : false;
                 break
+            case 'history':
             case 'order':
                 console.log("order: " + Date.now());
                 var status = await sn.order(msg);

@@ -40,7 +40,7 @@ instrumentMap.set('ML',{
 const lscount = 10 ;
 
 const chartOptions = {
-  width: 700, height: 780,
+  width: 660, height: 780,
   layout: {
       textColor: 'black',
       background: { type: 'solid', color: 'white'},

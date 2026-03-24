@@ -34,7 +34,7 @@ function findQuote(q, lt)
 }
 
 function ISODate(datetime) {
-    return (new Date(datetime + 330 * 60 * 1000)).toISOString();
+    return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
 }
 
 function formatExpiry(expiry) {

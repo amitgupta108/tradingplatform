@@ -192,16 +192,15 @@
             <table id="dataTable">
             <thead>
                 <tr>
-                    <th width="4%">Expiry</th>
-                    <th width="4%">Strike</th>
-                    <th width="4%">CE/PE</th>
-                    <th width="5%">Delta</th>
-                    <th width="4%">LTP</th>
-                    <th width="3%">Lot</th>
-                    <th width="6%%">Booked</th>
-                    <th width="6%">Unbooked</th>
-                    <th width="7%">Orders</th>
-                    <th width="3%">Actions</th>
+                    <th width="8%">Expiry</th>
+                    <th width="8%">Strike</th>
+                    <th width="8%">CE/PE</th>
+                    <th colspan="2" width="23%">Booked</th>
+                    <th width="7%">Avg Price</th>
+                    <th width="7%">LTP</th>
+                    <th colspan="2" width="23%">Unbooked</th>
+                    <th width="10%">Total</th>
+                    <th width="6%">Actions</th>
                 </tr>
             </thead>    
             <tbody id="tblBody">
@@ -209,17 +208,13 @@
                     <td><label id="expiry"></label></input></td>
                     <td><label id="strike"></label></input></td>
                     <td><label id="right"></label></td>
-                    <td><label id="delta"></label></td>
-                    <td><label id="ltp"></label></td>
-                    <td><label id="quantity"></label></td>
-                    <td><label id="bookedPL"></label></td>
-                    <td><label id="unbookedPL"></label></td>
-                    <td class="topcontainer">
-                        <div class="hoverDiv">
-                            <button id="orders" class="buy_button" onclick="enterPosition(event)">+</button>
-                        </div>
-                    </td>
-
+                    <td><label id="BQ"></label></td>
+                    <td><label id="BP"></label></td>
+                    <td><label id="AvgP"></label></td>
+                    <td><label id="LTP"></label></td>
+                    <td><label id="UQ"></label></td>
+                    <td><label id="UP"></label></td>
+                    <td><label id="totalPL"></label></td>
                     <td>
                         <div style="display: flex; ">
                             <div id="exitPostion" class="buy_button" onclick="exitPosition(event)">=></div>

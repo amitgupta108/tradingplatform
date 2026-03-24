@@ -169,7 +169,7 @@ async function getHistoricalData(instrument, sTime, endTime, interval)
     b.productType = instrument.right != undefined ? 'options' : 'futures';
     b.expiryDate = instrument.exchange != 'NSE' ? sutils.formatExpiry(instrument.expiry) : undefined;
     b.fromDate = sutils.ISODate(sTime);
-    b.toDate = endTime === undefined ? sutils.ISODate(sTime + ((16 * 60) * 1000)) : ISODate(endTime);  
+    b.toDate = endTime != undefined ? sutils.ISODate(endTime) : sutils.ISODate(sTime + ((16 * 60) * 1000));  
 
     utils.printObject(b);
     try {

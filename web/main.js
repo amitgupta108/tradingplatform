@@ -18,7 +18,7 @@ function loadPreData()
 
   const p = {
     uid: uuid,
-    mode: mode,
+    mode: 0,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     oExpiry: instrument.oExpiry,

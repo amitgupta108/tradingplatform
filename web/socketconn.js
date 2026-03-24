@@ -21,7 +21,7 @@ function rh(socket)
   });
 
   socket.on('futuresPreData', (fQuotes) => {
-    setFuturesChart(fQuotes);
+    setFuturesChart(fQuotes.quotes);
   });
 
   socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
@@ -83,13 +83,13 @@ function rh(socket)
         orderresponses.map((e) => {
           if (e.counter === openorders[j].counter)
           {
+            openorders.orderid = orderresponses.orderid;
             e.matched = true;
             openorders[j].matched = true;
             if(e.status === 'success')
               openorders[j].state = 'accepted';
             else
               openorders[j].state = 'rejected';
-            openorders.orderid = orderresponses.orderid;
           }
         });
       }
