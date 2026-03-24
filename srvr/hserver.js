@@ -107,7 +107,7 @@ function dothings(speed)
         var qt = q(usermap.get(req.key), req.instrument, getUserTime(req.key));
 
         if(qt !== undefined)
-            callback.call(this, uid, q);
+            callback(req.key, qt);
     });
     return count;
 }

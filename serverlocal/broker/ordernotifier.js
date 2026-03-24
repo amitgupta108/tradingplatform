@@ -16,7 +16,7 @@ async function wsconnect(p)
         else
             console.log(JSON.stringify(lr));
     }
-    else
+    else if (p.action === 'disconnect')
         iKws.wsdisconnect();
 }
 

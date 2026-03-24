@@ -19,7 +19,7 @@ instrumentMap.set('NL', {
   oExpiry: "24MAR26",
   oExpiryNxt: "30MAR26",
   stockCode: 'NIFTY',
-  exc: 'NSE',
+  exc: 'NFO',
   lscount: 10,
   mode: mode === 'L' ? 1 : 0,
   lotsize: 65,

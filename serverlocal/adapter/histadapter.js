@@ -16,7 +16,7 @@ function subscribe(uid, instruments, action)
     var requests = new Array(0);
     instruments.forEach((inst) => {
         requests.push({ key: uid,
-            instrument: inst
+            symbol: inst.symbol
         });
     });
     if(action)
@@ -27,6 +27,8 @@ function subscribe(uid, instruments, action)
 
 function onmessage(uid, q)
 { 
+    standardizeq(q);
+
     var callbackfn = usercb.get(uid);
     if(callbackfn !== undefined)    
          callbackfn.call(this, q);
@@ -34,6 +36,23 @@ function onmessage(uid, q)
         console.error("No callback found for user " + uid + " with quote " + JSON.stringify(q));
 }
 
+function standardizeq(q) 
+{
+    q['exchange'] = q['exchange_code'];
+    q['type'] = q['product_type'];
+
+    if(q.exchange != 'NSE')
+        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+
+    if (q.type === 'Options')
+        q.symbol = q.stock_code + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');
+    else if (q.type === 'Futures')
+        q.symbol = q.stock_code + q.expiry_date + 'FUT';
+
+    q.ltt = Date.parse(q.datetime);
+    
+    return q;
+}
 module.exports = {
     connect,
     getHistoricalQuotes,

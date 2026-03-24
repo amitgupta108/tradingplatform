@@ -2,14 +2,14 @@ const vollib = require('../../js_vollib-master/build/js_vollib').js_vollib;
 require('console-stamp')(console, '[HH:MM:ss.l]');
 var regex = /Time/;
 
-function addIVNDelta(q, uq, lt)
+function addIVNDelta(q, uq)
 {
     if(q.expiry_date.length === 7)
         var e = q.expiry_date.slice(0, 2).concat('-').concat(q.expiry_date.slice(2, 5)).concat('-20').concat(q.expiry_date.slice(5));
     else
         var e = q.expiry_date;
 
-    var yearsToExpiry = ((new Date((e).concat(', 15:30'))).getTime() - lt)/(1000*60*60*24*365);
+    var yearsToExpiry = ((new Date((e).concat(', 15:30'))).getTime() - q.ltt)/(1000*60*60*24*365);
     var flag = q.right === 'Call' ? 'c' : 'p';
 
     var iv = vollib.black_scholes.implied_volatility.implied_volatility(q.close, uq.close, q.strike_price, yearsToExpiry, 0.05, flag);

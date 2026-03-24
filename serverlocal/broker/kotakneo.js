@@ -1,11 +1,25 @@
 import OpenAlgo from 'openalgo';
 
 var client;
+var usercb = new Map();
+var connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
 
-function connect()
+function connect(uid, simStartTime, callback)
 {
-    client = new OpenAlgo('1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307');
+    client = new OpenAlgo(connkey);
     client.connect();
+    usercb.set(connkey, callback);
+}
+
+function onmessage(q)
+{ 
+    standardizeq(q);
+
+    var callbackfn = usercb.get(connkey);
+    if(callbackfn !== undefined)    
+         callbackfn.call(this, q);
+    else
+        console.error("No callback found for user " + uid + " with quote " + JSON.stringify(q));
 }
 
 async function order(p)
@@ -27,14 +41,14 @@ async function order(p)
     return response;
 }
 
-function subscribe(sublist, callback)
+function subscribe(uid, sublist)
 {
-    client.subscribe_ltp(sublist, callback);
+    client.subscribe_ltp(sublist, onmessage);
 }
 
-function unsubscribe(sublist)
+function unsubscribe(uid, sublist)
 {
-    client.unsubscribe_ltp(sublist);
+    client.unsubscribe_ltp(sublist, onmessage);
 }
 
 function quotes(symbol, exchange){

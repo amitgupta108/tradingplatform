@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/serverlocal/apiserver.js",
+            "program": "${workspaceFolder}/serverlocal/app.js",
             "outputCapture": "std"
         }
     ]

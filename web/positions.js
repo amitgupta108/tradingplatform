@@ -14,11 +14,8 @@ function writeProfitLoss()
   document.getElementById("vTotalPL").innerText = (bookedPL + unBookedPL).toFixed(2);
 }
 
-function setPositionQuote(q) {
-  
-  if(mode === 'L')
-    return;
-
+function setPositionQuote(q) 
+{
   var p = Position.findPositionRow(q.symbol);
   if (p != undefined)
   {

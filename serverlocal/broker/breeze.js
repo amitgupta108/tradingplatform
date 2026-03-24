@@ -16,24 +16,6 @@ function unsubscribe(uid, instruments)
     adapter.subscribe(uid, instruments, false);
 }
 
-function standardizeq(q) 
-{
-    q['exchange'] = q['exchange_code'];
-    q['type'] = q['product_type'];
-
-    if(q.exchange != 'NSE')
-        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
-
-    if (q.type === 'Options')
-        q.symbol = q.stock_code + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');
-    else if (q.type === 'Futures')
-        q.symbol = q.stock_code + q.expiry_date + 'FUT';
-
-    q.ltt = Date.parse(q.datetime);
-    
-    return q;
-}
-
 function preU(p) {
     p.exchange = 'NSE';
     return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
@@ -65,7 +47,6 @@ module.exports = {
     subscribe,
     connect,
     unsubscribe,
-    standardizeq,
     preU,
     preF,
     preD

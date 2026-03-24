@@ -35,7 +35,7 @@ class Session
         for(var i = 0; i < this.st.length - 1; i++)
         {
             this.st[i].stockCode = p.stockCode; 
-            this.st[i].exchange = p.exc === 'MCX' ? p.exc : i != 0 ? 'NFO' : 'NSE';
+            this.st[i].exchange = p.exc === 'MCX' ? p.exc : i != 0 ? 'NFO' : p.mode === 0 ? 'NSE' : 'NSE_INDEX';
             this.st[i].symbol = i === 1 || p.exc === 'MCX' ? p.stockCode.concat(p.fExpiry).concat('FUT') : p.stockCode;
             if(i != 0)
             {
@@ -94,7 +94,7 @@ class Session
         ost.streamState = 'ready to run';
         ost.strikes = sks;
         
-        ocqsub(ost.stockCode, ost.expiry);
+        this.ocqsub(ost.stockCode, ost.expiry);
     }
 
     order(p)
@@ -108,9 +108,9 @@ class Session
         var sublist = utils.filter(fst, {toStream: [true]});
         var unsublist = utils.filter(fst, {toStream: [false]});
     
-        this.bserver.subscribe(this.uid, sublist, this.cb);
         if(unsublist != 0)
             this.bserver.unsubscribe(this.uid, unsublist);
+        this.bserver.subscribe(this.uid, sublist);
     }
     
     inqsub() {
@@ -123,7 +123,7 @@ class Session
         this.bserver.unsubscribe(this.uid, fst);
     }
 
-    lastuq(uq, lt)
+    lastuq(uq)
     {
         var st = utils.filter(this.st, {keys: ['index']})[0];
         if(uq === undefined)
@@ -133,7 +133,7 @@ class Session
         for (var j = 0; j < ost.length; j++)
         {
             if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.close))  > 60)
-                this.#oq(uq, ost[j], lt);
+                this.#oq(uq, ost[j]);
         }
         st.uq = uq;
     }
@@ -141,18 +141,16 @@ class Session
     emitQuotes(q)
     {
         try {
-            q = this.bserver.standardizeq(q);
-    
             var key = 'strikex';
             if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
             {
-                sn.lastuq(q, lt);
+                this.lastuq(q);
                 key = 'index';
             }
             else if (q.exchange === 'NFO' && q.symbol.endsWith('FUT'))
                 key = 'futures';
             else if (q.symbol.endsWith('CE') || q.symbol.endsWith('PE'))
-                utils.addIVNDelta(q, sn.lastuq(), lt);
+                utils.addIVNDelta(q, this.lastuq());
     
             this.s.emit(key, q);
         } catch(error){

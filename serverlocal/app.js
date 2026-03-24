@@ -6,6 +6,9 @@ const path = require('path');
 const { Server } = require("socket.io");
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
+const Session = require('./session/session');
+const apiserver = require('./apiserver');
+
 var port = 443;
 
 const es = session({secret: '***REMOVED***', 
@@ -37,3 +40,28 @@ const io = new Server(httpsServer, {
 });
 
 io.engine.use(es);
+
+
+io.on('connection', (s) => {
+    console.log('socket connected ' + s.id);        
+    
+    var uid = s.handshake.headers.uid;
+    var sn = setuser(uid, s);
+    s.onAny((event, msg) => {
+        console.log("Received event " + event + " with data " + JSON.stringify(msg));
+        apiserver.handleMessage(sn, event, msg);
+    });
+});
+
+function setuser(uid, s)
+{
+    var sn = Session.sn(uid);
+    if(sn === undefined)
+        sn = new Session(uid, s); 
+    else {
+        if(!s.recovered)
+            sn.s = s;
+        s.emit('restored', uid);
+    }
+    return sn;
+}

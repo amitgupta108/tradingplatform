@@ -3,29 +3,6 @@ const Session = require('./session/session');
 const ordersocket = require('./broker/ordernotifier');
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-io.on('connection', (s) => {
-    console.log('socket connected ' + s.id);        
-    
-    var uid = s.handshake.headers.uid;
-    var sn = setuser(uid, s);
-    s.onAny((event, msg) => {
-        console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        handleMessage(sn, event, msg);
-    });
-});
-
-function setuser(uid, s)
-{
-    var sn = Session.sn(uid);
-    if(sn === undefined)
-        sn = new Session(uid, s); 
-    else {
-        if(!s.recovered)
-            sn.s = s;
-        s.emit('restored', uid);
-    }
-    return sn;
-}
 
 async function handleMessage(sn, event, msg)
 {
@@ -67,7 +44,7 @@ async function handleMessage(sn, event, msg)
                 sn.changeSpeed(msg);
                 break;
             case 'stop':
-                sn.unsubsQuotes();
+                sn.unsuball();
                 console.log("Streaming stopped " + msg);
                 break;
         
@@ -86,7 +63,7 @@ async function handleMessage(sn, event, msg)
                 var status = await sn.order(msg);
                 status.counter = msg.counter;
                 status.rtime = msg.time;
-                emit("orderconf", status);
+                emit(sn.s, "orderconf", status);
                 break;
             case 'ws':
                 ordersocket.wsconnect(msg);
@@ -102,4 +79,8 @@ async function handleMessage(sn, event, msg)
 function emit(s, event, args)
 {
     s.emit(event, args);
+}
+
+module.exports = {
+    handleMessage,
 }
