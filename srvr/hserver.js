@@ -5,8 +5,8 @@ var BreezeConnect = require('breezeconnect').BreezeConnect;
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
 var appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
-var appSecret = "43w395ij)O59261x532q11059PH)Y738";
-var sessionId = "55089872";
+var appSecret = "p877A97d2r04602X623=39762X51375m";
+var sessionId = "55124967";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 

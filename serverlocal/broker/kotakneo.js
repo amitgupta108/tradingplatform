@@ -41,10 +41,26 @@ async function order(p)
     return response;
 }
 
+async function orderstatus(orderid)
+{
+    var status = await client.orderStatus({
+        orderId: orderid});
+    
+    var modstatus = status.data;
+    modstatus.average_price = Math.round(Number(status.data.price)) + Math.round((new Date()).getMilliseconds()/100) * 0.05
+                    + (status.data.action === 'BUY' ? 20 : -20);
+    modstatus.filled_quantity = status.data.quantity;
+    modstatus.pending_quantity = 0;
+    modstatus.status = status.status;
+    modstatus.mode = status.mode;
+
+    return modstatus;
+}
+
 async function history(p)
 {
     var response = await client.history({
-        exchange: 'NFO',
+        exchange: symbol.startsWith('CRUDE') ? 'MCX' : 'NFO',
         symbol: p.stockCode + p.fExpiry + 'FUT',
         interval: '5m',
         startDate: '2026-03-23',
@@ -81,4 +97,4 @@ function standardizeq(q)
     return q;
 } 
 
-export { connect, order, quotes, subscribe, unsubscribe, standardizeq, history };
+export { connect, order, quotes, subscribe, unsubscribe, standardizeq, history, orderstatus };

@@ -1,4 +1,3 @@
-let serverTime = 0;
 var uQuoteGl;
 var orderresponses = new Array(0);
 
@@ -21,7 +20,7 @@ function rh(socket)
   });
 
   socket.on('futuresPreData', (fQuotes) => {
-    setFuturesChart(fQuotes.quotes);
+    futuresChart(fQuotes.quotes);
   });
 
   socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
@@ -31,39 +30,39 @@ function rh(socket)
   });
 
   socket.on('index', (q) => {
-    console.log("index:  " + JSON.stringify(q));
-    serverTime = q.ltt;
-    var lt = new Date(q.ltt);
+    //console.log("index:  " + JSON.stringify(q));
+  
+    //if(q.exchange === 'MCX')
+      //futuresChart(q);
     
-    if(q.stock_code === 'INDVIX')
-      IVSeries.update({"time": lastCandle.time, "value": q.close});
-    else
-    {
-      timerText.innerHTML = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2) + " |   ATM: " + optionChains[0].atm;
-      uQuoteGl = q;  
-      //updateIndexChart(q);
+    uQuoteGl = q;  
+    //updateIndexChart(q);
+    if(optionChains[0].atm === undefined)
+      optionChains[0].atm = Math.round(q.close / 50) * 50;
 
-      if (Math.abs(optionChains[0].atm - uQuoteGl.close) > 60)
-        optionChains[0].atm = Math.round(uQuoteGl.close / 50) * 50;
-    }
+    var lt = new Date(q.ltt);
+    timerText.innerHTML = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2) + " |   ATM: " + optionChains[0].atm;
   });
 
   socket.on('futures', (fQuote) => 
   {    
     if(fQuote != undefined)
     {
-      updateFuturesChart(fQuote);
+      futuresChart(fQuote);
       //updateFuturesTable(fQuote);
-      document.title = "Nifty Futures " + fQuote.close.toFixed(2);
+      document.title = fQuote.symbol + " " + fQuote.close.toFixed(2);
     }
   });
 
   socket.on('strikex', (q) => {
-    console.log("strikex:  " + JSON.stringify(q));
+    //console.log("strikex:  " + JSON.stringify(q));
     try {
+      
+      var p = Position.findPositionRow(q.symbol);
+      if(p != undefined) 
+        refreshPositionPL(p, q.close) 
+      
       OptionChain.update(q);
-      setPositionQuote(q);
-      writeProfitLoss();
       //setChartQuotes(optionChainQuotes);
       //updateOptionsChart();  
     } catch(error) {
@@ -75,41 +74,24 @@ function rh(socket)
     console.log("order status:  " + JSON.stringify(response));
     orderresponses.push(response);
     
-    for(var i = 0; i < positions.length; i++)
-    {
-      var openorders = positions[i].findorders('opened');
-      for(var j = 0; j < openorders.length; j++)
-      {
-        orderresponses.map((e) => {
-          if (e.counter === openorders[j].counter)
-          {
-            openorders.orderid = orderresponses.orderid;
-            e.matched = true;
-            openorders[j].matched = true;
-            if(e.status === 'success')
-              openorders[j].state = 'accepted';
-            else
-              openorders[j].state = 'rejected';
-          }
-        });
-      }
-    }    
-    updateOrder(response);
+    var p = positions.find((e) => e.symbol === response.symbol);
+    
+    response.state = response.status === 'success' ? 'submitted' : 'rejected';
+    p.orders[response.orderN - 1] = response;
   });
 
-  socket.on('order', (omsg) => {
-    console.log("order message " + omsg)
+  socket.on('simorder', (exorder) => {
+    console.log("order message " + JSON.stringify(exorder));
 
-    var p = positions.map((e) => {
-      e.orders.map((o => {
-        if(o.state === 'accepted' && omsg.orderid === o.orderid)
-        {
-          o.state = 'completed';
-          o.exprice = omsg.ltp;
-          o.ltt = omsg.time;
-        }
-      }));
-    }); 
+    var p = positions.find((e) => e.symbol === exorder.symbol);
+    p.orderupdate(exorder);
+  });
+
+  socket.on('order', (exorder) => {
+    console.log("order message " + JSON.stringify(exorder));
+
+    var p = positions.find((e) => e.symbol === exorder.symbol);
+    p.liveorderupdate(exorder);
   });
 
   socket.on('position', (pmsg) => {

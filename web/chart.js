@@ -1,56 +1,86 @@
-var lastCandle = { time: instrument.simStartTime / 1000 + 330 * 60 };
 
-function setFuturesChart(qs)
+const nTVtime = unixtime => unixtime/1000 + 330 * 60;
+const sTVtime = datetime => Date.parse(datetime)/1000 + 330 * 60;
+
+var lastCandle = {};
+
+/*function futuresChart(qs)
 {
-  lastCandle = {time: 0};
-  for (var i = 0; i < qs.length; i++)
+  if(mainSeries.data().length === 0)
   {
-    qs[i].value = i === 0 ? (qs[i].close + qs[i].open)/2 : qs[i].close*(2/21) + qs[i-1].value*(1 - 2/21);
-    qs[i].time = (Date.parse(qs[i].datetime)/1000) + 330*60;
+    if(!Array.isArray(qs))
+      qs = [qs];
+
+    var chartpoints = qs.map((e, idx, arr) => {
+        e.value = idx === 0 ? (e.close + e.open)/2 : e.close*(2/21) + arr[idx-1].value*(1 - 2/21);
+        e.time = sTVtime(e.datetime);
+        return e;
+    });
+    mainSeries.setData(chartpoints);
+    emaSeries.setData(chartpoints);
+    lastCandle.value = chartpoints[chartpoints.length - 1].value;
+    lastCandle.time = chartpoints[chartpoints.length - 1].time;
   }
-  mainSeries.setData(qs);
-  emaSeries.setData(qs);
- 
-  lastCandle = qs[qs.length - 1];
-  lastCandle.m = lastCandle.value;
-  lastCandle.time = instrument.simStartTime / 1000 + 330 * 60;
-}
-
-function updateFuturesChart(q)
-{
-
-  if ((q.ltt / 1000 + 330*60) >= lastCandle.time) //5 min candle
-  {
-    lastCandle.time = lastCandle.time + 5*60;
-    lastCandle.high = q.close;
-    lastCandle.low = q.close;
-    lastCandle.open = q.close;
-    lastCandle.close = q.close;
-    lastCandle.m = lastCandle.value === undefined ? q.close : lastCandle.value;
-    lastCandle.value = (2/21)*q.close + (1-2/21)*lastCandle.m; 
-  }  
   else
-  {   
-    lastCandle.high = Math.max(lastCandle.high, q.close);
-    lastCandle.low = Math.min(lastCandle.low, q.close);
-    lastCandle.close = q.close;
-    lastCandle.value = (2/21)*q.close + (1-2/21)*lastCandle.m;  
+  {
+    if(nTVtime(qs.ltt) >= lastCandle.time)
+    {
+      lastCandle.t = lastCandle.time;
+      lastCandle.time = lastCandle.time + 5 *60;
+      lastCandle.m = lastCandle.value === undefined ? qs.close : lastCandle.value;
+    }
+    qs.time = lastCandle.t;
+
+    lastCandle.value = (2/21) * qs.close + (1-2/21) * lastCandle.m;
+    qs.value = lastCandle.value;
+
+    mainSeries.update(qs);
+    emaSeries.update(qs);    
+  } 
+} */
+
+function futuresChart(q)
+{
+  if(mainSeries.data().length === 0)
+  {
+    q.time = nTVtime(q.ltt);
+    q.value = q.ltp;
+
+    mainSeries.setData([q]);
+    emaSeries.setData([q]);
+  }
+  else
+  {
+    var lastData = structuredClone(mainSeries.data().at(-1));
+    if(nTVtime(q.ltt) > lastData.time + 5 * 60)
+    {
+      lastData = q;
+      lastData.time = nTVtime(q.ltt);
+      lastData.m = (2/21) * q.close + lastData.value;
+    }
+    else
+    {
+      lastData.close = q.close;
+      lastData.high = Math.max(lastData.high, q.high);
+      lastData.low = Math.min(lastData.low, q.low);
+      lastData.value = (2/21) * q.close + (1-2/21) * lastData.m;
+    }
+    mainSeries.update(lastData);
+    emaSeries.update(lastData);
   }
   
-  mainSeries.update(lastCandle);
-  emaSeries.update(lastCandle);
 }
 
 function updateIndexChart(uQuote)
 {
-  var uQuoteTime = new Date(uQuote.datetime).setSeconds(0)/1000+330*60;
+  var uQuoteTime = sTVtime(new Date(uQuote.datetime).setSeconds(0));
   nifty.update({"time": uQuoteTime, "value": uQuote.close});
 }
 
 function setChartQuotes(optionChainQuotes)
 {
   var cTime = serverTime;
-  cTime = (((new Date(cTime)).setSeconds(0))/1000)+330*60;
+  cTime = sTVtime(new Date(cTime)).setSeconds(0);
 
   for(var i = 0; i < optionsChartConfig.length; i++)
   {
@@ -84,7 +114,7 @@ function setUpInitialNiftyChart(uq)
 {
   for(var i = 0; i < uq.length; i++)
   { 
-    uq[i].time = new Date(uq[i].datetime).getTime()/1000 + 330*60;
+    uq[i].time = sTVtime(uq[i].datetime);
     uq[i].value = uq[i].close;
   }
   nifty.setData(uq);
@@ -102,10 +132,10 @@ function setUpInitialOptionsChart(peQuotes, ceQuotes, oExpiry)
   const stPoints = new Array(peQuotes.length);
   for(var i = 0; i < peQuotes.length; i++)
   {
-    peQuotes[i].time = (Date.parse(peQuotes[i].datetime)/1000 + 330*60);
+    peQuotes[i].time = sTVtime(peQuotes[i].datetime);
     peQuotes[i].value = peQuotes[i].close;
 
-    ceQuotes[i].time = (Date.parse(ceQuotes[i].datetime)/1000  + 330*60);
+    ceQuotes[i].time = sTVtime(ceQuotes[i].datetime);
     ceQuotes[i].value = ceQuotes[i].close;
     
     stPoints[i] = {time: peQuotes[i].time,

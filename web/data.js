@@ -3,7 +3,7 @@ var mode = document.getElementById("modeselect").value;
 var instrumentMap = new Map();
 
 instrumentMap.set('NH', {
-  simStartTime: new Date("2025-07-01 13:15:00").getTime(),
+  simStartTime: new Date("2025-07-02 09:15:00").getTime(),
   fExpiry: "31JUL25",
   oExpiry: "03JUL25",
   oExpiryNxt: "10JUL25",
@@ -16,8 +16,8 @@ instrumentMap.set('NH', {
 instrumentMap.set('NL', {
   simStartTime: Date.now(),
   fExpiry: "30MAR26",
-  oExpiry: "24MAR26",
-  oExpiryNxt: "30MAR26",
+  oExpiry: "30MAR26",
+  oExpiryNxt: "07APR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 10,
@@ -38,6 +38,7 @@ instrumentMap.set('ML',{
 });
 
 const lscount = 10 ;
+const addrows = 4; //should be an even number
 
 const chartOptions = {
   width: 660, height: 780,
@@ -49,7 +50,8 @@ const chartOptions = {
       mode: 0, // CrosshairMode.Normal
     },
     timeScale: {		
-      minBarSpacing: 2,	
+      minBarSpacing: 2,
+      visible: true,	
       timeVisible: true,
       secondsVisible: false,
       tickMarkMaxCharacterLength: 5,

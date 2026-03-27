@@ -52,7 +52,7 @@ class Session
         ost.atm = Math.round(uq.close / 50) * 50;
         var sks = utils.strikes(ost.atm, ost.n);
 
-        var curst = utils.filter(this.st, {
+    /*    var curst = utils.filter(this.st, {
             stockCodes: [ost.stockCode],
             expiries: [ost.expiry],
             keys: ['strikex']
@@ -67,7 +67,7 @@ class Session
             if(lst === undefined || lst.length === 0)
                 curst[i].toStream = false;
         }
-
+    */
         for (var i = 0; i < sks.length; i++) 
         {
             var lst = utils.filter(this.st, {
@@ -104,14 +104,19 @@ class Session
         return this.bserver.order(p);
     }
 
+    orderstatus(orderid)
+    {
+        return this.bserver.orderstatus(orderid);;
+    }
+
     ocqsub(stockCode, expiry)
     {
         var fst = utils.filter(this.st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
         var sublist = utils.filter(fst, {toStream: [true]});
         var unsublist = utils.filter(fst, {toStream: [false]});
     
-        if(unsublist != 0)
-            this.bserver.unsubscribe(this.uid, unsublist);
+        /* if(unsublist != 0)
+            this.bserver.unsubscribe(this.uid, unsublist); */
         this.bserver.subscribe(this.uid, sublist);
     }
     
@@ -122,13 +127,18 @@ class Session
         var sst = utils.filter(this.st, {keys: ['index', 'futures']});
         this.bserver.subscribe(this.uid, sst);
     }
+
+    resume() {
+        var sst = utils.filter(this.st, {keys: ['index', 'futures', 'strikex']});
+        this.bserver.subscribe(this.uid, sst);
+    }
     
     unsuball() {
         this.st.forEach((e) => e.toStream = false);
         var fst = utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt', 'vix']});
         this.bserver.unsubscribe(this.uid, fst);
-        var st = utils.filter(this.st, {keys: ['index']})[0];
-        st.uq = undefined;
+        /*var st = utils.filter(this.st, {keys: ['index']})[0];
+        st.uq = undefined;*/
     }
 
     lastuq(uq)
@@ -149,10 +159,10 @@ class Session
     emitQuotes(q)
     {
         try {
-            var fst = utils.filter(this.st, {symbol: [q.symbol]})[0];
+            /*var fst = utils.filter(this.st, {symbol: [q.symbol]})[0];
             if(fst === undefined || fst.toStream === false)
                 return;
-            
+            */
             var key = 'strikex';
             if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
             {
