@@ -109,6 +109,8 @@ function enterPosition(event)
   let row = btn.parentNode.parentNode.parentNode;
   let colStrikePrice = right === 'Call' ? 3 : 4;
   let symbol = row.cells[colStrikePrice].childNodes[6].innerText;
+  let colTLP = right === 'Call' ? 2 : 5;
+  let cprice = row.cells[colTLP].childNodes[0].innerText;
   let lot = document.getElementById("lotselect").value;
   let lmtprice = document.getElementById('lmtprice').value;
   
@@ -116,7 +118,7 @@ function enterPosition(event)
   if(p === undefined)
     p = new Position(symbol);
 
-  p.order(action, lot, lmtprice);
+  p.order(action, Number(lot), Number(lmtprice), Number(cprice));
 }
 
 function exitPosition(event) 

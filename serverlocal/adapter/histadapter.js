@@ -16,7 +16,7 @@ function subscribe(uid, instruments, action)
     var requests = new Array(0);
     instruments.forEach((inst) => {
         requests.push({ key: uid,
-            symbol: inst.symbol
+            instrument: inst
         });
     });
     if(action)

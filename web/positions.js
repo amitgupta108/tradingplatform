@@ -14,74 +14,62 @@ function writeProfitLoss()
   document.getElementById("vTotalPL").innerText = (bookedPL + unbookedPL).toFixed(2);
 }
 
-function setPositionQuote(q) 
+function refreshPositionPL(p, price) 
 {
-  var p = Position.findPositionRow(q.symbol);
-  if (p != undefined)
-  {
-    var buyq = 0;
-    var sellq = 0;
-    var buyv = 0;
-    var sellv = 0;
-    
-    p.orders.map((o) => 
-    {  
-      if(o.state === 'accepted')  
+  var buyq = 0; var sellq = 0;
+  var buyv = 0; var sellv = 0;
+  
+  p.orders.map((o) => 
+  {  
+    if(o.state === 'completed')
+    {
+      if(o.quantity > 0)
       {
-        o.state = 'completed';
-        o.price = q.close;
-        o.time = q.ltt;
-      } else if(o.state === 'completed')
+        buyq += o.filled_q;
+        buyv += o.filled_q * o.price;
+      }  
+      else if(o.quantity < 0)
       {
-        if(o.quantity > 0)
-        {
-          buyq += o.quantity;
-          buyv += o.quantity * o.price;
-        }  
-        else if(o.quantity < 0)
-        {
-          sellq += o.quantity;
-          sellv += o.quantity * o.price;
-        }
+        sellq += o.filled_q;
+        sellv += o.filled_q * o.price;
       }
-    });
-
-    var abp = buyv / (buyq === 0 ? 1 : buyq);
-    var asp = sellv / (sellq === 0 ? 1 : sellq);
-    var psize = buyq + sellq;
-    var bookedPL = 0;
-    var unbookedPL = 0;
-
-    if(psize === 0) {
-      bookedPL = (sellv - buyv);
-      unbookedPL = 0;
     }
-    else if (psize > 0) {
-      bookedPL = (asp - abp) * sellq * instrument.lotsize;
-      unbookedPL = (q.close - abp) * psize * instrument.lotsize;
-    }
-    else {
-      bookedPL = (asp - abp) * buyq * instrument.lotsize;
-      unbookedPL = (asp - q.close) * psize * instrument.lotsize;
-    }
-    
-    var totalPL = bookedPL + unbookedPL;
-    var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
+  });
 
-    p.value('bookedPL', bookedPL.toFixed(2));
-    p.value('averageP', avgopnpr.toFixed(2));
-    p.value('LTP', q.close);
+  var abp = buyv / (buyq === 0 ? 1 : buyq);
+  var asp = sellv / (sellq === 0 ? 1 : sellq);
+  var psize = buyq + sellq;
+  var bookedPL = 0;
+  var unbookedPL = 0;
 
-    p.value('unbookedQ', psize);
-    p.value('unbookedPL', unbookedPL.toFixed(2));
-    p.value('totalPL', totalPL.toFixed(2));
+  if(psize === 0) {
+    bookedPL = (Math.abs(sellv) - buyv);
+    unbookedPL = 0;
   }
-}
+  else if (psize > 0) {
+    bookedPL = (asp - abp) * sellq;
+    unbookedPL = (price - abp) * psize;
+  }
+  else {
+    bookedPL = (asp - abp) * buyq;
+    unbookedPL = (asp - price) * psize;
+  }
+  
+  var totalPL = bookedPL + unbookedPL;
+  var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
-function updateOrder(response)
-{
+  p.value('bookedPL', bookedPL.toFixed(2));
+  p.value('averageP', avgopnpr.toFixed(2));
+  p.value('LTP', (price).toFixed(2));
+
+  p.value('unbookedQ', psize);
+  p.value('unbookedPL', unbookedPL.toFixed(2));
+  p.value('totalPL', totalPL.toFixed(2));
+
+  writeProfitLoss();
   
 }
+
 class Position
 {
   #pRow; 
@@ -94,7 +82,7 @@ class Position
     LTP: [6, 0, 'n'],
     unbookedQ: [7, 0, 'n'],
     unbookedPL: [8, 0, 'n'],
-    totalPL: [9, 0, 'n']
+    totalPL: [9, 1, 'n']
   };
   #oc;
   orders = new Array(0);
@@ -123,24 +111,20 @@ class Position
     return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
   }
 
-  order(action, osize, lmtprice)
+  order(action, osize, lmtprice, cprice)
   {
     osize = (action === 'BUY' ? 1 : -1) * Number(osize);
-    var type = Number(lmtprice) > 0 ? 'LIMIT' : 'MARKET';
-    var lp = action === 'BUY' ? 1 : 5000;
+    //var type = Number(lmtprice) > 0 ? 'LIMIT' : 'MARKET';
+    var lp = action === 'BUY' ? cprice - 100 : cprice + 100;
     var exc = instrument.exc;
 
     var order = {
-      orderN: this.orderN + 1, action: action, quantity: osize, price: Number(lp),
+      orderN: ++this.orderN, action: action, quantity: osize * instrument.lotsize, price: lp,
           time: Date.now(), state: 'opened', counter: ordercounter++, type: 'LIMIT',
-        exc: exc, symbol: this. symbol};
+        exc: exc, symbol: this.symbol, cprice: cprice};
     this.orders.push(order);
-    this.orderN = this.orderN + 1;
 
-    if (mode === 'L')
-      emit('order', order);
-    else
-      order.state = accepted;
+    emit('order', order);
   }
 
   findorders(state)
@@ -156,6 +140,49 @@ class Position
       this.order(psize < 0 ? 'BUY' : 'SELL', psize, -1);      
   } 
 
+  orderupdate(exorder){
+    var o = this.orders.find((e) => e.orderid === exorder.orderid);
+    if(o.state === 'submitted' && exorder.status === 'success')
+    {
+      o.state = 'completed';
+      o.price = exorder.average_price;
+      o.extime = exorder.timestamp;
+      o.filled_q = exorder.filled_quantity * (o.action === 'BUY' ? 1 : -1);
+
+      //refreshPositionPL(this, o.price);
+    }
+  }
+
+  liveorderupdate(ordermsg){
+    var o = this.orders.find((e) => e.orderid === ordermsg.nOrdNo);
+    if(o === undefined) {
+      console.log('unmatched order msg ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
+      return;
+    }
+    
+    if(ordermsg.ordSt === 'complete')
+    {
+      o.state = 'completed';
+      o.price = Number(ordermsg.avgPrc);
+      o.extime = ordermsg.exCfmTm;
+      o.filled_q = Number(ordermsg.fldQty) * (o.action === 'BUY' ? 1 : -1);
+      o.unfilled_q = ordermsg.unFldSz;
+    }
+    else if ((ordermsg.ordSt === 'rejected') || (ordermsg.ordSt === 'cancelled'))
+    {
+      o.state = ordermsg.ordSt;
+    }
+    else if(ordermsg.ordSt === 'modified')
+    {
+      o.state = ordermsg.ordSt;
+      o.quantity = ordermsg.qty;
+      o.type = ordermsg.prcTp === 'L' ? 'LIMIT' : 'MARKET';
+      o.price = Number(ordermsg.prc)
+    }
+    else
+      console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
+
+  }
   static findPositionRow(symbol)
   {
     return positions.find((e) =>

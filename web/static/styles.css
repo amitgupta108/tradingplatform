@@ -112,7 +112,7 @@ body {
 }
 
 .plAmount {
-    width: 50px;
+    width: 65px;
     border: 0px solid lightgray;
     text-align: left;
     font-size: 14px;
@@ -145,11 +145,11 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     border-radius: 3px;
 }
 th, td {
-    padding: 4px;
+    padding: 3px;
     text-align: center;
     border: 1px solid #ddd;
 }
@@ -204,23 +204,6 @@ label {
     vertical-align: middle;
     justify-items: center;
     justify-content: center;
-}
-
-.hoverDiv {
-    display: none;
-    height: 18px;
-    width: 96px;
-    border: 1px solid #ccc;
-    justify-items:stretch;
-    justify-content:space-between;
-}
-
-.topcontainer:hover .hoverDiv{
-    position:fixed;
-    z-index: 150;
-    display:flex;
-    justify-items:stretch;
-    justify-content:space-evenly;
 }
 
 .buy_button {
@@ -357,3 +340,25 @@ select:hover {
     width: 99%;
 }
 
+.hover-cell {
+    position: relative; /* 1. Sets the positioning context for the absolute div. */
+  }
+  
+  .hover-content {
+    display: none; /* 2. Hides the div by default. */
+    position: absolute; /* 3. Positions the div relative to its parent .hover-cell. */
+    top: 10%; /* Adjust positioning as needed */
+    left: 10%; /* Positions the div to the right of the cell */
+    z-index: 20; /* 4. Ensures the div appears above other content. */
+    height: 18px;
+    width: 96px;
+    border: 0px solid #ccc;
+    justify-items:stretch;
+  }
+  
+  .hover-cell:hover .hover-content {
+    display: flex; /* 5. Shows the div when the parent .hover-cell is hovered. */
+    justify-items:stretch;
+    justify-content:space-evenly;
+  }
+  

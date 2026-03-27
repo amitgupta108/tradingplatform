@@ -11,13 +11,13 @@ class OptionChain
   #r;
   #icons = new Array(0);
   #aiv = [0,0];
-  atm = 25000;
+  atm;
   oc;
 
   constructor(expiry, tblBody)
   {
     this.oc = document.getElementById(tblBody);
-    this.#r = Array.from(createOCTable(this.oc, lscount));
+    this.#r = Array.from(createOCTable(this.oc, lscount + addrows));
     this.#expiry = expiry;
   }
 
@@ -36,18 +36,14 @@ class OptionChain
 
   q(q)
   {     
-    var offset = (this.atm - q.strike_price) / 50;
-    var n = 0;
-    if(offset > 0)
-      n = lscount - offset-1;
-    else if (offset < 0)
-      n = offset * -1;
-    else 
-      if (q.right === 'Put')
-        n = lscount-1;
-      else
-        n = 0;
+    var offset = (this.atm - Number(q.strike_price)) / 50;
 
+    var n = 0;
+    if(q.right === 'Put' && (offset <= lscount + addrows/2) && offset >= (-1 * addrows/2))
+      n = lscount + addrows/2 - 1 - offset;
+    else if (q.right === 'Call' && (offset > -1 * (lscount + addrows/2)) && offset <= addrows/2)
+      n = (offset * -1) + addrows/2;
+    
     this.#rowfill(n, q, q.right);
   }
 
@@ -76,7 +72,7 @@ class OptionChain
       this.#value(n, 'sym', rg, q.symbol);
     }
     var p = Position.findPositionRow(q.symbol);
-    if(p != undefined && p.psize != 0)
+    if(p != undefined && p.value('unbookedQ') != 0)
       this.#value(n, 'icon', rg, p.value('unbookedQ'), rg);
     else
       this.#value(n, 'icon', rg, '');

@@ -11,7 +11,7 @@ async function handleMessage(sn, event, msg)
         {
             case 'restored':
                 if (msg.continue === true)
-                    sn.inqsub();
+                    sn.resume();
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
@@ -69,14 +69,18 @@ async function handleMessage(sn, event, msg)
                 break
             case 'history':
             case 'order':
-                console.log("order: " + Date.now());
-                var status = await sn.order(msg);
-                status.counter = msg.counter;
-                status.rtime = msg.time;
-                emit(sn.s, "orderconf", status);
+                console.log("order: " + JSON.stringify(msg));
+                var orsub = await sn.order(msg);
+                msg.status = orsub.status;
+                msg.orderid = orsub.orderid;    
+                
+                emit(sn.s, "orderconf", msg);
+
+                //if(orsub.status === 'success')
+                    //emit(sn.s, 'simorder', await sn.orderstatus(orsub.orderid));
                 break;
             case 'ws':
-                ordersocket.wsconnect(msg);
+                ordersocket.wsconnect(sn, msg);
                 break;
             default:
                 console.log("Unknown event " + event);
