@@ -3,13 +3,12 @@ class OptionChain
   #m = {iv: [0, 0],
     delta: [1, 0],
     price: [2, 0],
-    strike:[3, 3],
     icon:[3, 1],
+    strike:[3, 3],
     sym: [3, 6],
   };
   #expiry;
   #r;
-  #icons = new Array(0);
   #aiv = [0,0];
   atm;
   oc;
@@ -47,20 +46,6 @@ class OptionChain
     this.#rowfill(n, q, q.right);
   }
 
-  fill(q)
-  {
-    this.#rst();
-  }
-
-  #rst(){
-    for( var i = 0; i < this.#icons.length; i++)
-    {
-      var nr = Math.abs((this.#icons[i].s - this.#value(0, 'strike', this.#icons[i].rg)) / 50);
-      if(nr < this.#r.length)
-        this.#value(nr, this.#icons[i].a, this.#icons[i].rg, this.#icons[i].q);
-    }
-  }
-
   #rowfill(n, q, rg)
   {
     if(q != undefined)
@@ -73,20 +58,12 @@ class OptionChain
     }
     var p = Position.findPositionRow(q.symbol);
     if(p != undefined && p.value('unbookedQ') != 0)
-      this.#value(n, 'icon', rg, p.value('unbookedQ'), rg);
+      this.#value(n, 'icon', rg, p.value('unbookedQ'), 1);
     else
       this.#value(n, 'icon', rg, '');
   }
-  
-  icon(sy, a, q)
-  { 
-    this.#icons.push(new Icon(sy, a, q));
 
-    var r = Math.abs((s - this.#value(0, 'strike', rg)) / 50);
-    this.#value(r, a, rg, q);
-  }
-
-  #value(n, p, rg, nv = undefined)
+  #value(n, p, rg, nv = undefined, css = undefined)
   {
     var i = Object.getOwnPropertyDescriptor(this.#m, p).value;
     var ci = Math.abs(i[0] + (rg === 'Call' ? 0 : -7));
@@ -96,20 +73,12 @@ class OptionChain
     else
     {      
       this.#r[n].cells[ci].childNodes[i[1]].innerText = nv;
+      if(css === 1)
+      {
+        this.#r[n].cells[ci].childNodes[i[1]].classList.remove(p, (nv > 0 ? 'sell' : 'buy'));
+        this.#r[n].cells[ci].childNodes[i[1]].classList.add(p, (nv > 0 ? 'buy' : 'sell'));
+      }
       return nv;
     }
   }
-}
-
-class Icon
-{
-  constructor(sy, a, q)
-  {
-    this.sy = sy;
-    this.a = a;
-    this.q = q;
-  }
-  sy;
-  a;
-  q;
 }

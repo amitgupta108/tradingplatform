@@ -39,7 +39,8 @@ async function orderstatus(orderid)
         price: 0,
         pricetype: "MARKET",
         product: "MIS",
-        quantity: order.quantity,
+        quantity: Math.abs(order.quantity), //returning positive q as does the openalgo
+        filled_q: Math.abs(order.quantity),
         symbol: order.symbol,
         timestamp: order.time + 500,
         trigger_price: 0,

@@ -9,7 +9,15 @@ require('console-stamp')(console, '[HH:MM:ss.l]');
 const Session = require('./session/session');
 const apiserver = require('./apiserver');
 
-var port = 443;
+// script.js
+const args = process.argv;
+
+console.log(`Node executable path: ${args[0]}`);
+console.log(`Script file path: ${args[1]}`);
+console.log(`First argument: ${args[2]}`);
+console.log(`Second argument: ${args[3]}`);
+
+var port = args[2] === undefined ? 443 : Number(args[2]);
 
 const es = session({secret: '72r5N3K05754+43ek796960QT96Hc8e1', 
         resave: true,
@@ -47,9 +55,9 @@ io.on('connection', (s) => {
     
     var uid = s.handshake.headers.uid;
     var sn = setuser(uid, s);
-    s.onAny((event, msg) => {
+    s.onAny((event, msg, mode) => {
         console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(sn, event, msg);
+        apiserver.handleMessage(sn, event, msg, mode);
     });
 });
 

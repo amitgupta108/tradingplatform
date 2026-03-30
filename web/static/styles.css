@@ -2,8 +2,9 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
-    margin: 5px;
+    margin: 3px;
 }
+
 #container {
     position: absolute; 
     display: flex;
@@ -16,7 +17,7 @@ body {
 #leftContainer {
     border: 1px solid #4CAF50;
     width: 53.0%;
-    height: 99.5%; 
+    height: 100%; 
     border-radius: 5px;
     vertical-align: auto;
 }  
@@ -24,7 +25,7 @@ body {
 #rightContainer {
     border: 1px solid #4CAF50;
     width: 46.0%;
-    height: 99.5%; 
+    height: 100%; 
     border-radius: 5px;
     vertical-align: auto;
 } 
@@ -39,24 +40,20 @@ body {
 
 #timer {
     font-size: 13px;
-} 
+}
+
 .tab-content {
     display: none;
-    padding: 5px;
+    padding: 2px;
     background-color: white;
     border: 1px solid #4CAF50;
     border-radius: 5px;
-    margin-top: 4px;
-    height: 34.5%;
-    width: 98%;
+    margin-top: 2px;
+    height: 39%;
+    width: 99%;
     overflow-y:auto;
 }
 
-#optionChain {
-    border: 0px solid lightgray;
-    height: 100%;
-    width: 100%;
-}
 #futures {
     border: 0px solid lightgray;
     height: 3%;
@@ -74,17 +71,17 @@ body {
 #positions {
     border: 0px solid lightgray;
     width: 100%;
-    height:44%;
+    height:48%;
     border-radius: 5px;
     overflow-y:auto;
 }
 #bottomPanel {
     display:flex;
     border: 1px solid #4CAF50;
-    width: 98.5%;
+    width: 99%;
     height: 3.5%;
     border-radius: 5px;
-    padding:4px;
+    padding:3px;
 }
 
 #bottomButtons {
@@ -145,65 +142,74 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 3px;
-    border-radius: 3px;
-}
-th, td {
-    padding: 3px;
-    text-align: center;
-    border: 1px solid #ddd;
-}
-td {
-    font-size: 12px;
-}
-th {
-    background-color: #4CAF50;
-    color: white;
-    font-size: 12px;
-    border-radius: 4px;
-}
-.secondTableHead {
-    background-color: #4cafaf;
-    color: white;
-    font-size: 12px;
-    border-radius: 4px;
-}
-
-.thirdTableHead {
-    background-color: rebeccapurple;
-    color: white;
-    font-size: 12px;
-    border-radius: 4px;
+    margin-bottom: 2px;
+    border-radius: 5px;
+    overflow: hidden;
 }
 
 tr {
     background-color: #f2f2f2;
     font-size: 12px;
+    border-radius: 5px;
 }
+
+th, td {
+    padding: 4px;
+    text-align: center;
+    border: 1px solid #ddd;
+    font-size: 12px;
+
+}
+
+th {
+    background-color: #4CAF50;
+    color: white;
+}
+
 tr:hover {
     background-color: #ddd;
 }
+
 button {
     background-color: #4CAF50;
     color: white;
-    padding: 6px 6px;
+    padding: 5px 5px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
 }
+
 button:hover {
     background-color: #45a049;
 }
+
 button:disabled {
     color: grey;
 }
 
-label {
-    font-size: 12px;
+label {    
+    font-size: 14px;
     vertical-align: middle;
     justify-items: center;
     justify-content: center;
+    padding: 3px;
+}
+
+.small_button {
+    color: #00897b;
+    border-color: #00897b;
+    width: 15px;
+    height: 15px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all .2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    padding: 1px 1px;
+    cursor: pointer;
 }
 
 .buy_button {
@@ -215,7 +221,6 @@ label {
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 12px;
-    margin-left: 10px;
     transition: all .2s ease-in-out;
     display: flex;
     align-items: center;
@@ -223,7 +228,6 @@ label {
     padding: 1px;
     cursor: pointer;
 }
-
 .sell_button{
     color: #d32f2f;
     border-color: #d32f2f;
@@ -241,7 +245,24 @@ label {
     cursor: pointer;
 }
 
-.position {
+.lot_select {
+    color: #d32f2f;
+    border-color: #d32f2f;
+    width: 40px;
+    height: 18px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all .2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    cursor: pointer;
+}
+
+.icon.buy {
     color: rgb(56, 103, 224);
     border-color:rgb(56, 103, 224);
     border: 0px solid rgb(56, 103, 224);
@@ -254,7 +275,7 @@ label {
     padding: 1px;
 }
 
-.sell_position {
+.icon.sell {
     color: #d32f2f;
     border-color: #d32f2f;
     border: 0px solid #d32f2f;
@@ -277,6 +298,7 @@ select {
     font-size: 12px;
     transition: border-color 0.3s;
 }
+
 select:hover {
   border-color: #388e3c;
 }
@@ -288,21 +310,25 @@ select:hover {
     vertical-align: middle;
     color: white;
     transition: background-color 0.3s;
-    font-size: 15px;
+    font-size: 13px;
     justify-content:center;
     display: flex;
+    gap: 10px;
 }
 
 .tab2 {
     flex:content;
     padding: 4px;
     text-align: center;
+    vertical-align: middle;
     color: white;
     transition: background-color 0.3s;
-    font-size: 15px;
+    font-size: 13px;
     justify-content: center;
     display: flex;
+    gap: 10px;
 }
+
 .tab:hover {
     background-color: #45a049;
 }
@@ -310,34 +336,14 @@ select:hover {
 .active {
     display:block;
 }
+
 .active-tab {
     flex: content;
     background-color: #1a9a20;
     justify-content: center;
     display: flex;
     vertical-align: middle;
-}
-
-.tab-content2 {
-    display: none;
-    padding: 0px;
-    background-color: white;
-    border: 1px solid #4CAF50;
-    border-radius: 5px;
-    margin-top: 2px;
-    height: 95%;
-    width: 99%;
-}
-
-.tab-content2 {
-    display: none;
-    padding: 0px;
-    background-color: white;
-    border: 1px solid #4CAF50;
-    border-radius: 5px;
-    margin-top: 2px;
-    height: 95%;
-    width: 99%;
+    justify-content: center;
 }
 
 .hover-cell {
@@ -347,8 +353,8 @@ select:hover {
   .hover-content {
     display: none; /* 2. Hides the div by default. */
     position: absolute; /* 3. Positions the div relative to its parent .hover-cell. */
-    top: 10%; /* Adjust positioning as needed */
-    left: 10%; /* Positions the div to the right of the cell */
+    top: 15%; /* Adjust positioning as needed */
+    left: 8%; /* Positions the div to the right of the cell */
     z-index: 20; /* 4. Ensures the div appears above other content. */
     height: 18px;
     width: 96px;
@@ -362,3 +368,45 @@ select:hover {
     justify-content:space-evenly;
   }
   
+#message-container {
+    position: fixed;
+    top: 25px;
+    left: 650px;
+    width: 350px;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    border-radius: 4px;
+}
+
+.orderwindow {
+    padding: 2px;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0; /* Start hidden to use fade-in animation */
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    transform: translateY(-20px); /* Optional: add a slight slide-in effect */
+}
+
+.orderwindow.buy {
+    background-color: #4CAF50; /* Green */
+    border-radius: 4px;
+}
+
+.orderwindow.sell {
+    background-color: #f44336; /* Red */
+    border-radius: 4px;
+}
+
+.orderwindow.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.close-btn {
+    float:right;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 15px;
+    margin-right: 5px;
+}

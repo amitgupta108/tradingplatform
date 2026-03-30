@@ -2,9 +2,8 @@ let positions = new Array(0);
 let optionChains = new Array(0);
 let ordercounter = 1;
 
-function emit(event, args) {
-
-  socket.emit(event, args);
+function emit(event, arg1, arg2) {
+  socket.emit(event, arg1, arg2);
 }
 
 function loadPreData()
@@ -18,7 +17,7 @@ function loadPreData()
 
   const p = {
     uid: uuid,
-    mode: 0,
+    mode: instrument.mode,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     oExpiry: instrument.oExpiry,
@@ -41,8 +40,6 @@ function resumeSimulation()
 
 function start()
 {
-  mode = document.getElementById("modeselect").value;
-
   emit('startstream', instrument); 
   if (OptionChain.get(instrument.oExpiry) === undefined)
     optionChains.push(new OptionChain(instrument.oExpiry, 'ocBody'));
@@ -86,7 +83,7 @@ function switchExpiry(evt, tabName) {
 function runOptionChainNxt(event)
 {
   if (OptionChain.get(instrument.oExpiryNxt) === undefined)
-    optionChains.push(new OptionChain(instrument.oExpiryNxt), 'ocBody2');
+    optionChains.push(new OptionChain(instrument.oExpiryNxt, 'ocBody2'));
   
   if (event.currentTarget.innerText === '>') {
     emit('ocnxt', 'start');
@@ -99,34 +96,21 @@ function runOptionChainNxt(event)
   }
 }
 
-function enterPosition(event) 
-{
-  let btn = event.target;
-
-  var action = btn.id.startsWith('buy') ? 'BUY' : 'SELL';
-  var right = btn.id.endsWith('CE') ? 'Call' : 'Put';
-
-  let row = btn.parentNode.parentNode.parentNode;
-  let colStrikePrice = right === 'Call' ? 3 : 4;
-  let symbol = row.cells[colStrikePrice].childNodes[6].innerText;
-  let colTLP = right === 'Call' ? 2 : 5;
-  let cprice = row.cells[colTLP].childNodes[0].innerText;
-  let lot = document.getElementById("lotselect").value;
-  let lmtprice = document.getElementById('lmtprice').value;
-  
-  var p = Position.findPositionRow(symbol);
-  if(p === undefined)
-    p = new Position(symbol);
-
-  p.order(action, Number(lot), Number(lmtprice), Number(cprice));
-}
-
 function exitPosition(event) 
 {
   let row = event.target.parentNode.parentNode.parentNode;
 
   var p = Position.findPositionRow(row.title);
   p.exit();
+}
+
+function savePositions(){
+  var p = new Array(0);
+  positions.forEach((e) => {
+    p.push({symbol: p.symbol, orderN: p.orderN, orders: p.orders})
+ });
+
+ emit('positions', p);
 }
 
 function wsconnect(action){

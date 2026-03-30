@@ -5,8 +5,8 @@ var BreezeConnect = require('breezeconnect').BreezeConnect;
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
 var appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
-var appSecret = "p877A97d2r04602X623=39762X51375m";
-var sessionId = "55124967";
+var appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
+var sessionId = "55148969";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -21,7 +21,7 @@ var callback;
 var userclocks = new Map();
 const subsRequests = new Array(0);
 //subsRequests[0] = {user: '0', speed: '1', instruments: undefined, time: undefined};
-const usermap = new Map();
+const userqcollmap = new Map();
 
 const streamers = [
         {key: '1x', speed: 1, qsid: 0, state: 'stopped', time: 0},
@@ -32,7 +32,7 @@ const streamers = [
 
 function connect(uid, simStartTime, callbackfn) {
     callback = callbackfn;
-    usermap.set(uid, new Array(0));
+    userqcollmap.set(uid, new Array(0));
     userclocks.set(uid, {sTime: simStartTime, cTime: Date.now()});
 }
 
@@ -69,11 +69,11 @@ function subscribe(requests) {
     
     requests.forEach((request) => {
         
-        if(request.key === undefined || request.instrument === undefined) {
+        if(request.uid === undefined || request.instrument === undefined) {
             console.error("Invalid subscription request " + JSON.stringify(request));
             return;
         }
-        var exReq = utils.filter(subsRequests, {keys: [request.key], symbol: [request.instrument.symbol]})[0];
+        var exReq = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]})[0];
         if (exReq === undefined) {
             subsRequests.push(request);
         }
@@ -86,12 +86,12 @@ function subscribe(requests) {
 function unsubscribe(requests) {
     requests.forEach((request) => {
         
-        if(request.key === undefined) {
+        if(request.uid === undefined) {
             console.error("Invalid unsubscription request " + JSON.stringify(request));
             return;
         }
         var symbol = request.instrument != undefined ? request.instrument.symbol : undefined;
-        var exReq = utils.filter(subsRequests, {keys: [request.key], symbol: [symbol]})[0];   
+        var exReq = utils.filter(subsRequests, {uid: [request.uid], symbol: [symbol]})[0];   
         if (exReq !== undefined) {
             subsRequests.splice(subsRequests.indexOf(exReq), 1);
         }
@@ -104,10 +104,10 @@ function dothings(speed)
     //var reqs = utils.filter(subsRequests, {keys: [speed]});
     subsRequests.forEach((req) => {
         count++;
-        var qt = q(usermap.get(req.key), req.instrument, getUserTime(req.key));
+        var qt = q(userqcollmap.get(req.uid), req.instrument, getUserTime(req.uid));
 
         if(qt !== undefined)
-            callback(req.key, qt);
+            callback(req.uid, qt);
     });
     return count;
 }
@@ -147,15 +147,16 @@ function q(qArray, instrument, time)
 function qw(qArray, instrument, time) {
     var qs = getHistoricalData(instrument, time);
 
-    return qs.then((q) => {
-        var st = utils.filter(qArray, {symbol: [instrument.symbol]})[0];
+    return qs.then((resp) => {
+        var st = utils.filter(qArray, {symbol: [resp.symbol]})[0];
     
         if(st === undefined) 
-            qArray.push({symbol: instrument.symbol, quotes: q.quotes, state: q.state});
-        else
-            st = {symbol: instrument.symbol, quotes: q.quotes, state: q.state}; 
-            
-        return q;   
+            qArray.push({symbol: resp.symbol, quotes: resp.quotes, state: resp.state});
+        else {
+            st.quotes = resp.quotes;
+            st.state = resp.state;
+        }
+        return resp;   
     });
 }
 
@@ -176,12 +177,12 @@ async function getHistoricalData(instrument, sTime, endTime, interval)
         var resp = await breeze.getHistoricalDatav2(b);
 
         if (resp.Status === 200)
-            return { status: resp.Status, quotes: resp.Success, state: 'ready to stream', lastLoadTime: sTime };
+            return { status: resp.Status, symbol: instrument.symbol, quotes: resp.Success, state: 'ready to stream', lastLoadTime: sTime };
         else
             throw Error(resp.Error);
     } catch (error) {
         console.error("Error from breeze call " + error + '\n' + error.stack);
-        return { status: 0, quotes: undefined, state: 'load failed', lastLoadTime: sTime };
+        return { status: 0, symbol: instrument.symbol, quotes: undefined, state: 'load failed', lastLoadTime: sTime };
     }
 }
 

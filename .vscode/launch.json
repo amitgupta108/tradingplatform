@@ -14,11 +14,23 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Server",
+            "name": "Launch Server 443",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/serverlocal/app.js",
+            "args": ["443", "arg2"],
+            "outputCapture": "std"
+        }
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Server 449",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/serverlocal/app.js",
+            "args": ["449", "arg2"],
             "outputCapture": "std"
         }
     ]

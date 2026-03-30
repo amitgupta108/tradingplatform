@@ -46,7 +46,7 @@ function filter(collection, fO)
     {
         var a = true; var b = true; var c = true; var d = true;
         var e = true; var f = true; var g = true; var h = true;
-        var j = true; var k = true;
+        var j = true; var k = true; var l = true;
 
         if(fO.keys != undefined) 
             a = fO.keys.includes(element.key);
@@ -78,7 +78,10 @@ function filter(collection, fO)
         if (fO.symbol != undefined)
             k = fO.symbol.includes(element.symbol);
 
-        return a && b && c && d && e && f && g && h && j && k;
+        if (fO.uid != undefined)
+            l = fO.uid.includes(element.uid);
+
+        return a && b && c && d && e && f && g && h && j && k && l;
     });
     return fResults;
 }
