@@ -147,7 +147,7 @@ class Session
         if(uq === undefined)
             return st.uq;
 
-        var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnext'], toStream: [true] });
+        var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnxt'], toStream: [true] });
         for (var j = 0; j < ost.length; j++)
         {
             if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.close))  > 60)

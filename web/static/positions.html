@@ -16,7 +16,6 @@
         <div id="leftContainer">
 
             <div id="timerBar">
- 
                 <label id="timer"></label>
                 <label id="atmiv"></label>
 
@@ -44,21 +43,21 @@
                             
                             <td class="hover-cell">
 
-                                <label class="position"></label>
+                                <label id="icon" class="icon"></label>
                                 <label id="CEStrike"></label>
                                 <div class="hover-content">
-                                    <button  id="buyCE" class="buy_button" onclick="enterPosition(event)">B</button>
-                                    <button  id="sellCE" class="sell_button" onclick="enterPosition(event)">S</button>
+                                    <button  id="buyCE" class="buy_button" onclick="showMessage(event, 'BUY', 'Call')">B</button>
+                                    <button  id="sellCE" class="sell_button" onclick="showMessage(event, 'SELL', 'Call')">S</button>                            
                                 </div>
-                                <label hidden></label>
+                                <label id='sym' hidden></label>
                             </td> 
                             
                             <td class="hover-cell">
-                                <label class="position"></label>
+                                <label class="icon"></label>
                                 <label id="PEStrike"></label>
                                 <div  class="hover-content">
-                                    <button  id="buyPE" class="buy_button" onclick="enterPosition(event)">B</button>
-                                    <button  id="sellPE" class="sell_button" onclick="enterPosition(event)">S</button>
+                                    <button  id="buyPE" class="buy_button" onclick="showMessage(event, 'BUY', 'Put')">B</button>
+                                    <button  id="sellPE" class="sell_button" onclick="showMessage(event, 'SELL', 'Put')">S</button>
                                 </div>
                                 <label hidden></label>
                             </td>
@@ -77,14 +76,14 @@
                     <table id="ocTable2">
                         <thead>
                             <tr>
-                                <th class="secondTableHead" width="11%">IV</th>
-                                <th class="secondTableHead" width="11%">Delta</th>
-                                <th class="secondTableHead" width="12%">LTP</th>
-                                <th class="secondTableHead" width="16%">CE</th>
-                                <th class="secondTableHead" width="16%">PE</th>
-                                <th class="secondTableHead" width="12%">LTP</th>
-                                <th class="secondTableHead" width="11%">Delta</th>
-                                <th class="secondTableHead" width="11%">IV</th>
+                                <th  style="background-color:#4f8ee7;" width="11%">IV</th>
+                                <th  style="background-color:#4f8ee7;" width="11%">Delta</th>
+                                <th  style="background-color:#4f8ee7;" width="12%">LTP</th>
+                                <th  style="background-color:#4f8ee7;" width="16%">CE</th>
+                                <th  style="background-color:#4f8ee7;" width="16%">PE</th>
+                                <th  style="background-color:#4f8ee7;" width="12%">LTP</th>
+                                <th  style="background-color:#4f8ee7;" width="11%">Delta</th>
+                                <th  style="background-color:#4f8ee7;" width="11%">IV</th>
                             </tr>
                         </thead>    
                         <tbody id="ocBody2">
@@ -95,21 +94,21 @@
                                 
                                 <td class="hover-cell">
     
-                                    <label class="position"></label>
+                                    <label class="icon"></label>
                                     <label id="CEStrike"></label>
                                     <div class="hover-content">
-                                        <button  id="buyCE" class="buy_button" onclick="enterPosition(event)">B</button>
-                                        <button  id="sellCE" class="sell_button" onclick="enterPosition(event)">S</button>
+                                        <button  id="buyCE" class="buy_button" onclick="showMessage(event, 'BUY', 'Call')">B</button>
+                                        <button  id="sellCE" class="sell_button" onclick="showMessage(event, 'SELL', 'Call')">S</button>
                                     </div>
                                     <label hidden></label>
                                 </td> 
                                 
                                 <td class="hover-cell">
-                                    <label class="position"></label>
+                                    <label class="icon"></label>
                                     <label id="PEStrike"></label>
                                     <div  class="hover-content" >
-                                        <button  id="buyPE" class="buy_button" onclick="enterPosition(event)">B</button>
-                                        <button  id="sellPE" class="sell_button" onclick="enterPosition(event)">S</button>
+                                        <button  id="buyPE" class="buy_button" onclick="showMessage(event, 'BUY', 'Put')">B</button>
+                                        <button  id="sellPE" class="sell_button" onclick="showMessage(event, 'SELL', 'Put')">S</button>
                                     </div>
                                     <label hidden></label>
                                 </td>
@@ -121,69 +120,20 @@
                         </tbody>
                     </table> 
                 </div>
-
-            </div>
-            <div id="order">
-                <table id="tblOrder">
-                    <tbody id="orderBody">
-                        <tr>
-                            <td>
-                                <div width='30%'>
-                                    <label for="modeselect">Live/History</label>
-                                    <select id="modeselect" onchange="changeMode()">
-                                        <option value="H">Historical</option>
-                                        <option value="L" selected>Live</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td>
-                                <div width="20%">
-                                    <label for="lotselect">Lot size</label>
-                                    <select id="lotselect" onchange="changelot()">
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td>
-                                <div width="20%" >
-                                    <label for="mkt">Market</label>
-                                    <input type="radio" id="mkt" name="type" value="MARKET">                                
-                                </div>
-                            </td>
-                            <td>
-                                <div width="20%">
-                                    <label for="lmt">Limit</label>
-                                    <input type="radio" id="lmt" name="type" value="LIMIT" checked>
-                                </div>
-                            </td>
-                            <td>
-                                <div width="10%">
-                                    <label for="lmtprice">Limit Price:</label>
-                                    <input type="number" id="lmtprice" name="lmtprice" step="0.5"  style="width: 45px;padding:3px;">
-                                </div>
-                            </td>
-                        
-
-                        </tr>
-                    </tbody>
-                </table>
             </div>
 
             <div class="tabs">
                 <div id="tabButton1" class="tab active-tab" onclick="switchExpiry(event, 'Exp1')">
-                    <div>Expiry 1</div>
-                    <div>.   .</div>
+                    <label>Expiry 1</label>
                     <div>
-                        <input type="number" id="tpt" name="tpt" style="width: 60px;">
+                        <input type="number" id="tpt" name="tpt" style="width: 60px;padding:1px;">
                     </div>
-                    <div id="wsc" class="buy_button" onclick="wsconnect('connect')">></div>
-                    <div id="wsd" class="buy_button" onclick="wsconnect('disconnect')">||</div>
+                    <div id="wsc" class="small_button" onclick="wsconnect('connect')">></div>
+                    <div id="wsd" class="small_button" onclick="wsconnect('disconnect')">||</div>
                 </div>
                 <div id="tabButton2" class="tab" onclick="switchExpiry(event, 'Exp2')">
-                    <div>Expiry 2</div>
-                    <div id="ocNxt" class="buy_button" onclick="runOptionChainNxt(event)">></div>
+                    <label>Expiry 2</label>
+                    <div id="ocNxt" class="small_button" onclick="runOptionChainNxt(event)">></div>
                 </div>
 
             </div>
@@ -195,11 +145,11 @@
                     <th width="9%">Expiry</th>
                     <th width="9%">Strike</th>
                     <th width="9%">CE/PE</th>
-                    <th colspan="2" width="23%">Booked</th>
-                    <th width="8%">Avg Price</th>
-                    <th width="8%">LTP</th>
-                    <th colspan="2" width="23%">Unbooked</th>
-                    <th width="10%">Total</th>
+                    <th colspan="2" width="20%">Booked</th>
+                    <th width="10%">Avg Price</th>
+                    <th width="10%">LTP</th>
+                    <th colspan="2" width="20%">Unbooked</th>
+                    <th width="13%">Total</th>
                 </tr>
             </thead>    
             <tbody id="tblBody">
@@ -225,7 +175,7 @@
             </tbody>
             </table>   
             </div>
-            <div id="futures">    
+<!--            <div id="futures">    
                 <table id="futurespositions">
                     <tbody id="futurestblbody">
                         <tr>
@@ -246,6 +196,7 @@
                     </tbody>
                 </table>
             </div>
+        -->
             <div id="bottomPanel">    
                 <div id="bottomButtons">
                     <button type="button" id="btnLoad" onclick="loadPreData()">Load</button>
@@ -287,9 +238,55 @@
                 </div>
         </div>
     </div>  
+    <div id="message-container">
+        <div id="orderwindow">
+            <label id='owsymbol'></label>
+            <span id="closeBtn" class="close-btn">x</span>
+            <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <div width="24%">
+                            <label for="lotselect">Lot size</label>
+                            <select id="lotselect" onchange="changelot()">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div width="18%" >
+                            <label for="mkt">Market</label>
+                            <input type="radio" id="mkt" name="type" value="MARKET">                                
+                        </div>
+                    </td>
+                    <td>
+                        <div width="18%">
+                            <label for="lmt">Limit</label>
+                            <input type="radio" id="lmt" name="type" value="LIMIT" checked>
+                        </div>
+                    </td>
+                    <td>
+                        <div width="20%">
+                            <label for="lmtprice">Limit Price</label>
+                            <input type="number" id="lmtprice" name="lmtprice" step="0.5"  style="width:40px;padding:3px;">
+                        </div>
+                    </td>
+                    <td>
+                        <div width="20%">
+                            <button type="button" id="submit" onclick="enterPosition()">Order</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <script src="../data.js"></script>
     <script src="../main.js"></script>
     <script src="../optionchain.js"></script>
+    <script src="../order.js"></script>
     <script src="../positions.js"></script>
     <script src="../socketconn.js"></script>
     <script src="../helper.js"></script>

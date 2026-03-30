@@ -1,7 +1,8 @@
 const iKws = require('./kotakws');
+const Session = require('../session/session');
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-async function wsconnect(sn, p)
+async function wsconnect(uid, p)
 {
     if (p.action === 'connect') {
         var lr = await iKws.apiLogin(p.tpt);
@@ -12,7 +13,7 @@ async function wsconnect(sn, p)
                 'token': lr.data.token
             });
             iKws.wsconnect(vr.data.baseUrl.substring(8), lr.data.token, vr.data.sid, (msg) => {
-                wsmessage(sn, msg)
+                wsmessage(uid, msg)
             });
         }
         else
@@ -22,15 +23,16 @@ async function wsconnect(sn, p)
         iKws.wsdisconnect();
 }
 
-function wsmessage(sn, message)
+function wsmessage(uid, message)
 {
     try {
-        console.log("ws message: ", JSON.stringify(message.msg));
+        console.log("ws message: ", JSON.stringify(message));
+        var usersn = Session.sn(uid);
 
         if (message.type === "cn")
-            sn.s.emit(message.type, message.msg);
+            usersn.s.emit(message.type, message.msg);
         else
-            sn.s.emit(message.type, message.data);
+            usersn.s.emit(message.type, message.data);
     } catch (error) {
         console.log(error);
     }

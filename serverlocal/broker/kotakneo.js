@@ -8,14 +8,14 @@ function connect(uid, simStartTime, callback)
 {
     client = new OpenAlgo(connkey);
     client.connect();
-    usercb.set(connkey, callback);
+    usercb.set(uid, callback);
 }
 
-function onmessage(q)
+function onmessage(q, uid)
 { 
     standardizeq(q);
 
-    var callbackfn = usercb.get(connkey);
+    var callbackfn = usercb.get(uid);
     if(callbackfn !== undefined)    
          callbackfn.call(this, q);
     else
@@ -71,12 +71,16 @@ async function history(p)
 
 function subscribe(uid, sublist)
 {
-    client.subscribe_ltp(sublist, onmessage);
+    client.subscribe_ltp(sublist, ((q) => {
+        onmessage(q, uid);
+    }));
 }
 
 function unsubscribe(uid, sublist)
 {
-    client.unsubscribe_ltp(sublist, onmessage);
+    client.unsubscribe_ltp(sublist, ((q) => {
+        onmessage(q, uid);
+    }));
 }
 
 function quotes(symbol, exchange){
@@ -88,11 +92,12 @@ function standardizeq(q)
     q.close = q.ltp;
     q.exchange = q.exchange === 'NSE_INDEX' ? 'NSE' : q.exchange;
     if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
-        var plength = q.exchange === 'MCX' ? -4 : -5;
         q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
-        q.strike_price = q.symbol.slice(plength - 2, -2);
 
-        q.expiry_date = q.symbol.slice(plength - 9, plength - 2);
+        var strike = q.symbol.slice(-9, -2);
+        var digit5 = Number.isFinite(Number(strike));
+        q.strike_price = digit5 ? strike.slice(2, 7) : strike.slice(3, 7);
+        q.expiry_date = digit5 ? q.symbol.slice(-14, -7) : q.symbol.slice(-13, -6);
     }
     return q;
 } 

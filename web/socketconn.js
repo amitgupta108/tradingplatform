@@ -20,7 +20,7 @@ function rh(socket)
   });
 
   socket.on('futuresPreData', (fQuotes) => {
-    futuresChart(fQuotes.quotes);
+    setFuturesChart(fQuotes.quotes);
   });
 
   socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
@@ -37,8 +37,11 @@ function rh(socket)
     
     uQuoteGl = q;  
     //updateIndexChart(q);
-    if(optionChains[0].atm === undefined)
-      optionChains[0].atm = Math.round(q.close / 50) * 50;
+
+    optionChains.forEach((e) => {
+      if(e.atm === undefined)
+        e.atm = Math.round(q.close / 50) * 50;
+    });
 
     var lt = new Date(q.ltt);
     timerText.innerHTML = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2) + " |   ATM: " + optionChains[0].atm;
@@ -81,16 +84,23 @@ function rh(socket)
   });
 
   socket.on('simorder', (exorder) => {
-    console.log("order message " + JSON.stringify(exorder));
+    console.log("sim order message " + JSON.stringify(exorder));
 
     var p = positions.find((e) => e.symbol === exorder.symbol);
     p.orderupdate(exorder);
   });
 
   socket.on('order', (exorder) => {
-    console.log("order message " + JSON.stringify(exorder));
+    console.log("live order message " + JSON.stringify(exorder));
+    
+    /*
+    var allorders = new Array(0);
+    positions.forEach((p) => {
+      allorders.concat(p.orders);
+    })
+    */
 
-    var p = positions.find((e) => e.symbol === exorder.symbol);
+    var p = positions.find((e) => e.symbol === exorder.trdSym);
     p.liveorderupdate(exorder);
   });
 

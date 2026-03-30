@@ -1,27 +1,36 @@
-var mode = document.getElementById("modeselect").value;
-
 var instrumentMap = new Map();
 
 instrumentMap.set('NH', {
-  simStartTime: new Date("2025-07-02 09:15:00").getTime(),
+  simStartTime: new Date("2025-07-07 09:15:00").getTime(),
   fExpiry: "31JUL25",
-  oExpiry: "03JUL25",
-  oExpiryNxt: "10JUL25",
+  oExpiry: "10JUL25",
+  oExpiryNxt: "17JUL25",
   stockCode: 'NIFTY',
   lscount: 10,
-  mode: mode === 'L' ? 1 : 0,
+  mode: 0,
+  lotsize: 65,
+});
+
+instrumentMap.set('NH449', {
+  simStartTime: new Date("2025-07-04 09:15:00").getTime(),
+  fExpiry: "31JUL25",
+  oExpiry: "10JUL25",
+  oExpiryNxt: "17JUL25",
+  stockCode: 'NIFTY',
+  lscount: 10,
+  mode: 0,
   lotsize: 65,
 });
 
 instrumentMap.set('NL', {
   simStartTime: Date.now(),
-  fExpiry: "30MAR26",
-  oExpiry: "30MAR26",
-  oExpiryNxt: "07APR26",
+  fExpiry: "28APR26",
+  oExpiry: "07APR26",
+  oExpiryNxt: "14APR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 10,
-  mode: mode === 'L' ? 1 : 0,
+  mode: 1,
   lotsize: 65,
 });
 
@@ -33,7 +42,7 @@ instrumentMap.set('ML',{
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
   lscount: 10,
-  mode: mode === 'L' ? 1 : 0,
+  mode: 1,
   lotsize: 100,
 });
 
@@ -71,6 +80,7 @@ const chartOptions = {
 };
 
 const chart = LightweightCharts.createChart(document.getElementById('chart'), chartOptions);
+const ts = chart.timeScale();
 
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
 const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });

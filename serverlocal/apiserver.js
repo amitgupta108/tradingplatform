@@ -2,9 +2,10 @@ const iBreeze = require('./broker/breeze');
 const iKNeo = require('./broker/kotakneo');
 const Session = require('./session/session');
 const ordersocket = require('./broker/ordernotifier');
+const utils = require('../common/utils')
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-async function handleMessage(sn, event, msg)
+async function handleMessage(sn, event, msg, orMode)
 {
     try {
         switch(event)
@@ -65,9 +66,11 @@ async function handleMessage(sn, event, msg)
                 Session.destroy(msg);
                 break;
             case 'ocnxt':
-                sn.st[4].toStream = a === 'start' ? true : false;
+                var fst = utils.filter(sn.st, {keys: ['ocnxt']})[0];
+                fst.toStream = msg === 'start' ? true : false;
                 break
             case 'history':
+                break
             case 'order':
                 console.log("order: " + JSON.stringify(msg));
                 var orsub = await sn.order(msg);
@@ -76,11 +79,11 @@ async function handleMessage(sn, event, msg)
                 
                 emit(sn.s, "orderconf", msg);
 
-                //if(orsub.status === 'success')
-                    //emit(sn.s, 'simorder', await sn.orderstatus(orsub.orderid));
+                if(orMode === 0 && orsub.status === 'success')
+                    emit(sn.s, 'simorder', await sn.orderstatus(orsub.orderid));
                 break;
             case 'ws':
-                ordersocket.wsconnect(sn, msg);
+                ordersocket.wsconnect(sn.uid, msg);
                 break;
             default:
                 console.log("Unknown event " + event);

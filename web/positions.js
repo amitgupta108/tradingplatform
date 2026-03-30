@@ -48,11 +48,11 @@ function refreshPositionPL(p, price)
   }
   else if (psize > 0) {
     bookedPL = (asp - abp) * sellq;
-    unbookedPL = (price - abp) * psize;
+    unbookedPL = (price - abp) * Math.abs(psize);
   }
   else {
     bookedPL = (asp - abp) * buyq;
-    unbookedPL = (asp - price) * psize;
+    unbookedPL = (asp - price) * Math.abs(psize);
   }
   
   var totalPL = bookedPL + unbookedPL;
@@ -124,7 +124,7 @@ class Position
         exc: exc, symbol: this.symbol, cprice: cprice};
     this.orders.push(order);
 
-    emit('order', order);
+    emit('order', order, instrument.mode);
   }
 
   findorders(state)
@@ -147,7 +147,7 @@ class Position
       o.state = 'completed';
       o.price = exorder.average_price;
       o.extime = exorder.timestamp;
-      o.filled_q = exorder.filled_quantity * (o.action === 'BUY' ? 1 : -1);
+      o.filled_q = exorder.filled_q * (o.action === 'BUY' ? 1 : -1);
 
       //refreshPositionPL(this, o.price);
     }
@@ -183,6 +183,7 @@ class Position
       console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
 
   }
+  
   static findPositionRow(symbol)
   {
     return positions.find((e) =>
