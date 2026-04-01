@@ -1,9 +1,9 @@
 var uQuoteGl;
-var orderresponses = new Array(0);
 
 socket = io(`https://localhost:${window.location.port}`, {
-  extraHeaders: {
-    "uid": uuid
+  auth: {
+    token: uuid,
+    mode: instrument.mode
   },
   timeout: 60000,
   reconnectionDelay: 5000,
@@ -14,6 +14,12 @@ rh(socket);
 function rh(socket)
 {
   socket.on('restored', (response) => {     
+    console.log(response + " continue?");
+    if(response === uuid)
+      document.getElementById("btnResumeSim").disabled = false;
+  });
+
+  socket.on('recovered', (response) => {     
     console.log(response + " continue?");
     if(response === uuid)
       document.getElementById("btnResumeSim").disabled = false;
@@ -32,8 +38,8 @@ function rh(socket)
   socket.on('index', (q) => {
     //console.log("index:  " + JSON.stringify(q));
   
-    //if(q.exchange === 'MCX')
-      //futuresChart(q);
+    if(q.exchange === 'MCX')
+      futuresChart(q);
     
     uQuoteGl = q;  
     //updateIndexChart(q);
@@ -75,7 +81,6 @@ function rh(socket)
   
   socket.on('orderconf', (response) => {
     console.log("order status:  " + JSON.stringify(response));
-    orderresponses.push(response);
     
     var p = positions.find((e) => e.symbol === response.symbol);
     
@@ -84,27 +89,32 @@ function rh(socket)
   });
 
   socket.on('simorder', (exorder) => {
-    console.log("sim order message " + JSON.stringify(exorder));
+    console.log("sim order confirmation " + JSON.stringify(exorder));
 
     var p = positions.find((e) => e.symbol === exorder.symbol);
     p.orderupdate(exorder);
   });
 
-  socket.on('order', (exorder) => {
+  socket.on('liveorder', (exorder) => {
     console.log("live order message " + JSON.stringify(exorder));
     
+    var p = positions.find((e) => e.symbol === exorder.symbol);
+    p.orderupdate(exorder);
+  });
+
+  socket.on('ws-order', (exorder) => {
+    console.log("live order message " + JSON.stringify(exorder));
     /*
     var allorders = new Array(0);
     positions.forEach((p) => {
       allorders.concat(p.orders);
     })
     */
-
-    var p = positions.find((e) => e.symbol === exorder.trdSym);
-    p.liveorderupdate(exorder);
+    //var p = positions.find((e) => e.symbol === exorder.trdSym);
+    //p.wsorderupdate(exorder);
   });
 
-  socket.on('position', (pmsg) => {
+  socket.on('ws-position', (pmsg) => {
     console.log("position message " + pmsg)
     var sp = pmsg.data;
     positions.map((p) => {
@@ -112,5 +122,17 @@ function rh(socket)
         p.value(p.psize === (sp.flBuyQty - sp.ftSellQty) ? 1 : 0);
       }
     });
+  });
+
+  socket.on('isalive', (state) => {
+    if(state = 'connected' || Number(state) === 1)
+      document.getElementById('socn').style.backgroundColor = '#4CAF50';
+    else
+      document.getElementById('socn').style.backgroundColor = '#f44336';
+  });
+
+  socket.on('ws-cn', (msg) => {
+    console.log("position message " + msg)  
+    document.getElementById('socn').style.backgroundColor = '#4CAF50';
   });
 }

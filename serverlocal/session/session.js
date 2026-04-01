@@ -1,21 +1,16 @@
 const utils = require('../../common/utils');
-const iBreeze = require('../broker/breeze');
-const iKNeo = require('../broker/kotakneo');
-
 var us = new Array(0);
 
 class Session
 {
     uid;    
-    s;
+    mode;
     st;
-    cb;
-    bserver;
-    constructor(uid, s)
+    subsupdate;
+    constructor(uid, mode)
     {
         this.uid = uid;
-        this.s = s;
-        us.push(this);
+        this.mode = mode;
         this.st = [
             {key: 'index', toStream: true, mt: false, streamState: 'initialized',},
             {key: 'futures', toStream: true, mt: true, streamState: 'initialized',},
@@ -24,14 +19,11 @@ class Session
             {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: false,
              symbol: 'INDVIX', mt: true, streamState: 'initialized', },
         ];
-        this.cb = this.emitQuotes.bind(this);
+        us.push(this);
     }
 
-    ini(p) 
+    ini(p, callback) 
     {
-        this.bserver = p.mode === 0 ? iBreeze : iKNeo;
-        this.bserver.connect(this.uid, p.simStartTime, this.cb);
-
         for(var i = 0; i < this.st.length - 1; i++)
         {
             this.st[i].stockCode = p.stockCode; 
@@ -45,6 +37,7 @@ class Session
             if(p.mdoe === 0 && st[i].key === 'vix')
                 this.st[i].toStream = true;
         }
+        this.subsupdate = callback;
     }
 
     #oq(uq, ost)
@@ -96,20 +89,11 @@ class Session
         ost.streamState = 'ready to run';
         ost.strikes = sks;
         
-        this.ocqsub(ost.stockCode, ost.expiry);
+        this.#ocqsub(ost.stockCode, ost.expiry);
     }
 
-    order(p)
-    {
-        return this.bserver.order(p);
-    }
 
-    orderstatus(orderid)
-    {
-        return this.bserver.orderstatus(orderid);;
-    }
-
-    ocqsub(stockCode, expiry)
+    #ocqsub(stockCode, expiry)
     {
         var fst = utils.filter(this.st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
         var sublist = utils.filter(fst, {toStream: [true]});
@@ -117,28 +101,25 @@ class Session
     
         /* if(unsublist != 0)
             this.bserver.unsubscribe(this.uid, unsublist); */
-        this.bserver.subscribe(this.uid, sublist);
+        this.subsupdate(sublist);
     }
     
     inqsub() {
         var fst = utils.filter(this.st, {keys: ['index', 'futures', 'occrnt']});
         fst.forEach((e) => e.toStream = true);
 
-        var sst = utils.filter(this.st, {keys: ['index', 'futures']});
-        this.bserver.subscribe(this.uid, sst);
+        return utils.filter(this.st, {keys: ['index', 'futures']});
     }
 
     resume() {
-        var sst = utils.filter(this.st, {keys: ['index', 'futures', 'strikex']});
-        this.bserver.subscribe(this.uid, sst);
+        return utils.filter(this.st, {keys: ['index', 'futures', 'strikex']});
     }
     
     unsuball() {
         this.st.forEach((e) => e.toStream = false);
-        var fst = utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt', 'vix']});
-        this.bserver.unsubscribe(this.uid, fst);
-        /*var st = utils.filter(this.st, {keys: ['index']})[0];
-        st.uq = undefined;*/
+        return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt', 'vix']});
+        var st = utils.filter(this.st, {keys: ['index']})[0];
+        st.uq = undefined;
     }
 
     lastuq(uq)
@@ -156,32 +137,7 @@ class Session
         st.uq = uq;
     }
 
-    emitQuotes(q)
-    {
-        try {
-            /*var fst = utils.filter(this.st, {symbol: [q.symbol]})[0];
-            if(fst === undefined || fst.toStream === false)
-                return;
-            */
-            var key = 'strikex';
-            if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
-            {
-                this.lastuq(q);
-                key = 'index';
-            }
-            else if (q.exchange === 'NFO' && q.symbol.endsWith('FUT'))
-                key = 'futures';
-            else if (q.symbol.endsWith('CE') || q.symbol.endsWith('PE'))
-                utils.addIVNDelta(q, this.lastuq());
-    
-            this.s.emit(key, q);
-        } catch(error){
-            console.log(error);
-        }
-    }
-
-    static sn(uid)
-    {
+    static usn(uid){
         return us.find((e) => e.uid === uid);
     }
 

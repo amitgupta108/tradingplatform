@@ -1,6 +1,5 @@
-
-const nTVtime = unixtime => unixtime/1000 + 330 * 60;
-const sTVtime = datetime => Date.parse(datetime)/1000 + 330 * 60;
+const nTVtime = unixtime => Math.round(unixtime/1000) + 330 * 60;
+const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
 
 function setFuturesChart(qs)
 {
@@ -21,25 +20,29 @@ function futuresChart(q)
     emaSeries.update({time: nTVtime(q.ltt), value: q.close});
     return;
   }
-  
-  var index = ts.timeToIndex(nTVtime(q.ltt) - 5 * 60, true);
+  var index = ts.timeToIndex(nTVtime(q.ltt), true);
   var curCandle = mainSeries.dataByIndex(index);
+  
+  var firstcandlestart = mainSeries.dataByIndex(0).time;
+  var tonext300 = 300 - firstcandlestart % 300;
+  var firstcandlecross = nTVtime(q.ltt) >= firstcandlestart + tonext300 ;
 
+  var newcandle = nTVtime(q.ltt) - curCandle.time >= 300;
 
-  if(nTVtime(q.ltt) < curCandle.time + 5 * 60)
+  if((firstcandlecross && index === 0) || newcandle )
+  {
+    mainSeries.update({time: nTVtime(q.ltt), open: q.close, close: q.close, high: q.close, low: q.close});
+    var emadatapoint = emaSeries.dataByIndex(index);
+    emaSeries.update({time: nTVtime(q.ltt), value: (2/21) * q.close + (1-2/21) * emadatapoint.value});
+  }
+  else
   {
     var data = {high: Math.max(q.close, curCandle.high),
       low: Math.min(q.close, curCandle.low),
       close: q.close, open: curCandle.open, 
       time: curCandle.time
     };
-    mainSeries.update(data);
-  }
-  else
-  {
-    mainSeries.update({time: nTVtime(q.ltt), open: q.close, close: q.close, high: q.close, low: q.close});
-    var emadatapoint = emaSeries.dataByIndex(index);
-    emaSeries.update({time: nTVtime(q.ltt), value: (2/21) * q.close + (1-2/21) * emadatapoint.value});
+    mainSeries.update(data);    
   }
 }
 
