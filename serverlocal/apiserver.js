@@ -1,18 +1,26 @@
 const iBreeze = require('./broker/breeze');
-const iKNeo = require('./broker/kotakneo');
 const Session = require('./session/session');
+const iKNeo = require('./broker/kotakneo');
 const ordersocket = require('./broker/ordernotifier');
 const utils = require('../common/utils')
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-async function handleMessage(sn, event, msg, orMode)
+async function handleMessage(sn, event, msg, cb)
 {
     try {
+        var bserver = sn.mode === 0 ? iBreeze : iKNeo;
         switch(event)
         {
-            case 'restored':
+            case 'startstream':
+                sn.ini(msg, (list) => {
+                    bserver.subscribe(sn.uid, list);
+                });
+                bserver.connect(sn.uid, msg.simStartTime);
+                bserver.subscribe(sn.uid, sn.inqsub());
+                break;
+            case 'resume':
                 if (msg.continue === true)
-                    sn.resume();
+                    bserver.subscribe(sn.uid, sn.inqsub());
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
@@ -21,7 +29,7 @@ async function handleMessage(sn, event, msg, orMode)
                 {
                     iKNeo.connect(msg.uid, msg.simStartTime, sn.cb);
                     var prefq = await iKNeo.history(msg);
-                    emit(sn.s, "futuresPreData", prefq);
+                    cb(sn.s, "futuresPreData", prefq);
                 }
                 else
                 {
@@ -29,17 +37,12 @@ async function handleMessage(sn, event, msg, orMode)
                     var prefq = iBreeze.preF(msg);
 
                     var uq = await preUq;
-                    emit(sn.s, "futuresPreData", await prefq);
+                    cb(sn.s, "futuresPreData", await prefq);
 
                     //var preDq = iBreeze.preD(msg, uq[uq.length - 1]);
                     //var pq = await preDq[0]; var cq = await preDq[1];
                     //emit(sn.s, "qdeltastrikes", uq, pq, cq);
                 }
-                break;
-            
-            case 'startstream':
-                sn.ini(msg);
-                sn.inqsub();
                 break;
             case 'speed':
                 /*if (p === 10 || p === 12) {
@@ -51,39 +54,30 @@ async function handleMessage(sn, event, msg, orMode)
                 }
                 stServer.startStreamer(sn); */
 
-                sn.changeSpeed(msg);
+                bserver.changeSpeed(msg);
                 break;
             case 'stop':
-                sn.unsuball();
-                console.log("Streaming stopped " + msg);
-                break;
-        
-            case 'disconnect':
-                console.log("socket disconnected " + s.id + ": " + msg);
-                break;
-            case 'exit':
-                console.log("User  left " + msg);
-                Session.destroy(msg);
+                bserver.unsubscribe(sn.uid, sn.unsuball());
                 break;
             case 'ocnxt':
                 var fst = utils.filter(sn.st, {keys: ['ocnxt']})[0];
                 fst.toStream = msg === 'start' ? true : false;
                 break
-            case 'history':
-                break
             case 'order':
-                console.log("order: " + JSON.stringify(msg));
-                var orsub = await sn.order(msg);
+                var orsub = await bserver.order(msg);
+                msg.orderid = orsub.orderid;
                 msg.status = orsub.status;
-                msg.orderid = orsub.orderid;    
-                
-                emit(sn.s, "orderconf", msg);
-
-                if(orMode === 0 && orsub.status === 'success')
-                    emit(sn.s, 'simorder', await sn.orderstatus(orsub.orderid));
+                cb(sn.uid, "orderconf", msg);
+            
+                var ordconf = sn.mode === 1 ? 'liveorder' : 'simorder';
+                cb(sn.uid, ordconf, await bserver.orderstatus(orsub.orderid));
                 break;
-            case 'ws':
-                ordersocket.wsconnect(sn.uid, msg);
+            case 'wsOps':
+                ordersocket.wsOps(sn.uid, msg.action, msg.tpt);
+                break;
+            case 'isAlive':
+                var isAlive = ordersocket.wsOps(sn.uid, msg);
+                cb(sn.uid, 'isalive', isAlive);
                 break;
             default:
                 console.log("Unknown event " + event);
@@ -93,9 +87,11 @@ async function handleMessage(sn, event, msg, orMode)
     }
 }
 
-function emit(s, event, args)
+function order(bserver, msg)
 {
-    s.emit(event, args);
+    var orsub = bserver.order(msg);
+
+    return msg;
 }
 
 module.exports = {

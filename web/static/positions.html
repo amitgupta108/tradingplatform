@@ -130,6 +130,7 @@
                     </div>
                     <div id="wsc" class="small_button" onclick="wsconnect('connect')">></div>
                     <div id="wsd" class="small_button" onclick="wsconnect('disconnect')">||</div>
+                    <div id="socn" class="small_button">@</div>
                 </div>
                 <div id="tabButton2" class="tab" onclick="switchExpiry(event, 'Exp2')">
                     <label>Expiry 2</label>
@@ -248,7 +249,7 @@
                     <td>
                         <div width="24%">
                             <label for="lotselect">Lot size</label>
-                            <select id="lotselect" onchange="changelot()">
+                            <select id="lotselect">
                                 <option value="1">1</option>
                                 <option value="2">2</option>
                                 <option value="3">3</option>
@@ -284,12 +285,12 @@
     </div>
 
     <script src="../data.js"></script>
+    <script src="../helper.js"></script>
     <script src="../main.js"></script>
     <script src="../optionchain.js"></script>
     <script src="../order.js"></script>
     <script src="../positions.js"></script>
-    <script src="../socketconn.js"></script>
-    <script src="../helper.js"></script>
     <script src="../chart.js"></script>
+    <script src="../socketconn.js"></script>
   </body>
 </html>

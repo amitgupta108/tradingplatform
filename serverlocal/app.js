@@ -8,6 +8,7 @@ const { Server } = require("socket.io");
 require('console-stamp')(console, '[HH:MM:ss.l]');
 const Session = require('./session/session');
 const apiserver = require('./apiserver');
+const qserver = require('./quotes');
 
 // script.js
 const args = process.argv;
@@ -47,29 +48,60 @@ const io = new Server(httpsServer, {
     pingTimeout: 30000
 });
 
-io.engine.use(es);
+var livemodeuser;
 
+io.use((s, next) => {
+    var uid = s.
+    handshake.auth.token;
+    var mode = s.handshake.auth.mode;
+    
+    if(mode === 1 && livemodeuser === undefined) {
+        livemodeuser = uid;
+        next();
+    }
+    else if (mode === 1 && uid != livemodeuser) {
+        //next(new Error('Live mode not available'));
+        next();
+    }
+    else
+        next();
+})
+//io.use(es);
 
 io.on('connection', (s) => {
     console.log('socket connected ' + s.id);        
     
-    var uid = s.handshake.headers.uid;
-    var sn = setuser(uid, s);
-    s.onAny((event, msg, mode) => {
+    var uid = s.handshake.auth.token;
+    var mode = s.handshake.auth.mode;
+
+    var sn = Session.usn(uid);
+    if(sn === undefined){
+        sn = new Session(uid, mode);
+    } else
+    {
+        var rStatus = s.recovered ? 'recovered' : 'restored';
+        s.emit(rStatus, uid);
+    }
+    qserver.socketmap.set(uid, s);
+    s.onAny((event, msg) => {
         console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(sn, event, msg, mode);
+        apiserver.handleMessage(sn, event, msg, callback);
+    });
+
+    s.on("disconnect", (reason) => {
+        if(['server namespace disconnect', 'client namespace disconnect',
+            'server shutting down', 'tranport close', 'transport error'].includes(reason))
+        {
+            console.log("socket disconnected  " + JSON.stringify(msg));
+            Session.destroy(uid);
+            //qserver.socketmap.delete(uid);
+            if(livemodeuser === uid)
+                livemodeuser = undefined;            
+        }
     });
 });
 
-function setuser(uid, s)
+function callback(uid, event, msg)
 {
-    var sn = Session.sn(uid);
-    if(sn === undefined)
-        sn = new Session(uid, s); 
-    else {
-        if(!s.recovered)
-            sn.s = s;
-        s.emit('restored', uid);
-    }
-    return sn;
+    qserver.emit(uid, event, msg);
 }

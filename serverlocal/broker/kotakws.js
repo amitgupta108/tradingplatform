@@ -1,4 +1,3 @@
-var ws;
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
 
@@ -47,7 +46,7 @@ async function apiValidate(headers) {
 
 function wsconnect(baseurl, token, sid, cb)
 {
-    ws = new WebSocket(`wss://${baseurl}/realtime`);
+    var ws = new WebSocket(`wss://${baseurl}/realtime`);
 
     ws.onopen = (event) => {
         const payload = `{type:cn,Authorization:${token},Sid:${sid},src:WEB}`;
@@ -68,16 +67,12 @@ function wsconnect(baseurl, token, sid, cb)
     ws.onclose = (event) => {
         console.log("connection closed " + event.reason);
     };
-}
 
-function wsdisconnect()
-{
-    ws.close();
+    return ws;
 }
 
 module.exports = {
     apiLogin,
     apiValidate,
     wsconnect,
-    wsdisconnect
 }

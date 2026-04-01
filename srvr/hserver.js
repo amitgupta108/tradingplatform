@@ -1,12 +1,14 @@
 
 const sutils = require('./serverutils');
 const utils = require('../common/utils');
+const qserver = require('../serverlocal/quotes');
+
 var BreezeConnect = require('breezeconnect').BreezeConnect;
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
 var appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 var appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-var sessionId = "55148969";
+var sessionId = "55165038";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -17,7 +19,6 @@ breeze.generateSession(appSecret, sessionId)
     console.log(err);
 });;
 
-var callback;
 var userclocks = new Map();
 const subsRequests = new Array(0);
 //subsRequests[0] = {user: '0', speed: '1', instruments: undefined, time: undefined};
@@ -30,27 +31,26 @@ const streamers = [
         {key: '5x', speed: 5, qsid: 0, state: 'stopped', time: 0},
     ];
 
-function connect(uid, simStartTime, callbackfn) {
-    callback = callbackfn;
+function connect(uid, simStartTime) {
     userqcollmap.set(uid, new Array(0));
     userclocks.set(uid, {sTime: simStartTime, cTime: Date.now()});
 }
 
 function startStreamer(speed){
-    var stmr = utils.filter(streamers, {keys: [speed+'x'] })[0];
+    var stmr = utils.filter(streamers, {keys: [speed] })[0];
     
     if(stmr.state === 'stopped') {
         stmr.qsid = setInterval(() => {
             try {
-                var count = dothings(speed);
+                var resp = dothings(speed);
                 stmr.time = stmr.time + 1000;
-                if(count === 0) 
-                    stopStreamer(speed);
+                if(resp.count === 0) 
+                    stopStreamer(resp.speed);
             } catch (err) {
                 clearInterval(stmr.qsid);
                 console.error(err);
             }
-        }, 994 / speed);
+        }, 995 / stmr.speed);
         stmr.state = 'started';   
     }
 }
@@ -80,7 +80,7 @@ function subscribe(requests) {
     });
 
     if(streamers[0].state === 'stopped')
-        startStreamer(1);
+        startStreamer('1x');
 }
 
 function unsubscribe(requests) {
@@ -107,9 +107,9 @@ function dothings(speed)
         var qt = q(userqcollmap.get(req.uid), req.instrument, getUserTime(req.uid));
 
         if(qt !== undefined)
-            callback(req.uid, qt);
+            qserver.emitQuotes(req.uid, qt, 'history');
     });
-    return count;
+    return {speed: speed, count: count};
 }
 
 function getUserTime(uid) 

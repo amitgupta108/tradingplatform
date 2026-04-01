@@ -1,7 +1,7 @@
 var instrumentMap = new Map();
 
 instrumentMap.set('NH', {
-  simStartTime: new Date("2025-07-07 09:15:00").getTime(),
+  simStartTime: new Date("2025-07-07 09:19:00").getTime(),
   fExpiry: "31JUL25",
   oExpiry: "10JUL25",
   oExpiryNxt: "17JUL25",

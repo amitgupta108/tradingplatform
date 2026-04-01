@@ -1,25 +1,32 @@
 import OpenAlgo from 'openalgo';
+import qserver from '../quotes.js';
 
+//const qserver = require('../quotes');
+//const oaApi = require('openalgo').OpenAlgo;
 var client;
-var usercb = new Map();
+var uid;
 var connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
 
-function connect(uid, simStartTime, callback)
+function connect(cuid)
 {
     client = new OpenAlgo(connkey);
     client.connect();
-    usercb.set(uid, callback);
+    uid = cuid;
 }
 
-function onmessage(q, uid)
+function onmessage(q)
 { 
-    standardizeq(q);
+    qserver.emitQuotes(uid, q, 'live');
+}
 
-    var callbackfn = usercb.get(uid);
-    if(callbackfn !== undefined)    
-         callbackfn.call(this, q);
-    else
-        console.error("No callback found for user " + uid + " with quote " + JSON.stringify(q));
+function subscribe(uid, sublist)
+{
+    client.subscribe_ltp(sublist, onmessage );
+}
+
+function unsubscribe(uid, sublist)
+{
+    client.unsubscribe_ltp(sublist, onmessage);
 }
 
 async function order(p)
@@ -43,8 +50,9 @@ async function order(p)
 
 async function orderstatus(orderid)
 {
-    var status = await client.orderStatus({
-        orderId: orderid});
+    var status = await client.orderStatus({orderid: orderid,
+            orderId: orderid
+        });
     
     var modstatus = status.data;
     modstatus.average_price = Math.round(Number(status.data.price)) + Math.round((new Date()).getMilliseconds()/100) * 0.05
@@ -69,37 +77,12 @@ async function history(p)
     return response;
 }
 
-function subscribe(uid, sublist)
-{
-    client.subscribe_ltp(sublist, ((q) => {
-        onmessage(q, uid);
-    }));
-}
 
-function unsubscribe(uid, sublist)
-{
-    client.unsubscribe_ltp(sublist, ((q) => {
-        onmessage(q, uid);
-    }));
-}
 
 function quotes(symbol, exchange){
     return client.quotes({symbol: symbol, exchange: exchange});
 }
 
-function standardizeq(q) 
-{
-    q.close = q.ltp;
-    q.exchange = q.exchange === 'NSE_INDEX' ? 'NSE' : q.exchange;
-    if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
-        q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
 
-        var strike = q.symbol.slice(-9, -2);
-        var digit5 = Number.isFinite(Number(strike));
-        q.strike_price = digit5 ? strike.slice(2, 7) : strike.slice(3, 7);
-        q.expiry_date = digit5 ? q.symbol.slice(-14, -7) : q.symbol.slice(-13, -6);
-    }
-    return q;
-} 
 
-export { connect, order, quotes, subscribe, unsubscribe, standardizeq, history, orderstatus };
+export { connect, order, quotes, subscribe, unsubscribe, history, orderstatus };

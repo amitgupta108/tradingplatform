@@ -1,12 +1,14 @@
 const adapter = require('../adapter/histadapter');
+const qserver = require('../quotes');
+
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
 var orderid = 50001;
 var orders = new Map();
 
-function connect(uid, time, callback)
+function connect(uid, time)
 {
-    adapter.connect(uid, time, callback);
+    adapter.connect(uid, time);
 }
 
 function subscribe(uid, instruments)
@@ -19,22 +21,29 @@ function unsubscribe(uid, instruments)
     adapter.subscribe(uid, instruments, false);
 }
 
-async function order(p)
+function order(p)
 {
-    var response = {orderid: orderid, status: "success"};
+    var status = Date.now() % 11 === 0 ? 'failure' : 'success';
+    var response = {orderid: orderid, status: status};
     orders.set(orderid++, p);
 
     return response;
 }
 
-async function orderstatus(orderid)
+function orderstatus(orderid)
 {
     var order = orders.get(orderid);
+    
+    var response = 'complete';
+    if(order.status === 'failure')
+        response = 'submission failed';
+    var response = Date.now() % 20 === 0 ? 'rejected' : 'complete';
+
     var status = {
         action: order.action,
         average_price: Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05,
         exchange: order.exc,
-        order_status: "complete",
+        order_status: response,
         orderid: orderid,
         price: 0,
         pricetype: "MARKET",
@@ -44,10 +53,11 @@ async function orderstatus(orderid)
         symbol: order.symbol,
         timestamp: order.time + 500,
         trigger_price: 0,
-        status: "success"
       }
     return status;
 }
+
+
 
 function preU(p) {
     p.exchange = 'NSE';

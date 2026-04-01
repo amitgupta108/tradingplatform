@@ -115,7 +115,7 @@ class Position
   {
     osize = (action === 'BUY' ? 1 : -1) * Number(osize);
     //var type = Number(lmtprice) > 0 ? 'LIMIT' : 'MARKET';
-    var lp = action === 'BUY' ? cprice - 100 : cprice + 100;
+    var lp = action === 'BUY' ? cprice - 20 : cprice + 20;
     var exc = instrument.exc;
 
     var order = {
@@ -124,7 +124,7 @@ class Position
         exc: exc, symbol: this.symbol, cprice: cprice};
     this.orders.push(order);
 
-    emit('order', order, instrument.mode);
+    emit('order', order);
   }
 
   findorders(state)
@@ -142,18 +142,31 @@ class Position
 
   orderupdate(exorder){
     var o = this.orders.find((e) => e.orderid === exorder.orderid);
-    if(o.state === 'submitted' && exorder.status === 'success')
+    if(exorder.order_status === 'complete')
     {
       o.state = 'completed';
       o.price = exorder.average_price;
       o.extime = exorder.timestamp;
       o.filled_q = exorder.filled_q * (o.action === 'BUY' ? 1 : -1);
-
       //refreshPositionPL(this, o.price);
     }
+    else if ((exorder.order_status === 'rejected') || (exorder.order_status  === 'cancelled'))
+    {
+      o.state = exorder.order_status ;
+    }
+    else if(exorder.order_status  === 'modified')
+    {
+      o.state = exorder.order_status;
+      //o.quantity = ordermsg.qty;
+      //o.type = ordermsg.prcTp === 'L' ? 'LIMIT' : 'MARKET';
+      //o.price = Number(ordermsg.prc)
+    }
+    else
+      console.log('matched order state ignored ' + exorder.orderid + ' ' + exorder.order_status);
+    this.value('bookedQ', o.state);
   }
 
-  liveorderupdate(ordermsg){
+  wsorderupdate(ordermsg){
     var o = this.orders.find((e) => e.orderid === ordermsg.nOrdNo);
     if(o === undefined) {
       console.log('unmatched order msg ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
@@ -181,6 +194,7 @@ class Position
     }
     else
       console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
+    this.value('bookedQ', o.state);
 
   }
   

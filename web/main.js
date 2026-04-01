@@ -35,7 +35,7 @@ function changeSpeed()
 
 function resumeSimulation()
 {
-  emit('restored', {continue: true});
+  emit('resume', {continue: true});
 }
 
 function start()
@@ -115,7 +115,12 @@ function savePositions(){
 
 function wsconnect(action){
   var tpt = document.getElementById("tpt").value;
-  emit('ws', {action: action, tpt: tpt});
+  emit('wsOps', {action: action, tpt: tpt});
+  document.getElementById("tpt").value = "";
+
+  var id = setInterval(() => {
+      emit('isAlive', Date.now());
+  }, 60000);
 }
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
