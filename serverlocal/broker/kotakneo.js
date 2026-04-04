@@ -1,17 +1,29 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../quotes.js';
 
-//const qserver = require('../quotes');
-//const oaApi = require('openalgo').OpenAlgo;
-var client;
+var uidscripmapping = new Array(0);
+const connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
+const client = new OpenAlgo(connkey);
 var uid;
-var connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
 
-function connect(cuid)
+function connect(cuid, scrip)
 {
-    client = new OpenAlgo(connkey);
+    /*var existing = uidscripmapping.find((s) => s.scrip === scrip);
+    if(existing !== undefined)
+        throw Error('user scrip combination already exist'); //may be extendable using rooms?
+    uidscripmapping.push({uid: cuid, scrip: scrip})
+    */
     client.connect();
     uid = cuid;
+    
+}
+
+function disconnect(cuid, scrip)
+{
+    /*var idx = uidscripmapping.findIndex((s) => s.scrip === scrip);
+    uidscripmapping.splice(idx, 1);
+    //client.disconnect();
+    */
 }
 
 function onmessage(q)
@@ -19,27 +31,35 @@ function onmessage(q)
     qserver.emitQuotes(uid, q, 'live');
 }
 
-function subscribe(uid, sublist)
+function subscribe(uid, sublist, action)
 {
-    client.subscribe_ltp(sublist, onmessage );
+    if(action === 'subs')
+        client.subscribe_ltp(sublist, onmessage);
+    else 
+        client.unsubscribe_ltp(sublist, onmessage);
 }
 
-function unsubscribe(uid, sublist)
+async function positionbook(uid, scrip)
 {
-    client.unsubscribe_ltp(sublist, onmessage);
+    return await client.positionbook();
+    //split positionbook
 }
-
+   
 async function order(p)
 {
     var submittime = Date.now();
+    if(p.type === 'LIMIT' && Number(p.price) < 2)
+        throw Error('Limit price close to 0');
+
     var response = await client.placeOrder({
         strategy: p.symbol,
         exchange: p.exc,
         symbol: p.symbol,
         action: p.action,
         pricetype: p.type,
-        price: p.price,
-        quantity: Math.abs(p.quantity) * p.symbol.startsWith('CRUDE') ? 100 : 65
+        product: 'NRML',
+        price: p.price === '' ? 0 : p.price,
+        quantity: Math.abs(p.quantity)
     });
     var conftime = Date.now();
 
@@ -54,35 +74,11 @@ async function orderstatus(orderid)
             orderId: orderid
         });
     
-    var modstatus = status.data;
-    modstatus.average_price = Math.round(Number(status.data.price)) + Math.round((new Date()).getMilliseconds()/100) * 0.05
-                    + (status.data.action === 'BUY' ? 20 : -20);
-    modstatus.filled_quantity = status.data.quantity;
-    modstatus.pending_quantity = 0;
-    modstatus.status = status.status;
-    modstatus.mode = status.mode;
-
-    return modstatus;
+    return status.data;
 }
-
-async function history(p)
-{
-    var response = await client.history({
-        exchange: symbol.startsWith('CRUDE') ? 'MCX' : 'NFO',
-        symbol: p.stockCode + p.fExpiry + 'FUT',
-        interval: '5m',
-        startDate: '2026-03-23',
-        endDate: '2026-03-24'
-    });
-    return response;
-}
-
-
 
 function quotes(symbol, exchange){
     return client.quotes({symbol: symbol, exchange: exchange});
 }
 
-
-
-export { connect, order, quotes, subscribe, unsubscribe, history, orderstatus };
+export { connect, order, quotes, subscribe, positionbook, orderstatus, disconnect };

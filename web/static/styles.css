@@ -354,7 +354,7 @@ select:hover {
     display: none; /* 2. Hides the div by default. */
     position: absolute; /* 3. Positions the div relative to its parent .hover-cell. */
     top: 15%; /* Adjust positioning as needed */
-    left: 8%; /* Positions the div to the right of the cell */
+    left: 5%; /* Positions the div to the right of the cell */
     z-index: 20; /* 4. Ensures the div appears above other content. */
     height: 18px;
     width: 96px;
@@ -371,8 +371,8 @@ select:hover {
 #message-container {
     position: fixed;
     top: 25px;
-    left: 650px;
-    width: 350px;
+    left: 600px;
+    width: 425px;
     z-index: 1000;
     display: none;
     flex-direction: column;

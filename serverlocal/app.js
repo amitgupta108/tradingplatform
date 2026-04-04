@@ -10,7 +10,6 @@ const Session = require('./session/session');
 const apiserver = require('./apiserver');
 const qserver = require('./quotes');
 
-// script.js
 const args = process.argv;
 
 console.log(`Node executable path: ${args[0]}`);
@@ -48,31 +47,30 @@ const io = new Server(httpsServer, {
     pingTimeout: 30000
 });
 
-var livemodeuser;
+const liveStocks = new Array(0);
 
 io.use((s, next) => {
-    var uid = s.
-    handshake.auth.token;
+    var uid = s.handshake.auth.token;
     var mode = s.handshake.auth.mode;
+    var stockCode = s.handshake.auth.stockCode;
     
-    if(mode === 1 && livemodeuser === undefined) {
-        livemodeuser = uid;
-        next();
-    }
-    else if (mode === 1 && uid != livemodeuser) {
-        //next(new Error('Live mode not available'));
-        next();
-    }
-    else
-        next();
+    if(mode === 1)
+        if(liveStocks.includes(stockCode))
+            next(new Error('Live mode for this not available'));
+        else
+            liveStocks.push(stockCode);
+    next();
 })
 //io.use(es);
 
 io.on('connection', (s) => {
-    console.log('socket connected ' + s.id);        
     
-    var uid = s.handshake.auth.token;
-    var mode = s.handshake.auth.mode;
+    const uid = s.handshake.auth.token;
+    const mode = s.handshake.auth.mode;
+    const stockCode = s.handshake.auth.stockCode;
+
+    console.log('user connected with socket ' + uid + ' ' + s.id);        
+    qserver.socketmap.set(uid, s);
 
     var sn = Session.usn(uid);
     if(sn === undefined){
@@ -82,26 +80,24 @@ io.on('connection', (s) => {
         var rStatus = s.recovered ? 'recovered' : 'restored';
         s.emit(rStatus, uid);
     }
-    qserver.socketmap.set(uid, s);
     s.onAny((event, msg) => {
         console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(sn, event, msg, callback);
+        apiserver.handleMessage(sn, event, msg);
     });
 
     s.on("disconnect", (reason) => {
         if(['server namespace disconnect', 'client namespace disconnect',
-            'server shutting down', 'tranport close', 'transport error'].includes(reason))
+            'server shutting down', 'transport close', 'transport error'].includes(reason))
         {
-            console.log("socket disconnected  " + JSON.stringify(msg));
+            console.log("socket disconnected  " + reason);
+            apiserver.disconnect(uid, mode);
             Session.destroy(uid);
-            //qserver.socketmap.delete(uid);
-            if(livemodeuser === uid)
-                livemodeuser = undefined;            
+            qserver.socketmap.delete(uid);
+            
+            if(mode === 1){
+                var idx = liveStocks.findIndex((e) => e === stockCode);
+                liveStocks.splice(idx, 1);
+            }
         }
     });
 });
-
-function callback(uid, event, msg)
-{
-    qserver.emit(uid, event, msg);
-}

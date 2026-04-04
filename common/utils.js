@@ -1,26 +1,24 @@
 const vollib = require('../../js_vollib-master/build/js_vollib').js_vollib;
 require('console-stamp')(console, '[HH:MM:ss.l]');
-var regex = /Time/;
+const regex = /Time/;
 
 function addIVNDelta(q, uq)
 {
-    if(q.expiry_date.length === 7)
-        var e = q.expiry_date.slice(0, 2).concat('-').concat(q.expiry_date.slice(2, 5)).concat('-20').concat(q.expiry_date.slice(5));
-    else
-        var e = q.expiry_date;
+    if(q !== undefined && uq !== undefined)
+    {    
+        if(q.expiry_date.length === 7)
+            var e = q.expiry_date.slice(0, 2).concat('-').concat(q.expiry_date.slice(2, 5)).concat('-20').concat(q.expiry_date.slice(5));
+        else
+            var e = q.expiry_date;
 
-    var yearsToExpiry = ((new Date((e).concat(', 15:30'))).getTime() - q.ltt)/(1000*60*60*24*365);
-    var flag = q.right === 'Call' ? 'c' : 'p';
+        const yearsToExpiry = ((new Date((e).concat(', 15:30'))).getTime() - q.ltt)/(1000*60*60*24*365);
+        const flag = q.right === 'Call' ? 'c' : 'p';
 
-    var iv = vollib.black_scholes.implied_volatility.implied_volatility(q.close, uq.close, q.strike_price, yearsToExpiry, 0.05, flag);
-    var delta = vollib.black_scholes.greeks.analytical.delta(flag, uq.close, q.strike_price, yearsToExpiry, 0.05, iv);   
-    q.iv = Math.round(iv*10000)/100;
-    q.delta = Math.round(delta*10000)/100;
-
-    var atmStrike = Math.round(uq.close/50) * 50;
-    if(atmStrike === q.close)
-        quote.atm = true;
-
+        var iv = vollib.black_scholes.implied_volatility.implied_volatility(q.close, uq.close, q.strike_price, yearsToExpiry, 0.05, flag);
+        var delta = vollib.black_scholes.greeks.analytical.delta(flag, uq.close, q.strike_price, yearsToExpiry, 0.05, iv);   
+        q.iv = Math.round(iv*10000)/100;
+        q.delta = Math.round(delta*10000)/100;
+    }
     return q;
 }
 
@@ -46,7 +44,7 @@ function filter(collection, fO)
     {
         var a = true; var b = true; var c = true; var d = true;
         var e = true; var f = true; var g = true; var h = true;
-        var j = true; var k = true; var l = true;
+        var j = true; var k = true; var l = true; var m = true;
 
         if(fO.keys != undefined) 
             a = fO.keys.includes(element.key);
@@ -81,7 +79,10 @@ function filter(collection, fO)
         if (fO.uid != undefined)
             l = fO.uid.includes(element.uid);
 
-        return a && b && c && d && e && f && g && h && j && k && l;
+        if (fO.speed != undefined)
+            m = fO.speed.includes(element.speed);
+
+        return a && b && c && d && e && f && g && h && j && k && l & m;
     });
     return fResults;
 }

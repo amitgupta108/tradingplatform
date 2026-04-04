@@ -1,4 +1,3 @@
-
 const sutils = require('./serverutils');
 const utils = require('../common/utils');
 const qserver = require('../serverlocal/quotes');
@@ -8,7 +7,7 @@ require('console-stamp')(console, '[HH:MM:ss.l]');
 
 var appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 var appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-var sessionId = "55165038";
+var sessionId = "55195931";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -17,56 +16,100 @@ breeze.generateSession(appSecret, sessionId)
     console.log("Session created");
 }).catch((err) => {
     console.log(err);
-});;
+});
 
-var userclocks = new Map();
+const userclocks = new Map();
 const subsRequests = new Array(0);
-//subsRequests[0] = {user: '0', speed: '1', instruments: undefined, time: undefined};
 const userqcollmap = new Map();
 
 const streamers = [
-        {key: '1x', speed: 1, qsid: 0, state: 'stopped', time: 0},
-        {key: '2x', speed: 2, qsid: 0, state: 'stopped', time: 0},
-        {key: '3x', speed: 3, qsid: 0, state: 'stopped', time: 0},  
-        {key: '5x', speed: 5, qsid: 0, state: 'stopped', time: 0},
-    ];
+        {key: '1x', speed: 1, qsid: 0, state: 'stopped'},
+        {key: '2x', speed: 2, qsid: 0, state: 'stopped'},
+        {key: '3x', speed: 3, qsid: 0, state: 'stopped'},  
+        {key: '5x', speed: 5, qsid: 0, state: 'stopped'},
+    ];  
 
 function connect(uid, simStartTime) {
     userqcollmap.set(uid, new Array(0));
-    userclocks.set(uid, {sTime: simStartTime, cTime: Date.now()});
+    userclocks.set(uid, {uid: uid, sTime: simStartTime, key: '1x'});
 }
 
-function startStreamer(speed){
-    var stmr = utils.filter(streamers, {keys: [speed] })[0];
+function startStreamer(stmrkey){
+    const stmr = utils.filter(streamers, {keys: [stmrkey] })[0];
     
-    if(stmr.state === 'stopped') {
-        stmr.qsid = setInterval(() => {
-            try {
-                var resp = dothings(speed);
-                stmr.time = stmr.time + 1000;
+    if(stmr.state === 'stopped') 
+    {
+        try {
+            stmr.qsid = setInterval(() => {
+            
+                var resp = dothings(stmrkey);
+                runUserClocks(stmrkey);
                 if(resp.count === 0) 
-                    stopStreamer(resp.speed);
-            } catch (err) {
-                clearInterval(stmr.qsid);
-                console.error(err);
-            }
-        }, 995 / stmr.speed);
+                    stopStreamer(resp.key);
+            }, 900 / stmr.speed);
+        } catch (err) {
+            clearInterval(stmr.qsid);
+            stmr.state = 'stopped';   
+            console.error(err);
+        }
         stmr.state = 'started';   
     }
 }
 
-function stopStreamer(speed){
-    var stmr = utils.filter(streamers, {keys: [speed] })[0];
+function stopStreamer(stmrkey){
+    var stmr = streamers.find((x) => x.key === stmrkey);
     
-    if(stmr.state === 'started') {
+    if(stmr.state != 'stopped') {
         clearInterval(stmr.qsid);
         stmr.state = 'stopped';
         stmr.qsid = 0;
     }
 }
 
-function subscribe(requests) {
+function dothings(stmrkey) 
+{
+    var count = 0;
+    var usrSpdComb = utils.filter(userclocks.values().toArray(), {keys: [stmrkey]});
+    usrSpdComb.forEach((c) => {
+        var reqs = utils.filter(subsRequests, {uid: c.uid});
+        reqs.forEach((req) => {
+            count++;
+            var qt = q(req.uid, req.instrument, c.sTime);
+
+            if(qt !== undefined)
+                qserver.emitQuotes(req.uid, qt, 'history');
+        });
+    });
+    return {key: stmrkey, count: count};
+}
+
+function runUserClocks(stmrkey) 
+{
+    var usrSpdComb = utils.filter(userclocks.values().toArray(), {key: [stmrkey]});
+    usrSpdComb.forEach((c) => {
+        c.sTime = c.sTime + 1000;
+    });
+}
+
+function changeSpeed(uid, stmrkey){
+    var clock = userclocks.get(uid);
+    clock.key = stmrkey;
     
+    var stmr = streamers.find((s) => s.key === stmrkey);
+    var exReq = utils.filter(subsRequests, {uid: [uid]});
+    if(stmr.state === 'stopped' && exReq.length > 0)
+        startStreamer(stmrkey);
+}
+
+function subscribe(requests, stmrkey = undefined) {
+    
+    if(stmrkey !== undefined && requests.length > 0) {
+        userclocks.get(requests[0].uid).key = stmrkey;
+        var streamer = streamers.find((s) => s.key === stmrkey);
+        if(streamer.state !== 'stated')
+            startStreamer(stmrkey);
+    }
+
     requests.forEach((request) => {
         
         if(request.uid === undefined || request.instrument === undefined) {
@@ -78,9 +121,6 @@ function subscribe(requests) {
             subsRequests.push(request);
         }
     });
-
-    if(streamers[0].state === 'stopped')
-        startStreamer('1x');
 }
 
 function unsubscribe(requests) {
@@ -98,69 +138,48 @@ function unsubscribe(requests) {
     });
 }   
 
-function dothings(speed) 
+function disconnect(uid)
 {
-    var count = 0;
-    //var reqs = utils.filter(subsRequests, {keys: [speed]});
-    subsRequests.forEach((req) => {
-        count++;
-        var qt = q(userqcollmap.get(req.uid), req.instrument, getUserTime(req.uid));
-
-        if(qt !== undefined)
-            qserver.emitQuotes(req.uid, qt, 'history');
+    console.log('Drop user ' + uid);
+    userclocks.delete(uid);
+    userqcollmap.delete(uid);
+    var exReq = utils.filter(subsRequests, {uid: [uid]});   
+    exReq.forEach((r) => {
+        subsRequests.splice(subsRequests.indexOf(r), 1);
     });
-    return {speed: speed, count: count};
 }
 
-function getUserTime(uid) 
+function q(uid, instrument, time)
 {
-    var uTime = userclocks.get(uid);
-    if (uTime !== undefined) {
-        var cTime = Date.now();
-        var sTime = uTime.sTime;
-        var timeElapsed = Math.round((cTime - uTime.cTime) / 1000) * 1000;
-        return sTime + timeElapsed;
+    var qArray = userqcollmap.get(uid);
+    var st = qArray.find((q) => q.symbol === instrument.symbol);
+    if(st === undefined) {
+        st = {uid: uid, symbol: instrument.symbol, quotes: undefined, state: 'initialized', lastUpdated: time};
+        qArray.push(st);
     }
-    return undefined;
-}
-
-function q(qArray, instrument, time)
-{
-    var st = utils.filter(qArray, {symbol: [instrument.symbol]})[0];
-    if(st === undefined)
-        st = {symbol: instrument.symbol, quotes: undefined, state: 'initialized', lastLoadTime: 0};
-    var quotes = st.quotes;
 
     var idx = -1;
-    if (quotes != undefined)
-        idx = sutils.findQuoteByTime(quotes, time);
+    if (st.quotes != undefined)
+        idx = sutils.findQuoteByTime(st.quotes, time);
 
-    if ((quotes === undefined || idx === -2 || quotes.length - idx < 25) && st.state != 'load requested')
+    if ((st.quotes === undefined || idx === -2 || st.quotes.length - idx < 25) && st.state != 'load requested')
     {
         st.state = 'load requested';
-        qw(qArray, instrument, time);
+        qw(st, instrument, time);
     }
 
-    return idx > -1 ? quotes[idx] : undefined;
+    return idx > -1 ? st.quotes[idx] : undefined;
 }
 
-function qw(qArray, instrument, time) {
-    var qs = getHistoricalData(instrument, time);
+function qw(st, instrument, time) {
+    var qs = getHistoricalData(st, instrument, time);
 
     return qs.then((resp) => {
-        var st = utils.filter(qArray, {symbol: [resp.symbol]})[0];
-    
-        if(st === undefined) 
-            qArray.push({symbol: resp.symbol, quotes: resp.quotes, state: resp.state});
-        else {
-            st.quotes = resp.quotes;
-            st.state = resp.state;
-        }
         return resp;   
     });
 }
 
-async function getHistoricalData(instrument, sTime, endTime, interval) 
+async function getHistoricalData(st, instrument, sTime, endTime, interval) 
 {
     var b = { exchangeCode: instrument.exchange };
     b.interval = interval != undefined ? interval : '1second';
@@ -176,13 +195,19 @@ async function getHistoricalData(instrument, sTime, endTime, interval)
     try {
         var resp = await breeze.getHistoricalDatav2(b);
 
-        if (resp.Status === 200)
-            return { status: resp.Status, symbol: instrument.symbol, quotes: resp.Success, state: 'ready to stream', lastLoadTime: sTime };
+        if (resp.Status === 200 && resp.Success.length > 0) {
+            st.quotes = resp.Success;
+            st.state = 'ready to stream';
+            st.lastUpdated = sTime;
+            return st;
+         }
         else
             throw Error(resp.Error);
     } catch (error) {
         console.error("Error from breeze call " + error + '\n' + error.stack);
-        return { status: 0, symbol: instrument.symbol, quotes: undefined, state: 'load failed', lastLoadTime: sTime };
+        st.state = 'load failed';
+        st.lastUpdated = sTime;
+        return st;
     }
 }
 
@@ -191,4 +216,6 @@ module.exports = {
     getHistoricalData,
     subscribe,
     unsubscribe,
+    changeSpeed,
+    disconnect
 };

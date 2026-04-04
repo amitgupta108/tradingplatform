@@ -38,8 +38,11 @@ function ISODate(datetime) {
 }
 
 function formatExpiry(expiry) {
+    
+    if(expiry === undefined)
+        return
+    
     var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
-
     return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
 }
 

@@ -11,14 +11,19 @@ function connect(uid, time)
     adapter.connect(uid, time);
 }
 
-function subscribe(uid, instruments)
+function disconnect(uid)
 {
-    adapter.subscribe(uid, instruments, true);
+    adapter.disconnect(uid);
 }
 
-function unsubscribe(uid, instruments)
+function subscribe(uid, instruments, action, speed)
 {
-    adapter.subscribe(uid, instruments, false);
+    adapter.subscribe(uid, instruments, action, speed);
+}
+
+function changeSpeed(uid, speed)
+{
+    adapter.changeSpeed(uid, speed);
 }
 
 function order(p)
@@ -47,7 +52,7 @@ function orderstatus(orderid)
         orderid: orderid,
         price: 0,
         pricetype: "MARKET",
-        product: "MIS",
+        product: "NRML",
         quantity: Math.abs(order.quantity), //returning positive q as does the openalgo
         filled_q: Math.abs(order.quantity),
         symbol: order.symbol,
@@ -56,8 +61,6 @@ function orderstatus(orderid)
       }
     return status;
 }
-
-
 
 function preU(p) {
     p.exchange = 'NSE';
@@ -89,10 +92,11 @@ function preD(p, uq) {
 module.exports = {
     subscribe,
     connect,
-    unsubscribe,
     preU,
     preF,
     preD,
     order,
-    orderstatus
+    orderstatus,
+    changeSpeed,
+    disconnect
   };

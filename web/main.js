@@ -1,6 +1,5 @@
-let positions = new Array(0);
-let optionChains = new Array(0);
-let ordercounter = 1;
+const positions = new Array(0);
+const optionChains = new Array(0);
 
 function emit(event, arg1, arg2) {
   socket.emit(event, arg1, arg2);
@@ -8,7 +7,7 @@ function emit(event, arg1, arg2) {
 
 function loadPreData()
 {
-  var ls = new Date(instrument.simStartTime);
+  var ls = instrument.mode === 0 ? new Date(instrument.simStartTime) : new Date();
   var le = ls.getTime() - 1000; 
   var newDate = ls.getDate()-1;
   if (ls.getDay() === 1) //Monday
@@ -17,7 +16,6 @@ function loadPreData()
 
   const p = {
     uid: uuid,
-    mode: instrument.mode,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     oExpiry: instrument.oExpiry,
@@ -30,7 +28,7 @@ function loadPreData()
 function changeSpeed()
 {
   var selectBoxValue = document.getElementById("optionSpeed").value;
-  emit('speed', Number(selectBoxValue));
+  emit('speed', selectBoxValue);
 }
 
 function resumeSimulation()
@@ -48,6 +46,11 @@ function start()
 function stopSimulation() 
 {
   emit('stop', 'user action');
+}
+
+function fetchPositions()
+{
+  emit('positionbook', {uid: uuid, stockCode: instrument.stockCode});
 }
 
 function switchChart(evt, tabClicked, tabOther) 
@@ -96,14 +99,6 @@ function runOptionChainNxt(event)
   }
 }
 
-function exitPosition(event) 
-{
-  let row = event.target.parentNode.parentNode.parentNode;
-
-  var p = Position.findPositionRow(row.title);
-  p.exit();
-}
-
 function savePositions(){
   var p = new Array(0);
   positions.forEach((e) => {
@@ -115,12 +110,10 @@ function savePositions(){
 
 function wsconnect(action){
   var tpt = document.getElementById("tpt").value;
-  emit('wsOps', {action: action, tpt: tpt});
+  emit('wsOps', {action: action, data: tpt});
   document.getElementById("tpt").value = "";
 
-  var id = setInterval(() => {
-      emit('isAlive', Date.now());
-  }, 60000);
+  var timer = action === 'connect' ? timer(action, 60000, true) : timer(action, 60000, false);
 }
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
