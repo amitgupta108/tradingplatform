@@ -3,7 +3,8 @@ var uQuoteGl;
 socket = io(`https://localhost:${window.location.port}`, {
   auth: {
     token: uuid,
-    mode: instrument.mode
+    mode: instrument.mode,
+    stock: instrument.stockCode
   },
   timeout: 60000,
   reconnectionDelay: 5000,
@@ -15,14 +16,10 @@ function rh(socket)
 {
   socket.on('restored', (response) => {     
     console.log(response + " continue?");
-    if(response === uuid)
-      document.getElementById("btnResumeSim").disabled = false;
   });
 
   socket.on('recovered', (response) => {     
     console.log(response + " continue?");
-    if(response === uuid)
-      document.getElementById("btnResumeSim").disabled = false;
   });
 
   socket.on('futuresPreData', (fQuotes) => {
@@ -36,13 +33,11 @@ function rh(socket)
   });
 
   socket.on('index', (q) => {
-    //console.log("index:  " + JSON.stringify(q));
   
     if(q.exchange === 'MCX')
       futuresChart(q);
     
     uQuoteGl = q;  
-    //updateIndexChart(q);
 
     optionChains.forEach((e) => {
       if(e.atm === undefined)
@@ -50,21 +45,23 @@ function rh(socket)
     });
 
     var lt = new Date(q.ltt);
-    timerText.innerHTML = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2) + " |   ATM: " + optionChains[0].atm;
+    timerText.innerHTML = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
   });
 
-  socket.on('futures', (fQuote) => 
-  {    
+  socket.on('vix', (q) => {
+    if(q !== undefined)
+      qBox.dispatchEvent(generateEvent('vix', q));
+  });
+
+  socket.on('futures', (fQuote) => {    
     if(fQuote != undefined)
     {
       futuresChart(fQuote);
-      //updateFuturesTable(fQuote);
       document.title = fQuote.symbol + " " + fQuote.close.toFixed(2);
     }
   });
 
   socket.on('strikex', (q) => {
-    //console.log("strikex:  " + JSON.stringify(q));
     try {
       
       var p = Position.findPositionRow(q.symbol);
@@ -72,15 +69,19 @@ function rh(socket)
         refreshPositionPL(p, q.close) 
       
       OptionChain.update(q);
-      //setChartQuotes(optionChainQuotes);
-      //updateOptionsChart();  
+
+      orderquote(q);
     } catch(error) {
       console.log(error);
     }
   });
   
+  socket.on('positionbook', (response) => {
+    refreshPositions(response.data);
+  });
+
   socket.on('orderconf', (response) => {
-    console.log("order status:  " + JSON.stringify(response));
+    console.log("immediate order conf:  " + JSON.stringify(response));
     
     var p = positions.find((e) => e.symbol === response.symbol);
     
@@ -89,29 +90,24 @@ function rh(socket)
   });
 
   socket.on('simorder', (exorder) => {
-    console.log("sim order confirmation " + JSON.stringify(exorder));
+    console.log("sim order update " + JSON.stringify(exorder));
 
     var p = positions.find((e) => e.symbol === exorder.symbol);
     p.orderupdate(exorder);
   });
 
   socket.on('liveorder', (exorder) => {
-    console.log("live order message " + JSON.stringify(exorder));
+    console.log("live order update " + JSON.stringify(exorder));
     
-    var p = positions.find((e) => e.symbol === exorder.symbol);
-    p.orderupdate(exorder);
+    //var p = positions.find((e) => e.symbol === exorder.symbol);
+    //p.orderupdate(exorder);
   });
 
   socket.on('ws-order', (exorder) => {
-    console.log("live order message " + JSON.stringify(exorder));
-    /*
-    var allorders = new Array(0);
-    positions.forEach((p) => {
-      allorders.concat(p.orders);
-    })
-    */
-    //var p = positions.find((e) => e.symbol === exorder.trdSym);
-    //p.wsorderupdate(exorder);
+    console.log("ws order message " + JSON.stringify(exorder));
+
+    var p = positions.find((e) => e.symbol === exorder.trdSym);
+    p.wsorderupdate(exorder);
   });
 
   socket.on('ws-position', (pmsg) => {
@@ -124,15 +120,15 @@ function rh(socket)
     });
   });
 
-  socket.on('isalive', (state) => {
-    if(state = 'connected' || Number(state) === 1)
+  socket.on('ws-hb', (state) => {
+    if(state === 'connected' || Number(state) === 1)
       document.getElementById('socn').style.backgroundColor = '#4CAF50';
     else
       document.getElementById('socn').style.backgroundColor = '#f44336';
   });
 
   socket.on('ws-cn', (msg) => {
-    console.log("position message " + msg)  
+    console.log("connection message " + msg)  
     document.getElementById('socn').style.backgroundColor = '#4CAF50';
   });
 }

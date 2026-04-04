@@ -1,10 +1,10 @@
-var instrumentMap = new Map();
+const instrumentMap = new Map();
 
 instrumentMap.set('NH', {
-  simStartTime: new Date("2025-07-07 09:19:00").getTime(),
-  fExpiry: "31JUL25",
-  oExpiry: "10JUL25",
-  oExpiryNxt: "17JUL25",
+  simStartTime: new Date("2026-02-06 10:21:00").getTime(),
+  fExpiry: "24FEB26",
+  oExpiry: "10FEB26",
+  oExpiryNxt: "17FEB26",
   stockCode: 'NIFTY',
   lscount: 10,
   mode: 0,
@@ -84,17 +84,17 @@ const ts = chart.timeScale();
 
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
 const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
-const IVSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
-const IVNxtSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(14, 122, 8)', lineWidth: 2 });
+const vixSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
+//const IVNxtSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(14, 122, 8)', lineWidth: 2 });
 chart.timeScale().fitContent();
 chart.timeScale().scrollToPosition(15);
-
+/*
 const chart2 = LightweightCharts.createChart(document.getElementById('chart2'), chartOptions);
 const peSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2});  
 const ceSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: 'rgb(242, 142, 44)', lineWidth: 2});
 const stratSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: 'rgb(225, 22, 22)', lineWidth: 2, title: 'QuaterDelta' });
 const nifty = chart2.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(12, 140, 14)', lineWidth: 2, title: 'Nifty' });  
-
+*/
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
@@ -103,3 +103,13 @@ const timerText = document.getElementById("timer");
 timerText.innerText = instrument.simStartTime;
 const uuid = crypto.randomUUID();
 var socket;
+var wsping;
+
+const qBox = new EventTarget();
+
+qBox.addEventListener('vix', (nv) => {
+  vixChart(nv);
+});
+
+const sOrderSubmit = new Audio('./static/ordersubmit.wav');
+

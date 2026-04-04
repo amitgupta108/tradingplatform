@@ -23,7 +23,7 @@ class OptionChain
   static get(expiry)
   {
     return optionChains.find((o) => {
-      return o.#expiry.substring(0,2) === expiry.substring(0,2)
+      return o.#expiry === expiry;
     });
   }
 
@@ -48,14 +48,13 @@ class OptionChain
 
   #rowfill(n, q, rg)
   {
-    if(q != undefined)
-    {
-      this.#value(n, 'iv', rg, q.iv);
-      this.#value(n, 'delta', rg, q.delta);
-      this.#value(n, 'price', rg, q.close);
-      this.#value(n, 'strike', rg, q.strike_price);
-      this.#value(n, 'sym', rg, q.symbol);
-    }
+
+    this.#value(n, 'iv', rg, q.iv);
+    this.#value(n, 'delta', rg, q.delta);
+    this.#value(n, 'price', rg, q.close.toFixed(2));
+    this.#value(n, 'strike', rg, q.strike_price);
+    this.#value(n, 'sym', rg, q.symbol);
+
     var p = Position.findPositionRow(q.symbol);
     if(p != undefined && p.value('unbookedQ') != 0)
       this.#value(n, 'icon', rg, p.value('unbookedQ'), 1);

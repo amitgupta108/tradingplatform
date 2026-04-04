@@ -67,7 +67,24 @@ function refreshPositionPL(p, price)
   p.value('totalPL', totalPL.toFixed(2));
 
   writeProfitLoss();
-  
+}
+
+function refreshPositions(ps)
+{
+  ps.forEach(element => {
+    if(symboltoinstrument(element.symbol).stockCode === instrument.stockCode)
+    {
+      var p = new Position(element.symbol);
+      p.orders = [{
+        orderN: 1,
+        symbol: element.symbol,
+        price: element.average_price,
+        quantity: element.quantity,
+      }];
+      p.orderN = 1;
+      refreshPositionPL(p, element.ltp);
+    }
+  });
 }
 
 class Position
@@ -84,7 +101,6 @@ class Position
     unbookedPL: [8, 0, 'n'],
     totalPL: [9, 1, 'n']
   };
-  #oc;
   orders = new Array(0);
   orderN = 0;
   symbol;
@@ -94,13 +110,13 @@ class Position
     this.symbol = symbol;
     this.#pRow = addRow(symbol);
     
-    var plength = symbol.startsWith('CRUDE') ? -4 : -5;
-    this.value('expiry', symbol.slice(plength - 9, plength - 2));
-    this.value('strike', symbol.slice(plength - 2, -2));
-    this.value('right', symbol.slice(-2) === 'CE' ? 'Call' : 'Put');
+    var scrip = symtoinstrument(symbol);
+
+    this.value('expiry', scrip.expiry);
+    this.value('strike', scrip.strike);
+    this.value('right', scrip.right === 'CE' ? 'Call' : 'Put');
 
     this.#pRow.style.display = "table-row";
-    this.#oc = OptionChain.get(symbol.substring(5,12));
     positions.push(this);
   }
 
@@ -111,20 +127,14 @@ class Position
     return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
   }
 
-  order(action, osize, lmtprice, cprice)
+  order(neworder)
   {
-    osize = (action === 'BUY' ? 1 : -1) * Number(osize);
-    //var type = Number(lmtprice) > 0 ? 'LIMIT' : 'MARKET';
-    var lp = action === 'BUY' ? cprice - 20 : cprice + 20;
-    var exc = instrument.exc;
+    neworder.orderN = ++this.orderN;
+    neworder.time = Date.now();
+    neworder.state = 'opened';
 
-    var order = {
-      orderN: ++this.orderN, action: action, quantity: osize * instrument.lotsize, price: lp,
-          time: Date.now(), state: 'opened', counter: ordercounter++, type: 'LIMIT',
-        exc: exc, symbol: this.symbol, cprice: cprice};
-    this.orders.push(order);
-
-    emit('order', order);
+    this.orders.push(neworder);
+    emit('order', neworder);
   }
 
   findorders(state)
@@ -133,12 +143,6 @@ class Position
       return e.state === state;
     });
   }
-
-  exit(){
-    var psize = Number(this.value('unbookedQ')); 
-    if(psize != 0)
-      this.order(psize < 0 ? 'BUY' : 'SELL', psize, -1);      
-  } 
 
   orderupdate(exorder){
     var o = this.orders.find((e) => e.orderid === exorder.orderid);
@@ -150,18 +154,14 @@ class Position
       o.filled_q = exorder.filled_q * (o.action === 'BUY' ? 1 : -1);
       //refreshPositionPL(this, o.price);
     }
-    else if ((exorder.order_status === 'rejected') || (exorder.order_status  === 'cancelled'))
-    {
-      o.state = exorder.order_status ;
-    }
-    else if(exorder.order_status  === 'modified')
+    else if(['modified', 'open', 'rejected', 'cancelled'].includes(exorder.order_status) )
     {
       o.state = exorder.order_status;
       //o.quantity = ordermsg.qty;
       //o.type = ordermsg.prcTp === 'L' ? 'LIMIT' : 'MARKET';
       //o.price = Number(ordermsg.prc)
     }
-    else
+    else //unmapped status from kotak - open
       console.log('matched order state ignored ' + exorder.orderid + ' ' + exorder.order_status);
     this.value('bookedQ', o.state);
   }
@@ -169,7 +169,7 @@ class Position
   wsorderupdate(ordermsg){
     var o = this.orders.find((e) => e.orderid === ordermsg.nOrdNo);
     if(o === undefined) {
-      console.log('unmatched order msg ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
+      console.log('unmatched order Id' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
       return;
     }
     
@@ -181,7 +181,7 @@ class Position
       o.filled_q = Number(ordermsg.fldQty) * (o.action === 'BUY' ? 1 : -1);
       o.unfilled_q = ordermsg.unFldSz;
     }
-    else if ((ordermsg.ordSt === 'rejected') || (ordermsg.ordSt === 'cancelled'))
+    else if(['open', 'rejected', 'cancelled'].includes(ordermsg.ordSt))
     {
       o.state = ordermsg.ordSt;
     }
@@ -192,7 +192,7 @@ class Position
       o.type = ordermsg.prcTp === 'L' ? 'LIMIT' : 'MARKET';
       o.price = Number(ordermsg.prc)
     }
-    else
+    else //unmapped status from kotak - open
       console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
     this.value('bookedQ', o.state);
 

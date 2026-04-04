@@ -1,5 +1,5 @@
 const utils = require('../../common/utils');
-var us = new Array(0);
+const us = new Array(0);
 
 class Session
 {
@@ -12,12 +12,12 @@ class Session
         this.uid = uid;
         this.mode = mode;
         this.st = [
-            {key: 'index', toStream: true, mt: false, streamState: 'initialized',},
-            {key: 'futures', toStream: true, mt: true, streamState: 'initialized',},
-            {key: 'occrnt', toStream: true, mt: true, n: 0, lastUpdated: 0, atm: 25000},
-            {key: 'ocnxt', toStream: false, mt: true, n: 0, lastUpdated: 0, atm: 25000},
-            {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: false,
-             symbol: 'INDVIX', mt: true, streamState: 'initialized', },
+            {key: 'index', toStream: true, streamState: 'initialized',},
+            {key: 'futures', toStream: true, streamState: 'initialized',},
+            {key: 'occrnt', toStream: true, atm: 25000},
+            {key: 'ocnxt', toStream: false, atm: 25000},
+            {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: true,
+             symbol: 'INDVIX', streamState: 'initialized', },
         ];
         us.push(this);
     }
@@ -26,18 +26,17 @@ class Session
     {
         for(var i = 0; i < this.st.length - 1; i++)
         {
-            this.st[i].stockCode = p.stockCode; 
-            this.st[i].exchange = p.exc === 'MCX' ? p.exc : i != 0 ? 'NFO' : p.mode === 0 ? 'NSE' : 'NSE_INDEX';
+            this.st[i].stockCode = this.st[i].stockCode === 'INDVIX' ? 'INDVIX' : p.stockCode; 
+            this.st[i].exchange = p.exc === 'MCX' ? p.exc : (i != 0 && i != 4) ? 'NFO' : p.mode === 0 ? 'NSE' : 'NSE_INDEX';
             this.st[i].symbol = i === 1 || p.exc === 'MCX' ? p.stockCode.concat(p.fExpiry).concat('FUT') : p.stockCode;
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
                 this.st[i].n = i != 1? p.lscount : 0;
             }
-            if(p.mdoe === 0 && st[i].key === 'vix')
-                this.st[i].toStream = true;
         }
         this.subsupdate = callback;
+        return this.inqsub();
     }
 
     #oq(uq, ost)
@@ -45,22 +44,6 @@ class Session
         ost.atm = Math.round(uq.close / 50) * 50;
         var sks = utils.strikes(ost.atm, ost.n);
 
-    /*    var curst = utils.filter(this.st, {
-            stockCodes: [ost.stockCode],
-            expiries: [ost.expiry],
-            keys: ['strikex']
-        });
-        
-        for (var i = 0; i < curst.length; i++) 
-        {
-            var lst = utils.filter(sks, {
-                strikes: [curst.strike],
-                rights: [curst.right]});
-        
-            if(lst === undefined || lst.length === 0)
-                curst[i].toStream = false;
-        }
-    */
         for (var i = 0; i < sks.length; i++) 
         {
             var lst = utils.filter(this.st, {
@@ -92,39 +75,31 @@ class Session
         this.#ocqsub(ost.stockCode, ost.expiry);
     }
 
-
     #ocqsub(stockCode, expiry)
     {
         var fst = utils.filter(this.st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
         var sublist = utils.filter(fst, {toStream: [true]});
-        var unsublist = utils.filter(fst, {toStream: [false]});
-    
-        /* if(unsublist != 0)
-            this.bserver.unsubscribe(this.uid, unsublist); */
-        this.subsupdate(sublist);
+
+        this.subsupdate('subs', sublist);
     }
     
     inqsub() {
-        var fst = utils.filter(this.st, {keys: ['index', 'futures', 'occrnt']});
+        var fst = utils.filter(this.st, {keys: ['index', 'futures', 'vix']});
         fst.forEach((e) => e.toStream = true);
 
-        return utils.filter(this.st, {keys: ['index', 'futures']});
-    }
-
-    resume() {
-        return utils.filter(this.st, {keys: ['index', 'futures', 'strikex']});
+        return fst;
     }
     
     unsuball() {
         this.st.forEach((e) => e.toStream = false);
-        return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt', 'vix']});
-        var st = utils.filter(this.st, {keys: ['index']})[0];
+        var st = this.st.find((e) => e.key === 'index');
         st.uq = undefined;
+        return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
     }
 
     lastuq(uq)
     {
-        var st = utils.filter(this.st, {keys: ['index']})[0];
+        var st = this.st.find((e) => e.key === 'index');
         if(uq === undefined)
             return st.uq;
 
@@ -144,6 +119,10 @@ class Session
     static destroy(uid)
     {
         var idx = us.findIndex((e) => e.uid === uid);
+        var sn = us[idx];
+        if(sn != undefined)
+            if(sn.subsupdate != undefined)
+                sn.subsupdate(uid, new Array(0), 'exit');
         us.splice(idx, 1);
     }
 }

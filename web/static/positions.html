@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Please visit https://tradingview.github.io/lightweight-charts/tutorials/customization for more information on this tutorial. -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -8,7 +7,6 @@
         <link rel="stylesheet" href="./styles.css">        
         <script type="text/javascript" src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
         <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-        <script src="https://unpkg.com/mitt/dist/mitt.umd.js"></script>
     </head>
 
     <body>
@@ -18,7 +16,6 @@
             <div id="timerBar">
                 <label id="timer"></label>
                 <label id="atmiv"></label>
-
             </div>         
             <div id="Exp1" class="tab-content active">
                 <div id="optionChain">  
@@ -42,12 +39,11 @@
                             <td><label id="CELTP"></label></td> 
                             
                             <td class="hover-cell">
-
                                 <label id="icon" class="icon"></label>
                                 <label id="CEStrike"></label>
                                 <div class="hover-content">
-                                    <button  id="buyCE" class="buy_button" onclick="showMessage(event, 'BUY', 'Call')">B</button>
-                                    <button  id="sellCE" class="sell_button" onclick="showMessage(event, 'SELL', 'Call')">S</button>                            
+                                    <button  id="buyCE" class="buy_button" onclick="orderOC(event, 'BUY', 'Call')">B</button>
+                                    <button  id="sellCE" class="sell_button" onclick="orderOC(event, 'SELL', 'Call')">S</button>                            
                                 </div>
                                 <label id='sym' hidden></label>
                             </td> 
@@ -56,12 +52,11 @@
                                 <label class="icon"></label>
                                 <label id="PEStrike"></label>
                                 <div  class="hover-content">
-                                    <button  id="buyPE" class="buy_button" onclick="showMessage(event, 'BUY', 'Put')">B</button>
-                                    <button  id="sellPE" class="sell_button" onclick="showMessage(event, 'SELL', 'Put')">S</button>
+                                    <button  id="buyPE" class="buy_button" onclick="orderOC(event, 'BUY', 'Put')">B</button>
+                                    <button  id="sellPE" class="sell_button" onclick="orderOC(event, 'SELL', 'Put')">S</button>
                                 </div>
                                 <label hidden></label>
                             </td>
-                            
                             <td><label id="PELTP"></label</td>
                             <td><label id="PEDELTA"></label></td>
                             <td><label id="PEIV"></label></td>
@@ -70,7 +65,6 @@
                 </table> 
                 </div>
             </div>
-
             <div id="Exp2" class="tab-content">
                 <div id="optionChain2">  
                     <table id="ocTable2">
@@ -93,12 +87,11 @@
                                 <td><label id="CELTP"></label></td> 
                                 
                                 <td class="hover-cell">
-    
                                     <label class="icon"></label>
                                     <label id="CEStrike"></label>
                                     <div class="hover-content">
-                                        <button  id="buyCE" class="buy_button" onclick="showMessage(event, 'BUY', 'Call')">B</button>
-                                        <button  id="sellCE" class="sell_button" onclick="showMessage(event, 'SELL', 'Call')">S</button>
+                                        <button  id="buyCE" class="buy_button" onclick="orderOC(event, 'BUY', 'Call')">B</button>
+                                        <button  id="sellCE" class="sell_button" onclick="orderOC(event, 'SELL', 'Call')">S</button>
                                     </div>
                                     <label hidden></label>
                                 </td> 
@@ -107,8 +100,8 @@
                                     <label class="icon"></label>
                                     <label id="PEStrike"></label>
                                     <div  class="hover-content" >
-                                        <button  id="buyPE" class="buy_button" onclick="showMessage(event, 'BUY', 'Put')">B</button>
-                                        <button  id="sellPE" class="sell_button" onclick="showMessage(event, 'SELL', 'Put')">S</button>
+                                        <button  id="buyPE" class="buy_button" onclick="orderOC(event, 'BUY', 'Put')">B</button>
+                                        <button  id="sellPE" class="sell_button" onclick="orderOC(event, 'SELL', 'Put')">S</button>
                                     </div>
                                     <label hidden></label>
                                 </td>
@@ -136,7 +129,6 @@
                     <label>Expiry 2</label>
                     <div id="ocNxt" class="small_button" onclick="runOptionChainNxt(event)">></div>
                 </div>
-
             </div>
             
             <div id="positions">    
@@ -167,8 +159,8 @@
                     <td class="hover-cell">
                         <label id="totalPL"></label>
                         <div  class="hover-content" >
-                            <button  id="buyPE" class="buy_button" onclick="enterPosition(event)">B</button>
-                            <button  id="sellPE" class="sell_button" onclick="enterPosition(event)">S</button>
+                            <button  id="buy" class="buy_button" onclick="orderPos(event, 'BUY')">B</button>
+                            <button  id="sell" class="sell_button" onclick="orderPos(event, 'SELL')">S</button>
                         </div>
                         <label hidden></label>
                     </td>
@@ -204,13 +196,12 @@
                     <button type="button" id="btnStartSim" onclick="start()">Start</button>
                     <button type="button" id="btnStopSim" onclick="stopSimulation()">Stop</button>
                     <button type="button" id="btnResumeSim" onclick="resumeSimulation()">Resume</button>
+                    <button type="button" id="btnRefreshPositions" onclick="fetchPositions()">{P}</button>
                     <select id="optionSpeed" onchange="changeSpeed()">
-                        <option value="1">1x</option>
-                        <option value="2">2x</option>
-                        <option value="3">3x</option>
-                        <option value="5">5x</option>
-                        <option value="10">10x</option>
-                        <option value="12">12x</option>
+                        <option value="1x">1x</option>
+                        <option value="2x">2x</option>
+                        <option value="3x">3x</option>
+                        <option value="5x">5x</option>
                     </select>
                 </div>
 
@@ -222,30 +213,35 @@
                     <label class="plLabel" id="totalPL">Total: </label>
                     <label class="plAmount" id="vTotalPL">0.00</label>
                 </div>
-
             </div>
         </div>
 
         <div id="rightContainer">
-                <div id="chartLinks" class="tabs">
-                    <div id="tabLink1" class="tab2  active-tab" onclick="switchChart(event, 'chart', 'chart2')">Futures</div>
-                    <div id="tabLink2" class="tab2" onclick="switchChart(event, 'chart2', 'chart')">Options</div>
-                </div>
-                
-                <div id="chart" class="chart-show">
-
-                </div>
-                <div id="chart2" class="chart-hide">
-                </div>
+            <div id="chartLinks" class="tabs">
+                <div id="tabLink1" class="tab2  active-tab" onclick="switchChart(event, 'chart', 'chart2')">Futures</div>
+                <div id="tabLink2" class="tab2" onclick="switchChart(event, 'chart2', 'chart')">Options</div>
+            </div>
+            <div id="chart" class="chart-show">
+            </div>
+            <div id="chart2" class="chart-hide">
+            </div>
         </div>
     </div>  
     <div id="message-container">
         <div id="orderwindow">
-            <label id='owsymbol'></label>
+            <label id='owheading'></label>
+            <label id='owaction' hidden></label>
+            <label id='owsymbol' hidden></label>
             <span id="closeBtn" class="close-btn">x</span>
             <table>
             <tbody>
                 <tr>
+                    <td>
+                        <div width="18%">
+                            <label>Price</label>
+                            <label id="owprice"></label>
+                        </div>
+                    </td>
                     <td>
                         <div width="24%">
                             <label for="lotselect">Lot size</label>
@@ -257,26 +253,26 @@
                         </div>
                     </td>
                     <td>
-                        <div width="18%" >
+                        <div width="14%" >
                             <label for="mkt">Market</label>
                             <input type="radio" id="mkt" name="type" value="MARKET">                                
                         </div>
                     </td>
                     <td>
-                        <div width="18%">
+                        <div width="14%">
                             <label for="lmt">Limit</label>
                             <input type="radio" id="lmt" name="type" value="LIMIT" checked>
                         </div>
                     </td>
                     <td>
-                        <div width="20%">
+                        <div width="15%">
                             <label for="lmtprice">Limit Price</label>
                             <input type="number" id="lmtprice" name="lmtprice" step="0.5"  style="width:40px;padding:3px;">
                         </div>
                     </td>
                     <td>
-                        <div width="20%">
-                            <button type="button" id="submit" onclick="enterPosition()">Order</button>
+                        <div width="15%">
+                            <button type="button" id="submit" onclick="submitOrder()">Order</button>
                         </div>
                     </td>
                 </tr>

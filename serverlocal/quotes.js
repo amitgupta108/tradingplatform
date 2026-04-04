@@ -1,8 +1,7 @@
 require('console-stamp')(console, '[HH:MM:ss.l]');
 const utils = require('./../common/utils');
 const Session = require('./session/session');
-
-var socketmap = new Map();
+const socketmap = new Map();
 
 function emitQuotes(uid, q, mode)
 { 
@@ -52,7 +51,9 @@ function emitQs(uid, q)
     try {
         var sn = Session.usn(uid);
         var key = 'strikex';
-        if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
+        if(q.stock_code === 'INDVIX')
+            key = 'vix';
+        else if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
         {
             sn.lastuq(q);
             key = 'index';

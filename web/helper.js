@@ -74,3 +74,43 @@ function createOCTable(oTblBody, nStrikes)
   }
   return oTblBody.getElementsByTagName('tr');
 }
+
+function symtoinstrument(symbol)
+{
+  var stk = symbol.slice(-9, -2);
+  var digit5 = Number.isFinite(Number(stk));
+  var strike = digit5 ? stk.slice(2, 7) : stk.slice(3, 7);
+  var expiry = digit5 ? symbol.slice(-14, -7) : symbol.slice(-13, -6);
+  var stockCode = symbol.slice(-14);
+
+  var instrument = {
+    stockCode: stockCode,
+    expiry: expiry,
+    strike: strike,
+    right: symbol.slice(-2)
+  };
+
+  return instrument;
+}
+
+function generateEvent(type, nv)
+{
+  return new CustomEvent(type, {
+
+    detail: { ov: ov, nv: nv },
+    bubbles: true,   // Allow the event to bubble up the DOM
+    cancelable: true // Allow event.preventDefault()
+  });
+}
+
+function timer(action, duration, start)
+{
+  if(start)
+    wsping = setInterval(() => {
+      emit('wsOps', {action: action, data: Date.now()});
+    }, duration);
+  else
+    clearInterval(wsping);
+
+  return !start;
+}
