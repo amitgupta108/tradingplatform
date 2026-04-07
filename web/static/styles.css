@@ -1,4 +1,3 @@
-
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -9,9 +8,8 @@ body {
     position: absolute; 
     display: flex;
     justify-content: space-around;
-    width: 99.5%; 
-    height: 99.5%;
-    border-radius: 5px;
+    width: 99.7%; 
+    height: 99.7%;
 }
 
 #leftContainer {
@@ -30,15 +28,12 @@ body {
     vertical-align: auto;
 } 
 
-#timerBar {
+#timer {
     height: 3.5%;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content:center;
-}
-
-#timer {
     font-size: 13px;
 }
 
@@ -54,11 +49,6 @@ body {
     overflow-y:auto;
 }
 
-#futures {
-    border: 0px solid lightgray;
-    height: 3%;
-    width: 100%;
-}
 .tabs {
     display: flex;
     cursor: pointer;
@@ -66,54 +56,40 @@ body {
     border-radius: 5px;
     overflow: hidden;
     height: 3.5%;
-    width: 100%;
+    width:100%;
 }
+
 #positions {
     border: 0px solid lightgray;
     width: 100%;
-    height:48%;
+    height:48.5%;
     border-radius: 5px;
     overflow-y:auto;
 }
+
 #bottomPanel {
     display:flex;
     border: 1px solid #4CAF50;
-    width: 99%;
-    height: 3.5%;
+    width: 99.2%;
+    height: 3.3%;
     border-radius: 5px;
-    padding:3px;
-}
-
-#bottomButtons {
-    width: 53%;
-    height: 99%;
+    padding:2px;
 }
 
 #bottomPLPanel {
+    width: 58%;
     display:flex;
-    width: 47%;
-    height: 99%;
     border: 0px solid lightgray;
-    justify-content: flex-end;
-    justify-items: flex-end;
-    padding: 3px;
+    justify-content: space-evenly;
+    justify-items: space-evenly;
+    padding: 2px;
 }
 
-.plLabel {
-    width: 65px;
-    border: 0px solid lightgray;
-    text-align: right;
+label {    
     font-size: 14px;
-    vertical-align: top;
-    padding: 3px;
-}
-
-.plAmount {
-    width: 65px;
-    border: 0px solid lightgray;
-    text-align: left;
-    font-size: 14px;
-    vertical-align: top;
+    vertical-align: middle;
+    justify-items: center;
+    justify-content: center;
     padding: 3px;
 }
 
@@ -149,16 +125,14 @@ table {
 
 tr {
     background-color: #f2f2f2;
-    font-size: 12px;
     border-radius: 5px;
 }
 
 th, td {
-    padding: 4px;
+    padding: 3px;
     text-align: center;
     border: 1px solid #ddd;
-    font-size: 12px;
-
+    font-size: 13px;
 }
 
 th {
@@ -188,84 +162,41 @@ button:disabled {
     color: grey;
 }
 
-label {    
-    font-size: 14px;
-    vertical-align: middle;
-    justify-items: center;
+.smallbutton {
+    width: 15px;
+    height: 15px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all .2s ease-in-out;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    padding: 3px;
+    padding: 1px;
+    cursor: pointer;
 }
 
-.small_button {
+.smallbutton:hover {
+    background-color: #ddd;
+}
+
+.smallbutton.order {
+    color: #0e63e3;
+    border-color: #0e63e3;    
+}
+
+.smallbutton.buy {
     color: #00897b;
     border-color: #00897b;
-    width: 15px;
-    height: 15px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: all .2s ease-in-out;
-    display: flex;
-    justify-content: center;
-    padding: 1px 1px;
-    cursor: pointer;
 }
 
-.buy_button {
-    color: #00897b;
-    border-color: #00897b;
-    width: 15px;
-    height: 15px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: all .2s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1px;
-    cursor: pointer;
-}
-.sell_button{
+.smallbutton.sell{
     color: #d32f2f;
     border-color: #d32f2f;
-    width: 15px;
-    height: 15px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: all .2s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1px;
-    cursor: pointer;
 }
 
-.lot_select {
-    color: #d32f2f;
-    border-color: #d32f2f;
-    width: 40px;
-    height: 18px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: all .2s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1px;
-    cursor: pointer;
-}
-
-.icon.buy {
-    color: rgb(56, 103, 224);
-    border-color:rgb(56, 103, 224);
-    border: 0px solid rgb(56, 103, 224);
+.icon {
     border-radius: 2px;
     font-size: 10px;
     margin-right: 5px;
@@ -275,24 +206,23 @@ label {
     padding: 1px;
 }
 
+.icon.buy {
+    color: rgb(56, 103, 224);
+    border-color:rgb(56, 103, 224);
+    border: 0px solid rgb(56, 103, 224);
+}
+
 .icon.sell {
     color: #d32f2f;
     border-color: #d32f2f;
     border: 0px solid #d32f2f;
-    border-radius: 2px;
-    font-size: 10px;
-    margin-left: 5px;
-    transition: all .2s ease-in-out;
-    align-items: center;
-    justify-content: center;
-    padding: 1px;
 }
 
 select {
-    height: 20px;
+    height: 22px;
     padding: 2px;
     border: 1px solid #4CAF50;
-    border-radius: 3px;
+    border-radius: 4px;
     background-color: #e8f5e9;
     color: #2e7d32;
     font-size: 12px;
@@ -347,10 +277,10 @@ select:hover {
 }
 
 .hover-cell {
-    position: relative; /* 1. Sets the positioning context for the absolute div. */
-  }
+    position:relative;
+}
   
-  .hover-content {
+.hover-content {
     display: none; /* 2. Hides the div by default. */
     position: absolute; /* 3. Positions the div relative to its parent .hover-cell. */
     top: 15%; /* Adjust positioning as needed */
@@ -360,15 +290,15 @@ select:hover {
     width: 96px;
     border: 0px solid #ccc;
     justify-items:stretch;
-  }
+}
   
-  .hover-cell:hover .hover-content {
+.hover-cell:hover .hover-content {
     display: flex; /* 5. Shows the div when the parent .hover-cell is hovered. */
     justify-items:stretch;
     justify-content:space-evenly;
-  }
-  
-#message-container {
+}
+
+#floating-container {
     position: fixed;
     top: 25px;
     left: 600px;
@@ -386,6 +316,7 @@ select:hover {
     opacity: 0; /* Start hidden to use fade-in animation */
     transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
     transform: translateY(-20px); /* Optional: add a slight slide-in effect */
+    justify-content: center;
 }
 
 .orderwindow.buy {
@@ -409,4 +340,36 @@ select:hover {
     font-size: 14px;
     margin-left: 15px;
     margin-right: 5px;
+}
+
+.trade-buttons {
+    display: flex;
+}
+
+.orderlist {
+    position: fixed;
+    top: 450px;
+    left: 250px;
+    width: 150px;
+    z-index: 1000;
+    flex-direction: column;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: opacity 1.0s ease-in-out, transform 1.0s ease-in-out;
+    transform: translateY(-20px); /* Optional: add a slight slide-in effect */
+    justify-content: center;
+    background-color: dimgray;
+}
+
+.hidden {
+    display: none;
+}
+
+.orderlist-td {
+    padding: 2px;
+    text-align: center;
+    border: 0px solid #ddd;
+    font-size: 11px;
+    background-color: dimgray;
+    color: lightgray;
 }

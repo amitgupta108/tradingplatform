@@ -7,31 +7,20 @@
         <link rel="stylesheet" href="./styles.css">        
         <script type="text/javascript" src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
         <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-    </head>
 
+    </head>
     <body>
     <div id="container">
         <div id="leftContainer">
-
-            <div id="timerBar">
-                <label id="timer"></label>
-                <label id="atmiv"></label>
-            </div>         
+            <div id="timer"></div>
+            <!------------------------------------------------------------------------------------------------------------------------------>    
+            
             <div id="Exp1" class="tab-content active">
                 <div id="optionChain">  
                 <table id="ocTable">
-                    <thead>
-                        <tr>
-                            <th width="11%">IV</th>
-                            <th width="11%">Delta</th>
-                            <th width="12%">LTP</th>
-                            <th width="16%">CE</th>
-                            <th width="16%">PE</th>
-                            <th width="12%">LTP</th>
-                            <th width="11%">Delta</th>
-                            <th width="11%">IV</th>
-                        </tr>
-                    </thead>    
+                    <thead id="ocHead">
+                        <!-- <template id="ocheading"> -->
+                    </thead>
                     <tbody id="ocBody">
                         <tr>
                             <td><label id="CEIV"></label></td> 
@@ -39,22 +28,15 @@
                             <td><label id="CELTP"></label></td> 
                             
                             <td class="hover-cell">
-                                <label id="icon" class="icon"></label>
+                                <label class="icon"></label>
                                 <label id="CEStrike"></label>
-                                <div class="hover-content">
-                                    <button  id="buyCE" class="buy_button" onclick="orderOC(event, 'BUY', 'Call')">B</button>
-                                    <button  id="sellCE" class="sell_button" onclick="orderOC(event, 'SELL', 'Call')">S</button>                            
-                                </div>
-                                <label id='sym' hidden></label>
+                                <trade-buttons expiry="Expiry1" right="Call"></trade-buttons>
+                                <label hidden></label>
                             </td> 
-                            
                             <td class="hover-cell">
                                 <label class="icon"></label>
                                 <label id="PEStrike"></label>
-                                <div  class="hover-content">
-                                    <button  id="buyPE" class="buy_button" onclick="orderOC(event, 'BUY', 'Put')">B</button>
-                                    <button  id="sellPE" class="sell_button" onclick="orderOC(event, 'SELL', 'Put')">S</button>
-                                </div>
+                                <trade-buttons expiry="Expiry1" right="Put"></trade-buttons>
                                 <label hidden></label>
                             </td>
                             <td><label id="PELTP"></label</td>
@@ -65,21 +47,14 @@
                 </table> 
                 </div>
             </div>
+            <!------------------------------------------------------------------------------------------------------------------------------>    
+            
             <div id="Exp2" class="tab-content">
                 <div id="optionChain2">  
                     <table id="ocTable2">
-                        <thead>
-                            <tr>
-                                <th  style="background-color:#4f8ee7;" width="11%">IV</th>
-                                <th  style="background-color:#4f8ee7;" width="11%">Delta</th>
-                                <th  style="background-color:#4f8ee7;" width="12%">LTP</th>
-                                <th  style="background-color:#4f8ee7;" width="16%">CE</th>
-                                <th  style="background-color:#4f8ee7;" width="16%">PE</th>
-                                <th  style="background-color:#4f8ee7;" width="12%">LTP</th>
-                                <th  style="background-color:#4f8ee7;" width="11%">Delta</th>
-                                <th  style="background-color:#4f8ee7;" width="11%">IV</th>
-                            </tr>
-                        </thead>    
+                        <thead id="ocHead2">
+
+                        </thead>
                         <tbody id="ocBody2">
                             <tr>
                                 <td><label id="CEIV"></label></td> 
@@ -89,23 +64,15 @@
                                 <td class="hover-cell">
                                     <label class="icon"></label>
                                     <label id="CEStrike"></label>
-                                    <div class="hover-content">
-                                        <button  id="buyCE" class="buy_button" onclick="orderOC(event, 'BUY', 'Call')">B</button>
-                                        <button  id="sellCE" class="sell_button" onclick="orderOC(event, 'SELL', 'Call')">S</button>
-                                    </div>
+                                    <trade-buttons expiry="Expiry2" right="Call"></trade-buttons>
                                     <label hidden></label>
                                 </td> 
-                                
                                 <td class="hover-cell">
                                     <label class="icon"></label>
                                     <label id="PEStrike"></label>
-                                    <div  class="hover-content" >
-                                        <button  id="buyPE" class="buy_button" onclick="orderOC(event, 'BUY', 'Put')">B</button>
-                                        <button  id="sellPE" class="sell_button" onclick="orderOC(event, 'SELL', 'Put')">S</button>
-                                    </div>
+                                    <trade-buttons expiry="Expiry2" right="Put"></trade-buttons>
                                     <label hidden></label>
                                 </td>
-                                
                                 <td><label id="PELTP"></label</td>
                                 <td><label id="PEDELTA"></label></td>
                                 <td><label id="PEIV"></label></td>
@@ -115,88 +82,71 @@
                 </div>
             </div>
 
+            <!------------------------------------------------------------------------------------------------------------------------------>    
             <div class="tabs">
                 <div id="tabButton1" class="tab active-tab" onclick="switchExpiry(event, 'Exp1')">
-                    <label>Expiry 1</label>
-                    <div>
-                        <input type="number" id="tpt" name="tpt" style="width: 60px;padding:1px;">
-                    </div>
-                    <div id="wsc" class="small_button" onclick="wsconnect('connect')">></div>
-                    <div id="wsd" class="small_button" onclick="wsconnect('disconnect')">||</div>
-                    <div id="socn" class="small_button">@</div>
+                    <label>Expiry1</label>
+                    <input type="number" id="tpt" name="tpt" style="width: 60px;padding:1px;">
+                    <div id="wsc" class="smallbutton buy" onclick="wsconnect('connect')">></div>
+                    <div id="wsd" class="smallbutton buy" onclick="wsconnect('disconnect')">||</div>
+                    <div id="socn" class="smallbutton buy">@</div>
                 </div>
                 <div id="tabButton2" class="tab" onclick="switchExpiry(event, 'Exp2')">
-                    <label>Expiry 2</label>
-                    <div id="ocNxt" class="small_button" onclick="runOptionChainNxt(event)">></div>
+                    <label>Expiry2</label>
+                    <div id="ocNxt" class="smallbutton buy" onclick="runOptionChainNxt(event)">></div>
                 </div>
             </div>
             
+            <!------------------------------------------------------------------------------------------------------------------------------>                
             <div id="positions">    
             <table id="dataTable">
-            <thead>
-                <tr>
-                    <th width="9%">Expiry</th>
-                    <th width="9%">Strike</th>
-                    <th width="9%">CE/PE</th>
-                    <th colspan="2" width="20%">Booked</th>
-                    <th width="10%">Avg Price</th>
-                    <th width="10%">LTP</th>
-                    <th colspan="2" width="20%">Unbooked</th>
-                    <th width="13%">Total</th>
-                </tr>
-            </thead>    
-            <tbody id="tblBody">
-                <tr hidden title = "0">
-                    <td><label id="expiry"></label></input></td>
-                    <td><label id="strike"></label></input></td>
-                    <td><label id="right"></label></td>
-                    <td><label id="BQ"></label></td>
-                    <td><label id="BP"></label></td>
-                    <td><label id="AvgP"></label></td>
-                    <td><label id="LTP"></label></td>
-                    <td><label id="UQ"></label></td>
-                    <td><label id="UP"></label></td>
-                    <td class="hover-cell">
-                        <label id="totalPL"></label>
-                        <div  class="hover-content" >
-                            <button  id="buy" class="buy_button" onclick="orderPos(event, 'BUY')">B</button>
-                            <button  id="sell" class="sell_button" onclick="orderPos(event, 'SELL')">S</button>
-                        </div>
-                        <label hidden></label>
-                    </td>
-                </tr>
-            </tbody>
+                <thead>
+                    <tr>
+                        <th width="9%">Expiry</th>
+                        <th width="9%">Strike</th>
+                        <th width="9%">CE/PE</th>
+                        <th width="16%">Booked</th>                        
+                        <th width="10%">Avg Price</th>
+                        <th width="10%">LTP</th>
+                        <th colspan="2" width="21%">Unbooked</th>
+                        <th width="16%">Total</th>
+                    </tr>
+                </thead>    
+                <tbody id="tblBody">
+                    <tr hidden>
+                        <td><label id="expiry"></label></td>
+                        <td><label id="strike"></label></td>
+                        <td><label id="right"></label></td>
+                        <td style="display: flex; justify-content: space-between;">
+                            <label id="BP"></label>
+                            <button class="smallbutton order" onclick="displayOrders(event)">O</button>
+                        </td>
+                        <td><label id="AvgP"></label></td>
+                        <td><label id="LTP"></label></td>
+                        <td><label id="UQ"></label></td>
+                        <td><label id="UP"></label></td>
+                        <td class="hover-cell">
+                            <label id="totalPL"></label>
+                            <div  class="hover-content" >
+                                <button  id="buyPE" class="smallbutton buy" onclick="orderPos(event, 'BUY')">B</button>
+                                <button  id="sell" class="smallbutton sell" onclick="orderPos(event, 'SELL')">S</button>
+                            </div>
+                            <label hidden></label>
+                        </td>
+                    </tr>
+                </tbody>
             </table>   
             </div>
-<!--            <div id="futures">    
-                <table id="futurespositions">
-                    <tbody id="futurestblbody">
-                        <tr>
-                            <td class="hover-cell" width="10%">
-                                hover
-                                <div class="hover-content">
-                                    <button  id="buyFutures" class="buy_button" onclick="enterPosition(event)">B</button>
-                                    <button  id="sellFutures" class="sell_button" onclick="enterPosition(event)">S</button>
-                                </div>
-                            </td>
-                            <td width="10%">B / S</td>
-                            <td width="10%">Entry</td>
-                            <td width="10%">Exit</td>
-                            <td width="10%">Price</td>
-                            <td width="15%">P&L</td>
-                            <td width="10%">Actions</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        -->
+            <!------------------------------------------------------------------------------------------------------------------------------>    
+            
             <div id="bottomPanel">    
-                <div id="bottomButtons">
+                <div>
                     <button type="button" id="btnLoad" onclick="loadPreData()">Load</button>
                     <button type="button" id="btnStartSim" onclick="start()">Start</button>
                     <button type="button" id="btnStopSim" onclick="stopSimulation()">Stop</button>
                     <button type="button" id="btnResumeSim" onclick="resumeSimulation()">Resume</button>
-                    <button type="button" id="btnRefreshPositions" onclick="fetchPositions()">{P}</button>
+                    <button type="button" id="btnListPositions" onclick="listPositions()">{ P }</button>
+                    <button type="button" id="btnListOrders" onclick="listOrders()">{ O }</button>
                     <select id="optionSpeed" onchange="changeSpeed()">
                         <option value="1x">1x</option>
                         <option value="2x">2x</option>
@@ -206,15 +156,16 @@
                 </div>
 
                 <div id="bottomPLPanel">
-                    <label class="plLabel" id="bookedPL">Booked: </label>
-                    <label class="plAmount" id="vBookedPL">0.00</label>
-                    <label class="plLabel" id="unbookedPL">Unbooked: </label>
-                    <label class="plAmount" id="vUnbookedPL">0.00</label>
-                    <label class="plLabel" id="totalPL">Total: </label>
-                    <label class="plAmount" id="vTotalPL">0.00</label>
+                    <label  id="bookedPL">Booked: </label>
+                    <label  id="vBookedPL">0.00</label>
+                    <label  id="unbookedPL">Unbooked: </label>
+                    <label  id="vUnbookedPL">0.00</label>
+                    <label  id="totalPL">Total: </label>
+                    <label  id="vTotalPL">0.00</label>
                 </div>
             </div>
         </div>
+        <!------------------------------------------------------------------------------------------------------------------------------>    
 
         <div id="rightContainer">
             <div id="chartLinks" class="tabs">
@@ -227,7 +178,9 @@
             </div>
         </div>
     </div>  
-    <div id="message-container">
+    <!------------------------------------------------------------------------------------------------------------------------------>    
+
+    <div id="floating-container">
         <div id="orderwindow">
             <label id='owheading'></label>
             <label id='owaction' hidden></label>
@@ -236,51 +189,69 @@
             <table>
             <tbody>
                 <tr>
-                    <td>
-                        <div width="18%">
+                    <td width="18%">
                             <label>Price</label>
                             <label id="owprice"></label>
-                        </div>
                     </td>
-                    <td>
-                        <div width="24%">
+                    <td width="20%">
                             <label for="lotselect">Lot size</label>
                             <select id="lotselect">
                                 <option value="1">1</option>
                                 <option value="2">2</option>
                                 <option value="3">3</option>
                             </select>
-                        </div>
                     </td>
-                    <td>
-                        <div width="14%" >
+                    <td width="14%">
                             <label for="mkt">Market</label>
                             <input type="radio" id="mkt" name="type" value="MARKET">                                
-                        </div>
                     </td>
-                    <td>
-                        <div width="14%">
+                    <td width="14%">
                             <label for="lmt">Limit</label>
                             <input type="radio" id="lmt" name="type" value="LIMIT" checked>
-                        </div>
                     </td>
-                    <td>
-                        <div width="15%">
+                    <td width="20%">
                             <label for="lmtprice">Limit Price</label>
                             <input type="number" id="lmtprice" name="lmtprice" step="0.5"  style="width:40px;padding:3px;">
-                        </div>
                     </td>
-                    <td>
-                        <div width="15%">
+                    <td width="14%">
                             <button type="button" id="submit" onclick="submitOrder()">Order</button>
-                        </div>
                     </td>
                 </tr>
             </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 
+    <div id="order-list" class="orderlist hidden">
+        <table>
+        <tbody id="order-list-body">
+        </tbody>
+        </table>
+    </div>
+<!------------------------------------------------------------------------------------------------------------------------------>    
+<template id="oc-head-row">
+    <tr>
+        <th width="11%">IV</th>
+        <th width="11%">Delta</th>
+        <th width="12%">LTP</th>
+        <th width="16%">CE</th>
+        <th width="16%">PE</th>
+        <th width="12%">LTP</th>
+        <th width="11%">Delta</th>
+        <th width="11%">IV</th>
+    </tr>
+  </template>    
+  <template id="order-list-tr">
+    <tr>
+        <td class="orderlist-td" width="30%">Price</td>
+        <td class="orderlist-td" width="30%">Quatity</td>
+        <td class="orderlist-td" width="40%">Status</td>
+    </tr>
+</template>
+<!------------------------------------------------------------------------------------------------------------------------------>    
+
     <script src="../data.js"></script>
+    <script src="../load.js"></script>
     <script src="../helper.js"></script>
     <script src="../main.js"></script>
     <script src="../optionchain.js"></script>

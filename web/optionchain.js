@@ -49,20 +49,20 @@ class OptionChain
   #rowfill(n, q, rg)
   {
 
-    this.#value(n, 'iv', rg, q.iv);
-    this.#value(n, 'delta', rg, q.delta);
-    this.#value(n, 'price', rg, q.close.toFixed(2));
-    this.#value(n, 'strike', rg, q.strike_price);
-    this.#value(n, 'sym', rg, q.symbol);
+    this.value(n, 'iv', rg, q.iv.toFixed(2));
+    this.value(n, 'delta', rg, q.delta.toFixed(2));
+    this.value(n, 'price', rg, q.close.toFixed(2));
+    this.value(n, 'strike', rg, q.strike_price);
+    this.value(n, 'sym', rg, q.symbol);
 
     var p = Position.findPositionRow(q.symbol);
     if(p != undefined && p.value('unbookedQ') != 0)
-      this.#value(n, 'icon', rg, p.value('unbookedQ'), 1);
+      this.value(n, 'icon', rg, p.value('unbookedQ'), 1);
     else
-      this.#value(n, 'icon', rg, '');
+      this.value(n, 'icon', rg, '');
   }
 
-  #value(n, p, rg, nv = undefined, css = undefined)
+  value(n, p, rg, nv = undefined, css = undefined)
   {
     var i = Object.getOwnPropertyDescriptor(this.#m, p).value;
     var ci = Math.abs(i[0] + (rg === 'Call' ? 0 : -7));

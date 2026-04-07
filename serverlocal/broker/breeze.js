@@ -1,5 +1,5 @@
 const adapter = require('../adapter/histadapter');
-const qserver = require('../quotes');
+const utils = require('../../common/utils')
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
@@ -26,40 +26,35 @@ function changeSpeed(uid, speed)
     adapter.changeSpeed(uid, speed);
 }
 
-function order(p)
+function orderBook(uid, stockCode)
+{
+    return utils.filter(orders.values().toArray(), {uid: uid, stockCode: stockCode});
+}
+
+function order(uid, p)
 {
     var status = Date.now() % 11 === 0 ? 'failure' : 'success';
-    var response = {orderid: orderid, status: status};
+    var response = {uid: uid, orderid: orderid, status: status};
+    p.uid = uid;
     orders.set(orderid++, p);
 
     return response;
 }
 
-function orderstatus(orderid)
+function orderstatus(uid, orderid)
 {
     var order = orders.get(orderid);
     
-    var response = 'complete';
     if(order.status === 'failure')
-        response = 'submission failed';
-    var response = Date.now() % 20 === 0 ? 'rejected' : 'complete';
+        return order;
 
-    var status = {
-        action: order.action,
-        average_price: Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05,
-        exchange: order.exc,
-        order_status: response,
-        orderid: orderid,
-        price: 0,
-        pricetype: "MARKET",
-        product: "NRML",
-        quantity: Math.abs(order.quantity), //returning positive q as does the openalgo
-        filled_q: Math.abs(order.quantity),
-        symbol: order.symbol,
-        timestamp: order.time + 500,
-        trigger_price: 0,
-      }
-    return status;
+    order.average_price = Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05;
+    order.status = Date.now() % 20 === 0 ? 'rejected' : 'complete';
+    order.filled_q = order.status === 'rejected' ? 0: Math.abs(order.quantity);
+    order.timestamp = order.time + 125;
+    order.order_status = order.status; //same field name as in openalgo
+
+    return order;
 }
 
 function preU(p) {
@@ -97,6 +92,7 @@ module.exports = {
     preD,
     order,
     orderstatus,
+    orderBook,
     changeSpeed,
     disconnect
   };

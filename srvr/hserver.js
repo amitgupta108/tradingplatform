@@ -2,22 +2,6 @@ const sutils = require('./serverutils');
 const utils = require('../common/utils');
 const qserver = require('../serverlocal/quotes');
 
-var BreezeConnect = require('breezeconnect').BreezeConnect;
-require('console-stamp')(console, '[HH:MM:ss.l]');
-
-var appKey = "***REMOVED***";
-var appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-var sessionId = "55195931";
-
-var breeze = new BreezeConnect({ "appKey": appKey });
-
-breeze.generateSession(appSecret, sessionId)
-.then((resp) => {
-    console.log("Session created");
-}).catch((err) => {
-    console.log(err);
-});
-
 const userclocks = new Map();
 const subsRequests = new Array(0);
 const userqcollmap = new Map();
@@ -172,50 +156,39 @@ function q(uid, instrument, time)
 }
 
 function qw(st, instrument, time) {
-    var qs = getHistoricalData(st, instrument, time);
+    var qs = sutils.getHistoricalData(st, instrument, time);
 
     return qs.then((resp) => {
         return resp;   
     });
 }
 
-async function getHistoricalData(st, instrument, sTime, endTime, interval) 
+function getHistory(p, startTime, endTime, interval)
 {
-    var b = { exchangeCode: instrument.exchange };
-    b.interval = interval != undefined ? interval : '1second';
-    b.stockCode = instrument.stockCode;
-    b.strikePrice = instrument.strike;
-    b.right = instrument.right;
-    b.productType = instrument.right != undefined ? 'options' : 'futures';
-    b.expiryDate = instrument.exchange != 'NSE' ? sutils.formatExpiry(instrument.expiry) : undefined;
-    b.fromDate = sutils.ISODate(sTime);
-    b.toDate = endTime != undefined ? sutils.ISODate(endTime) : sutils.ISODate(sTime + ((16 * 60) * 1000));  
+    return sutils.getHistory(p, startTime, endTime, interval);
+}
 
-    utils.printObject(b);
-    try {
-        var resp = await breeze.getHistoricalDatav2(b);
+function wsLive(uid, list, action)
+{
+    if(action === 'subs')
+        sutils.wssub(list, (q) => {
+            wsmessage(uid, q);
+        });
+    else
+        sutils.wsunsub(list);
+}
 
-        if (resp.Status === 200 && resp.Success.length > 0) {
-            st.quotes = resp.Success;
-            st.state = 'ready to stream';
-            st.lastUpdated = sTime;
-            return st;
-         }
-        else
-            throw Error(resp.Error);
-    } catch (error) {
-        console.error("Error from breeze call " + error + '\n' + error.stack);
-        st.state = 'load failed';
-        st.lastUpdated = sTime;
-        return st;
-    }
+function wsmessage(uid, q)
+{
+    qserver.emitQuotes(uid, q, 'live');
 }
 
 module.exports = {
     connect,
-    getHistoricalData,
     subscribe,
     unsubscribe,
     changeSpeed,
-    disconnect
+    disconnect,
+    getHistory,
+    wsLive
 };

@@ -1,5 +1,7 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../quotes.js';
+import adapter from '../adapter/histadapter.js';
+
 
 var uidscripmapping = new Array(0);
 const connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
@@ -33,10 +35,14 @@ function onmessage(q)
 
 function subscribe(uid, sublist, action)
 {
+    var originalpath = sublist.filter((item) => item.source !== 'icicilive');
     if(action === 'subs')
-        client.subscribe_ltp(sublist, onmessage);
+        client.subscribe_ltp(originalpath, onmessage);
     else 
-        client.unsubscribe_ltp(sublist, onmessage);
+        client.unsubscribe_ltp(originalpath, onmessage);
+    
+    var redirectedpath = sublist.filter((item) => item.source === 'icicilive');
+    adapter.wsLive(uid, redirectedpath, action);
 }
 
 async function positionbook(uid, scrip)

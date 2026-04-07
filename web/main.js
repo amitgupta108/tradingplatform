@@ -1,5 +1,3 @@
-const positions = new Array(0);
-const optionChains = new Array(0);
 
 function emit(event, arg1, arg2) {
   socket.emit(event, arg1, arg2);
@@ -48,9 +46,14 @@ function stopSimulation()
   emit('stop', 'user action');
 }
 
-function fetchPositions()
+function listPositions()
 {
-  emit('positionbook', {uid: uuid, stockCode: instrument.stockCode});
+  emit('positionbook', {stockCode: instrument.stockCode});
+}
+
+function listOrders()
+{
+  emit('orderbook', {stockCode: instrument.stockCode});
 }
 
 function switchChart(evt, tabClicked, tabOther) 
@@ -114,6 +117,11 @@ function wsconnect(action){
   document.getElementById("tpt").value = "";
 
   var timer = action === 'connect' ? timer(action, 60000, true) : timer(action, 60000, false);
+}
+
+function listPositions(ps)
+{
+  emit('positionbook', instrument.stockCode);
 }
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;

@@ -1,12 +1,12 @@
-function orderOC(event, action, right)
+function orderOC(event, action, expiry, right)
 {
-  let btn = event.target;  
-  let row = btn.parentNode.parentNode.parentNode;
+  const oc = OptionChain.get(expiry);
 
-  let colStrikePrice = right === 'Call' ? 3 : 4;
-  let colLTP = right === 'Call' ? 2 : 5;
-  let symbol = row.cells[colStrikePrice].childNodes[6].innerText;
-  let cprice = row.children.item(colLTP).innerText;
+  let btn = event.target;  
+  let row = btn.parentNode.parentNode.parentNode.parentNode;
+
+  let symbol = oc.value(row.rowIndex - 1, 'sym', right);
+  let cprice = oc.value(row.rowIndex - 1, 'price', right);
 
   orderpanel(symbol, action, cprice)
 }
@@ -23,12 +23,14 @@ function orderPos(event, action)
 
 function orderpanel(symbol, action, cprice) 
 {
-    const container = document.getElementById('message-container');
+    const container = document.getElementById('floating-container');
     if (!container) return;
     container.style.display = "block";
 
     const ow = document.getElementById('orderwindow');
     ow.classList.remove('show');
+    var prevSymbol = document.getElementById("owsymbol").innerText;
+    qBox.removeEventListener(prevSymbol, orderPanelQuote);
     ow.classList.remove('orderwindow', action === 'BUY' ? 'sell' : 'buy');
     ow.classList.add('orderwindow', action === 'BUY' ? 'buy' : 'sell');
 
@@ -43,17 +45,23 @@ function orderpanel(symbol, action, cprice)
     
     closeBtn.onclick = () => {
         container.style.display = "none";
+        qBox
     };
 
     setTimeout(() => {
         ow.classList.add('show');
+        qBox.addEventListener(symbol, orderPanelQuote);
     }, 10);
+}
+
+function orderPanelQuote(event)
+{
+  if(event.type === document.getElementById("owsymbol").innerText)
+    document.getElementById("owprice").innerText = event.detail.close.toFixed(2);
 }
 
 function submitOrder() 
 {  
-  sOrderSubmit.play();
-
   var symbol = document.getElementById("owsymbol").innerText;
   var action = document.getElementById("owaction").innerText;
   var lots = document.getElementById("lotselect").value;
@@ -73,11 +81,34 @@ function submitOrder()
     p = new Position(symbol);
 
   p.order(neworder);
+  sOrderSubmit.play();
 }
 
-function orderquote(q) 
+function displayOrderList(event)
 {
-  var symbol = document.getElementById('owsymbol').innerText;
-  if(symbol === q.symbol)
-    document.getElementById('owprice').innerText = q.close;
+  let btn = event.target;  
+  let pRow = btn.parentNode.parentNode;
+  let symbol = pRow.title;
+
+  const row = document.getElementById('order-list-tr');
+  const p =  Position.findPositionRow(symbol);
+  
+  document.querySelector('#order-list-body').innerHTML = "";
+  p.orders.forEach((o) => {
+    var clone = document.importNode(row.content, true);
+    var newtr = clone.querySelector('tr');
+
+    newtr.childNodes[1].innerText = o.price;
+    newtr.childNodes[3].innerText = o.quantity;
+    newtr.childNodes[5].innerText = o.state;
+
+    document.querySelector('#order-list-body').append(newtr);
+  });
+}
+
+function displayOrders(event)
+{
+  displayOrderList(event);
+  const orderlistDiv = document.getElementById('order-list');
+  orderlistDiv.classList.toggle('hidden');
 }

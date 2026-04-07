@@ -8,7 +8,7 @@
             "name": "Launch Chrome",
             "request": "launch",
             "type": "chrome",
-            "url": "https://localhost:443/static/positions.html?instrument=ML",
+            "url": "https://localhost:449/static/positions.html?instrument=ML",
             "webRoot": "${workspaceFolder}"
         },
         {
@@ -19,9 +19,9 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/serverlocal/app.js",
-            "args": ["443", "arg2"],
+            "args": ["80", "arg2"],
             "outputCapture": "std"
-        }
+        },
         {
             "type": "node",
             "request": "launch",

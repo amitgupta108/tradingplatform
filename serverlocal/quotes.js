@@ -42,6 +42,7 @@ function standardizelq(q)
         var digit5 = Number.isFinite(Number(strike));
         q.strike_price = digit5 ? strike.slice(2, 7) : strike.slice(3, 7);
         q.expiry_date = digit5 ? q.symbol.slice(-14, -7) : q.symbol.slice(-13, -6);
+        q.stockCode = digit5 ? q.symbol.slice(0, -14) : q.symbol.slice(0, -13);
     }
     return q;
 } 

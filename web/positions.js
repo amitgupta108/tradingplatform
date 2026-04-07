@@ -69,10 +69,10 @@ function refreshPositionPL(p, price)
   writeProfitLoss();
 }
 
-function refreshPositions(ps)
+function loadPositions(ps)
 {
   ps.forEach(element => {
-    if(symboltoinstrument(element.symbol).stockCode === instrument.stockCode)
+    if(symtoinstrument(element.symbol).stockCode === instrument.stockCode)
     {
       var p = new Position(element.symbol);
       p.orders = [{
@@ -87,19 +87,42 @@ function refreshPositions(ps)
   });
 }
 
+function listOrders(orders)
+{
+  orders.forEach((order) => {
+    if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
+    {
+      var p = positions.find((e) => e.symbol === order.symbol);
+      if(p === undefined)
+      {
+        p = new Position(order.symbol);
+        p.orders.push(order);
+      }
+      else
+      {
+        var existing = p.orders.find((o) => o.orderid === order.orderid);
+        if(existing !== undefined)
+          existing.recon = true;
+        else
+          p.orders.push(order);
+      }
+      //refreshPositionPL(p, element.ltp);
+    }
+  });
+}
+
 class Position
 {
   #pRow; 
   #m = {expiry: [0, 0, 's'],
     strike: [1, 0, 'n'],
     right: [2, 0, 's'],
-    bookedQ: [3, 0, 'n'],
-    bookedPL: [4, 0, 'n'],
-    averageP: [5, 0, 'n'],
-    LTP: [6, 0, 'n'],
-    unbookedQ: [7, 0, 'n'],
-    unbookedPL: [8, 0, 'n'],
-    totalPL: [9, 1, 'n']
+    bookedPL: [3, 1, 'n'],
+    averageP: [4, 0, 'n'],
+    LTP: [5, 0, 'n'],
+    unbookedQ: [6, 0, 'n'],
+    unbookedPL: [7, 0, 'n'],
+    totalPL: [8, 1, 'n']
   };
   orders = new Array(0);
   orderN = 0;
@@ -129,6 +152,7 @@ class Position
 
   order(neworder)
   {
+    neworder.stockCode = instrument.stockCode;
     neworder.orderN = ++this.orderN;
     neworder.time = Date.now();
     neworder.state = 'opened';
@@ -163,7 +187,7 @@ class Position
     }
     else //unmapped status from kotak - open
       console.log('matched order state ignored ' + exorder.orderid + ' ' + exorder.order_status);
-    this.value('bookedQ', o.state);
+    this.value('bookedPL', o.state);
   }
 
   wsorderupdate(ordermsg){
@@ -194,7 +218,7 @@ class Position
     }
     else //unmapped status from kotak - open
       console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
-    this.value('bookedQ', o.state);
+    this.value('bookedPL', o.state);
 
   }
   

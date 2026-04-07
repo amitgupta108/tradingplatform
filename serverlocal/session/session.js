@@ -17,7 +17,7 @@ class Session
             {key: 'occrnt', toStream: true, atm: 25000},
             {key: 'ocnxt', toStream: false, atm: 25000},
             {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: true,
-             symbol: 'INDVIX', streamState: 'initialized', },
+             symbol: 'INDVIX', streamState: 'initialized', source:'icicilive'},
         ];
         us.push(this);
     }

@@ -17,7 +17,7 @@ console.log(`Script file path: ${args[1]}`);
 console.log(`First argument: ${args[2]}`);
 console.log(`Second argument: ${args[3]}`);
 
-var port = args[2] === undefined ? 443 : Number(args[2]);
+var port = args[2] === undefined ? 80 : Number(args[2]);
 
 const es = session({secret: '***REMOVED***', 
         resave: true,

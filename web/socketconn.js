@@ -1,15 +1,3 @@
-var uQuoteGl;
-
-socket = io(`https://localhost:${window.location.port}`, {
-  auth: {
-    token: uuid,
-    mode: instrument.mode,
-    stock: instrument.stockCode
-  },
-  timeout: 60000,
-  reconnectionDelay: 5000,
-  reconnectionDelayMax: 5000,
-});
 rh(socket);
 
 function rh(socket)
@@ -23,7 +11,7 @@ function rh(socket)
   });
 
   socket.on('futuresPreData', (fQuotes) => {
-    setFuturesChart(fQuotes.quotes);
+    setFuturesChart(fQuotes);
   });
 
   socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
@@ -45,9 +33,9 @@ function rh(socket)
     });
 
     var lt = new Date(q.ltt);
-    timerText.innerHTML = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
+    timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
   });
-
+  
   socket.on('vix', (q) => {
     if(q !== undefined)
       qBox.dispatchEvent(generateEvent('vix', q));
@@ -57,7 +45,7 @@ function rh(socket)
     if(fQuote != undefined)
     {
       futuresChart(fQuote);
-      document.title = fQuote.symbol + " " + fQuote.close.toFixed(2);
+      document.title = "Futures " + fQuote.close.toFixed(2);
     }
   });
 
@@ -70,14 +58,18 @@ function rh(socket)
       
       OptionChain.update(q);
 
-      orderquote(q);
+      qBox.dispatchEvent(generateEvent(q.symbol, q));
     } catch(error) {
       console.log(error);
     }
   });
   
   socket.on('positionbook', (response) => {
-    refreshPositions(response.data);
+    listOrders(response);
+  });
+
+  socket.on('orderbook', (response) => {
+    refreshPositions(response);
   });
 
   socket.on('orderconf', (response) => {

@@ -81,7 +81,7 @@ function symtoinstrument(symbol)
   var digit5 = Number.isFinite(Number(stk));
   var strike = digit5 ? stk.slice(2, 7) : stk.slice(3, 7);
   var expiry = digit5 ? symbol.slice(-14, -7) : symbol.slice(-13, -6);
-  var stockCode = symbol.slice(-14);
+  var stockCode = digit5 ? symbol.slice(0, -14) : symbol.slice(0, -13);
 
   var instrument = {
     stockCode: stockCode,
@@ -97,7 +97,7 @@ function generateEvent(type, nv)
 {
   return new CustomEvent(type, {
 
-    detail: { ov: ov, nv: nv },
+    detail: nv,
     bubbles: true,   // Allow the event to bubble up the DOM
     cancelable: true // Allow event.preventDefault()
   });

@@ -5,11 +5,11 @@ function connect(uid, time) {
 }
 
 function disconnect(uid) {
-    historyserver.disconnect(uid, time);
+    historyserver.disconnect(uid);
 }
 
 function getHistoricalQuotes(p, startTime, endTime, interval) {
-    return historyserver.getHistoricalData(p, startTime, endTime, interval);
+    return historyserver.getHistory(p, startTime, endTime, interval);
 }
 
 function subscribe(uid, instruments, action, speed) 
@@ -34,10 +34,16 @@ function changeSpeed(uid, speed)
     historyserver.changeSpeed(uid, speed);
 }
 
+function wsLive(uid, list, action)
+{
+    historyserver.wsLive(uid, list, action);
+}
+
 module.exports = {
     connect,
     getHistoricalQuotes,
     subscribe,
     changeSpeed,
-    disconnect
+    disconnect,
+    wsLive
 };

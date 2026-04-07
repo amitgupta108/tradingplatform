@@ -48,16 +48,17 @@ async function handleMessage(sn, event, msg)
                 fst.toStream = msg === 'start' ? true : false;
                 break
             case 'order':
-                var orsub = await bserver.order(msg);
+                var orsub = await bserver.order(sn.uid, msg);
                 msg.orderid = orsub.orderid;
                 msg.status = orsub.status;
                 emit(sn.uid, "orderconf", msg);
             
                 var ordconf = sn.mode === 1 ? 'liveorder' : 'simorder';
-                emit(sn.uid, ordconf, await bserver.orderstatus(orsub.orderid));
+                emit(sn.uid, ordconf, await bserver.orderstatus(sn.uid, orsub.orderid));
                 break;
             case 'positionbook':
-                iKNeo.positionbook(uid, stockcode)
+                var response = await bserver.orderBook(sn.uid, msg);
+                emit(sn.uid, event, response);
                 break;
             case 'wsOps':
                 var response = await ordersocket.wsOps(sn.uid, msg.action, msg.data);
