@@ -3,17 +3,17 @@ const utils = require('./../common/utils');
 const Session = require('./session/session');
 const socketmap = new Map();
 
-function emitQuotes(uid, q, mode)
+function emitQuotes(uid, q, source)
 { 
-    if(mode === 'history')
-        standardizehq(q);
+    if(source.startsWith('icici'))
+        standardizeiq(q);
     else
-        standardizelq(q);
+        standardizeoq(q);
 
     emitQs(uid, q);
 }
 
-function standardizehq(q) 
+function standardizeiq(q) 
 {
     q['exchange'] = q['exchange_code'];
     q['type'] = q['product_type'];
@@ -31,7 +31,7 @@ function standardizehq(q)
     return q;
 }
 
-function standardizelq(q) 
+function standardizeoq(q) 
 {
     q.close = q.ltp;
     q.exchange = q.exchange === 'NSE_INDEX' ? 'NSE' : q.exchange;

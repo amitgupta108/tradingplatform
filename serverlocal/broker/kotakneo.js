@@ -30,7 +30,7 @@ function disconnect(cuid, scrip)
 
 function onmessage(q)
 { 
-    qserver.emitQuotes(uid, q, 'live');
+    qserver.emitQuotes(uid, q, 'openalgo');
 }
 
 function subscribe(uid, sublist, action)
@@ -50,10 +50,14 @@ async function positionbook(uid, scrip)
     return await client.positionbook();
     //split positionbook
 }
-   
-async function order(p)
+ 
+async function orderbook(uid, scrip)
 {
-    var submittime = Date.now();
+    return await client.orderbook();
+}
+
+async function order(uid, p)
+{
     if(p.type === 'LIMIT' && Number(p.price) < 2)
         throw Error('Limit price close to 0');
 
@@ -67,14 +71,11 @@ async function order(p)
         price: p.price === '' ? 0 : p.price,
         quantity: Math.abs(p.quantity)
     });
-    var conftime = Date.now();
 
-    response.ctime = conftime;
-    response.stime = submittime;
     return response;
 }
 
-async function orderstatus(orderid)
+async function orderstatus(uid, orderid)
 {
     var status = await client.orderStatus({orderid: orderid,
             orderId: orderid
@@ -87,4 +88,4 @@ function quotes(symbol, exchange){
     return client.quotes({symbol: symbol, exchange: exchange});
 }
 
-export { connect, order, quotes, subscribe, positionbook, orderstatus, disconnect };
+export { connect, order, quotes, subscribe, positionbook, orderbook, orderstatus, disconnect };

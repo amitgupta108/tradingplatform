@@ -1,7 +1,6 @@
 function writeProfitLoss()
 {  
-  let bookedPL = 0;
-  let unbookedPL = 0;
+  let bookedPL = 0; let unbookedPL = 0;
 
   for (let i = 0; i < positions.length ; i++)
   {
@@ -12,61 +11,6 @@ function writeProfitLoss()
   document.getElementById("vBookedPL").innerText = bookedPL.toFixed(2);
   document.getElementById("vUnbookedPL").innerText = unbookedPL.toFixed(2);
   document.getElementById("vTotalPL").innerText = (bookedPL + unbookedPL).toFixed(2);
-}
-
-function refreshPositionPL(p, price) 
-{
-  var buyq = 0; var sellq = 0;
-  var buyv = 0; var sellv = 0;
-  
-  p.orders.map((o) => 
-  {  
-    if(o.state === 'completed')
-    {
-      if(o.quantity > 0)
-      {
-        buyq += o.filled_q;
-        buyv += o.filled_q * o.price;
-      }  
-      else if(o.quantity < 0)
-      {
-        sellq += o.filled_q;
-        sellv += o.filled_q * o.price;
-      }
-    }
-  });
-
-  var abp = buyv / (buyq === 0 ? 1 : buyq);
-  var asp = sellv / (sellq === 0 ? 1 : sellq);
-  var psize = buyq + sellq;
-  var bookedPL = 0;
-  var unbookedPL = 0;
-
-  if(psize === 0) {
-    bookedPL = (Math.abs(sellv) - buyv);
-    unbookedPL = 0;
-  }
-  else if (psize > 0) {
-    bookedPL = (asp - abp) * sellq;
-    unbookedPL = (price - abp) * Math.abs(psize);
-  }
-  else {
-    bookedPL = (asp - abp) * buyq;
-    unbookedPL = (asp - price) * Math.abs(psize);
-  }
-  
-  var totalPL = bookedPL + unbookedPL;
-  var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
-
-  p.value('bookedPL', bookedPL.toFixed(2));
-  p.value('averageP', avgopnpr.toFixed(2));
-  p.value('LTP', (price).toFixed(2));
-
-  p.value('unbookedQ', psize);
-  p.value('unbookedPL', unbookedPL.toFixed(2));
-  p.value('totalPL', totalPL.toFixed(2));
-
-  writeProfitLoss();
 }
 
 function loadPositions(ps)
@@ -87,42 +31,19 @@ function loadPositions(ps)
   });
 }
 
-function listOrders(orders)
-{
-  orders.forEach((order) => {
-    if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
-    {
-      var p = positions.find((e) => e.symbol === order.symbol);
-      if(p === undefined)
-      {
-        p = new Position(order.symbol);
-        p.orders.push(order);
-      }
-      else
-      {
-        var existing = p.orders.find((o) => o.orderid === order.orderid);
-        if(existing !== undefined)
-          existing.recon = true;
-        else
-          p.orders.push(order);
-      }
-      //refreshPositionPL(p, element.ltp);
-    }
-  });
-}
-
 class Position
 {
   #pRow; 
   #m = {expiry: [0, 0, 's'],
     strike: [1, 0, 'n'],
     right: [2, 0, 's'],
-    bookedPL: [3, 1, 'n'],
-    averageP: [4, 0, 'n'],
-    LTP: [5, 0, 'n'],
-    unbookedQ: [6, 0, 'n'],
-    unbookedPL: [7, 0, 'n'],
-    totalPL: [8, 1, 'n']
+    bookedQ: [3, 0, 'n'],
+    bookedPL: [4, 1, 'n'],
+    averageP: [5, 0, 'n'],
+    LTP: [6, 0, 'n'],
+    unbookedQ: [7, 0, 'n'],
+    unbookedPL: [8, 0, 'n'],
+    totalPL: [9, 1, 'n']
   };
   orders = new Array(0);
   orderN = 0;
@@ -134,13 +55,35 @@ class Position
     this.#pRow = addRow(symbol);
     
     var scrip = symtoinstrument(symbol);
-
     this.value('expiry', scrip.expiry);
     this.value('strike', scrip.strike);
     this.value('right', scrip.right === 'CE' ? 'Call' : 'Put');
 
     this.#pRow.style.display = "table-row";
     positions.push(this);
+    qBox.addEventListener('strikex', this);
+  }
+
+  handleEvent(event)
+  {
+    var q = event.detail;
+    
+    if(q.symbol !== this.symbol)
+      return;
+
+    var prevQ = Number(this.value('LTP'));
+    this.value('LTP', (q.close).toFixed(2));
+
+    if(Number(this.value('unbookedQ')) === 0)
+      return;
+    
+    var prevPL = Number(this.value('unbookedPL'));
+    var psize = Number(this.value('unbookedQ'));
+
+    this.value('unbookedPL', (prevPL + (q.close - prevQ) * psize).toFixed(2));
+    this.value('totalPL', Number(this.value('unbookedPL')) + Number(this.value('bookedPL')).toFixed(2));
+    
+    writeProfitLoss();
   }
 
   value(p, v = undefined){
@@ -161,13 +104,6 @@ class Position
     emit('order', neworder);
   }
 
-  findorders(state)
-  {
-    return this.orders.filter((e) => {
-      return e.state === state;
-    });
-  }
-
   orderupdate(exorder){
     var o = this.orders.find((e) => e.orderid === exorder.orderid);
     if(exorder.order_status === 'complete')
@@ -176,18 +112,18 @@ class Position
       o.price = exorder.average_price;
       o.extime = exorder.timestamp;
       o.filled_q = exorder.filled_q * (o.action === 'BUY' ? 1 : -1);
-      //refreshPositionPL(this, o.price);
+      this.pnlUpdate();
     }
-    else if(['modified', 'open', 'rejected', 'cancelled'].includes(exorder.order_status) )
+    else if(['modified'].includes(exorder.order_status) )
     {
       o.state = exorder.order_status;
-      //o.quantity = ordermsg.qty;
-      //o.type = ordermsg.prcTp === 'L' ? 'LIMIT' : 'MARKET';
-      //o.price = Number(ordermsg.prc)
+      o.type = exorder.prcTp === 'L' ? 'LIMIT' : 'MARKET';
+      o.price = Number(exorder.prc)
     }
-    else //unmapped status from kotak - open
+    else if(['open', 'rejected', 'cancelled'].includes(exorder.order_status) )
+      o.state = exorder.order_status === 'open'? 'opened' : exorder.order_status;
+    else
       console.log('matched order state ignored ' + exorder.orderid + ' ' + exorder.order_status);
-    this.value('bookedPL', o.state);
   }
 
   wsorderupdate(ordermsg){
@@ -204,6 +140,7 @@ class Position
       o.extime = ordermsg.exCfmTm;
       o.filled_q = Number(ordermsg.fldQty) * (o.action === 'BUY' ? 1 : -1);
       o.unfilled_q = ordermsg.unFldSz;
+      this.pnlUpdate();
     }
     else if(['open', 'rejected', 'cancelled'].includes(ordermsg.ordSt))
     {
@@ -218,10 +155,64 @@ class Position
     }
     else //unmapped status from kotak - open
       console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
-    this.value('bookedPL', o.state);
-
   }
   
+  pnlUpdate() 
+  {
+    var buyq = 0; var sellq = 0;
+    var buyv = 0; var sellv = 0;
+    
+    this.orders.map((o) => 
+    {  
+      if(o.state === 'completed')
+      {
+        if(o.quantity > 0)
+        {
+          buyq += Number(o.filled_q);
+          buyv += Number(o.filled_q) * Number(o.price);
+        }  
+        else if(o.quantity < 0)
+        {
+          sellq += Number(o.filled_q);
+          sellv += Number(o.filled_q) * Number(o.price);
+        }
+      }
+    });
+
+    var abp = Number(buyv / (buyq === 0 ? 1 : buyq).toFixed(2));
+    var asp = Number(sellv / (sellq === 0 ? 1 : sellq).toFixed(2));
+    var psize = buyq + sellq;
+    var bookedPL = 0;
+    var unbookedPL = 0;
+    var price = Number(this.orders.at(-1).price);
+
+    if(psize === 0) {
+      bookedPL = (Math.abs(sellv) - buyv);
+      unbookedPL = 0;
+    }
+    else if (psize > 0) {
+      bookedPL = (asp - abp) * sellq;
+      unbookedPL = (price - abp) * Math.abs(psize);
+    }
+    else {
+      bookedPL = (asp - abp) * buyq;
+      unbookedPL = (asp - price) * Math.abs(psize);
+    }
+    
+    var totalPL = bookedPL + unbookedPL;
+    var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
+
+    this.value('bookedQ', Math.min(Math.abs(sellq), buyq));
+    this.value('bookedPL', bookedPL.toFixed(2));
+    this.value('averageP', avgopnpr.toFixed(2));
+    this.value('LTP', price);
+    this.value('unbookedQ', psize);
+    this.value('unbookedPL', unbookedPL.toFixed(2));
+    this.value('totalPL', totalPL);
+
+    writeProfitLoss();
+  }
+
   static findPositionRow(symbol)
   {
     return positions.find((e) =>

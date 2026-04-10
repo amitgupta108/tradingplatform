@@ -55,12 +55,17 @@ io.use((s, next) => {
     var stockCode = s.handshake.auth.stockCode;
     
     if(mode === 1)
-        if(liveStocks.includes(stockCode))
-            next(new Error('Live mode for this not available'));
-        else
-            liveStocks.push(stockCode);
+    {
+        var usrstpair = liveStocks.find((c) => {c.stockCode === stockCode});
+
+        if(usrstpair === undefined) {
+            liveStocks.push({uid: uid, stockCode: stockCode});
+        }
+        else if (usrstpair.uid !== uid)
+            next(new Error('Live mode for this user not available'));
+    }
     next();
-})
+});
 //io.use(es);
 
 io.on('connection', (s) => {
@@ -78,11 +83,11 @@ io.on('connection', (s) => {
     } else
     {
         var rStatus = s.recovered ? 'recovered' : 'restored';
-        s.emit(rStatus, uid);
+        s.emit('prevsession', {uid: uid, socket: rStatus});
     }
     s.onAny((event, msg) => {
         console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(sn, event, msg);
+        apiserver.handleMessage(sn, event, msg, freeLiveStock);
     });
 
     s.on("disconnect", (reason) => {
@@ -90,14 +95,17 @@ io.on('connection', (s) => {
             'server shutting down', 'transport close', 'transport error'].includes(reason))
         {
             console.log("socket disconnected  " + reason);
-            apiserver.disconnect(uid, mode);
-            Session.destroy(uid);
-            qserver.socketmap.delete(uid);
-            
-            if(mode === 1){
-                var idx = liveStocks.findIndex((e) => e === stockCode);
-                liveStocks.splice(idx, 1);
-            }
         }
     });
 });
+
+function freeLiveStock(uid, mode)
+{
+    var s = qserver.socketmap.get(uid);
+    var stockCode = s.handshake.auth.stockCode;
+    if(mode === 1){
+        var idx = liveStocks.findIndex((c) => c.stockCode === stockCode);
+        if(idx !== -1)
+            liveStocks.splice(idx, 1);
+    }
+}

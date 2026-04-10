@@ -29,8 +29,7 @@ function orderpanel(symbol, action, cprice)
 
     const ow = document.getElementById('orderwindow');
     ow.classList.remove('show');
-    var prevSymbol = document.getElementById("owsymbol").innerText;
-    qBox.removeEventListener(prevSymbol, orderPanelQuote);
+    qBox.removeEventListener('strikex', orderPanelQuote);
     ow.classList.remove('orderwindow', action === 'BUY' ? 'sell' : 'buy');
     ow.classList.add('orderwindow', action === 'BUY' ? 'buy' : 'sell');
 
@@ -50,13 +49,13 @@ function orderpanel(symbol, action, cprice)
 
     setTimeout(() => {
         ow.classList.add('show');
-        qBox.addEventListener(symbol, orderPanelQuote);
+        qBox.addEventListener('strikex', orderPanelQuote);
     }, 10);
 }
 
 function orderPanelQuote(event)
 {
-  if(event.type === document.getElementById("owsymbol").innerText)
+  if(event.detail.symbol === document.getElementById("owsymbol").innerText)
     document.getElementById("owprice").innerText = event.detail.close.toFixed(2);
 }
 
@@ -98,7 +97,7 @@ function displayOrderList(event)
     var clone = document.importNode(row.content, true);
     var newtr = clone.querySelector('tr');
 
-    newtr.childNodes[1].innerText = o.price;
+    newtr.childNodes[1].innerText = o.average_price;
     newtr.childNodes[3].innerText = o.quantity;
     newtr.childNodes[5].innerText = o.state;
 
@@ -111,4 +110,32 @@ function displayOrders(event)
   displayOrderList(event);
   const orderlistDiv = document.getElementById('order-list');
   orderlistDiv.classList.toggle('hidden');
+}
+
+
+function loadOrders(response)
+{
+  response.orders.forEach((order) => {
+    if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
+    {
+      order.state = order.order_status === 'complete' ? 'completed' : order.order_status;
+      order.average_price = order.price;
+      
+      var p = positions.find((e) => e.symbol === order.symbol);
+      if(p === undefined)
+      {
+        p = new Position(order.symbol);
+        p.orders.push(order);
+      }
+      else
+      {
+        var existing = p.orders.find((o) => o.orderid === order.orderid);
+        if(existing !== undefined)
+          existing.recon = true;
+        else
+          p.orders.push(order);
+      }
+      //refreshPositionPL(p, element.ltp);
+    }
+  });
 }

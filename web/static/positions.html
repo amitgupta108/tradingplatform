@@ -22,27 +22,7 @@
                         <!-- <template id="ocheading"> -->
                     </thead>
                     <tbody id="ocBody">
-                        <tr>
-                            <td><label id="CEIV"></label></td> 
-                            <td><label id="CEDelta"></label></td> 
-                            <td><label id="CELTP"></label></td> 
-                            
-                            <td class="hover-cell">
-                                <label class="icon"></label>
-                                <label id="CEStrike"></label>
-                                <trade-buttons expiry="Expiry1" right="Call"></trade-buttons>
-                                <label hidden></label>
-                            </td> 
-                            <td class="hover-cell">
-                                <label class="icon"></label>
-                                <label id="PEStrike"></label>
-                                <trade-buttons expiry="Expiry1" right="Put"></trade-buttons>
-                                <label hidden></label>
-                            </td>
-                            <td><label id="PELTP"></label</td>
-                            <td><label id="PEDELTA"></label></td>
-                            <td><label id="PEIV"></label></td>
-                        </tr>
+                        <!-- <template id="option-chain-row"> -->
                     </tbody>
                 </table> 
                 </div>
@@ -53,30 +33,10 @@
                 <div id="optionChain2">  
                     <table id="ocTable2">
                         <thead id="ocHead2">
-
+                            <!-- <template id="ocheading"> -->
                         </thead>
                         <tbody id="ocBody2">
-                            <tr>
-                                <td><label id="CEIV"></label></td> 
-                                <td><label id="CEDelta"></label></td> 
-                                <td><label id="CELTP"></label></td> 
-                                
-                                <td class="hover-cell">
-                                    <label class="icon"></label>
-                                    <label id="CEStrike"></label>
-                                    <trade-buttons expiry="Expiry2" right="Call"></trade-buttons>
-                                    <label hidden></label>
-                                </td> 
-                                <td class="hover-cell">
-                                    <label class="icon"></label>
-                                    <label id="PEStrike"></label>
-                                    <trade-buttons expiry="Expiry2" right="Put"></trade-buttons>
-                                    <label hidden></label>
-                                </td>
-                                <td><label id="PELTP"></label</td>
-                                <td><label id="PEDELTA"></label></td>
-                                <td><label id="PEIV"></label></td>
-                            </tr>
+                            <!-- <template id="option-chain-row"> -->
                         </tbody>
                     </table> 
                 </div>
@@ -90,6 +50,10 @@
                     <div id="wsc" class="smallbutton buy" onclick="wsconnect('connect')">></div>
                     <div id="wsd" class="smallbutton buy" onclick="wsconnect('disconnect')">||</div>
                     <div id="socn" class="smallbutton buy">@</div>
+                    <label class="switch">
+                        <input type="checkbox" id="toggleAction">
+                        <span class="slider round"></span>
+                      </label>
                 </div>
                 <div id="tabButton2" class="tab" onclick="switchExpiry(event, 'Exp2')">
                     <label>Expiry2</label>
@@ -105,10 +69,10 @@
                         <th width="9%">Expiry</th>
                         <th width="9%">Strike</th>
                         <th width="9%">CE/PE</th>
-                        <th width="16%">Booked</th>                        
+                        <th colspan="2" width="21%">Booked</th>                        
                         <th width="10%">Avg Price</th>
                         <th width="10%">LTP</th>
-                        <th colspan="2" width="21%">Unbooked</th>
+                        <th colspan="2" width="16%">Unbooked</th>
                         <th width="16%">Total</th>
                     </tr>
                 </thead>    
@@ -117,7 +81,8 @@
                         <td><label id="expiry"></label></td>
                         <td><label id="strike"></label></td>
                         <td><label id="right"></label></td>
-                        <td style="display: flex; justify-content: space-between;">
+                        <td><label id="BQ"></label></td>
+                        <td style="display: flex; justify-content: space-evenly;">
                             <label id="BP"></label>
                             <button class="smallbutton order" onclick="displayOrders(event)">O</button>
                         </td>
@@ -128,8 +93,9 @@
                         <td class="hover-cell">
                             <label id="totalPL"></label>
                             <div  class="hover-content" >
-                                <button  id="buyPE" class="smallbutton buy" onclick="orderPos(event, 'BUY')">B</button>
-                                <button  id="sell" class="smallbutton sell" onclick="orderPos(event, 'SELL')">S</button>
+                                <button  class="smallbutton buy" onclick="orderPos(event, 'BUY')">B</button>
+                                <button  class="smallbutton sell" onclick="orderPos(event, 'SELL')">S</button>
+                                <button  class="smallbutton order" onclick="orderPos(event, 'EXIT')">E</button>
                             </div>
                             <label hidden></label>
                         </td>
@@ -145,8 +111,8 @@
                     <button type="button" id="btnStartSim" onclick="start()">Start</button>
                     <button type="button" id="btnStopSim" onclick="stopSimulation()">Stop</button>
                     <button type="button" id="btnResumeSim" onclick="resumeSimulation()">Resume</button>
-                    <button type="button" id="btnListPositions" onclick="listPositions()">{ P }</button>
                     <button type="button" id="btnListOrders" onclick="listOrders()">{ O }</button>
+                    <button type="button" id="btnExit" onclick="exit()">Exit</button>
                     <select id="optionSpeed" onchange="changeSpeed()">
                         <option value="1x">1x</option>
                         <option value="2x">2x</option>
@@ -185,6 +151,10 @@
             <label id='owheading'></label>
             <label id='owaction' hidden></label>
             <label id='owsymbol' hidden></label>
+            <label class="switch">
+                <input type="checkbox" id="toggleAction">
+                <span class="slider round"></span>
+              </label>
             <span id="closeBtn" class="close-btn">x</span>
             <table>
             <tbody>
@@ -246,6 +216,29 @@
         <td class="orderlist-td" width="30%">Price</td>
         <td class="orderlist-td" width="30%">Quatity</td>
         <td class="orderlist-td" width="40%">Status</td>
+    </tr>
+</template>
+<template id="option-chain-row">
+    <tr>
+        <td><label id="CEIV"></label></td> 
+        <td><label id="CEDelta"></label></td> 
+        <td><label id="CELTP"></label></td> 
+        
+        <td class="hover-cell">
+            <label class="icon"></label>
+            <label id="CEStrike"></label>
+            <trade-buttons expiry="Expiry1" right="Call"></trade-buttons>
+            <label hidden></label>
+        </td> 
+        <td class="hover-cell">
+            <label class="icon"></label>
+            <label id="PEStrike"></label>
+            <trade-buttons expiry="Expiry1" right="Put"></trade-buttons>
+            <label hidden></label>
+        </td>
+        <td><label id="PELTP"></label</td>
+        <td><label id="PEDELTA"></label></td>
+        <td><label id="PEIV"></label></td>
     </tr>
 </template>
 <!------------------------------------------------------------------------------------------------------------------------------>    

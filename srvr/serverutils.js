@@ -6,16 +6,16 @@ const sb = require('./binarysearch');
 
 const appKey = "***REMOVED***";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55226382";
+const sessionId = "55250650";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
-breeze.generateSession(appSecret, sessionId)
-.then((resp) => {
-    console.log("Session created");
-}).catch((err) => {
-    console.log(err);
-});
+    breeze.generateSession(appSecret, sessionId)
+    .then((resp) => {
+        console.log("Session created");
+    }).catch((err) => {
+        console.log(err);
+    });
 
 function findQuoteByTime(q, lt)
 {

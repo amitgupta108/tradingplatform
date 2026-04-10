@@ -62,7 +62,8 @@ function addRow(symbol) {
 
 function createOCTable(oTblBody, nStrikes)
 {
-  var rows = oTblBody.getElementsByTagName('tr');
+  const tblBody = document.getElementById(oTblBody);
+  var rows = tblBody.getElementsByTagName('tr');
   
   var template = rows[rows.length -1].cloneNode(true);
   oTblBody.innerHTML = '';

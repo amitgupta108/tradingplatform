@@ -1,17 +1,5 @@
 const instrumentMap = new Map();
 
-instrumentMap.set('NH1', {
-  simStartTime: new Date("2026-02-06 10:21:00").getTime(),
-  fExpiry: "24FEB26",
-  oExpiry: "10FEB26",
-  oExpiryNxt: "17FEB26",
-  stockCode: 'NIFTY',
-  lscount: 10,
-  mode: 0,
-  lotsize: 65,
-  uuid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
-});
-
 instrumentMap.set('NH2', {
   fExpiry: "24FEB26",
   simStartTime: new Date("2026-02-12 09:21:00").getTime(),
@@ -52,8 +40,8 @@ instrumentMap.set('NH449', {
 instrumentMap.set('NL', {
   simStartTime: Date.now(),
   fExpiry: "28APR26",
-  oExpiry: "07APR26",
-  oExpiryNxt: "14APR26",
+  oExpiry: "13APR26",
+  oExpiryNxt: "21APR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 10,
@@ -76,8 +64,6 @@ instrumentMap.set('ML',{
 });
 
 const lscount = 10 ;
-const addrows = 4; //should be an even number
-
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
