@@ -3,7 +3,7 @@ const utils = require('../common/utils');
 const qserver = require('../serverlocal/quotes');
 
 const userclocks = new Map();
-const subsRequests = new Array(0);
+var subsRequests = new Array(0);
 const userqcollmap = new Map();
 
 const streamers = [
@@ -61,7 +61,7 @@ function dothings(stmrkey)
             var qt = q(req.uid, req.instrument, c.sTime);
 
             if(qt !== undefined)
-                qserver.emitQuotes(req.uid, qt, 'history');
+                qserver.emitQuotes(req.uid, qt, 'icicihistory');
         });
     });
     return {key: stmrkey, count: count};
@@ -122,6 +122,12 @@ function unsubscribe(requests) {
     });
 }   
 
+function unsubscribeall(uid)
+ {
+    var others = subsRequests.filter((s) => s.uid !== uid);   
+    subsRequests = others;
+}   
+
 function disconnect(uid)
 {
     console.log('Drop user ' + uid);
@@ -170,23 +176,28 @@ function getHistory(p, startTime, endTime, interval)
 
 function wsLive(uid, list, action)
 {
-    if(action === 'subs')
-        sutils.wssub(list, (q) => {
-            wsmessage(uid, q);
-        });
-    else
-        sutils.wsunsub(list);
+    try {
+        if(action === 'subs')
+            sutils.wssub(list, (q) => {
+                wsmessage(uid, q);
+            });
+        else
+            sutils.wsunsub(list);
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 function wsmessage(uid, q)
 {
-    qserver.emitQuotes(uid, q, 'live');
+    qserver.emitQuotes(uid, q, 'icicilive');
 }
 
 module.exports = {
     connect,
     subscribe,
     unsubscribe,
+    unsubscribeall,
     changeSpeed,
     disconnect,
     getHistory,

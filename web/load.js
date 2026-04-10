@@ -1,4 +1,3 @@
-
 var uQuoteGl;
 const timerText = document.getElementById("timer");
 timerText.innerText = new Date(instrument.simStartTime).toDateString();
@@ -15,7 +14,18 @@ const qBox = new EventTarget();
 qBox.addEventListener('vix', (event) => {
   vixChart(event.detail);
 });
+qBox.addEventListener('futures', (event) => {
+  futuresChart(event.detail);
+});
 
+const toggle = document.getElementById('toggleAction');
+
+toggle.addEventListener('change', function() {
+  var action = (this.checked) ? 'BUY' : 'SELL';
+  document.getElementById("owaction").innerText = action;
+  ow.classList.remove('orderwindow', action === 'BUY' ? 'sell' : 'buy');
+  ow.classList.add('orderwindow', action === 'BUY' ? 'buy' : 'sell');
+});
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 socket = io(`https://localhost:${window.location.port}`, {
   auth: {

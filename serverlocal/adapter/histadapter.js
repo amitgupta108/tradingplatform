@@ -25,6 +25,8 @@ function subscribe(uid, instruments, action, speed)
         historyserver.dropUser(uid);
     else if(action === 'subs')
         historyserver.subscribe(requests, speed);
+    else if(action === 'unsuball')
+        historyserver.unsubscribeall(uid);
     else
         historyserver.unsubscribe(requests);
 }

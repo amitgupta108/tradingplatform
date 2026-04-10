@@ -9,6 +9,13 @@ function rh(socket)
   socket.on('recovered', (response) => {     
     console.log(response + " continue?");
   });
+  
+  socket.on('prevsession', (response) => {     
+    console.log('prevsession exists: ' + JSON.stringify(response));
+    if(response.uid === instrument.uid)
+      if (OptionChain.get(instrument.oExpiry) === undefined)
+        new OptionChain(instrument.oExpiry, 'ocBody');
+  });
 
   socket.on('futuresPreData', (fQuotes) => {
     setFuturesChart(fQuotes);
@@ -20,17 +27,14 @@ function rh(socket)
     document.getElementById("btnStartSim").disabled = false;
   });
 
-  socket.on('index', (q) => {
+  socket.on('index', (q) => 
+  {
+    qBox.dispatchEvent(generateEvent('index', q));
   
     if(q.exchange === 'MCX')
       futuresChart(q);
     
     uQuoteGl = q;  
-
-    optionChains.forEach((e) => {
-      if(e.atm === undefined)
-        e.atm = Math.round(q.close / 50) * 50;
-    });
 
     var lt = new Date(q.ltt);
     timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
@@ -41,35 +45,21 @@ function rh(socket)
       qBox.dispatchEvent(generateEvent('vix', q));
   });
 
-  socket.on('futures', (fQuote) => {    
-    if(fQuote != undefined)
-    {
-      futuresChart(fQuote);
-      document.title = "Futures " + fQuote.close.toFixed(2);
-    }
+  socket.on('futures', (q) => {    
+      qBox.dispatchEvent(generateEvent('futures', q));
+      document.title = "Futures " + q.close.toFixed(2);
   });
 
   socket.on('strikex', (q) => {
-    try {
-      
-      var p = Position.findPositionRow(q.symbol);
-      if(p != undefined) 
-        refreshPositionPL(p, q.close) 
-      
-      OptionChain.update(q);
-
-      qBox.dispatchEvent(generateEvent(q.symbol, q));
-    } catch(error) {
-      console.log(error);
-    }
+      qBox.dispatchEvent(generateEvent('strikex', q));
   });
   
   socket.on('positionbook', (response) => {
-    listOrders(response);
+    loadOrders(response.data);
   });
 
   socket.on('orderbook', (response) => {
-    refreshPositions(response);
+    loadOrders(response);
   });
 
   socket.on('orderconf', (response) => {

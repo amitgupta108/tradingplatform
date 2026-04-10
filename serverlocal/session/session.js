@@ -7,6 +7,7 @@ class Session
     mode;
     st;
     subsupdate;
+    status;
     constructor(uid, mode)
     {
         this.uid = uid;
@@ -20,6 +21,7 @@ class Session
              symbol: 'INDVIX', streamState: 'initialized', source:'icicilive'},
         ];
         us.push(this);
+        this.status = 'initialized';
     }
 
     ini(p, callback) 
@@ -36,7 +38,7 @@ class Session
             }
         }
         this.subsupdate = callback;
-        return this.inqsub();
+        this.status = 'initialized';
     }
 
     #oq(uq, ost)
@@ -84,7 +86,7 @@ class Session
     }
     
     inqsub() {
-        var fst = utils.filter(this.st, {keys: ['index', 'futures', 'vix']});
+        var fst = utils.filter(this.st, {keys: ['index', 'futures', 'vix', 'occrnt']});
         fst.forEach((e) => e.toStream = true);
 
         return fst;
@@ -112,18 +114,24 @@ class Session
         st.uq = uq;
     }
 
+    destroy()
+    {
+        if(this.subsupdate != undefined)
+            this.subsupdate(this.uid, new Array(0), 'exit');
+
+        var idx = us.findIndex((e) => e.uid === this.uid);
+        us.splice(idx, 1);
+    }
+
     static usn(uid){
         return us.find((e) => e.uid === uid);
     }
 
     static destroy(uid)
     {
-        var idx = us.findIndex((e) => e.uid === uid);
-        var sn = us[idx];
-        if(sn != undefined)
-            if(sn.subsupdate != undefined)
-                sn.subsupdate(uid, new Array(0), 'exit');
-        us.splice(idx, 1);
+        var sn = us.find((e) => e.uid === uid);
+        if(sn !== undefined)
+            sn.destroy();
     }
 }
 

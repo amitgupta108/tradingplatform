@@ -13,7 +13,7 @@ function loadPreData()
   ls.setDate(newDate); ls.setHours(9); ls.setMinutes(15);
 
   const p = {
-    uid: uuid,
+    uid: instrument.uuid,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     oExpiry: instrument.oExpiry,
@@ -38,12 +38,17 @@ function start()
 {
   emit('startstream', instrument); 
   if (OptionChain.get(instrument.oExpiry) === undefined)
-    optionChains.push(new OptionChain(instrument.oExpiry, 'ocBody'));
+    new OptionChain(instrument.oExpiry, 'ocBody');
 }
 
 function stopSimulation() 
 {
   emit('stop', 'user action');
+}
+
+function exit() 
+{
+  emit('exit', 'user action');
 }
 
 function listPositions()
@@ -53,7 +58,7 @@ function listPositions()
 
 function listOrders()
 {
-  emit('orderbook', {stockCode: instrument.stockCode});
+  emit('positionbook', {stockCode: instrument.stockCode});
 }
 
 function switchChart(evt, tabClicked, tabOther) 
@@ -89,7 +94,7 @@ function switchExpiry(evt, tabName) {
 function runOptionChainNxt(event)
 {
   if (OptionChain.get(instrument.oExpiryNxt) === undefined)
-    optionChains.push(new OptionChain(instrument.oExpiryNxt, 'ocBody2'));
+    new OptionChain(instrument.oExpiryNxt, 'ocBody2');
   
   if (event.currentTarget.innerText === '>') {
     emit('ocnxt', 'start');
