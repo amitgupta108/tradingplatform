@@ -1,15 +1,29 @@
 const instrumentMap = new Map();
 
+instrumentMap.set('UI', {
+  fExpiry: "24FEB26",
+  simStartTime: new Date("2026-02-12 09:21:00").getTime(),
+  oExpiry: "17FEB26",
+  oExpiryNxt: "24FEB26",
+  stockCode: 'NIFTY',
+  exc: 'NFO',
+  lscount: 10,
+  mode: 2,
+  lotsize: 65,
+  uid: 'b6033d82-1d88-470a-bf28-58b217f098e7'
+});
+
 instrumentMap.set('NH2', {
   fExpiry: "24FEB26",
   simStartTime: new Date("2026-02-12 09:21:00").getTime(),
   oExpiry: "17FEB26",
   oExpiryNxt: "24FEB26",
   stockCode: 'NIFTY',
+  exc: 'NFO',
   lscount: 10,
   mode: 0,
   lotsize: 65,
-  uuid: 'b6033d82-1d88-470a-bf28-58b217f098e7'
+  uid: 'b6033d82-1d88-470a-bf28-58b217f098e7'
 });
 
 
@@ -19,10 +33,11 @@ instrumentMap.set('NH1', {
   oExpiry: "10FEB26",
   oExpiryNxt: "17FEB26",
   stockCode: 'NIFTY',
+  exc: 'NFO',
   lscount: 10,
   mode: 0,
   lotsize: 65,
-  uuid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
+  uid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
 });
 
 instrumentMap.set('NH449', {
@@ -31,13 +46,14 @@ instrumentMap.set('NH449', {
   oExpiry: "10JUL25",
   oExpiryNxt: "17JUL25",
   stockCode: 'NIFTY',
+  exc: 'NFO',
   lscount: 10,
   mode: 0,
   lotsize: 65,
-  uuid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
+  uid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
 
-instrumentMap.set('NL', {
+instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "28APR26",
   oExpiry: "13APR26",
@@ -47,7 +63,20 @@ instrumentMap.set('NL', {
   lscount: 10,
   mode: 1,
   lotsize: 65,
-  uuid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
+  uid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
+});
+
+instrumentMap.set('NL2', {
+  simStartTime: Date.now(),
+  fExpiry: "28APR26",
+  oExpiry: "13APR26",
+  oExpiryNxt: "21APR26",
+  stockCode: 'NIFTY',
+  exc: 'NFO',
+  lscount: 10,
+  mode: 1,
+  lotsize: 65,
+  uid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
 instrumentMap.set('ML',{
@@ -60,7 +89,7 @@ instrumentMap.set('ML',{
   lscount: 10,
   mode: 1,
   lotsize: 100,
-  uuid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
+  uid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
 const lscount = 10 ;
@@ -98,7 +127,7 @@ const chartOptions = {
     },
 };
 
-const chart = LightweightCharts.createChart(document.getElementById('chart'), chartOptions);
+const chart = LightweightCharts.createChart(document.getElementById('chart1'), chartOptions);
 const ts = chart.timeScale();
 
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);

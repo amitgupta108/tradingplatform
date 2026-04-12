@@ -50,7 +50,7 @@ function vixChart(q)
 {
   var index = ts.timeToIndex(nTVtime(q.ltt), true);
   var curCandle = mainSeries.dataByIndex(index);
-  var qTime = curCandle === undefined ? nTVtime(q.ltt) : curCandle.time;
+  var qTime = curCandle === null ? nTVtime(q.ltt) : curCandle.time;
   vixSeries.update({"time": qTime, "value": q.close});  
 }
 

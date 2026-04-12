@@ -1,15 +1,68 @@
+var socket;
+
+if(instrument.mode !== 3) {
+  socket = io(`https://localhost:${window.location.port}`, {
+    auth: {
+      token: instrument.uid,
+      mode: instrument.mode,
+      stockCode: instrument.stockCode
+    },
+    timeout: 60000,
+    reconnectionDelay: 5000,
+    reconnectionDelayMax: 5000,
+  });
+}
+
+socket.io.on("reconnect", (attempt) => {
+    logSocketEvent("Reconnected on attempt # " + attempt);
+});
+
+socket.io.on("reconnect_attempt", (attempt) => {
+    logSocketEvent("Reconnection being tried attempt # " + attempt);
+});
+
+socket.io.on("reconnect_error", (error) => {
+    logSocketEvent("Reconnection error " + error.message);
+});
+
+socket.io.on("reconnect_failed", () => {
+    logSocketEvent("Reconnection not possible");
+});
+
+const socketEventLogging = false;
+function logSocketEvent(message){
+  if(socketEventLogging)
+      console.log(message);
+}
 rh(socket);
-
+/*--------------------------------------------------------------------------------------------------------------------------------*/
 function rh(socket)
-{
-  socket.on('restored', (response) => {     
-    console.log(response + " continue?");
+{  
+  socket.on("connect", () => {
+    console.log('socket connected for uid' + socket.id + '-' + instrument.uid);
+    if(socket.recovered) {
+      console.log('connection recovered ' + socket.id);
+    }
+    else {
+      console.log('Freshly connected ' + socket.id);
+    }
   });
 
-  socket.on('recovered', (response) => {     
-    console.log(response + " continue?");
+  socket.on("connect_error", (error) => {
+    console.log('connection error for uid' + socket.id + '-' + instrument.uid + '-' + error.message);
+    if (socket.active) {
+      console.log('connection error reconnection to be tried ' + socket.id);
+    } else {
+      // the connection was denied by the server
+      // in that case, `socket.connect()` must be manually called in order to reconnect
+      console.log('No reconnection ' + error.message);
+    }
   });
-  
+
+  socket.on("disconnect", (reason, details) => {
+    console.log('disconnected for uid' + socket.id + '-' + instrument.uid + '-' + reason + '-' + JSON.stringify(details));
+  });
+
   socket.on('prevsession', (response) => {     
     console.log('prevsession exists: ' + JSON.stringify(response));
     if(response.uid === instrument.uid)

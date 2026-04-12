@@ -1,7 +1,7 @@
 const qserver = require('./quotes');
 const iBreeze = require('./broker/breeze');
 const iKNeo = require('./broker/kotakneo');
-const ordersocket = require('./broker/ordernotifier');
+const ordersocket = require('./broker/brokeerws');
 const utils = require('../common/utils')
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
@@ -25,15 +25,14 @@ async function handleMessage(sn, event, msg, callback)
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var preUq = iBreeze.preU(msg);
                 var prefq = iBreeze.preF(msg);
-
-                var uq = await preUq;
                 emit(sn.uid, "futuresPreData", await prefq);
 
+                /*var preUq = iBreeze.preU(msg);
+                var uq = await preUq;
                 //var preDq = iBreeze.preD(msg, uq[uq.length - 1]);
                 //var pq = await preDq[0]; var cq = await preDq[1];
-                //emit(sn.s, "qdeltastrikes", uq, pq, cq);
+                //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
                 iBreeze.changeSpeed(sn.uid, msg);
@@ -45,7 +44,7 @@ async function handleMessage(sn, event, msg, callback)
                 disconnect(sn.uid, sn.mode);
                 sn.destroy(sn.uid);
                 callback(sn.uid, sn.mode)
-                emit('exit', 'exited');
+                emit(sn.uid, 'exit', 'exited');
                 console.log('user exited:' + sn.uid);
                 qserver.socketmap.delete(sn.uid);
                 break;
@@ -58,9 +57,6 @@ async function handleMessage(sn, event, msg, callback)
                 break
             case 'order':
                 var orsub = await bserver.order(sn.uid, msg);
-                msg.orderid = orsub.orderid;
-                msg.status = orsub.status;
-                emit(sn.uid, "orderconf", msg);
             
                 var ordconf = sn.mode === 1 ? 'liveorder' : 'simorder';
                 emit(sn.uid, ordconf, await bserver.orderstatus(sn.uid, orsub.orderid));
@@ -70,7 +66,7 @@ async function handleMessage(sn, event, msg, callback)
                 emit(sn.uid, event, response);
                 break;
             case 'wsOps':
-                var response = await ordersocket.wsOps(sn.uid, msg.action, msg.data);
+                var response = await ordersocket.wsOps(sn.uid, msg.action, msg.data, sn.mode);
                 console.log("wsOps response: " + response);
                 break;
             default:
@@ -92,5 +88,4 @@ function emit(uid, event, msg){
 
 module.exports = {
     handleMessage,
-    disconnect
 }

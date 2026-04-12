@@ -56,22 +56,13 @@ async function orderbook(uid, scrip)
     return await client.orderbook();
 }
 
-async function order(uid, p)
+async function order(uid, orders)
 {
-    if(p.type === 'LIMIT' && Number(p.price) < 2)
-        throw Error('Limit price close to 0');
-
-    var response = await client.placeOrder({
-        strategy: p.symbol,
-        exchange: p.exc,
-        symbol: p.symbol,
-        action: p.action,
-        pricetype: p.type,
-        product: 'NRML',
-        price: p.price === '' ? 0 : p.price,
-        quantity: Math.abs(p.quantity)
-    });
-
+    var response;
+    if(orders.length === 1)
+        response = await client.placeOrder(orders[0]);
+    else if( orders.length > 1)
+        response = await client.basketOrder(orders);
     return response;
 }
 
