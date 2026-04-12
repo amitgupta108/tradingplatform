@@ -6,16 +6,16 @@ const sb = require('./binarysearch');
 
 const appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55250650";
+const sessionId = "55278613";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
-    breeze.generateSession(appSecret, sessionId)
-    .then((resp) => {
-        console.log("Session created");
-    }).catch((err) => {
-        console.log(err);
-    });
+breeze.generateSession(appSecret, sessionId)
+.then((resp) => {
+    console.log("Session created");
+}).catch((err) => {
+    console.log(err);
+});
 
 function findQuoteByTime(q, lt)
 {
@@ -65,7 +65,6 @@ async function getHistory(instrument, sTime, endTime, interval)
     return resp.Success;
 }
 
-
 function getHistoricalDatav2(instrument, sTime, endTime, interval) 
 {
     var b = { exchangeCode: instrument.exchange };
@@ -114,6 +113,8 @@ function wssub(list, callback)
         breeze.subscribeFeeds(b)
         .then((resp) => {
             console.log(JSON.stringify(resp))
+        }).catch((error) => {
+            console.log(error);
         });
     });
 }
@@ -141,8 +142,6 @@ function wsDisconnect()
 
 module.exports = {
     findQuoteByTime,
-    ISODate,
-    formatExpiry,
     getHistoricalData,
     getHistory,
     wssub,

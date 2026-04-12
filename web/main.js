@@ -13,7 +13,7 @@ function loadPreData()
   ls.setDate(newDate); ls.setHours(9); ls.setMinutes(15);
 
   const p = {
-    uid: instrument.uuid,
+    uid: instrument.uid,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     oExpiry: instrument.oExpiry,
@@ -36,6 +36,7 @@ function resumeSimulation()
 
 function start()
 {
+  loadPreData();
   emit('startstream', instrument); 
   if (OptionChain.get(instrument.oExpiry) === undefined)
     new OptionChain(instrument.oExpiry, 'ocBody');
@@ -51,39 +52,19 @@ function exit()
   emit('exit', 'user action');
 }
 
-function listPositions()
-{
-  emit('positionbook', {stockCode: instrument.stockCode});
-}
-
 function listOrders()
 {
   emit('positionbook', {stockCode: instrument.stockCode});
 }
 
-function switchChart(evt, tabClicked, tabOther) 
-{
-  var i, tab, tablinks;
-
-  tab = document.getElementById(tabClicked);
-  tab.className = "chart-show";
-  tab = document.getElementById(tabOther);
-  tab.className = "chart-hide";
-  
-  tablinks = document.getElementsByClassName("tab2");
-  for (i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[i].className.replace(" active-tab", "");
-  }
-  evt.currentTarget.className += " active-tab";
-}
-  
-function switchExpiry(evt, tabName) {
+function switchTabs(evt, container, tabName) {
   var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tab-content");
+  var tabcontainer = document.getElementById(container);
+  var tabcontent = tabcontainer.querySelectorAll('.tab-content');
   for (i = 0; i < tabcontent.length; i++) {
       tabcontent[i].style.display = "none";
   }
-  tablinks = document.getElementsByClassName("tab");
+  tablinks = tabcontainer.querySelectorAll('.tab');
   for (i = 0; i < tablinks.length; i++) {
       tablinks[i].className = tablinks[0].className.replace(" active-tab", "");
   }
@@ -105,15 +86,6 @@ function runOptionChainNxt(event)
     emit('ocnxt', 'stop');
     event.currentTarget.innerText = '>';
   }
-}
-
-function savePositions(){
-  var p = new Array(0);
-  positions.forEach((e) => {
-    p.push({symbol: p.symbol, orderN: p.orderN, orders: p.orders})
- });
-
- emit('positions', p);
 }
 
 function wsconnect(action){

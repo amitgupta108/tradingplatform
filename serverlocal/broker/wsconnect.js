@@ -1,4 +1,4 @@
-const iKws = require('./kotakws');
+const iKws = require('./brokerws');
 const qserver = require('../quotes');
 
 require('console-stamp')(console, '[HH:MM:ss.l]');

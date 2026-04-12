@@ -52,6 +52,8 @@ function stopStreamer(stmrkey){
 
 function dothings(stmrkey) 
 {
+    try
+    {
     var count = 0;
     var usrSpdComb = utils.filter(userclocks.values().toArray(), {keys: [stmrkey]});
     usrSpdComb.forEach((c) => {
@@ -64,6 +66,9 @@ function dothings(stmrkey)
                 qserver.emitQuotes(req.uid, qt, 'icicihistory');
         });
     });
+} catch (exception){
+    console.log(exception);
+}
     return {key: stmrkey, count: count};
 }
 
@@ -87,43 +92,34 @@ function changeSpeed(uid, stmrkey){
 
 function subscribe(requests, stmrkey = undefined) {
     
+    requests.forEach((request) => {
+        var exReqs = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]});
+        if(exReqs.length === 0)
+            subsRequests.push(request);
+    });
+
     if(stmrkey !== undefined && requests.length > 0) {
         userclocks.get(requests[0].uid).key = stmrkey;
         var streamer = streamers.find((s) => s.key === stmrkey);
         if(streamer.state !== 'stated')
             startStreamer(stmrkey);
     }
-
-    requests.forEach((request) => {
-        
-        if(request.uid === undefined || request.instrument === undefined) {
-            console.error("Invalid subscription request " + JSON.stringify(request));
-            return;
-        }
-        var exReq = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]})[0];
-        if (exReq === undefined) {
-            subsRequests.push(request);
-        }
-    });
 }
 
 function unsubscribe(requests) {
     requests.forEach((request) => {
         
-        if(request.uid === undefined) {
-            console.error("Invalid unsubscription request " + JSON.stringify(request));
-            return;
-        }
-        var symbol = request.instrument != undefined ? request.instrument.symbol : undefined;
-        var exReq = utils.filter(subsRequests, {uid: [request.uid], symbol: [symbol]})[0];   
-        if (exReq !== undefined) {
-            subsRequests.splice(subsRequests.indexOf(exReq), 1);
+        var exReqs = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]});   
+        if (exReqs.length > 0) {
+            exReqs.forEach((r) => {
+                subsRequests.splice(subsRequests.indexOf(r), 1);
+            });
         }
     });
 }   
 
 function unsubscribeall(uid)
- {
+{
     var others = subsRequests.filter((s) => s.uid !== uid);   
     subsRequests = others;
 }   
@@ -133,10 +129,7 @@ function disconnect(uid)
     console.log('Drop user ' + uid);
     userclocks.delete(uid);
     userqcollmap.delete(uid);
-    var exReq = utils.filter(subsRequests, {uid: [uid]});   
-    exReq.forEach((r) => {
-        subsRequests.splice(subsRequests.indexOf(r), 1);
-    });
+    unsubscribeall(uid);
 }
 
 function q(uid, instrument, time)

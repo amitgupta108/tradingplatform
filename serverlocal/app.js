@@ -43,11 +43,17 @@ const io = new Server(httpsServer, {
         origin: "*",
         methods: ["GET", "POST"],
     },
+    connectionStateRecovery: {
+        maxDisconnectionDuration: 1 * 60 * 1000,
+        // whether to skip middlewares upon successful recovery
+        skipMiddlewares: true,
+      },
     pingInterval: 30000,
     pingTimeout: 30000
 });
 
 const liveStocks = new Array(0);
+const socketlogging = false;
 
 io.use((s, next) => {
     var uid = s.handshake.auth.token;
@@ -56,7 +62,7 @@ io.use((s, next) => {
     
     if(mode === 1)
     {
-        var usrstpair = liveStocks.find((c) => {c.stockCode === stockCode});
+        var usrstpair = liveStocks.find((c) => {return c.stockCode === stockCode});
 
         if(usrstpair === undefined) {
             liveStocks.push({uid: uid, stockCode: stockCode});
@@ -85,16 +91,17 @@ io.on('connection', (s) => {
         var rStatus = s.recovered ? 'recovered' : 'restored';
         s.emit('prevsession', {uid: uid, socket: rStatus});
     }
+    s.sn = sn;
     s.onAny((event, msg) => {
-        console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(sn, event, msg, freeLiveStock);
+        logSocketEvent("Received event " + event + " with data " + JSON.stringify(msg));
+        apiserver.handleMessage(s.sn, event, msg, freeLiveStock);
     });
-
+    
     s.on("disconnect", (reason) => {
         if(['server namespace disconnect', 'client namespace disconnect',
             'server shutting down', 'transport close', 'transport error'].includes(reason))
         {
-            console.log("socket disconnected  " + reason);
+            logSocketEvent("socket disconnected  " + reason);
         }
     });
 });
@@ -108,4 +115,9 @@ function freeLiveStock(uid, mode)
         if(idx !== -1)
             liveStocks.splice(idx, 1);
     }
+}
+
+function logSocketEvent(message){
+    if(socketlogging)
+        console.log(message);
 }

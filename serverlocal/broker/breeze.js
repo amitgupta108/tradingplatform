@@ -1,9 +1,10 @@
 const adapter = require('../adapter/histadapter');
+const ordersocket = require('./broker/brokeerws');
 const utils = require('../../common/utils')
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-var orderid = 50001;
+var orderid = 50000;
 var orders = new Map();
 
 function connect(uid, time)
@@ -31,30 +32,36 @@ function orderBook(uid, stockCode)
     return utils.filter(orders.values().toArray(), {uid: uid, stockCode: stockCode});
 }
 
-function order(uid, p)
+function order(uid, order)
 {
-    var status = Date.now() % 11 === 0 ? 'failure' : 'success';
-    var response = {uid: uid, orderid: orderid, status: status};
-    p.uid = uid;
-    orders.set(orderid++, p);
+    order.uid = uid;
+    orders.set(++orderid, order);
 
-    return response;
+    var tid = setTimeout(() => {
+        orderstatus(uid, orderid);
+    }, 150);
+}
+
+function basketOrder(uid, orders)
+{
+    orders.array.forEach((o) => {
+        order(uid, o);
+    });
 }
 
 function orderstatus(uid, orderid)
 {
     var order = orders.get(orderid);
-    
-    if(order.status === 'failure')
-        return order;
 
     order.average_price = Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05;
     order.status = Date.now() % 20 === 0 ? 'rejected' : 'complete';
     order.filled_q = order.status === 'rejected' ? 0: Math.abs(order.quantity);
-    order.timestamp = order.time + 125;
+    order.timestamp = order.time + 150;
     order.order_status = order.status; //same field name as in openalgo
 
-    return order;
+    var response = ordersocket.wsOpsSim(uid, 'isAlive', undefined); 
+    if(response.data === 'live');
+        ordersocket.onmessage({type: 'order', data: order});
 }
 
 function preU(p) {

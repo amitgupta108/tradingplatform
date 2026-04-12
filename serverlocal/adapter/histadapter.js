@@ -21,9 +21,7 @@ function subscribe(uid, instruments, action, speed)
             instrument: inst
         });
     });
-    if (action === 'exit')
-        historyserver.dropUser(uid);
-    else if(action === 'subs')
+    if (action === 'subs')
         historyserver.subscribe(requests, speed);
     else if(action === 'unsuball')
         historyserver.unsubscribeall(uid);
