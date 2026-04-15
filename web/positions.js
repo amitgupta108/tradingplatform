@@ -1,36 +1,3 @@
-function writeProfitLoss()
-{  
-  let bookedPL = 0; let unbookedPL = 0;
-
-  for (let i = 0; i < positions.length ; i++)
-  {
-    bookedPL += Number(positions[i].value('bookedPL'));
-    unbookedPL += Number(positions[i].value('unbookedPL')); 
-  }
-
-  document.getElementById("vBookedPL").innerText = bookedPL.toFixed(2);
-  document.getElementById("vUnbookedPL").innerText = unbookedPL.toFixed(2);
-  document.getElementById("vTotalPL").innerText = (bookedPL + unbookedPL).toFixed(2);
-}
-/*
-function loadPositions(ps)
-{
-  ps.forEach(element => {
-    if(symtoinstrument(element.symbol).stockCode === instrument.stockCode)
-    {
-      var p = new Position(element.symbol);
-      p.orders = [{
-        orderN: 1,
-        symbol: element.symbol,
-        pricedAt: element.average_price,
-        quantity: element.quantity,
-      }];
-      p.orderN = 1;
-      refreshPositionPL(p, element.ltp);
-    }
-  });
-}
-*/
 class Position
 {
   #m = {scrip: [1, 0, 's'],
