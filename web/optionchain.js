@@ -5,7 +5,7 @@ class OptionChain
     price: [2, 0],
     icon:[3, 1],
     strike:[3, 3],
-    sym: [3, 6],
+    symbol: [3, 7],
   };
   #expiry;
   #tblBody;
@@ -62,7 +62,7 @@ class OptionChain
     this.value(rIdx, 'delta', rg, q.delta.toFixed(2));
     this.value(rIdx, 'price', rg, q.close.toFixed(2));
     this.value(rIdx, 'strike', rg, q.strike_price);
-    this.value(rIdx, 'sym', rg, q.symbol);
+    this.value(rIdx, 'symbol', rg, q.symbol);
     
     var p = Position.findPositionRow(q.symbol);
     if(p != undefined && p.value('unbookedQ') != 0)

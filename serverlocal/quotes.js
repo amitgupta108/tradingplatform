@@ -84,6 +84,15 @@ function emitUpdates(uid, message)
     }
 }
 
+function standardizeiqko(order)
+{
+   const {trdSym: symbol, nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, fldQty: filled_q, unFldSz: unfilled_q, qty: quantity, prcTp: pricetype, ...rest} = order;
+
+   var updatedorder = {symbol, orderid, state, pricedAt, filled_q, unfilled_q, quantity, pricetype, ...rest};
+
+   return updatedorder;
+}
+
 function emit(uid, event, msg){
     var s = socketmap.get(uid);
     s.emit(event, msg);

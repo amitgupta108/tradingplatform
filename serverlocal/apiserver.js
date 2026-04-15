@@ -1,7 +1,7 @@
 const qserver = require('./quotes');
 const iBreeze = require('./broker/breeze');
 const iKNeo = require('./broker/kotakneo');
-const ordersocket = require('./broker/brokeerws');
+const ordersocket = require('./broker/brokerws');
 const utils = require('../common/utils')
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
@@ -57,9 +57,6 @@ async function handleMessage(sn, event, msg, callback)
                 break
             case 'order':
                 var orsub = await bserver.order(sn.uid, msg);
-            
-                var ordconf = sn.mode === 1 ? 'liveorder' : 'simorder';
-                emit(sn.uid, ordconf, await bserver.orderstatus(sn.uid, orsub.orderid));
                 break;
             case 'positionbook':
                 var response = await bserver.orderbook(sn.uid, msg);

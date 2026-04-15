@@ -3,18 +3,12 @@ const qserver = require('../quotes');
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
 require('console-stamp')(console, '[HH:MM:ss.l]');
+
 var ws;
 
-function wsOps(uid, action, tpt, mode){
-    if(mode === 1)
-        wsOpsLive(uid, action, tpt);
-    else
-        wsOpsSim(uid, action, tpt);
-}
-
-async function wsOpsLive(uid, action, tpt)
+async function wsOps(uid, action, tpt)
 {
-    var response = 'unknown state or action';
+    var response = 'failed to connect';
     if (action === 'connect') {
         var lr = await apiLogin(tpt);
 
@@ -23,12 +17,8 @@ async function wsOpsLive(uid, action, tpt)
                 'sid': lr.data.sid,
                 'token': lr.data.token
             });
-            ws = wsconnect(vr.data.baseUrl.substring(8), lr.data.token, vr.data.sid, uid);
+            wsconnect(vr.data.baseUrl.substring(8), lr.data.token, vr.data.sid, uid);
             response = 'connected';
-        }
-        else{
-            console.log(JSON.stringify(lr));
-            response = 'failed to connect';
         }
     }
     else if (ws != undefined && action === 'disconnect') {
@@ -39,9 +29,6 @@ async function wsOpsLive(uid, action, tpt)
         response = ws.readyState;
         qserver.emitUpdates(uid, {type: 'hb', data: response});
     }
-    else
-        console.log('wsOps: ' + response);
-    
     return response;
 }
 
@@ -86,7 +73,7 @@ async function apiValidate(headers) {
 
 function wsconnect(baseurl, token, sid, uid)
 {
-    var ws = new WebSocket(`wss://${baseurl}/realtime`);
+    ws = new WebSocket(`wss://${baseurl}/realtime`);
 
     ws.onopen = (event) => {
         const payload = `{type:cn,Authorization:${token},Sid:${sid},src:WEB}`;
@@ -107,22 +94,16 @@ function wsconnect(baseurl, token, sid, uid)
     ws.onclose = (event) => {
         console.log("connection closed " + event.reason);
     };
-
-    return ws;
 }
 
-async function wsOpsSim(uid, action, tpt)
+/*
+function wsOpsSim(appid, action, tpt)
 {
     var response = 'unknown state or action';
     if (action === 'connect') {
 
-        if (tpt === 111111) {
-            ws = wsconnectSim(uid);
-            response = 'connected';
-        }
-        else{
-            response = 'failed to connect';
-        }
+        ws = wsconnectSim(appid, tpt);
+        response = 'connected';
     }
     else if (ws != undefined && action === 'disconnect') {
         ws = undefined;
@@ -133,18 +114,18 @@ async function wsOpsSim(uid, action, tpt)
         qserver.emitUpdates(uid, {type: 'hb', data: response});
     }
     else
-        console.log('wsOps: ' + response);
+        console.log('wsOpsSim: action not supported ' + response);
     
     return response;
 }
 
-function wsconnectSim(uid)
+function wsconnectSim(appid, tpt)
 {
-    var ws = {};
+    var ws = new WSClient(appid, tpt);
 
     ws.onopen = (event) => {
-        ws.state = 'live';
-        console.log('On open ');
+        console.log('On open ' + event.type);
+        ws.send('sessionkey');
     };
 
     ws.onmessage = (event) => {
@@ -152,10 +133,42 @@ function wsconnectSim(uid)
         console.log("message type: " + message.type)
         qserver.emitUpdates(message);
     };
+    ws.onerror = (event) => {
+        console.log("connection error " + event.type);
+    }; 
+    
+    ws.onclose = (event) => {
+        console.log("connection closed " + event.type);
+    };
 
     return ws;
 }
 
+class WSClient {
+    appid;
+    onopen;
+    onmessage;
+    onerror;
+    onclose;
+
+    constructor(appid, tpt) {
+        this.appid = appid;
+        iBreezeWS.openWS(appid, tpt);
+    }
+
+    handleEvent(event)
+    {
+        if(event.type === 'open')
+            this.validate('sessionkey');
+    }
+
+    validate(key)
+    {
+        var response = iBreezeWS.validateWS(this.appid, key);
+        console.log('validation status ' + response);
+    }
+}
+*/
 module.exports = {
-    wsOps,
+    wsOps
   };

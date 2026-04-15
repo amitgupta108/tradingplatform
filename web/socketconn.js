@@ -94,7 +94,7 @@ function rh(socket)
   });
   
   socket.on('vix', (q) => {
-    if(q !== undefined)
+    if(q !== undefined) 
       qBox.dispatchEvent(generateEvent('vix', q));
   });
 
@@ -115,34 +115,11 @@ function rh(socket)
     loadOrders(response);
   });
 
-  socket.on('orderconf', (response) => {
-    console.log("immediate order conf:  " + JSON.stringify(response));
-    
-    var p = positions.find((e) => e.symbol === response.symbol);
-    
-    response.state = response.status === 'success' ? 'submitted' : 'rejected';
-    p.orders[response.orderN - 1] = response;
-  });
-
-  socket.on('simorder', (exorder) => {
-    console.log("sim order update " + JSON.stringify(exorder));
-
-    var p = positions.find((e) => e.symbol === exorder.symbol);
-    p.orderupdate(exorder);
-  });
-
-  socket.on('liveorder', (exorder) => {
-    console.log("live order update " + JSON.stringify(exorder));
-    
-    //var p = positions.find((e) => e.symbol === exorder.symbol);
-    //p.orderupdate(exorder);
-  });
-
   socket.on('ws-order', (exorder) => {
     console.log("ws order message " + JSON.stringify(exorder));
 
-    var p = positions.find((e) => e.symbol === exorder.trdSym);
-    p.wsorderupdate(exorder);
+    var p = positions.find((e) => e.symbol === exorder.symbol);
+    p.orderupdate(exorder);
   });
 
   socket.on('ws-position', (pmsg) => {

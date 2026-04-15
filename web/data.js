@@ -28,7 +28,7 @@ instrumentMap.set('NH2', {
 
 
 instrumentMap.set('NH1', {
-  simStartTime: new Date("2026-02-06 10:21:00").getTime(),
+  simStartTime: new Date("2026-02-10 10:21:00").getTime(),
   fExpiry: "24FEB26",
   oExpiry: "10FEB26",
   oExpiryNxt: "17FEB26",
@@ -98,10 +98,10 @@ const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
 
 const chartOptions = {
-  width: 660, height: 780,
+  width: 667, height: 790,
   layout: {
       textColor: 'black',
-      background: { type: 'solid', color: 'white'},
+      background: { type: 'solid', color: 'darkgrey'},
   	},
     crosshair: {
       mode: 0, // CrosshairMode.Normal

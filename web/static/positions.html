@@ -68,28 +68,28 @@
             <table id="dataTable">
                 <thead>
                     <tr>
-                        <th width="22%">Instrument</th>
-                        <th colspan="2" width="22%">Booked</th>                        
-                        <th width="14%">Avg Price</th>
-                        <th width="14%">LTP</th>
-                        <th colspan="2" width="20%">Unbooked</th>
-                        <th width="18%">Total</th>
+                        <th width="4%"><checkbox  class="smallbutton order"></checkbox></th>
+                        <th width="20%">Instrument</th>
+                        <th colspan="3" width="20%">Booked</th>                        
+                        <th width="12%">Avg Price</th>
+                        <th width="12%">LTP</th>
+                        <th colspan="2" width="16%">Unbooked</th>
+                        <th width="16%">Total</th>
                     </tr>
                 </thead>    
                 <tbody id="tblBody">
                     <tr hidden>
+                        <td><checkbox  class="smallbutton order"></checkbox></td>
                         <td><label id="Instrument"></label></td>
+                        <td><button class="smallbutton order" onclick="displayOrders(event)">O</button></td>
                         <td><label id="BQ"></label></td>
-                        <td style="display: flex; justify-content: space-evenly;">
-                            <label id="BP"></label>
-                            <button class="smallbutton order" onclick="displayOrders(event)">O</button>
-                        </td>
+                        <td><label id="BP"></label></td>
                         <td><label id="AvgP"></label></td>
                         <td><label id="LTP"></label></td>
                         <td><label id="UQ"></label></td>
                         <td><label id="UP"></label></td>
                         <td class="hover-cell">
-                            <label id="totalPL"></label>
+                            <label></label>
                             <trade-buttons></trade-buttons>
                             <label hidden></label>
                         </td>
@@ -101,7 +101,6 @@
             
             <div id="bottomPanel">    
                 <div>
-                    <button type="button" id="btnLoad" onclick="loadPreData()">Load</button>
                     <button type="button" id="btnStartSim" onclick="start()">Start</button>
                     <button type="button" id="btnStopSim" onclick="stopSimulation()">Stop</button>
                     <button type="button" id="btnResumeSim" onclick="resumeSimulation()">Resume</button>
@@ -131,9 +130,9 @@
                 <div id="tabLink1" class="tab  active-tab" onclick="switchTabs(event, 'rightContainer', 'chart1')">Futures</div>
                 <div id="tabLink2" class="tab" onclick="switchTabs(event, 'rightContainer', 'chart2')">Options</div>
             </div>
-            <div id="chart1" class="tab-content active" style="height: 95%;">
+            <div id="chart1" class="tab-content active" style="height: 95.5%;">
             </div>
-            <div id="chart2" class="tab-content" style="height: 95%;">
+            <div id="chart2" class="tab-content" style="height: 95.5%;">
             </div>
         </div>
     </div>  
@@ -143,16 +142,12 @@
         <span id="closeBtn" class="close-btn">x</span>
         <table >
             <tbody id="tbody-order-panel-single">
-                <tr> 
-                    <td colspan="6" style="text-align: right;padding-right: 15px;">
-                        <button type="button" onclick="submitOrder()">Order</button>
-                    </td>
-                </tr>
             </tbody>
-
             <tbody id="tbody-order-panel-basket">
+            </tbody>
+            <tbody id="tbody-submit-panel">
                 <tr> 
-                    <td colspan="6" style="text-align: right;padding-right: 15px;">
+                    <td style="width: 100%; text-align: right;padding-right: 15px;">
                         <button type="button" onclick="submitOrder()">Order</button>
                     </td>
                 </tr>
@@ -228,7 +223,7 @@
                 </select>
         </td>
         <td style='width:20%'>
-            <label class="clickable" id="ordertype" onclick="changeText()">MARKET</label>
+            <label class="clickable" id="ordertype" onclick="changeText(this)">MARKET</label>
         </td>
         <td style='width:16%'>
             <input type="number" id="lmtprice" step="0.5" style="width: 60px;">

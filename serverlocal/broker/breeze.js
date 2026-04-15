@@ -1,15 +1,20 @@
 const adapter = require('../adapter/histadapter');
-const ordersocket = require('./broker/brokeerws');
 const utils = require('../../common/utils')
+const qserver = require('../quotes');
+const EventEmitter = require('node:events');
+const wsServer = new EventEmitter();
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-var orderid = 50000;
-var orders = new Map();
+var counter = 50000;
+var ordermap = new Map();
 
 function connect(uid, time)
 {
     adapter.connect(uid, time);
+    wsServer.addListener('message', (message) => {
+        qserver.emitUpdates(uid, message);
+    });
 }
 
 function disconnect(uid)
@@ -29,39 +34,35 @@ function changeSpeed(uid, speed)
 
 function orderBook(uid, stockCode)
 {
-    return utils.filter(orders.values().toArray(), {uid: uid, stockCode: stockCode});
+    return utils.filter(ordermap.values().toArray(), {uid: uid, stockCode: stockCode});
 }
 
-function order(uid, order)
+function order(uid, orders)
 {
-    order.uid = uid;
-    orders.set(++orderid, order);
+    orders.forEach((order) => {
+        var oid = ++counter;
+        order.orderid = oid;
+        order.uid = uid;
+        order.appid = uid;
+        
+        ordermap.set(oid, order);
+        order.state = 'opened';
 
-    var tid = setTimeout(() => {
-        orderstatus(uid, orderid);
-    }, 150);
-}
-
-function basketOrder(uid, orders)
-{
-    orders.array.forEach((o) => {
-        order(uid, o);
+        orderstatus(uid, order.orderid);
     });
 }
 
 function orderstatus(uid, orderid)
 {
-    var order = orders.get(orderid);
+    var order = ordermap.get(orderid);
 
-    order.average_price = Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05;
-    order.status = Date.now() % 20 === 0 ? 'rejected' : 'complete';
-    order.filled_q = order.status === 'rejected' ? 0: Math.abs(order.quantity);
-    order.timestamp = order.time + 150;
-    order.order_status = order.status; //same field name as in openalgo
+    order.pricedAt = Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05;
+    order.state = Date.now() % 20 === 0 ? 'rejected' : 'complete';
+    order.filled_q = order.state === 'rejected' ? 0: Math.abs(order.quantity);
 
-    var response = ordersocket.wsOpsSim(uid, 'isAlive', undefined); 
-    if(response.data === 'live');
-        ordersocket.onmessage({type: 'order', data: order});
+    setTimeout((o) => {
+        wsServer.emit('message', {type: 'order', data: o});
+    }, 150, order);
 }
 
 function preU(p) {
@@ -91,6 +92,21 @@ function preD(p, uq) {
     return [pQ, cQ];
 }
 
+/*
+function validateWS(appid, key){
+    if(key === 'sessionkey')
+        wscnmap.get(appid).state = 'validated';
+    
+    wsServer.addListener('message', (mEvent) => {
+        if(mEvent.data.order.appid === appid)
+            wscnmap.get(appid).callback(mEvent);
+        else 
+            console.log('possible appid mismatch');
+    });
+
+    return wscnmap.get(appid).state;
+}
+*/
 module.exports = {
     subscribe,
     connect,

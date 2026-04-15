@@ -12,7 +12,7 @@ function writeProfitLoss()
   document.getElementById("vUnbookedPL").innerText = unbookedPL.toFixed(2);
   document.getElementById("vTotalPL").innerText = (bookedPL + unbookedPL).toFixed(2);
 }
-
+/*
 function loadPositions(ps)
 {
   ps.forEach(element => {
@@ -30,43 +30,40 @@ function loadPositions(ps)
     }
   });
 }
-
+*/
 class Position
 {
-  #pRow; 
-  #m = {scrip: [0, 0, 's'],
-    bookedQ: [1, 0, 'n'],
-    bookedPL: [2, 1, 'n'],
-    averageP: [3, 0, 'n'],
-    LTP: [4, 0, 'n'],
-    unbookedQ: [5, 0, 'n'],
-    unbookedPL: [6, 0, 'n'],
-    totalPL: [7, 1, 'n'],
-    symbol: [7, 2, 'n']
+  #m = {scrip: [1, 0, 's'],
+    bookedQ: [3, 0, 'n'],
+    bookedPL: [4, 0, 'n'],
+    averageP: [5, 0, 'n'],
+    LTP: [6, 0, 'n'],
+    unbookedQ: [7, 0, 'n'],
+    unbookedPL: [8, 0, 'n'],
+    totalPL: [9, 1, 'n'],
+    symbol: [9, 5, 'n']
   };
-  orders = new Array(0);
+  raisedorders = new Array(0);
+  revertedorders = new Array(0);
+  #pRow;
   orderN = 0;
   symbol;
 
   constructor(symbol)
   {
     this.symbol = symbol;
-    this.#pRow = addRow(symbol);
-    
-    var scrip = symtoinstrument(symbol);
+    this.#pRow = addPositionRow(symbol);
     this.value('symbol', symbol);
-    this.value('scrip', scrip.expiry + ' ' 
-          + scrip.strike + ' ' + (scrip.right === 'CE' ? 'Call' : 'Put'));
-
-    this.#pRow.style.display = "table-row";
     positions.push(this);
     qBox.addEventListener('strikex', this);
   }
 
   handleEvent(event)
   {
+    if(this.value('scrip') === undefined || this.value('scrip') === '')
+      return;
+
     var q = event.detail;
-    
     if(q.symbol !== this.symbol || Number(this.value('unbookedQ')) === 0)
       return;
 
@@ -75,9 +72,11 @@ class Position
     
     var prevPL = Number(this.value('unbookedPL'));
     var psize = Number(this.value('unbookedQ'));
+    var unbookedPL = prevPL + (q.close - prevQ) * psize;
+    var totalPL = unbookedPL + Number(this.value('bookedPL'));
 
-    this.value('unbookedPL', (prevPL + (q.close - prevQ) * psize).toFixed(2));
-    this.value('totalPL', Number(this.value('unbookedPL')) + Number(this.value('bookedPL')));
+    this.value('unbookedPL', unbookedPL.toFixed(2));
+    this.value('totalPL', totalPL.toFixed(2));
     
     writeProfitLoss();
   }
@@ -89,81 +88,35 @@ class Position
     return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
   }
 
-  updatePosition(neworder)
+  orderlist(neworder)
   {
     neworder.orderN = ++this.orderN;
-    this.orders.push(neworder);
+    this.raisedorders.push(neworder);
     return neworder;
   }
 
-  orderupdate(exorder){
-    var o = this.orders.find((e) => e.orderid === exorder.orderid);
-    if(exorder.order_status === 'complete')
-    {
-      o.state = 'completed';
-      o.pricedAt = exorder.average_price;
-      o.extime = exorder.timestamp;
-      o.filled_q = exorder.filled_q * (o.action === 'BUY' ? 1 : -1);
-      this.pnlUpdate();
-    }
-    else if(['modified'].includes(exorder.order_status) )
-    {
-      o.state = exorder.order_status;
-      o.type = exorder.prcTp === 'L' ? 'LIMIT' : 'MARKET';
-      o.pricedAt = Number(exorder.prc)
-    }
-    else if(['open', 'rejected', 'cancelled'].includes(exorder.order_status) )
-      o.state = exorder.order_status === 'open'? 'opened' : exorder.order_status;
-    else
-      console.log('matched order state ignored ' + exorder.orderid + ' ' + exorder.order_status);
+  orderupdate(exorder)
+  {
+    console.log('Reverted Order: ' + JSON.stringify(exorder));
+
+    this.revertedorders.push(exorder);
+    this.pnlUpdate(exorder);
   }
 
-  wsorderupdate(ordermsg){
-    var o = this.orders.find((e) => e.orderid === ordermsg.nOrdNo);
-    if(o === undefined) {
-      console.log('unmatched order Id' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
-      return;
-    }
-    
-    if(ordermsg.ordSt === 'complete')
-    {
-      o.state = 'completed';
-      o.priceAt = Number(ordermsg.avgPrc);
-      o.extime = ordermsg.exCfmTm;
-      o.filled_q = Number(ordermsg.fldQty) * (o.action === 'BUY' ? 1 : -1);
-      o.unfilled_q = ordermsg.unFldSz;
-      this.pnlUpdate();
-    }
-    else if(['open', 'rejected', 'cancelled'].includes(ordermsg.ordSt))
-    {
-      o.state = ordermsg.ordSt;
-    }
-    else if(ordermsg.ordSt === 'modified')
-    {
-      o.state = ordermsg.ordSt;
-      o.quantity = ordermsg.qty;
-      o.type = ordermsg.prcTp === 'L' ? 'LIMIT' : 'MARKET';
-      o.pricedAt = Number(ordermsg.prc);
-    }
-    else //unmapped status from kotak - open
-      console.log('matched order state ignored ' + ordermsg.nOrdNo + ' ' + ordermsg.ordSt);
-  }
-  
-  pnlUpdate() 
+  pnlUpdate(lastorder) 
   {  
     var buyq = 0; var sellq = 0;
     var buyv = 0; var sellv = 0;
     
-    this.orders.map((o) => 
-    {  
-      if(o.state === 'completed')
+    this.revertedorders.forEach((o)  => {
+      if(['complete', 'completed', 'partial'].includes(o.state))
       {
-        if(o.quantity > 0)
+        if(o.action === 'BUY')
         {
           buyq += Number(o.filled_q);
           buyv += Number(o.filled_q) * Number(o.pricedAt);
         }  
-        else if(o.quantity < 0)
+        else
         {
           sellq += Number(o.filled_q);
           sellv += Number(o.filled_q) * Number(o.pricedAt);
@@ -171,37 +124,30 @@ class Position
       }
     });
 
-    var abp = Number(buyv / (buyq === 0 ? 1 : buyq).toFixed(2));
-    var asp = Number(sellv / (sellq === 0 ? 1 : sellq).toFixed(2));
-    var psize = buyq + sellq;
+    var abp = (buyq === 0 ? 0 : buyv / buyq);
+    var asp = (sellq === 0 ? 0 : sellv / sellq);
+    var psize = buyq - sellq;
     var bookedPL = 0;
     var unbookedPL = 0;
-    var price = Number(this.orders.at(-1).pricedAt);
+    var price = Number(lastorder.pricedAt);
 
-    if(psize === 0) {
-      bookedPL = (Math.abs(sellv) - buyv);
-      unbookedPL = 0;
-    }
-    else if (psize > 0) {
-      bookedPL = (asp - abp) * sellq;
-      unbookedPL = (price - abp) * Math.abs(psize);
-    }
-    else {
-      bookedPL = (asp - abp) * buyq;
-      unbookedPL = (asp - price) * Math.abs(psize);
-    }
+    bookedPL = (asp - abp) * Math.min(buyq, sellq);
+    unbookedPL = psize * (psize > 0 ? price - abp : asp - price);
     
-    var totalPL = Number(bookedPL) + Number(unbookedPL);
+    var totalPL = bookedPL + unbookedPL;
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
-    this.value('bookedQ', Math.min(Math.abs(sellq), buyq));
+    var scrip = symtoinstrument(lastorder.symbol);
+    this.value('scrip', scrip.expiry + ' ' 
+          + scrip.strike + ' ' + (scrip.right === 'CE' ? 'Call' : 'Put'));
+    this.value('bookedQ', Math.min(sellq, buyq));
     this.value('bookedPL', bookedPL.toFixed(2));
     this.value('averageP', avgopnpr.toFixed(2));
-    this.value('LTP', price);
+    this.value('LTP', price.toFixed(2));
     this.value('unbookedQ', psize);
     this.value('unbookedPL', unbookedPL.toFixed(2));
-    this.value('totalPL', totalPL);
-
+    this.value('totalPL', totalPL.toFixed(2));
+    this.#pRow.style.display = 'table-row';
     writeProfitLoss();
   }
 

@@ -37,7 +37,6 @@ body {
     margin-top: 2px;
     width: 99%;
     overflow-y:auto;
-    font-size: 13px;
 }
 
 .tabs {
@@ -103,22 +102,22 @@ body {
 #bottomPanel {
     display:flex;
     border: 1px solid #4CAF50;
-    width: 99.2%;
-    height: 3.5%;
+    width: 99.5%;
+    height: 3.7%;
     border-radius: 5px;
-    padding:2px;
-    vertical-align: middle;
+    vertical-align:auto;
+    justify-content: space-between;
+    padding-top: 4px;
+    padding-left: 2px;
 }
 
 #bottomPLPanel {
-    width: 52%;
     display:flex;
     border: 0px solid lightgray;
-    justify-content: space-evenly;
-    justify-items: space-evenly;
     padding: 2px;
     font-size: 13px;
     vertical-align: middle;
+    justify-content: flex-end;
 }
 
 label {    
@@ -164,7 +163,7 @@ td {
 button {
     background-color: #4CAF50;
     color: white;
-    padding: 5px 5px;
+    padding: 4px 4px;
     border: none;
     border-radius: 5px;
     cursor: pointer;

@@ -1,15 +1,7 @@
 function raiseOrder(btn)
 {
-  let symbol = btn.parentNode.parentNode.nextSibling.innerText;
+  let symbol = btn.parentNode.parentNode.nextElementSibling.innerText;
   orderpanel(symbol, btn.innerText)
-}
-
-function orderPos(btn)
-{
-  let row = btn.parentNode.parentNode.parentNode;
-  let symbol = row.title;
-
-  orderpanel(symbol, btn.innerText);
 }
 
 function orderpanel(symbol, action) 
@@ -20,10 +12,9 @@ function orderpanel(symbol, action)
   var tBodies = oWindow.querySelectorAll('tbody');  
   var tBody = tBodies[tBodyIdx];  
   var existingrows = Array.from(tBody.querySelectorAll('tr'));
-  existingrows.pop();
 
   var tr;
-  if(tBodyIdx === 1 || tBody.rows.length < 2) {
+  if(tBodyIdx === 1 || tBody.rows.length < 1) {
     tr = document.importNode(order_window_row_template.content, true).querySelector('tr');
     var exr = existingrows.find((r) => r.querySelector('#owsymbol').innerText === symbol);
 
@@ -33,7 +24,7 @@ function orderpanel(symbol, action)
   else {
     tr = tBody.rows[0];
   }
-  
+
   var scrip = symtoinstrument(symbol);
   var scripName = scrip.expiry.slice(0,3) + ' ' + scrip.strike + ' ' + scrip.right;
     
@@ -67,7 +58,6 @@ function orderwindow(actionBtn, action)
   actionBtn.classList.add('smallbutton', action === 'B' ? 'buy' : 'sell');
 
   const ow = document.getElementById('orderwindow');
-  const ordersTable = ow.querySelector('table');
 
   if(document.getElementById('toggleBasket').checked)
   {
@@ -90,7 +80,7 @@ function orderPanelQuote(event)
   var tBody = container.querySelectorAll('tbody')[tBodyIdx];
   var rows = tBody.rows;
 
-  for(var i = 0; i < rows.length - 1; i++)
+  for(var i = 0; i < rows.length; i++)
   {
     if(event.detail.symbol === rows[i].querySelector("#owsymbol").innerText)
       rows[i].querySelector("#owprice").innerText = event.detail.close.toFixed(2);
@@ -100,21 +90,22 @@ function orderPanelQuote(event)
 function submitOrder() 
 {  
   const oWindow = document.getElementById('orderwindow');
-  const rows = Array.from(oWindow.querySelectorAll('tr'));
+  var tBodies = oWindow.querySelectorAll('[id^="tbody-order-panel-"]');
+  const idx = tBodies[0].style.display !== 'none' ? 0 : 1;
+  const rows = Array.from(tBodies[idx].querySelectorAll('tr'));
   const neworders = new Array(0);
   rows.forEach((r) => 
   {  
-    var symbol = r.querySelector('#owsymbol') !== null
+    var symbol = r.querySelector('#owsymbol').innerText;
     if(symbol !== null || symbol !== undefined)
     {
       var action = r.querySelector('#owaction').innerText;
-      var price = r.querySelector('#lmtprice').value; 
-      var lot =  r.querySelector('#lotselect').value;
+      var price = r.querySelector('#lmtprice').value;
+      var lot = r.querySelector('#lotselect').value; 
 
       let neworder = {
         symbol: symbol,
         action: ( action === 'B' ? 'BUY' : 'SELL'),
-        lot: lot * (action === 'S' ? -1 : 1),
         quantity: lot * instrument.lotsize,
         cprice: r.querySelector('#owprice').innerText,
         pricetype: r.querySelector('#ordertype').innerText,
@@ -123,17 +114,19 @@ function submitOrder()
         exchange: instrument.exc,
         stockCode: instrument.stockCode,
         time: Date.now(),
-        state: 'opened'
+        state: 'created'
       };
       var p = Position.findPositionRow(symbol);
       if(p === undefined)
         p = new Position(symbol);
 
-      neworders.push(p.updatePosition(neworder));
+      neworders.push(p.orderlist(neworder));
     }
   });
   emit('order', neworders);
   sOrderSubmit.play();
+  oWindow.style.display = 'none';
+  tBodies[idx].innerHTML = '';
 }
 
 function displayOrderList(event)
@@ -192,7 +185,6 @@ function loadOrders(response)
   });
 }
 
-function changeText() {
-  document.getElementById("ordertype").innerText 
-      = document.getElementById("ordertype").innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
+function changeText(self) {
+  self.innerText = self.innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
 }

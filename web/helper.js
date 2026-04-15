@@ -50,7 +50,7 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
   optionsChartConfig.push(chartConfigItem);
 }
 
-function addRow(symbol) {
+function addPositionRow(symbol) {
   const tblBody = document.getElementById("tblBody");
   var row = tblBody.getElementsByTagName('tr')[0];
 
