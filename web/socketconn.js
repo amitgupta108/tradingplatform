@@ -40,7 +40,7 @@ socket.sTime = instrument.simStartTime;
 function rh(socket)
 {  
   socket.on("connect", () => {
-    var lt = new Date(sTime);
+    var lt = new Date(socket.sTime);
     timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString();
 
     console.log('socket connected for uid' + socket.id + '-' + instrument.uid);

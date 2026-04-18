@@ -15,7 +15,6 @@ class Order{
 
 function submitOrder() 
 {  
-  const oWindow = document.getElementById('orderwindow');
   var tBody = oWindow.querySelector('#tbody-order-panel');  
   const rows = Array.from(tBody.querySelectorAll('tr'));
   const neworders = new Array(0);
@@ -48,7 +47,9 @@ function submitOrder()
 
   oWindow.style.display = 'none';
   tBody.innerHTML = '';
-  document.getElementById('toggleBasket').disabled = false;
+  var checkboxes = document.querySelectorAll('#exitcb');
+  checkboxes.forEach(cb => cb.checked = false);
+  toggle.disabled = false;
 }
 
 function loadOrders(response)

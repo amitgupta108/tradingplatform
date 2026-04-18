@@ -91,7 +91,8 @@ io.on('connection', (s) => {
         if(s.recovered === false) 
         {
             qserver.socketmap.set(uid, s);
-            s.emit('prevsession', sn.lastuq().ltt);
+            if(sn.lastuq() !== undefined)
+                s.emit('prevsession', sn.lastuq().ltt);
         }
         console.log('prevsession ' +  uid + ' ' + s.recovered);
     }

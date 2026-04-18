@@ -29,16 +29,16 @@ class Position
 
   handleEvent(event)
   {
-    if(this.value('scrip') === undefined || this.value('scrip') === '')
-      return;
-
     var q = event.detail;
-    if(q.symbol !== this.symbol || Number(this.value('unbookedQ')) === 0)
-      return;
-
+    if(q.symbol !== this.symbol)
+      return; 
+    
     var prevQ = Number(this.value('LTP'));
     this.value('LTP', (q.close).toFixed(2));
-    
+
+    if(Number(this.value('unbookedQ')) === 0)
+      return;    
+
     var prevPL = Number(this.value('unbookedPL'));
     var psize = Number(this.value('unbookedQ'));
     var unbookedPL = prevPL + (q.close - prevQ) * psize;
@@ -108,6 +108,7 @@ class Position
     var totalPL = bookedPL + unbookedPL;
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
+    this.#pRow.querySelector('#exitcb').disabled = psize === 0 ? true : false;
     var scrip = symtoinstrument(lastorder.symbol);
     this.value('scrip', scrip.expiry + ' ' 
           + scrip.strike + ' ' + (scrip.right === 'CE' ? 'Call' : 'Put'));

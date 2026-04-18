@@ -6,13 +6,11 @@ function setFuturesChart(qs)
   for(var i = 0; i < qs.length; i++)
   {
     qs[i].time = sTVtime(qs[i].datetime);
-    qs[i].value = (2/21) * qs[i].close + (1-2/21) * (i != 0 ? qs[i-1].value : qs[0].close);
-    qs[i].customValues = qs[i-1].value;
+    qs[i].value = (2/21) * qs[i].close + (1-2/21) * (i !== 0 ? qs[i-1].value : qs[0].close);
+    qs[i].customValues = (i !== 0 ? qs[i-1].value : qs[0].close) ;
   }
-    mainSeries.setData(qs);
-    emaSeries.setData(qs);
-    
-    ema.update({time: sTVtime(qs.at(-1).datetime), customValues: 'END'});
+  mainSeries.setData(qs);
+  emaSeries.setData(qs);
 }
 
 function futuresChart(q)
@@ -26,7 +24,7 @@ function futuresChart(q)
       lastcandle.low = q.low;
       lastcandle.close = q.close;
       lastcandle.open = q.open
-      lastcandle.value =  (2/21) * qs[i].close + (1-2/21) * lastcandle.value,
+      lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.value,
       lastcandle.customValues = lastcandle.value;
       lastcandle.time = lastcandle.time + 300;
     }
@@ -35,7 +33,7 @@ function futuresChart(q)
       lastcandle.high = Math.max(q.close, lastcandle.high);
       lastcandle.low = Math.min(q.close, lastcandle.low);
       lastcandle.close = q.close;
-      lastcandle.value =  (2/21) * qs[i].close + (1-2/21) * lastcandle.customValues;
+      lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues;
     }      
     mainSeries.update(lastcandle);
     emaSeries.update(lastcandle);

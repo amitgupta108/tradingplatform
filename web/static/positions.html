@@ -137,7 +137,7 @@
             </tbody>
         </table>
     </div>
-    <div id="order-list" class="orderlist hidden">
+    <div id="order-list" class="florderlist">
         <table>
         <tbody id="order-list-body">
         </tbody>
@@ -164,7 +164,9 @@
         <td class="orderlist-td" width="30%">Price</td>
         <td class="orderlist-td" width="25%">Quatity</td>
         <td class="orderlist-td" width="30%">Status</td>
-        <td class="orderlist-td" width="15%">X</td>
+        <td class="orderlist-td" width="15%">
+            <button  id='olaction' class="close-btn" onclick="cancelOrder(this)">X</button>
+        </td>
     </tr>
 </template>
 <template id="option-chain-row">
@@ -223,9 +225,13 @@
 </template>
 <template id="position-table-row">
     <tr>
-        <td><input type='checkbox' id="exitcb" onchange="exitCBEvent()"></input></td>
+        <td>
+            <input type='checkbox' id="exitcb" onchange="exitCBEvent()"></input>
+        </td>
         <td><label id="Instrument"></label></td>
-        <td><button class="smallbutton order" onclick="displayOrderList(event)">O</button></td>
+        <td>
+            <button class="smallbutton order" onclick="displayOrderList(event)">O</button>
+        </td>
         <td><label id="BQ"></label></td>
         <td><label id="BP"></label></td>
         <td><label id="AvgP"></label></td>
@@ -244,13 +250,13 @@
 
     <script src="../data.js"></script>
     <script src="../load.js"></script>
-    <script src="../socketconn.js"></script>
     <script src="../ui.js"></script>
     <script src="../helper.js"></script>
     <script src="../main.js"></script>
     <script src="../optionchain.js"></script>
-    <script src="../order.js"></script>
     <script src="../positions.js"></script>
+    <script src="../socketconn.js"></script>
+    <script src="../order.js"></script>
     <script src="../chart.js"></script>
   </body>
 </html>

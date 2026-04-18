@@ -32,6 +32,11 @@ function changeSpeed()
 function resumeSimulation()
 {
   emit('resume', {continue: true});
+  if(mainSeries.data().length === 0)
+    loadPreData(socket.sTime);
+
+  if (OptionChain.get(instrument.oExpiry) === undefined)
+    new OptionChain(instrument.oExpiry, 'ocBody');
 }
 
 function start()

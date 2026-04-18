@@ -1,23 +1,18 @@
 function prepareOrderWindow(clickedBtn)
 {
-  var tBody = document.getElementById('tbody-order-panel');  
-
-  document.getElementById('toggleBasket').disabled = true;    
-  var multi = document.getElementById('toggleBasket').checked;
-  if(!multi)
-    tBody.innerHTML = '';
-
   let symbol = clickedBtn.parentNode.parentNode.nextElementSibling.innerText;
   let action = clickedBtn.innerText;
 
+  toggle.disabled = true;    
+  var isMultiple = toggle.checked;
+
   var tr = createOrderRow(new Order(symbol, action));
-  
-  tBody.prepend(tr); 
-  showOrderWindow(action);
+  appendOrderRow(tr, isMultiple)
+  showOrderWindow();
 }
 
-function createOrderRow(order){
-  
+function createOrderRow(order)
+{
   var scrip = symtoinstrument(order.symbol);
   var scripName = scrip.expiry + ' ' + scrip.strike + ' ' + scrip.right;
 
@@ -26,7 +21,7 @@ function createOrderRow(order){
   tr.querySelector('#scripName').innerText  = scripName;
   tr.querySelector('#lmtprice').innerText  = "";
   if(order.quantity != undefined)
-    tr.querySelector('#lotSelect').value = order.quantity / instrument.lotsize;
+    tr.querySelector('#lotselect').value = order.quantity / instrument.lotsize;
   if(order.pricetype !== undefined)
     tr.querySelector('#ordertype').innerText = order.pricetype;
 
@@ -40,22 +35,30 @@ function createOrderRow(order){
   return tr;
 }
 
-function showOrderWindow(action, wCSS)
+function appendOrderRow(tr, isMultiple)
 {
-  const oWindow = document.getElementById('orderwindow');
+  var tBody = document.getElementById('tbody-order-panel');  
 
+  if(!isMultiple)
+    tBody.innerHTML = '';
+
+  tBody.prepend(tr); 
+}
+
+function showOrderWindow()
+{
+  toggle.disabled = true;
+  var rows = oWindow.querySelectorAll('tr');
   oWindow.classList.remove('multi');
   oWindow.classList.remove('buy');
   oWindow.classList.remove('sell');
   
-  var multi = document.getElementById('toggleBasket').checked;
-  if(wCSS === undefined)
-    wCSS = multi ? 'multi' : action === 'B' ? 'buy' : 'sell';
+  var wCSS = rows.length > 2 ? 'multi' : rows[0].querySelector("#owaction").innerText === 'B' ? 'buy' : 'sell';
   oWindow.classList.add(wCSS);
   oWindow.style.display = "block";
 
   setTimeout(() => {
-      document.getElementById('orderwindow').classList.add('show');
+      oWindow.classList.add('show');
       qBox.addEventListener('strikex', orderPanelQuote);
     }, 10);
 }
@@ -123,27 +126,34 @@ function writeProfitLoss()
 
 function displayOrderList(event)
 {
-  const btn = event.target;  
-  const symbol = btn.parentNode.parentNode.title;
-  const p =  Position.findPositionRow(symbol);
-
-  const row = document.getElementById('order-list-tr');
-  
+  const btn = event.target;
+  const orderlistDiv = document.getElementById('order-list');
   document.querySelector('#order-list-body').innerHTML = "";
-  p.finalorders.forEach((o) => {
-    var clone = document.importNode(row.content, true);
-    var newtr = clone.querySelector('tr');
 
-    newtr.childNodes[1].innerText = o.pricedAt;
-    newtr.childNodes[3].innerText = o.quantity;
-    newtr.childNodes[5].innerText = o.state;
+  if(orderlistDiv.style.display === 'none')
+  {
+    const row = document.getElementById('order-list-tr');  
+    positions[0].finalorders.forEach((o) => {
+      var clone = document.importNode(row.content, true);
+      var newtr = clone.querySelector('tr');
 
-    document.querySelector('#order-list-body').append(newtr);
-  });
+      newtr.childNodes[1].innerText = o.pricedAt;
+      newtr.childNodes[3].innerText = o.quantity;
+      newtr.childNodes[5].innerText = o.state;
+      newtr.querySelector('#olaction').disabled = o.state === 'opened' ? false : true;
+
+      document.querySelector('#order-list-body').append(newtr);
+    });
+    orderlistDiv.style.display = 'flex';
+  }
+  else
+    orderlistDiv.style.display = 'none';
+
 }
 
 function exitCBEvent()
 {
+  const checkboxes = document.querySelectorAll('#exitcb');
   const checkedIndexes = Array.from(checkboxes)
   .map((cb, i) => cb.checked ? i : null)
   .filter(val => val !== null);
@@ -153,9 +163,6 @@ function exitCBEvent()
   countSpan.textContent = checkedIndexes.length;
   exitAll.checked = checkedIndexes.length === checkboxes.length;
 }
-
-const orderlistDiv = document.getElementById('order-list');
-orderlistDiv.classList.toggle('hidden');
 /*
 function loadPositions(ps)
 {
