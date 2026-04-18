@@ -1,6 +1,5 @@
 require('console-stamp')(console, '[HH:MM:ss.l]');
 const utils = require('./../common/utils');
-const Session = require('./session/session');
 const socketmap = new Map();
 
 function emitQuotes(uid, q, source)
@@ -50,7 +49,7 @@ function standardizeoq(q)
 function emitQs(uid, q)
 {
     try {
-        var sn = Session.usn(uid);
+        var sn = usn(uid);
         var key = 'strikex';
         if(q.stock_code === 'INDVIX')
             key = 'vix';
@@ -98,9 +97,14 @@ function emit(uid, event, msg){
     s.emit(event, msg);
 }
 
+function usn(uid){
+    var s = socketmap.get(uid);
+    return s.sn;    
+}
+
 module.exports = {
     socketmap,
-    emitQuotes,
+    emitQs,
     emitUpdates,
     emit
 }

@@ -9,6 +9,7 @@ require('console-stamp')(console, '[HH:MM:ss.l]');
 const Session = require('./session/session');
 const apiserver = require('./apiserver');
 const qserver = require('./quotes');
+const iBreeze = require('./broker/breeze');
 
 const args = process.argv;
 
@@ -44,7 +45,7 @@ const io = new Server(httpsServer, {
         methods: ["GET", "POST"],
     },
     connectionStateRecovery: {
-        maxDisconnectionDuration: 1 * 60 * 1000,
+        maxDisconnectionDuration: 3 * 60 * 1000,
         // whether to skip middlewares upon successful recovery
         skipMiddlewares: true,
       },
@@ -52,8 +53,7 @@ const io = new Server(httpsServer, {
     pingTimeout: 30000
 });
 
-const liveStocks = new Array(0);
-const socketlogging = false;
+const us = new Array(0);
 
 io.use((s, next) => {
     var uid = s.handshake.auth.token;
@@ -62,12 +62,8 @@ io.use((s, next) => {
     
     if(mode === 1)
     {
-        var usrstpair = liveStocks.find((c) => {return c.stockCode === stockCode});
-
-        if(usrstpair === undefined) {
-            liveStocks.push({uid: uid, stockCode: stockCode});
-        }
-        else if (usrstpair.uid !== uid)
+        const idx = us.findIndex((s) => {return s.mode === mode && s.stockCode === stockCode});
+        if(idx !== -1 && us[idx].uid !== uid)
             next(new Error('Live mode for this user not available'));
     }
     next();
@@ -82,42 +78,54 @@ io.on('connection', (s) => {
 
     console.log('user connected with socket ' + uid + ' ' + s.id);        
     qserver.socketmap.set(uid, s);
+    var sn = us.find((e) => {
+        return e.mode === mode 
+         && e.stockCode === stockCode
+        && e.uid === uid});
 
-    var sn = Session.usn(uid);
     if(sn === undefined){
-        sn = new Session(uid, mode);
+        sn = new Session(uid, mode, stockCode);
+        us.push(sn);
     } else
     {
-        var rStatus = s.recovered ? 'recovered' : 'restored';
-        s.emit('prevsession', {uid: uid, socket: rStatus});
+        if(s.recovered === false) 
+        {
+            qserver.socketmap.set(uid, s);
+            s.emit('prevsession', sn.lastuq().ltt);
+        }
+        console.log('prevsession ' +  uid + ' ' + s.recovered);
     }
     s.sn = sn;
     s.onAny((event, msg) => {
-        logSocketEvent("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(s.sn, event, msg, freeLiveStock);
+        console.log("Received event " + event + " with data " + JSON.stringify(msg));
+        apiserver.handleMessage(s.sn, event, msg);
     });
     
     s.on("disconnect", (reason) => {
-        if(['server namespace disconnect', 'client namespace disconnect',
+        if(reason === 'client namespace disconnect')
+        {
+            disconnect(sn.uid, sn.mode);
+            sn.clear();
+            console.log('user exited:' + sn.uid);
+            qserver.socketmap.delete(sn.uid);
+            snDestroy(uid);
+        }
+        else if(['server namespace disconnect',
             'server shutting down', 'transport close', 'transport error'].includes(reason))
         {
-            logSocketEvent("socket disconnected  " + reason);
+            console.log("socket disconnected  " + reason);
         }
     });
 });
 
-function freeLiveStock(uid, mode)
+function disconnect(uid, mode)
 {
-    var s = qserver.socketmap.get(uid);
-    var stockCode = s.handshake.auth.stockCode;
-    if(mode === 1){
-        var idx = liveStocks.findIndex((c) => c.stockCode === stockCode);
-        if(idx !== -1)
-            liveStocks.splice(idx, 1);
-    }
+    iBreeze.disconnect(uid);
+    //iKNeo.disconnect(uid);
 }
 
-function logSocketEvent(message){
-    if(socketlogging)
-        console.log(message);
+function snDestroy(uid)
+{
+    var idx = us.findIndex((e) => e.uid === uid);
+    us.splice(idx, 1);
 }

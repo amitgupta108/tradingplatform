@@ -1,15 +1,15 @@
-
 function emit(event, arg1, arg2) {
   socket.emit(event, arg1, arg2);
 }
 
-function loadPreData()
+function loadPreData(endtime)
 {
   var ls = instrument.mode === 0 ? new Date(instrument.simStartTime) : new Date();
-  var le = ls.getTime() - 1000; 
+  var le = endtime === undefined ? ls.getTime() - 1000 : endtime; 
   var newDate = ls.getDate()-1;
-  if (ls.getDay() === 1) //Monday
-    newDate = newDate - 2;
+  var yesterdayoff = true;
+  var holiday = ls.getDay() === 1 ? 2 : yesterdayoff ? 1 : 0;
+  newDate = newDate - holiday;
   ls.setDate(newDate); ls.setHours(9); ls.setMinutes(15);
 
   const p = {
@@ -49,7 +49,7 @@ function stopSimulation()
 
 function exit() 
 {
-  emit('exit', 'user action');
+  socket.disconnect();
 }
 
 function listOrders()
@@ -100,6 +100,3 @@ function listPositions(ps)
 {
   emit('positionbook', instrument.stockCode);
 }
-
-document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
-document.getElementById("tabButton2").childNodes[1].innerText = instrument.oExpiryNxt;

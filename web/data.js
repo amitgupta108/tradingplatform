@@ -10,7 +10,7 @@ instrumentMap.set('UI', {
   lscount: 10,
   mode: 2,
   lotsize: 65,
-  uid: 'b6033d82-1d88-470a-bf28-58b217f098e7'
+  uid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
 
 instrumentMap.set('NH2', {
@@ -40,27 +40,14 @@ instrumentMap.set('NH1', {
   uid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
 });
 
-instrumentMap.set('NH449', {
-  simStartTime: new Date("2025-07-04 09:15:00").getTime(),
-  fExpiry: "31JUL25",
-  oExpiry: "10JUL25",
-  oExpiryNxt: "17JUL25",
-  stockCode: 'NIFTY',
-  exc: 'NFO',
-  lscount: 10,
-  mode: 0,
-  lotsize: 65,
-  uid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
-});
-
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "28APR26",
-  oExpiry: "13APR26",
-  oExpiryNxt: "21APR26",
+  oExpiry: "21APR26",
+  oExpiryNxt: "28APR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 10,
+  lscount: 12,
   mode: 1,
   lotsize: 65,
   uid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
@@ -69,11 +56,11 @@ instrumentMap.set('NL1', {
 instrumentMap.set('NL2', {
   simStartTime: Date.now(),
   fExpiry: "28APR26",
-  oExpiry: "13APR26",
-  oExpiryNxt: "21APR26",
+  oExpiry: "21APR26",
+  oExpiryNxt: "28APR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 10,
+  lscount: 12,
   mode: 1,
   lotsize: 65,
   uid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
@@ -96,12 +83,13 @@ const lscount = 10 ;
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
+const chbk = instrument.mode === 1 ? 'lightgray' : 'white';
 
 const chartOptions = {
-  width: 667, height: 790,
+  width: 665, height: 790,
   layout: {
       textColor: 'black',
-      background: { type: 'solid', color: 'darkgrey'},
+      background: { type: 'solid', color: chbk},
   	},
     crosshair: {
       mode: 0, // CrosshairMode.Normal

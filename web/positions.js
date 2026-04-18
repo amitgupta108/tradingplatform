@@ -1,17 +1,18 @@
 class Position
 {
-  #m = {scrip: [1, 0, 's'],
-    bookedQ: [3, 0, 'n'],
-    bookedPL: [4, 0, 'n'],
-    averageP: [5, 0, 'n'],
-    LTP: [6, 0, 'n'],
-    unbookedQ: [7, 0, 'n'],
-    unbookedPL: [8, 0, 'n'],
-    totalPL: [9, 1, 'n'],
-    symbol: [9, 5, 'n']
+  #m = {scrip: [1, 0],
+    bookedQ: [3, 0],
+    bookedPL: [4, 0],
+    averageP: [5, 0],
+    LTP: [6, 0],
+    unbookedQ: [7, 0],
+    unbookedPL: [8, 0],
+    totalPL: [9, 1],
+    symbol: [9, 5]
   };
   raisedorders = new Array(0);
-  revertedorders = new Array(0);
+  finalorders = new Array(0);
+  transientorders = new Array(0);
   #pRow;
   orderN = 0;
   symbol;
@@ -21,6 +22,7 @@ class Position
     this.symbol = symbol;
     this.#pRow = addPositionRow(symbol);
     this.value('symbol', symbol);
+    this.value('scrip', symbol);
     positions.push(this);
     qBox.addEventListener('strikex', this);
   }
@@ -58,15 +60,17 @@ class Position
   orderlist(neworder)
   {
     neworder.orderN = ++this.orderN;
+    neworder.action = neworder.action === 'B' ? 'BUY' : 'SELL';
     this.raisedorders.push(neworder);
     return neworder;
   }
 
   orderupdate(exorder)
   {
-    console.log('Reverted Order: ' + JSON.stringify(exorder));
-
-    this.revertedorders.push(exorder);
+    if(['complete', 'completed', 'partial'].includes(exorder.state))
+      this.finalorders.push(exorder);
+    else
+      this.transientorders.push(exorder);
     this.pnlUpdate(exorder);
   }
 
@@ -75,7 +79,7 @@ class Position
     var buyq = 0; var sellq = 0;
     var buyv = 0; var sellv = 0;
     
-    this.revertedorders.forEach((o)  => {
+    this.finalorders.forEach((o)  => {
       if(['complete', 'completed', 'partial'].includes(o.state))
       {
         if(o.action === 'BUY')

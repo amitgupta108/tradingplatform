@@ -1,8 +1,11 @@
 const adapter = require('../adapter/histadapter');
-const utils = require('../../common/utils')
 const qserver = require('../quotes');
 const EventEmitter = require('node:events');
 const wsServer = new EventEmitter();
+wsServer.setMaxListeners(1);
+wsServer.addListener('message', qserver.emitUpdates);
+
+const utils = require('../../common/utils');
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
@@ -12,9 +15,6 @@ var ordermap = new Map();
 function connect(uid, time)
 {
     adapter.connect(uid, time);
-    wsServer.addListener('message', (message) => {
-        qserver.emitUpdates(uid, message);
-    });
 }
 
 function disconnect(uid)
@@ -22,9 +22,9 @@ function disconnect(uid)
     adapter.disconnect(uid);
 }
 
-function subscribe(uid, instruments, action, speed)
+function subscribe(uid, instruments, action)
 {
-    adapter.subscribe(uid, instruments, action, speed);
+    adapter.subscribe(uid, instruments, action);
 }
 
 function changeSpeed(uid, speed)
@@ -47,22 +47,35 @@ function order(uid, orders)
         
         ordermap.set(oid, order);
         order.state = 'opened';
-
-        orderstatus(uid, order.orderid);
     });
+
+    adapter.addListener('strikex', orderMatching);
 }
 
-function orderstatus(uid, orderid)
+function orderMatching(q)
 {
-    var order = ordermap.get(orderid);
-
-    order.pricedAt = Math.round(Number(order.cprice)) + Math.round((new Date()).getMilliseconds()/100) * 0.05;
-    order.state = Date.now() % 20 === 0 ? 'rejected' : 'complete';
-    order.filled_q = order.state === 'rejected' ? 0: Math.abs(order.quantity);
-
-    setTimeout((o) => {
-        wsServer.emit('message', {type: 'order', data: o});
-    }, 150, order);
+    const openorders = ordermap.values().toArray().filter((odr) => {
+        return (odr.state === 'opened'
+        && odr.symbol === q.symbol);
+    });
+    
+    openorders.forEach((o) => {
+        var executed = false;
+        if(o.pricetype === 'MARKET')
+            executed = true;
+        else if(o.pricetype === 'LIMIT')
+            if(o.action === 'BUY' && q.close <= o.price)
+                executed = true;
+            else if(o.action === 'SELL' && q.close >= o.price)
+                executed = true;
+        
+        if(executed) {
+            o.state = 'completed';
+            o.pricedAt = q.close;
+            o.filled_q = o.quantity;
+            wsServer.emit('message', o.uid, {type: 'order', data: o});
+        }
+    });
 }
 
 function preU(p) {
@@ -92,30 +105,13 @@ function preD(p, uq) {
     return [pQ, cQ];
 }
 
-/*
-function validateWS(appid, key){
-    if(key === 'sessionkey')
-        wscnmap.get(appid).state = 'validated';
-    
-    wsServer.addListener('message', (mEvent) => {
-        if(mEvent.data.order.appid === appid)
-            wscnmap.get(appid).callback(mEvent);
-        else 
-            console.log('possible appid mismatch');
-    });
-
-    return wscnmap.get(appid).state;
-}
-*/
 module.exports = {
     subscribe,
     connect,
-    preU,
     preF,
-    preD,
     order,
-    orderstatus,
     orderBook,
     changeSpeed,
-    disconnect
+    disconnect,
+    orderMatching
   };

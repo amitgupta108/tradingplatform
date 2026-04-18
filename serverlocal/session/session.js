@@ -1,26 +1,26 @@
 const utils = require('../../common/utils');
-const us = new Array(0);
 
 class Session
 {
     uid;    
     mode;
+    stockCode;
     st;
     subsupdate;
     status;
-    constructor(uid, mode)
+    constructor(uid, mode, stockCode)
     {
         this.uid = uid;
         this.mode = mode;
+        this.stockCode = stockCode;
         this.st = [
-            {key: 'index', toStream: true, streamState: 'initialized',},
-            {key: 'futures', toStream: true, streamState: 'initialized',},
-            {key: 'occrnt', toStream: true, atm: 25000},
-            {key: 'ocnxt', toStream: false, atm: 25000},
+            {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized',},
+            {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized',},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm: 25000},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm: 25000},
             {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: true,
              symbol: 'INDVIX', streamState: 'initialized', source:'icicilive'},
         ];
-        us.push(this);
         this.status = 'initialized';
     }
 
@@ -28,9 +28,8 @@ class Session
     {
         for(var i = 0; i < this.st.length - 1; i++)
         {
-            this.st[i].stockCode = this.st[i].stockCode === 'INDVIX' ? 'INDVIX' : p.stockCode; 
             this.st[i].exchange = p.exc === 'MCX' ? p.exc : (i != 0 && i != 4) ? 'NFO' : p.mode === 0 ? 'NSE' : 'NSE_INDEX';
-            this.st[i].symbol = i === 1 || p.exc === 'MCX' ? p.stockCode.concat(p.fExpiry).concat('FUT') : p.stockCode;
+            this.st[i].symbol = i === 1 || p.exc === 'MCX' ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.stockCode;
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
@@ -114,24 +113,10 @@ class Session
         st.uq = uq;
     }
 
-    destroy()
+    clear()
     {
         if(this.subsupdate != undefined)
             this.subsupdate(this.uid, new Array(0), 'exit');
-
-        var idx = us.findIndex((e) => e.uid === this.uid);
-        us.splice(idx, 1);
-    }
-
-    static usn(uid){
-        return us.find((e) => e.uid === uid);
-    }
-
-    static destroy(uid)
-    {
-        var sn = us.find((e) => e.uid === uid);
-        if(sn !== undefined)
-            sn.destroy();
     }
 }
 

@@ -5,7 +5,7 @@ const ordersocket = require('./broker/brokerws');
 const utils = require('../common/utils')
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
-async function handleMessage(sn, event, msg, callback)
+async function handleMessage(sn, event, msg)
 {
     try {
         var bserver = sn.mode === 0 ? iBreeze : iKNeo;
@@ -16,7 +16,7 @@ async function handleMessage(sn, event, msg, callback)
                     bserver.subscribe(sn.uid, list, action);
                 });
                 bserver.connect(sn.uid, msg.simStartTime);
-                bserver.subscribe(sn.uid, sn.inqsub(), 'subs', '1x');
+                bserver.subscribe(sn.uid, sn.inqsub(), 'subs');
                 break;
             case 'resume':
                 if (msg.continue === true)
@@ -39,14 +39,6 @@ async function handleMessage(sn, event, msg, callback)
                 break;
             case 'stop':
                 bserver.subscribe(sn.uid, sn.unsuball(), 'unsuball');
-                break;
-            case 'exit':
-                disconnect(sn.uid, sn.mode);
-                sn.destroy(sn.uid);
-                callback(sn.uid, sn.mode)
-                emit(sn.uid, 'exit', 'exited');
-                console.log('user exited:' + sn.uid);
-                qserver.socketmap.delete(sn.uid);
                 break;
             case 'prevsession':
                 emit('prevsession', sn.status !== undefined)
@@ -74,11 +66,6 @@ async function handleMessage(sn, event, msg, callback)
     }
 }
 
-function disconnect(uid, mode)
-{
-    iBreeze.disconnect(uid);
-    //iKNeo.disconnect(uid);
-}
 function emit(uid, event, msg){
     qserver.emit(uid, event, msg);
 }

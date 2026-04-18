@@ -6,7 +6,7 @@ const sb = require('./binarysearch');
 
 const appKey = "***REMOVED***";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55298134";
+const sessionId = "55345680";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -108,7 +108,7 @@ function wssub(list, callback)
             exchangeCode: e.exchange, 
             stockCode: e.stockCode, 
             getExchangeQuotes:true, 
-            interval:"1minute"
+            interval:"1second"
         }
         breeze.subscribeFeeds(b)
         .then((resp) => {

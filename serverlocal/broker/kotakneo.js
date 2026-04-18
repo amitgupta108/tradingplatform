@@ -28,18 +28,34 @@ function disconnect(cuid, scrip)
     */
 }
 
-function onmessage(q)
+function onQuotes(q)
 { 
-    qserver.emitQuotes(uid, q, 'openalgo');
+    qserver.emitQs(uid, standardizeoq(q));
 }
+
+function standardizeoq(q) 
+{
+    q.close = q.ltp;
+    q.exchange = q.exchange === 'NSE_INDEX' ? 'NSE' : q.exchange;
+    if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
+        q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
+
+        var strike = q.symbol.slice(-9, -2);
+        var digit5 = Number.isFinite(Number(strike));
+        q.strike_price = digit5 ? strike.slice(2, 7) : strike.slice(3, 7);
+        q.expiry_date = digit5 ? q.symbol.slice(-14, -7) : q.symbol.slice(-13, -6);
+        q.stockCode = digit5 ? q.symbol.slice(0, -14) : q.symbol.slice(0, -13);
+    }
+    return q;
+} 
 
 function subscribe(uid, sublist, action)
 {
     var originalpath = sublist.filter((item) => item.source !== 'icicilive');
     if(action === 'subs')
-        client.subscribe_ltp(originalpath, onmessage);
+        client.subscribe_ltp(originalpath, onQuotes);
     else 
-        client.unsubscribe_ltp(originalpath, onmessage);
+        client.unsubscribe_ltp(originalpath, onQuotes);
     
     var redirectedpath = sublist.filter((item) => item.source === 'icicilive');
     adapter.wsLive(uid, redirectedpath, action);
@@ -79,4 +95,4 @@ function quotes(symbol, exchange){
     return client.quotes({symbol: symbol, exchange: exchange});
 }
 
-export { connect, order, quotes, subscribe, positionbook, orderbook, orderstatus, disconnect };
+export { connect, order, subscribe, orderbook, disconnect };

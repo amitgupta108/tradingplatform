@@ -30,6 +30,15 @@ class OptionChain
   #buildHTMLOC(tblBody)
   {
     const oTblBody = document.getElementById(tblBody);
+    const oTblHead = oTblBody.previousElementSibling;
+
+    var clone = document.importNode(option_chain_header.content, true);
+    var newtr = clone.querySelector('tr');
+    if(tblBody === 'ocHead2')
+      newtr.childNodes[1].style.color = 'black';
+
+    oTblHead.append(newtr);
+
     const template = document.getElementById('option-chain-row');
     
     for(var i = 0; i < lscount; i++)

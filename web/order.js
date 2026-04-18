@@ -1,9 +1,23 @@
+class Order{
+  exchange = instrument.exc;
+  stockCode = instrument.stockCode;
+  time = Date.now();
+  state = 'created';
+  symbol;
+  action;
+
+  constructor(symbol, action)
+  {
+    this.symbol = symbol;
+    this.action = action;
+  }
+}
+
 function submitOrder() 
 {  
   const oWindow = document.getElementById('orderwindow');
-  var tBodies = oWindow.querySelectorAll('[id^="tbody-order-panel-"]');
-  const idx = tBodies[0].style.display !== 'none' ? 0 : 1;
-  const rows = Array.from(tBodies[idx].querySelectorAll('tr'));
+  var tBody = oWindow.querySelector('#tbody-order-panel');  
+  const rows = Array.from(tBody.querySelectorAll('tr'));
   const neworders = new Array(0);
   rows.forEach((r) => 
   {  
@@ -14,59 +28,27 @@ function submitOrder()
       var price = r.querySelector('#lmtprice').value;
       var lot = r.querySelector('#lotselect').value; 
 
-      let neworder = {
-        symbol: symbol,
-        action: ( action === 'B' ? 'BUY' : 'SELL'),
-        quantity: lot * instrument.lotsize,
-        cprice: r.querySelector('#owprice').innerText,
-        pricetype: r.querySelector('#ordertype').innerText,
-        price: price === "" ? 0 : price,
-        product: 'NRML',
-        exchange: instrument.exc,
-        stockCode: instrument.stockCode,
-        time: Date.now(),
-        state: 'created'
-      };
+      let neworder = new Order(symbol, action);
+      neworder.quantity = lot * instrument.lotsize;
+      neworder.cprice = Number(r.querySelector('#owprice').innerText);
+      neworder.pricetype = r.querySelector('#ordertype').innerText;
+      neworder.price = price === "" ? 0 : Number(price);
+      neworder.product = 'NRML';  
+
       var p = Position.findPositionRow(symbol);
       if(p === undefined)
         p = new Position(symbol);
-
-      neworders.push(p.orderlist(neworder));
+      
+      p.orderlist(neworder);
+      neworders.push(neworder);
     }
   });
   emit('order', neworders);
   sOrderSubmit.play();
+
   oWindow.style.display = 'none';
-  tBodies[idx].innerHTML = '';
-}
-
-function displayOrderList(event)
-{
-  let btn = event.target;  
-  let pRow = btn.parentNode.parentNode;
-  let symbol = pRow.title;
-
-  const row = document.getElementById('order-list-tr');
-  const p =  Position.findPositionRow(symbol);
-  
-  document.querySelector('#order-list-body').innerHTML = "";
-  p.orders.forEach((o) => {
-    var clone = document.importNode(row.content, true);
-    var newtr = clone.querySelector('tr');
-
-    newtr.childNodes[1].innerText = o.pricedAt;
-    newtr.childNodes[3].innerText = o.quantity;
-    newtr.childNodes[5].innerText = o.state;
-
-    document.querySelector('#order-list-body').append(newtr);
-  });
-}
-
-function displayOrders(event)
-{
-  displayOrderList(event);
-  const orderlistDiv = document.getElementById('order-list');
-  orderlistDiv.classList.toggle('hidden');
+  tBody.innerHTML = '';
+  document.getElementById('toggleBasket').disabled = false;
 }
 
 function loadOrders(response)

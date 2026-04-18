@@ -7,42 +7,38 @@ function setFuturesChart(qs)
   {
     qs[i].time = sTVtime(qs[i].datetime);
     qs[i].value = (2/21) * qs[i].close + (1-2/21) * (i != 0 ? qs[i-1].value : qs[0].close);
+    qs[i].customValues = qs[i-1].value;
   }
     mainSeries.setData(qs);
     emaSeries.setData(qs);
+    
+    ema.update({time: sTVtime(qs.at(-1).datetime), customValues: 'END'});
 }
 
 function futuresChart(q)
 {
-  if(mainSeries.data().length === 0)
+  if(mainSeries.data().length > 0)
   {
-    mainSeries.update({time: nTVtime(q.ltt), open: q.close, close: q.close, high: q.close, low: q.close});
-    emaSeries.update({time: nTVtime(q.ltt), value: q.close});
-    return;
-  }
-  var index = ts.timeToIndex(nTVtime(q.ltt), true);
-  var curCandle = mainSeries.dataByIndex(index);
-  
-  var firstcandlestart = mainSeries.dataByIndex(0).time;
-  var tonext300 = 300 - firstcandlestart % 300;
-  var firstcandlecross = nTVtime(q.ltt) >= firstcandlestart + tonext300 ;
-
-  var newcandle = nTVtime(q.ltt) - curCandle.time >= 300;
-
-  if((firstcandlecross && index === 0) || newcandle )
-  {
-    mainSeries.update({time: nTVtime(q.ltt), open: q.close, close: q.close, high: q.close, low: q.close});
-    var emadatapoint = emaSeries.dataByIndex(index);
-    emaSeries.update({time: nTVtime(q.ltt), value: (2/21) * q.close + (1-2/21) * emadatapoint.value});
-  }
-  else
-  {
-    var data = {high: Math.max(q.close, curCandle.high),
-      low: Math.min(q.close, curCandle.low),
-      close: q.close, open: curCandle.open, 
-      time: curCandle.time
-    };
-    mainSeries.update(data);    
+    var lastcandle = mainSeries.data().at(-1);
+    if(lastcandle.time + 300 < nTVtime(q.ltt))
+    {  
+      lastcandle.high = q.high;
+      lastcandle.low = q.low;
+      lastcandle.close = q.close;
+      lastcandle.open = q.open
+      lastcandle.value =  (2/21) * qs[i].close + (1-2/21) * lastcandle.value,
+      lastcandle.customValues = lastcandle.value;
+      lastcandle.time = lastcandle.time + 300;
+    }
+    else
+    {
+      lastcandle.high = Math.max(q.close, lastcandle.high);
+      lastcandle.low = Math.min(q.close, lastcandle.low);
+      lastcandle.close = q.close;
+      lastcandle.value =  (2/21) * qs[i].close + (1-2/21) * lastcandle.customValues;
+    }      
+    mainSeries.update(lastcandle);
+    emaSeries.update(lastcandle);
   }
 }
 
@@ -51,7 +47,7 @@ function vixChart(q)
   var index = ts.timeToIndex(nTVtime(q.ltt), true);
   var curCandle = mainSeries.dataByIndex(index);
   var qTime = curCandle === null ? nTVtime(q.ltt) : curCandle.time;
-  vixSeries.update({"time": qTime, "value": q.close});  
+  vixSeries.update({"time": qTime, "value": Number(q.close)});  
 }
 
 function updateIndexChart(uQuote)
@@ -128,3 +124,68 @@ function setUpInitialOptionsChart(peQuotes, ceQuotes, oExpiry)
   ceSeries.setData(ceQuotes);
   stratSeries.setData(stPoints);
 }
+
+/*
+    var timetonext300 = 300 - lastcandletime % 300;
+
+    if(mainSeries.data().at(-1).customValues === 'END')
+    {
+    var currenttime = instrument.mode === 1 ? Date.now() : Date.now() - nTVtime(q.ltt);
+    var timeinseconds = Math.round(currenttime/1000);
+    var timetonext300 = 300 - timeinseconds % 300;
+
+    setTimeout(() => {
+      mainSeries.update({time: Date.now(), customValues: 'START'});
+      setInterval((q) => 
+      {
+        mainSeries.update({time: nTVtime(q.ltt), open: q.open, close: q.close, high: q.high, low: q.low});
+        var emadatapoint = emaSeries.dataByIndex(index);
+        emaSeries.update({time: nTVtime(q.ltt), value: (2/21) * q.close + (1-2/21) * emadatapoint.value});
+        newCandle = false;
+      }, 300000, q)
+    }, timetonext300);
+    return;
+  }
+
+  if(newCandle )
+  {
+      mainSeries.update({time: nTVtime(q.ltt), open: q.open, close: q.close, high: q.high, low: q.low});
+      var emadatapoint = emaSeries.dataByIndex(index);
+      emaSeries.update({time: nTVtime(q.ltt), value: (2/21) * q.close + (1-2/21) * emadatapoint.value});
+      newCandle = false;
+  }
+  else
+  {
+    var data = {high: Math.max(q.close, curCandle.high),
+      low: Math.min(q.close, curCandle.low),
+      close: q.close, open: curCandle.open, 
+      time: lastDatepoint.time
+    };
+    mainSeries.update(data); 
+    emaupdate   
+  }
+  var index = ts.timeToIndex(nTVtime(q.ltt), true);
+  var curCandle = mainSeries.dataByIndex(index);
+  
+  var firstcandlestart = mainSeries.dataByIndex(0).time;
+  var tonext300 = 300 - firstcandlestart % 300;
+  var firstcandlecross = nTVtime(q.ltt) >= firstcandlestart + tonext300 ;
+
+  var newcandle = nTVtime(q.ltt) - curCandle.time >= 300;
+
+  if((firstcandlecross && index === 0) || newcandle )
+  {
+    mainSeries.update({time: nTVtime(q.ltt), open: q.close, close: q.close, high: q.close, low: q.close});
+    var emadatapoint = emaSeries.dataByIndex(index);
+    emaSeries.update({time: nTVtime(q.ltt), value: (2/21) * q.close + (1-2/21) * emadatapoint.value});
+  }
+  else
+  {
+    var data = {high: Math.max(q.close, curCandle.high),
+      low: Math.min(q.close, curCandle.low),
+      close: q.close, open: curCandle.open, 
+      time: curCandle.time
+    };
+    mainSeries.update(data);    
+  }
+    */

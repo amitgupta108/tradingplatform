@@ -51,12 +51,12 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
 }
 
 function addPositionRow(symbol) {
-  const tblBody = document.getElementById("tblBody");
-  var row = tblBody.getElementsByTagName('tr')[0];
 
-  var clone = row.cloneNode(true);
+  var template = document.importNode(position_table_row_template.content, true);
+  var clone = template.querySelector('tr');
   clone.title = symbol;
-  tblBody.appendChild(clone);
+  document.getElementById('tblBody').append(clone);
+  
   return clone;
 }
 

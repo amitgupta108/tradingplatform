@@ -35,10 +35,14 @@ function logSocketEvent(message){
       console.log(message);
 }
 rh(socket);
+socket.sTime = instrument.simStartTime;
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 function rh(socket)
 {  
   socket.on("connect", () => {
+    var lt = new Date(sTime);
+    timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString();
+
     console.log('socket connected for uid' + socket.id + '-' + instrument.uid);
     if(socket.recovered) {
       console.log('connection recovered ' + socket.id);
@@ -46,6 +50,17 @@ function rh(socket)
     else {
       console.log('Freshly connected ' + socket.id);
     }
+  });
+
+  socket.on('prevsession', (sTime) => {
+    socket.sTime = sTime;
+    var lt = new Date(sTime);
+    timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString();
+    
+    if (OptionChain.get(instrument.oExpiry) === undefined)
+      new OptionChain(instrument.oExpiry, 'ocBody');
+    if(mainSeries.data().length === 0)
+      loadPreData(socket.sTime);
   });
 
   socket.on("connect_error", (error) => {
@@ -61,13 +76,6 @@ function rh(socket)
 
   socket.on("disconnect", (reason, details) => {
     console.log('disconnected for uid' + socket.id + '-' + instrument.uid + '-' + reason + '-' + JSON.stringify(details));
-  });
-
-  socket.on('prevsession', (response) => {     
-    console.log('prevsession exists: ' + JSON.stringify(response));
-    if(response.uid === instrument.uid)
-      if (OptionChain.get(instrument.oExpiry) === undefined)
-        new OptionChain(instrument.oExpiry, 'ocBody');
   });
 
   socket.on('futuresPreData', (fQuotes) => {
@@ -87,9 +95,8 @@ function rh(socket)
     if(q.exchange === 'MCX')
       futuresChart(q);
     
-    uQuoteGl = q;  
-
-    var lt = new Date(q.ltt);
+    socket.sTime = q.ltt;
+    var lt = new Date(socket.sTime);
     timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
   });
   

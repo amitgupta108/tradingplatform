@@ -1,4 +1,9 @@
 const historyserver = require('../../srvr/hserver');
+const qServer = require('../quotes');
+historyserver.addListener('strikex', receieveQs);
+historyserver.addListener('index', receieveQs);
+historyserver.addListener('vix', receieveQs);
+historyserver.addListener('futures', receieveQs);
 
 function connect(uid, time) {
     historyserver.connect(uid, time);
@@ -22,7 +27,7 @@ function subscribe(uid, instruments, action, speed)
         });
     });
     if (action === 'subs')
-        historyserver.subscribe(requests, speed);
+        historyserver.subscribe(requests);
     else if(action === 'unsuball')
         historyserver.unsubscribeall(uid);
     else
@@ -39,11 +44,36 @@ function wsLive(uid, list, action)
     historyserver.wsLive(uid, list, action);
 }
 
+function receieveQs(q, uid, imode)
+{
+    var q = standardizeiq(q);
+    qServer.emitQs(uid, q);
+}
+
+function addListener(type, callback)
+{
+    historyserver.addListener(type, callback);
+}
+
+function standardizeiq(q) 
+{
+    q['exchange'] = q['exchange_code'];
+    q['type'] = q['product_type'];
+
+    if(q.exchange != 'NSE')
+        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+
+    q.ltt = Date.parse(q.datetime);
+    
+    return q;
+}
+
 module.exports = {
     connect,
     getHistoricalQuotes,
-    subscribe,
+    subscribe,  
     changeSpeed,
     disconnect,
-    wsLive
+    wsLive,
+    addListener
 };

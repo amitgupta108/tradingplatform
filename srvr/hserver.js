@@ -1,6 +1,7 @@
 const sutils = require('./serverutils');
 const utils = require('../common/utils');
-const qserver = require('../serverlocal/quotes');
+const EventEmitter = require('node:events');
+const futsocket = new EventEmitter();
 
 const userclocks = new Map();
 var subsRequests = new Array(0);
@@ -61,9 +62,11 @@ function dothings(stmrkey)
         reqs.forEach((req) => {
             count++;
             var qt = q(req.uid, req.instrument, c.sTime);
-
-            if(qt !== undefined)
-                qserver.emitQuotes(req.uid, qt, 'icicihistory');
+            if(qt !== undefined) {
+                qt.symbol = req.instrument.symbol;
+                qt.key = req.instrument.key;
+                futsocket.emit(qt.key, qt, req.uid, 'icicihistory');
+            }
         });
     });
 } catch (exception){
@@ -90,7 +93,7 @@ function changeSpeed(uid, stmrkey){
         startStreamer(stmrkey);
 }
 
-function subscribe(requests, stmrkey = undefined) {
+function subscribe(requests) {
     
     requests.forEach((request) => {
         var exReqs = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]});
@@ -98,8 +101,8 @@ function subscribe(requests, stmrkey = undefined) {
             subsRequests.push(request);
     });
 
-    if(stmrkey !== undefined && requests.length > 0) {
-        userclocks.get(requests[0].uid).key = stmrkey;
+    if(requests.length > 0) {
+        var stmrkey = userclocks.get(requests[0].uid).key;
         var streamer = streamers.find((s) => s.key === stmrkey);
         if(streamer.state !== 'stated')
             startStreamer(stmrkey);
@@ -167,6 +170,10 @@ function getHistory(p, startTime, endTime, interval)
     return sutils.getHistory(p, startTime, endTime, interval);
 }
 
+function addListener(eventName, callback){
+    futsocket.addListener(eventName, callback);
+}
+
 function wsLive(uid, list, action)
 {
     try {
@@ -183,7 +190,9 @@ function wsLive(uid, list, action)
 
 function wsmessage(uid, q)
 {
-    qserver.emitQuotes(uid, q, 'icicilive');
+    q.symbol = 'INDVIX';
+    q.key = 'vix';
+    futsocket.emit(q.key, q, uid, 'icicilive');
 }
 
 module.exports = {
@@ -194,5 +203,6 @@ module.exports = {
     changeSpeed,
     disconnect,
     getHistory,
-    wsLive
+    wsLive,
+    addListener,
 };
