@@ -67,11 +67,25 @@ class Position
 
   orderupdate(exorder)
   {
-    if(['complete', 'completed', 'partial'].includes(exorder.state))
-      this.finalorders.push(exorder);
-    else
+    if(!['complete', 'completed', 'partial', 'opened', 'cancelled'].includes(exorder.state))
       this.transientorders.push(exorder);
-    this.pnlUpdate(exorder);
+    else
+    {
+      if(exorder.state === 'opened')
+        this.finalorders.push(exorder);
+      else
+      {
+        var idx = this.finalorders.findIndex((o) => o.orderid === exorder.orderid);
+        if(idx !== -1)
+        {
+          this.finalorders.splice(idx, 1, exorder);
+          this.pnlUpdate(exorder);
+        }
+      }
+      var opencount = this.finalorders.filter((o) => o.state === 'opened').length;
+      this.#pRow.querySelector('#orderdisplay-btn').innerText = (opencount === 0 ? 'N' : opencount);
+      this.#pRow.querySelector('#orderdisplay-btn').style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');
+    }
   }
 
   pnlUpdate(lastorder) 

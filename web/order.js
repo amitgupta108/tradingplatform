@@ -52,6 +52,13 @@ function submitOrder()
   toggle.disabled = false;
 }
 
+function cancelOrder(cancelBtn)
+{
+  var orderrow = cancelBtn.parentNode.parentNode;
+  var p = Position.findPositionRow(orderrow.title);
+  emit('cancelorder', p.finalorders[orderrow.rowIndex]);
+}
+
 function loadOrders(response)
 {
   response.orders.forEach((order) => {

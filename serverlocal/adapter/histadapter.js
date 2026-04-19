@@ -17,7 +17,7 @@ function getHistoricalQuotes(p, startTime, endTime, interval) {
     return historyserver.getHistory(p, startTime, endTime, interval);
 }
 
-function subscribe(uid, instruments, action, speed) 
+function subscribe(uid, instruments, action) 
 {
     var requests = new Array(0);
     instruments.forEach((inst) => {

@@ -7,7 +7,7 @@ const sOrderSubmit =  new Audio('./ordersubmit.wav');
   
 const toggle = document.getElementById('toggleBasket');
 const cbAll = document.getElementById('exitAll');
-const exitBtn = document.getElementById('exitBtn');
+const exitPositionBtn = document.getElementById('exitPositionBtn');
 const countSpan = document.getElementById('count');
 const order_window_row_template = document.querySelector('#order-window-row');
 const position_table_row_template = document.querySelector('#position-table-row');
@@ -38,17 +38,18 @@ qBox.addEventListener('vix', (event) => {
 qBox.addEventListener('futures', (event) => {
   futuresChart(event.detail);
 });
+/*
 toggle.addEventListener('change', function() {
   var action = (this.checked) ? 'BUY' : 'SELL';
 });
-
+*/
 cbAll.addEventListener('change', () => {
   var checkboxes = document.querySelectorAll('#exitcb');
   checkboxes.forEach(cb => cb.checked = cbAll.checked);
   exitCBEvent();
 });
 
-exitBtn.onclick = () => {
+exitPositionBtn.onclick = (event) => {
   
   toggle.disabled = true;    
 
@@ -71,11 +72,11 @@ exitBtn.onclick = () => {
     neworder.product = 'NRML';
     appendOrderRow(createOrderRow(neworder), true);
   });
-
+  event.target.style.display = 'none';
   showOrderWindow();
 }
 
-closeBtn.onclick = () => {
+closeOWinBtn.onclick = () => {
   var tBody = document.getElementById('tbody-order-panel');
   tBody.innerHTML = "";
   oWindow.style.display = "none";

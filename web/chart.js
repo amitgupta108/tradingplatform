@@ -42,10 +42,11 @@ function futuresChart(q)
 
 function vixChart(q)
 {
-  var index = ts.timeToIndex(nTVtime(q.ltt), true);
-  var curCandle = mainSeries.dataByIndex(index);
-  var qTime = curCandle === null ? nTVtime(q.ltt) : curCandle.time;
-  vixSeries.update({"time": qTime, "value": Number(q.close)});  
+  if(mainSeries.data().length > 0)
+  {
+    var qTime = mainSeries.data().at(-1).time;
+    vixSeries.update({"time": qTime, "value": Number(q.close)});  
+  }
 }
 
 function updateIndexChart(uQuote)

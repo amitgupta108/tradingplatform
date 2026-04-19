@@ -53,11 +53,12 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
 function addPositionRow(symbol) {
 
   var template = document.importNode(position_table_row_template.content, true);
-  var clone = template.querySelector('tr');
-  clone.title = symbol;
-  document.getElementById('tblBody').append(clone);
+  var positionrow = template.querySelector('tr');
+  positionrow.title = symbol;
+  template.querySelector('#orderdisplay-btn').title = symbol;
+  document.getElementById('tblBody').append(positionrow);
   
-  return clone;
+  return positionrow;
 }
 
 function createOCTable(oTblBody, nStrikes)

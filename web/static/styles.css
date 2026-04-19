@@ -316,17 +316,14 @@ select:hover {
 
 .florderlist {
     position: absolute;
-    display: none;
-    top: 50px;
-    left: 30px;
-    width: 180px;
+    top: 150px;
+    left: 50px;
+    width: 225px;
     z-index: 100;
-    flex-direction: column;
     border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: opacity 1.0s ease-in-out, transform 1.0s ease-in-out;
     transform: translateY(-20px); /* Optional: add a slight slide-in effect */
-    justify-content: center;
     background-color: dimgray;
 }
 

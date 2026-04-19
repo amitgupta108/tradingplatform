@@ -124,31 +124,38 @@ function writeProfitLoss()
   document.getElementById("vTotalPL").innerText = (bookedPL + unbookedPL).toFixed(2);
 }
 
-function displayOrderList(event)
+function displayOrderList(btn, event)
 {
-  const btn = event.target;
-  const orderlistDiv = document.getElementById('order-list');
-  document.querySelector('#order-list-body').innerHTML = "";
-
   if(orderlistDiv.style.display === 'none')
   {
+    const symbol = btn.parentNode.parentNode.title;
+    const p = Position.findPositionRow(symbol);
     const row = document.getElementById('order-list-tr');  
-    positions[0].finalorders.forEach((o) => {
+    orderlistDiv.querySelector('#order-list-tbody').innerHTML = "";
+
+    p.finalorders.forEach((o) => {
       var clone = document.importNode(row.content, true);
       var newtr = clone.querySelector('tr');
 
-      newtr.childNodes[1].innerText = o.pricedAt;
+      newtr.childNodes[1].innerText = o.orderid;
       newtr.childNodes[3].innerText = o.quantity;
       newtr.childNodes[5].innerText = o.state;
+      newtr.childNodes[7].innerText = o.pricetype.slice(0,1);
+      newtr.childNodes[9].innerText = o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt;
       newtr.querySelector('#olaction').disabled = o.state === 'opened' ? false : true;
+      newtr.title = symbol;
 
-      document.querySelector('#order-list-body').append(newtr);
+      document.querySelector('#order-list-tbody').append(newtr);
     });
+    orderlistDiv.style.left = event.pageX + 30;
+    orderlistDiv.style.top = event.pageY + 30;
+
     orderlistDiv.style.display = 'flex';
   }
   else
+  { 
     orderlistDiv.style.display = 'none';
-
+  }
 }
 
 function exitCBEvent()
@@ -159,7 +166,7 @@ function exitCBEvent()
   .filter(val => val !== null);
 
   const hasSelection = checkedIndexes.length > 0;
-  exitBtn.style.display = hasSelection ? 'block' : 'none';
+  exitPositionBtn.style.display = hasSelection ? 'block' : 'none';
   countSpan.textContent = checkedIndexes.length;
   exitAll.checked = checkedIndexes.length === checkboxes.length;
 }

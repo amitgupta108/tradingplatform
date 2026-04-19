@@ -1,11 +1,13 @@
 const adapter = require('../adapter/histadapter');
 const qserver = require('../quotes');
+const utils = require('../../common/utils');
+
 const EventEmitter = require('node:events');
 const wsServer = new EventEmitter();
 wsServer.setMaxListeners(1);
 wsServer.addListener('message', qserver.emitUpdates);
 
-const utils = require('../../common/utils');
+var qlistener;
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
@@ -39,6 +41,9 @@ function orderBook(uid, stockCode)
 
 function order(uid, orders)
 {
+    if(qlistener === undefined)
+        adapter.addListener('strikex', orderMatching);
+
     orders.forEach((order) => {
         var oid = ++counter;
         order.orderid = oid;
@@ -47,9 +52,18 @@ function order(uid, orders)
         
         ordermap.set(oid, order);
         order.state = 'opened';
-    });
 
-    adapter.addListener('strikex', orderMatching);
+        wsServer.emit('message', uid, {type: 'order', data: order});
+    });
+}
+
+function cancelorder(uid, order)
+{
+    var found = ordermap.get(o.orderid);
+    if(found !== undefined)
+        order.state = 'cancelled';
+
+    wsServer.emit('message', uid, {type: 'order', data: order});
 }
 
 function orderMatching(q)
@@ -113,5 +127,6 @@ module.exports = {
     orderBook,
     changeSpeed,
     disconnect,
-    orderMatching
+    orderMatching,
+    cancelorder
   };

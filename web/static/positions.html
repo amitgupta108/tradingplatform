@@ -64,8 +64,14 @@
             </div>
             
             <!------------------------------------------------------------------------------------------------------------------------------>                
-            <div id="positions">    
-            <table id="dataTable">
+            <div id="positions" style="position: relative;">    
+                <div id="order-list" class="florderlist" style="display: none;">
+                    <table>
+                        <tbody id="order-list-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                <table id="dataTable">
                 <thead>
                     <tr>
                         <th width="4%"><input type='checkbox' id="exitAll"></input></th>
@@ -80,7 +86,7 @@
                 <tbody id="tblBody">
                     
                 </tbody>
-            </table>   
+                </table>   
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>    
             
@@ -124,7 +130,7 @@
     <!--floating items---------------------------------------------------------------------------------------------------------------------------->    
 
     <div id="orderwindow" class="orderwindow">
-        <span id="closeBtn" class="close-btn">x</span>
+        <span id="closeOWinBtn" class="close-btn">x</span>
         <table >
             <tbody id="tbody-order-panel">
             </tbody>
@@ -137,13 +143,7 @@
             </tbody>
         </table>
     </div>
-    <div id="order-list" class="florderlist">
-        <table>
-        <tbody id="order-list-body">
-        </tbody>
-        </table>
-    </div>
-    <button id="exitBtn" style="position:absolute; top:350px; left:25px; display:none;">
+    <button id="exitPositionBtn" style="position:absolute; top:450px; left:25px; display:none;">
         Exit (<span id="count">0</span>)
     </button>
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
@@ -161,11 +161,13 @@
 </template>    
 <template id="order-list-tr">
     <tr>
-        <td class="orderlist-td" width="30%">Price</td>
-        <td class="orderlist-td" width="25%">Quatity</td>
-        <td class="orderlist-td" width="30%">Status</td>
-        <td class="orderlist-td" width="15%">
-            <button  id='olaction' class="close-btn" onclick="cancelOrder(this)">X</button>
+        <td class="orderlist-td" width="20%">OrderId</td>
+        <td class="orderlist-td" width="20%">Quatity</td>
+        <td class="orderlist-td" width="25%">Status</td>
+        <td class="orderlist-td" width="10%">Type</td>
+        <td class="orderlist-td" width="15%">Price</td>
+        <td class="orderlist-td" width="10%">
+            <label id="olaction" class="clickable" onclick="cancelOrder(this)">x</label>
         </td>
     </tr>
 </template>
@@ -224,13 +226,13 @@
     </tr>
 </template>
 <template id="position-table-row">
-    <tr>
+    <tr style="position:relative;">
         <td>
             <input type='checkbox' id="exitcb" onchange="exitCBEvent()"></input>
         </td>
         <td><label id="Instrument"></label></td>
         <td>
-            <button class="smallbutton order" onclick="displayOrderList(event)">O</button>
+            <button id="orderdisplay-btn" class="smallbutton order" onclick="displayOrderList(this, event)">O</button>
         </td>
         <td><label id="BQ"></label></td>
         <td><label id="BP"></label></td>

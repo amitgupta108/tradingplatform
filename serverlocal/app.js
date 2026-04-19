@@ -90,9 +90,8 @@ io.on('connection', (s) => {
     {
         if(s.recovered === false) 
         {
-            qserver.socketmap.set(uid, s);
             if(sn.lastuq() !== undefined)
-                s.emit('prevsession', sn.lastuq().ltt);
+                s.emit('prevsession', sn.sTime);
         }
         console.log('prevsession ' +  uid + ' ' + s.recovered);
     }

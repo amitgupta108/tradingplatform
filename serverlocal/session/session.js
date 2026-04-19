@@ -8,6 +8,7 @@ class Session
     st;
     subsupdate;
     status;
+    sTime;
     constructor(uid, mode, stockCode)
     {
         this.uid = uid;
@@ -21,7 +22,6 @@ class Session
             {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: true,
              symbol: 'INDVIX', streamState: 'initialized', source:'icicilive'},
         ];
-        this.status = 'initialized';
     }
 
     ini(p, callback) 
@@ -80,21 +80,23 @@ class Session
     {
         var fst = utils.filter(this.st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
         var sublist = utils.filter(fst, {toStream: [true]});
-
+        this.status = 'request completed';
         this.subsupdate('subs', sublist);
     }
     
     inqsub() {
         var fst = utils.filter(this.st, {keys: ['index', 'futures', 'vix', 'occrnt']});
         fst.forEach((e) => e.toStream = true);
-
+        this.status = 'stream requested';
+        
         return fst;
     }
     
     unsuball() {
         this.st.forEach((e) => e.toStream = false);
-        var st = this.st.find((e) => e.key === 'index');
-        st.uq = undefined;
+        var ist = this.st.find((e) => e.key === 'index');
+        ist.uq = undefined;
+        this.status = 'stopped';
         return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
     }
 
@@ -110,6 +112,8 @@ class Session
             if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.close))  > 60)
                 this.#oq(uq, ost[j]);
         }
+        this.status = 'streaming';
+        this.sTime = uq.ltt;
         st.uq = uq;
     }
 

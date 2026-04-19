@@ -50,6 +50,9 @@ async function handleMessage(sn, event, msg)
             case 'order':
                 var orsub = await bserver.order(sn.uid, msg);
                 break;
+            case 'cancelorder':
+                await bserver.cancelorder(sn.uid, msg);
+                break;
             case 'positionbook':
                 var response = await bserver.orderbook(sn.uid, msg);
                 emit(sn.uid, event, response);
