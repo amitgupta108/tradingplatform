@@ -115,7 +115,7 @@ function rh(socket)
   });
   
   socket.on('positionbook', (response) => {
-    loadOrders(response.data);
+    loadOrders(response);
   });
 
   socket.on('orderbook', (response) => {

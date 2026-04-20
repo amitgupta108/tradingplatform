@@ -126,36 +126,36 @@ function writeProfitLoss()
 
 function displayOrderList(btn, event)
 {
-  if(orderlistDiv.style.display === 'none')
-  {
-    const symbol = btn.parentNode.parentNode.title;
-    const p = Position.findPositionRow(symbol);
-    const row = document.getElementById('order-list-tr');  
-    orderlistDiv.querySelector('#order-list-tbody').innerHTML = "";
+  const symbol = btn.parentNode.parentNode.title;
+  const p = Position.findPositionRow(symbol);
+  orderlistDiv.querySelector('td').innerText = symtoinstrument(symbol).name;
 
-    p.finalorders.forEach((o) => {
-      var clone = document.importNode(row.content, true);
-      var newtr = clone.querySelector('tr');
+  const row = document.getElementById('order-list-tr');  
+  orderlistDiv.querySelector('#order-list-tbody').innerHTML = "";
+  
+  var tqty = 0;
+  p.finalorders.forEach((o, idx) => {
+    var clone = document.importNode(row.content, true);
+    var newtr = clone.querySelector('tr');
 
-      newtr.childNodes[1].innerText = o.orderid;
-      newtr.childNodes[3].innerText = o.quantity;
-      newtr.childNodes[5].innerText = o.state;
-      newtr.childNodes[7].innerText = o.pricetype.slice(0,1);
-      newtr.childNodes[9].innerText = o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt;
-      newtr.querySelector('#olaction').disabled = o.state === 'opened' ? false : true;
-      newtr.title = symbol;
+    newtr.title = symbol;
+    var qty = o.state.startsWith('complete') ? o.filled_q : 0;
+    tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
+    newtr.childNodes[1].innerText = o.orderid;
+    newtr.childNodes[3].innerText = o.action.slice(0, 1);
+    newtr.childNodes[5].innerText = qty;
+    newtr.childNodes[7].innerText = o.pricetype.slice(0, 1);
+    newtr.childNodes[9].innerText = tqty;
+    newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt).toFixed(2);
+    newtr.childNodes[13].innerText = o.state;
+    newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'x' : '');
+    if(o.state === 'opened') 
+      newtr.childNodes[15].childNodes[1].classList.add('clickable');
+          
+    document.querySelector('#order-list-tbody').append(newtr);
+  });
 
-      document.querySelector('#order-list-tbody').append(newtr);
-    });
-    orderlistDiv.style.left = event.pageX + 30;
-    orderlistDiv.style.top = event.pageY + 30;
-
-    orderlistDiv.style.display = 'flex';
-  }
-  else
-  { 
-    orderlistDiv.style.display = 'none';
-  }
+  orderlistDiv.style.display = 'flex';
 }
 
 function exitCBEvent()

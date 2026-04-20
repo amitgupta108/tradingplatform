@@ -306,7 +306,7 @@ select:hover {
     float:right;
     cursor: pointer;
     font-size: 14px;
-    margin-left: 15px;
+    margin-left: 5px;
     margin-right: 5px;
 }
 
@@ -316,9 +316,9 @@ select:hover {
 
 .florderlist {
     position: absolute;
-    top: 150px;
-    left: 50px;
-    width: 225px;
+    top: 50px;
+    left: 100px;
+    width: 250px;
     z-index: 100;
     border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);

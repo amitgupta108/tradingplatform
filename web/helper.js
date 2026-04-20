@@ -89,7 +89,8 @@ function symtoinstrument(symbol)
     stockCode: stockCode,
     expiry: expiry,
     strike: strike,
-    right: symbol.slice(-2)
+    right: symbol.slice(-2),
+    name: stockCode + ' ' + expiry + ' ' + strike + ' ' + symbol.slice(-2)
   };
 
   return instrument;

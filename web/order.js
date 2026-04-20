@@ -56,32 +56,29 @@ function cancelOrder(cancelBtn)
 {
   var orderrow = cancelBtn.parentNode.parentNode;
   var p = Position.findPositionRow(orderrow.title);
-  emit('cancelorder', p.finalorders[orderrow.rowIndex]);
+  emit('cancelorder', p.finalorders[orderrow.rowIndex-1]);
 }
 
-function loadOrders(response)
+function loadOrders(orders)
 {
-  response.orders.forEach((order) => {
+  orders.forEach((order) => {
     if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
     {
-      order.state = order.order_status === 'complete' ? 'completed' : order.order_status;
-      order.pricedAt = order.average_price;
-
       var p = positions.find((e) => e.symbol === order.symbol);
       if(p === undefined)
       {
         p = new Position(order.symbol);
-        p.orders.push(order);
+        p.finalorders.push(order);
       }
       else
       {
-        var existing = p.orders.find((o) => o.orderid === order.orderid);
+        var existing = p.finalorders.find((o) => o.orderid === order.orderid);
         if(existing !== undefined)
           existing.recon = true;
         else
-          p.orders.push(order);
+          p.finalorders.push(order);
       }
-      //refreshPositionPL(p, element.ltp);
+      p.orderupdate(order);
     }
   });
 }
