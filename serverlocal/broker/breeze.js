@@ -7,7 +7,7 @@ const wsServer = new EventEmitter();
 wsServer.setMaxListeners(1);
 wsServer.addListener('message', qserver.emitUpdates);
 
-var qlistener;
+var listener = false;
 
 require('console-stamp')(console, '[HH:MM:ss.l]');
 
@@ -34,14 +34,14 @@ function changeSpeed(uid, speed)
     adapter.changeSpeed(uid, speed);
 }
 
-function orderBook(uid, stockCode)
+function orderbook(uid, stockCode)
 {
     return utils.filter(ordermap.values().toArray(), {uid: uid, stockCode: stockCode});
 }
 
 function order(uid, orders)
 {
-    if(qlistener === undefined)
+    if(!listener)
         adapter.addListener('strikex', orderMatching);
 
     orders.forEach((order) => {
@@ -59,15 +59,16 @@ function order(uid, orders)
 
 function cancelorder(uid, order)
 {
-    var found = ordermap.get(o.orderid);
+    var found = ordermap.get(order.orderid);
     if(found !== undefined)
-        order.state = 'cancelled';
+        found.state = 'cancelled';
 
-    wsServer.emit('message', uid, {type: 'order', data: order});
+    wsServer.emit('message', uid, {type: 'order', data: found});
 }
 
 function orderMatching(q)
 {
+    listener = true;
     const openorders = ordermap.values().toArray().filter((odr) => {
         return (odr.state === 'opened'
         && odr.symbol === q.symbol);
@@ -124,7 +125,7 @@ module.exports = {
     connect,
     preF,
     order,
-    orderBook,
+    orderbook,
     changeSpeed,
     disconnect,
     orderMatching,

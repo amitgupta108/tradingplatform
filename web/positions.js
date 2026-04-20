@@ -71,7 +71,7 @@ class Position
       this.transientorders.push(exorder);
     else
     {
-      if(exorder.state === 'opened')
+      if(['opened'].includes(exorder.state))
         this.finalorders.push(exorder);
       else
       {

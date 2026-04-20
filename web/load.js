@@ -76,6 +76,10 @@ exitPositionBtn.onclick = (event) => {
   showOrderWindow();
 }
 
+closeOListBtn.onclick = () => {
+  orderlistDiv.style.display = 'none';
+};
+
 closeOWinBtn.onclick = () => {
   var tBody = document.getElementById('tbody-order-panel');
   tBody.innerHTML = "";
@@ -83,5 +87,4 @@ closeOWinBtn.onclick = () => {
   qBox.removeEventListener('strikex', orderPanelQuote);
   toggle.disabled = false;
 };
-
 /*--------------------------------------------------------------------------------------------------------------------------------*/

@@ -67,7 +67,16 @@
             <div id="positions" style="position: relative;">    
                 <div id="order-list" class="florderlist" style="display: none;">
                     <table>
+                        <tbody id="order-list-thead">
+                            <tr>
+                                <td colspan="7" class="orderlist-td"></td>
+                                <td class="orderlist-td" >
+                                    <span id="closeOListBtn" class="close-btn">x</span>
+                                </td>
+                            </tr>
+                        </tbody>
                         <tbody id="order-list-tbody">
+
                         </tbody>
                     </table>
                 </div>
@@ -161,13 +170,15 @@
 </template>    
 <template id="order-list-tr">
     <tr>
-        <td class="orderlist-td" width="20%">OrderId</td>
-        <td class="orderlist-td" width="20%">Quatity</td>
-        <td class="orderlist-td" width="25%">Status</td>
-        <td class="orderlist-td" width="10%">Type</td>
+        <td class="orderlist-td" width="16%">OrderId</td>
+        <td class="orderlist-td" width="8%">Action</td>
+        <td class="orderlist-td" width="15%">Quatity</td>
+        <td class="orderlist-td" width="8%">Type</td>
+        <td class="orderlist-td" width="16%">0</td>
         <td class="orderlist-td" width="15%">Price</td>
-        <td class="orderlist-td" width="10%">
-            <label id="olaction" class="clickable" onclick="cancelOrder(this)">x</label>
+        <td class="orderlist-td" width="18%">Status</td>
+        <td class="orderlist-td" width="4%">
+            <label id="olaction" onclick="cancelOrder(this)"></label>
         </td>
     </tr>
 </template>
