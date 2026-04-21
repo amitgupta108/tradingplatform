@@ -38,11 +38,7 @@ qBox.addEventListener('vix', (event) => {
 qBox.addEventListener('futures', (event) => {
   futuresChart(event.detail);
 });
-/*
-toggle.addEventListener('change', function() {
-  var action = (this.checked) ? 'BUY' : 'SELL';
-});
-*/
+
 cbAll.addEventListener('change', () => {
   var checkboxes = document.querySelectorAll('#exitcb');
   checkboxes.forEach(cb => cb.checked = cbAll.checked);

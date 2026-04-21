@@ -68,9 +68,9 @@ instrumentMap.set('NL2', {
 
 instrumentMap.set('ML',{
   simStartTime: new Date(Date.now()),
-  fExpiry: "20APR26",
-  oExpiry: "16APR26",
-  oExpiryNxt: "14MAY26",
+  fExpiry: "18MAY26",
+  oExpiry: "14MAY26",
+  oExpiryNxt: "16JUN26",
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
   lscount: 10,

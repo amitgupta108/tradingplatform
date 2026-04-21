@@ -82,9 +82,15 @@ function wsconnect(baseurl, token, sid, uid)
     };
 
     ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        console.log("message type: " + message.type)
-        qserver.emitUpdates(uid, message);
+        try {
+            const message = JSON.parse(event.data);
+            console.log("message type: " + message.type)
+            if(message.type === 'order')
+                message.data = standardizeO(message.data);
+            qserver.emitUpdates(uid, message);
+        } catch(error) {
+            console.log(error);
+        }          
     };
 
     ws.onerror = (event) => {
@@ -94,6 +100,20 @@ function wsconnect(baseurl, token, sid, uid)
     ws.onclose = (event) => {
         console.log("connection closed " + event.reason);
     };
+}
+
+function standardizeO(order)
+{
+    const {trdSym: symbol, nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, 
+        trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q, qty: quantity, prcTp: pricetype, ...rest} = order;
+
+    var updatedorder = {symbol, orderid, state, pricedAt, filled_q, unfilled_q, quantity, pricetype, ...rest};
+    if(updatedorder.state === 'open')
+        updatedorder.state = 'opened';
+    
+    updatedorder.action = updatedorder.action === 'B' ? 'BUY' : 'SELL';
+    
+    return updatedorder;
 }
 
 module.exports = {

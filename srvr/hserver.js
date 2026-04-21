@@ -162,6 +162,8 @@ function qw(st, instrument, time) {
 
     return qs.then((resp) => {
         return resp;   
+    }).catch((reason) => {
+        console.log('Error from historical data load ' + reason);
     });
 }
 

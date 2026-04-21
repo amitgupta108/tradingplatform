@@ -60,22 +60,7 @@ function exit()
 
 function listOrders()
 {
-  emit('positionbook', {stockCode: instrument.stockCode});
-}
-
-function switchTabs(evt, container, tabName) {
-  var i, tabcontent, tablinks;
-  var tabcontainer = document.getElementById(container);
-  var tabcontent = tabcontainer.querySelectorAll('.tab-content');
-  for (i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].style.display = "none";
-  }
-  tablinks = tabcontainer.querySelectorAll('.tab');
-  for (i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[0].className.replace(" active-tab", "");
-  }
-  document.getElementById(tabName).style.display = "block";  
-  evt.currentTarget.className += " active-tab";
+  emit('orderbook', {stockCode: instrument.stockCode});
 }
   
 function runOptionChainNxt(event)
@@ -99,10 +84,6 @@ function wsconnect(action){
   emit('wsOps', {action: action, data: tpt});
   document.getElementById("tpt").value = "";
 
-  var timer = action === 'connect' ? timer(action, 60000, true) : timer(action, 60000, false);
-}
-
-function listPositions(ps)
-{
-  emit('positionbook', instrument.stockCode);
+  var tAction = action === 'connect' ? true : false;
+  var status =  timer(action, 60000, tAction);
 }

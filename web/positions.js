@@ -22,7 +22,7 @@ class Position
     this.symbol = symbol;
     this.#pRow = addPositionRow(symbol);
     this.value('symbol', symbol);
-    this.value('scrip', symbol);
+    this.value('scrip', symtoinstrument(symbol).name);
     positions.push(this);
     qBox.addEventListener('strikex', this);
   }
@@ -71,17 +71,15 @@ class Position
       this.transientorders.push(exorder);
     else
     {
-      if(['opened'].includes(exorder.state))
-        this.finalorders.push(exorder);
+      var idx = this.finalorders.findIndex((o) => o.orderid === exorder.orderid);
+      if(idx !== -1)
+        this.finalorders.splice(idx, 1, exorder);
       else
-      {
-        var idx = this.finalorders.findIndex((o) => o.orderid === exorder.orderid);
-        if(idx !== -1)
-        {
-          this.finalorders.splice(idx, 1, exorder);
-          this.pnlUpdate(exorder);
-        }
-      }
+        this.finalorders.push(exorder);
+
+      if(exorder.state !== 'opened')
+        this.pnlUpdate(exorder);
+      
       var opencount = this.finalorders.filter((o) => o.state === 'opened').length;
       this.#pRow.querySelector('#orderdisplay-btn').innerText = (opencount === 0 ? 'N' : opencount);
       this.#pRow.querySelector('#orderdisplay-btn').style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');

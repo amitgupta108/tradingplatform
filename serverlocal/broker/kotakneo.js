@@ -61,38 +61,38 @@ function subscribe(uid, sublist, action)
     adapter.wsLive(uid, redirectedpath, action);
 }
 
-async function positionbook(uid, scrip)
-{
-    return await client.positionbook();
-    //split positionbook
-}
- 
 async function orderbook(uid, scrip)
 {
-    return await client.orderbook();
+    var response = await client.orderbook();
+    if(response.status === 'success')
+    {
+        var orders = response.data.orders.filter((o) => {
+            o.state = o.order_status;
+            return o.symbol.startsWith(scrip.stockCode);
+        });
+    }
+    return orders;
 }
 
 async function order(uid, orders)
 {
+    var fOrders = formatorder(orders);
     var response;
-    if(orders.length === 1)
-        response = await client.placeOrder(orders[0]);
-    else if( orders.length > 1)
-        response = await client.basketOrder(orders);
+    if(fOrders.length === 1)
+        response = await client.placeOrder(fOrders[0]);
+    else if( fOrders.length > 1)
+        response = await client.basketOrder(fOrders);
+    console.log(JSON.stringify(response));
     return response;
 }
 
-async function orderstatus(uid, orderid)
+function formatorder(orders)
 {
-    var status = await client.orderStatus({orderid: orderid,
-            orderId: orderid
-        });
+    return orders.map((o) => {
+        let { cprice, orderN, state, time, stockCode, ...trimmedOrder} = o;
+        return trimmedOrder;
+    });
     
-    return status.data;
-}
-
-function quotes(symbol, exchange){
-    return client.quotes({symbol: symbol, exchange: exchange});
 }
 
 export { connect, order, subscribe, orderbook, disconnect };

@@ -3,6 +3,7 @@ class Order{
   stockCode = instrument.stockCode;
   time = Date.now();
   state = 'created';
+  pricetype = 'LIMIT';
   symbol;
   action;
 
@@ -52,11 +53,18 @@ function submitOrder()
   toggle.disabled = false;
 }
 
-function cancelOrder(cancelBtn)
+function cancelorder(cancelBtn)
 {
   var orderrow = cancelBtn.parentNode.parentNode;
   var p = Position.findPositionRow(orderrow.title);
   emit('cancelorder', p.finalorders[orderrow.rowIndex-1]);
+  orderlistDiv.style.display = 'none';
+  sOrderSubmit.play();
+}
+
+function dropcancelorder(dropcancelBtn)
+{
+  dropcancelBtn.parentNode.style.display = 'none';
 }
 
 function loadOrders(orders)
@@ -66,18 +74,8 @@ function loadOrders(orders)
     {
       var p = positions.find((e) => e.symbol === order.symbol);
       if(p === undefined)
-      {
         p = new Position(order.symbol);
-        p.finalorders.push(order);
-      }
-      else
-      {
-        var existing = p.finalorders.find((o) => o.orderid === order.orderid);
-        if(existing !== undefined)
-          existing.recon = true;
-        else
-          p.finalorders.push(order);
-      }
+ 
       p.orderupdate(order);
     }
   });

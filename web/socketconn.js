@@ -113,10 +113,6 @@ function rh(socket)
   socket.on('strikex', (q) => {
       qBox.dispatchEvent(generateEvent('strikex', q));
   });
-  
-  socket.on('positionbook', (response) => {
-    loadOrders(response);
-  });
 
   socket.on('orderbook', (response) => {
     loadOrders(response);

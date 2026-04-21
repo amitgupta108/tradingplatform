@@ -13,8 +13,7 @@ function prepareOrderWindow(clickedBtn)
 
 function createOrderRow(order)
 {
-  var scrip = symtoinstrument(order.symbol);
-  var scripName = scrip.expiry + ' ' + scrip.strike + ' ' + scrip.right;
+  var scripName = symtoinstrument(order.symbol).name;
 
   var tr = document.importNode(order_window_row_template.content, true).querySelector('tr');
   tr.querySelector('#owsymbol').innerText  = order.symbol;
@@ -39,8 +38,10 @@ function appendOrderRow(tr, isMultiple)
 {
   var tBody = document.getElementById('tbody-order-panel');  
 
-  if(!isMultiple)
+  if(!isMultiple) {
     tBody.innerHTML = '';
+    tr.classList.remove('hover-row');
+  }
 
   tBody.prepend(tr); 
 }
@@ -63,6 +64,10 @@ function showOrderWindow()
     }, 10);
 }
 
+function removeOrderRow(target){
+  target.parentNode.parentNode.parentNode.remove();
+}
+
 function orderPanelQuote(event)
 {
   const tBody = document.getElementById('tbody-order-panel');
@@ -83,11 +88,6 @@ function flipAction(orderRowBtn)
     orderRowBtn.classList.replace('buy', 'sell');
   else
     orderRowBtn.classList.replace('sell', 'buy'); 
-}
-
-function removeOrderRow(btn) {
-  const row = btn.closest('tr');
-  row.remove(); // Deletes the underlying row
 }
 
 function switchTabs(evt, container, tabName) {
@@ -158,6 +158,11 @@ function displayOrderList(btn, event)
   orderlistDiv.style.display = 'flex';
 }
 
+function confirmcancel(target) {
+  var overlay = target.nextElementSibling;
+  overlay.style.display = 'flex';
+}
+
 function exitCBEvent()
 {
   const checkboxes = document.querySelectorAll('#exitcb');
@@ -170,25 +175,6 @@ function exitCBEvent()
   countSpan.textContent = checkedIndexes.length;
   exitAll.checked = checkedIndexes.length === checkboxes.length;
 }
-/*
-function loadPositions(ps)
-{
-  ps.forEach(element => {
-    if(symtoinstrument(element.symbol).stockCode === instrument.stockCode)
-    {
-      var p = new Position(element.symbol);
-      p.orders = [{
-        orderN: 1,
-        symbol: element.symbol,
-        pricedAt: element.average_price,
-        quantity: element.quantity,
-      }];
-      p.orderN = 1;
-      refreshPositionPL(p, element.ltp);
-    }
-  });
-}
-*/
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
 document.getElementById("tabButton3").childNodes[1].innerText = instrument.oExpiryNxt;
