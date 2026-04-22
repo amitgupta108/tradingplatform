@@ -22,8 +22,8 @@ async function wsOps(uid, action, tpt)
         }
     }
     else if (ws != undefined && action === 'disconnect') {
-        ws.close();
         wshb('stop');
+        ws.close();
         response = 'disconnected';
     }
     return response;
@@ -82,7 +82,7 @@ function wsconnect(baseurl, token, sid, uid)
         try {
             const message = JSON.parse(event.data);
             console.log("message type: " + message.type)
-            if(message,type === 'cn' && message.msg === "connected")
+            if(message.type === 'cn' && message.msg === "connected")
                 wshb('start');
             if(message.type === 'order')
                 message.data = standardizeO(message.data);
@@ -114,8 +114,8 @@ function standardizeO(order)
         uOrder.state = 'opened';
     
     uOrder.action = uOrder.action === 'B' ? 'BUY' : 'SELL';
-    uOrder.expiry_date = uOrder.expiry_date.replaceAll('-20', '').replaceAll('-', '');
-    uOrder.strike_price = uOrder.strike_price.slice(-3);
+    uOrder.expiry_date = uOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
+    uOrder.strike_price = uOrder.strike_price.replace('.00', '');
     uOrder.symbol = uOrder.stockCode + uOrder.expiry_date +  uOrder.strike_price + uOrder.right;
 
     return uOrder;
@@ -128,11 +128,14 @@ function wshb(action)
       clearInterval(wsping);
 
     wsping = setInterval(() => {
-        qserver.emitUpdates(uid, {type: 'hb', data: ws.readyState});
+        qserver.broadcast({type: 'hb', data: ws.readyState});
     }, 60000);
   }
   else
+  {
+    qserver.broadcast({type: 'hb', data: 0});
     clearInterval(wsping);
+  }
 }
 
 module.exports = {

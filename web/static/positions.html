@@ -146,14 +146,14 @@
             <tbody id="tbody-submit-panel">
                 <tr> 
                     <td colspan="6" style="width: 100%; text-align: right;padding-right: 15px;">
-                        <button type="button" onclick="submitOrder()">Order</button>
+                        <button type="button" onclick="submitOrder(this)">Order</button>
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
     <button id="exitPositionBtn" style="position:absolute; top:450px; left:25px; display:none;">
-        Exit (<span id="count">0</span>)
+        Exit
     </button>
     <div class="hover-row-content">
         <button  id="buyCE" class="smallbutton buy" onclick="prepareOrderWindow(this)">B</button>

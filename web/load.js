@@ -1,19 +1,21 @@
 const timerText = document.getElementById("timer");
 const positions = new Array(0);
 const optionChains = new Array(0);
-//const uuid = crypto.randomUUID();
-var wsping;
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
   
 const toggle = document.getElementById('toggleBasket');
 const cbAll = document.getElementById('exitAll');
 const exitPositionBtn = document.getElementById('exitPositionBtn');
-const countSpan = document.getElementById('count');
-const order_window_row_template = document.querySelector('#order-window-row');
-const position_table_row_template = document.querySelector('#position-table-row');
-const option_chain_header = document.querySelector('#oc-head-row');
+
+const t_order_list_row = document.getElementById('order-list-tr');
+const t_order_window_row = document.querySelector('#order-window-row');
+const t_position_table_row = document.querySelector('#position-table-row');
+const t_option_chain_header = document.querySelector('#oc-head-row');
+const t_option_chain_row = document.getElementById('option-chain-row');
+
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
+const ordersubmitBody = document.getElementById('tbody-order-panel');
 
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 class TradeButtons extends HTMLElement {
@@ -42,13 +44,11 @@ qBox.addEventListener('futures', (event) => {
 cbAll.addEventListener('change', () => {
   var checkboxes = document.querySelectorAll('#exitcb');
   checkboxes.forEach(cb => cb.checked = cbAll.checked);
-  exitCBEvent();
 });
 
 exitPositionBtn.onclick = (event) => {
   
   toggle.disabled = true;    
-
   var checkboxes = document.querySelectorAll('#exitcb');
   const checkedIndexes = Array.from(checkboxes)
   .map((cb, i) => cb.checked ? i : null)
@@ -77,8 +77,7 @@ closeOListBtn.onclick = () => {
 };
 
 closeOWinBtn.onclick = () => {
-  var tBody = document.getElementById('tbody-order-panel');
-  tBody.innerHTML = "";
+  ordersubmitBody.innerHTML = "";
   oWindow.style.display = "none";
   qBox.removeEventListener('strikex', orderPanelQuote);
   toggle.disabled = false;

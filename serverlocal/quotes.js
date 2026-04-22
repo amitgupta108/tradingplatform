@@ -44,6 +44,14 @@ function emit(uid, event, msg){
     s.emit(event, msg);
 }
 
+function broadcast(msg){
+    console.log("ws-hb: ", JSON.stringify(msg));
+
+    socketmap.values().toArray().forEach((s) => {
+        s.emit('ws-' + msg.type, msg.data);
+    });
+}
+
 function usn(uid){
     var s = socketmap.get(uid);
     return s.sn;    
@@ -53,5 +61,6 @@ module.exports = {
     socketmap,
     emitQs,
     emitUpdates,
-    emit
+    emit,
+    broadcast
 }

@@ -15,7 +15,7 @@ function createOrderRow(order)
 {
   var scripName = symtoinstrument(order.symbol).name;
 
-  var tr = document.importNode(order_window_row_template.content, true).querySelector('tr');
+  var tr = tRow(t_order_window_row);
   tr.querySelector('#owsymbol').innerText  = order.symbol;
   tr.querySelector('#scripName').innerText  = scripName;
   tr.querySelector('#lmtprice').innerText  = "";
@@ -36,13 +36,11 @@ function createOrderRow(order)
 
 function appendOrderRow(tr, isMultiple)
 {
-  var tBody = document.getElementById('tbody-order-panel');  
-
   if(!isMultiple) {
-    tBody.innerHTML = '';
+    ordersubmitBody.innerHTML = '';
     tr.classList.remove('hover-row');
   }
-  tBody.prepend(tr); 
+  ordersubmitBody.prepend(tr); 
 }
 
 function showOrderWindow()
@@ -69,14 +67,16 @@ function removeOrderRow(target){
 
 function orderPanelQuote(event)
 {
-  const tBody = document.getElementById('tbody-order-panel');
-  var rows = tBody.rows;
+  var rows = ordersubmitBody.rows;
 
-  for(var i = 0; i < rows.length; i++)
-  {
-    if(event.detail.symbol === rows[i].querySelector("#owsymbol").innerText)
-      rows[i].querySelector("#owprice").innerText = event.detail.close.toFixed(2);
-  }
+  rows.forEach((r) => {
+    if(event.detail.symbol === r.querySelector("#owsymbol").innerText) {
+      r.querySelector("#owprice").innerText = event.detail.close.toFixed(2);
+      
+      if(r.querySelector("#lmtprice").innerText === '')
+        r.querySelector("#lmtprice").innerText = event.detail.close.toFixed(2);
+    }
+  });
 }
 
 function flipAction(orderRowBtn)
@@ -126,16 +126,14 @@ function writeProfitLoss()
 function displayOrderList(btn, event)
 {
   const symbol = btn.parentNode.parentNode.title;
-  const p = Position.findPositionRow(symbol);
+  const p = Position.findPosition(symbol, false);
   orderlistDiv.querySelector('td').innerText = symtoinstrument(symbol).name;
 
-  const row = document.getElementById('order-list-tr');  
   orderlistDiv.querySelector('#order-list-tbody').innerHTML = "";
   
   var tqty = 0;
   p.finalorders.forEach((o, idx) => {
-    var clone = document.importNode(row.content, true);
-    var newtr = clone.querySelector('tr');
+    var newtr = tRow(t_order_list_row);
 
     newtr.title = symbol;
     var qty = o.state.startsWith('complete') ? o.filled_q : 0;
@@ -165,14 +163,12 @@ function confirmcancel(target) {
 function exitCBEvent()
 {
   const checkboxes = document.querySelectorAll('#exitcb');
-  const checkedIndexes = Array.from(checkboxes)
+  const checkedIdx = Array.from(checkboxes)
   .map((cb, i) => cb.checked ? i : null)
   .filter(val => val !== null);
 
-  const hasSelection = checkedIndexes.length > 0;
-  exitPositionBtn.style.display = hasSelection ? 'block' : 'none';
-  countSpan.textContent = checkedIndexes.length;
-  exitAll.checked = checkedIndexes.length === checkboxes.length;
+  exitPositionBtn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
+  exitAll.checked = checkedIdx.length === checkboxes.length;
 }
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
