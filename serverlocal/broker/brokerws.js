@@ -3,7 +3,7 @@ const qserver = require('../quotes');
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
 require('console-stamp')(console, '[HH:MM:ss.l]');
-
+var wsping;
 var ws;
 
 async function wsOps(uid, action, tpt)
@@ -23,11 +23,8 @@ async function wsOps(uid, action, tpt)
     }
     else if (ws != undefined && action === 'disconnect') {
         ws.close();
-        response = 'closed';
-    }
-    else if(ws != undefined && action === 'isAlive') {
-        response = ws.readyState;
-        qserver.emitUpdates(uid, {type: 'hb', data: response});
+        wshb('stop');
+        response = 'disconnected';
     }
     return response;
 }
@@ -85,6 +82,8 @@ function wsconnect(baseurl, token, sid, uid)
         try {
             const message = JSON.parse(event.data);
             console.log("message type: " + message.type)
+            if(message,type === 'cn' && message.msg === "connected")
+                wshb('start');
             if(message.type === 'order')
                 message.data = standardizeO(message.data);
             qserver.emitUpdates(uid, message);
@@ -104,16 +103,36 @@ function wsconnect(baseurl, token, sid, uid)
 
 function standardizeO(order)
 {
-    const {trdSym: symbol, nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, 
-        trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q, qty: quantity, prcTp: pricetype, ...rest} = order;
+    const {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode,
+            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
+            qty: quantity, prcTp: pricetype, ...rest} = order;
 
-    var updatedorder = {symbol, orderid, state, pricedAt, filled_q, unfilled_q, quantity, pricetype, ...rest};
-    if(updatedorder.state === 'open')
-        updatedorder.state = 'opened';
+    var uOrder = {orderid, state, pricedAt, price, product, stockCode, expiry_date, strike_price, right, action,
+                        filled_q, unfilled_q, quantity, pricetype, ...rest};
     
-    updatedorder.action = updatedorder.action === 'B' ? 'BUY' : 'SELL';
+    if(uOrder.state === 'open')
+        uOrder.state = 'opened';
     
-    return updatedorder;
+    uOrder.action = uOrder.action === 'B' ? 'BUY' : 'SELL';
+    uOrder.expiry_date = uOrder.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+    uOrder.strike_price = uOrder.strike_price.slice(-3);
+    uOrder.symbol = uOrder.stockCode + uOrder.expiry_date +  uOrder.strike_price + uOrder.right;
+
+    return uOrder;
+}
+
+function wshb(action)
+{
+  if(action === 'start') {
+    if(wsping !== undefined)
+      clearInterval(wsping);
+
+    wsping = setInterval(() => {
+        qserver.emitUpdates(uid, {type: 'hb', data: ws.readyState});
+    }, 60000);
+  }
+  else
+    clearInterval(wsping);
 }
 
 module.exports = {

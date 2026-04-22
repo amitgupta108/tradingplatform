@@ -10,6 +10,7 @@ const Session = require('./session/session');
 const apiserver = require('./apiserver');
 const qserver = require('./quotes');
 const iBreeze = require('./broker/breeze');
+const iKNeo = require('./broker/kotakneo');
 
 const args = process.argv;
 
@@ -121,7 +122,7 @@ io.on('connection', (s) => {
 function disconnect(uid, mode)
 {
     iBreeze.disconnect(uid);
-    //iKNeo.disconnect(uid);
+    iKNeo.disconnect(uid);
 }
 
 function snDestroy(uid)

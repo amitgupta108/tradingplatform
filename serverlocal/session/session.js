@@ -89,7 +89,7 @@ class Session
         fst.forEach((e) => e.toStream = true);
         this.status = 'stream requested';
         
-        return fst;
+        return utils.filter(this.st, {keys: ['index', 'futures', 'vix']});
     }
     
     unsuball() {

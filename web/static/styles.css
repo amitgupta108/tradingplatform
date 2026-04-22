@@ -256,10 +256,10 @@ select:hover {
     display: none; /* 2. Hides the div by default. */
     position: absolute; /* 3. Positions the div relative to its parent .hover-cell. */
     top: 10%; /* Adjust positioning as needed */
-    left: 2%; /* Positions the div to the right of the cell */
+    left: 5%; /* Positions the div to the right of the cell */
     z-index: 200; /* 4. Ensures the div appears above other content. */
     height: 18px;
-    width: 60%;
+    width: 90%;
     border: 0px solid #ccc;
     justify-items:stretch;
 }

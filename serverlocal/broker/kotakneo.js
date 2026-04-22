@@ -24,8 +24,8 @@ function disconnect(cuid, scrip)
 {
     /*var idx = uidscripmapping.findIndex((s) => s.scrip === scrip);
     uidscripmapping.splice(idx, 1);
-    //client.disconnect();
     */
+    client.disconnect();
 }
 
 function onQuotes(q)
@@ -35,7 +35,12 @@ function onQuotes(q)
 
 function standardizeoq(q) 
 {
-    q.close = q.ltp;
+    q.ltp = Number(q.ltp);
+    q.ltt = Number(q.ltt);
+    q.close = (q.ltp);
+    q.open = q.ltp;
+    q.high = q.ltp;
+    q.low = q.ltp;
     q.exchange = q.exchange === 'NSE_INDEX' ? 'NSE' : q.exchange;
     if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
         q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';

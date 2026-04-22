@@ -4,6 +4,7 @@ class Order{
   time = Date.now();
   state = 'created';
   pricetype = 'LIMIT';
+  product = 'NRML';
   symbol;
   action;
 
@@ -30,10 +31,8 @@ function submitOrder()
 
       let neworder = new Order(symbol, action);
       neworder.quantity = lot * instrument.lotsize;
-      neworder.cprice = Number(r.querySelector('#owprice').innerText);
       neworder.pricetype = r.querySelector('#ordertype').innerText;
       neworder.price = price === "" ? 0 : Number(price);
-      neworder.product = 'NRML';  
 
       var p = Position.findPositionRow(symbol);
       if(p === undefined)

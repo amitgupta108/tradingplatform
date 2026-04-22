@@ -105,15 +105,3 @@ function generateEvent(type, nv)
     cancelable: true // Allow event.preventDefault()
   });
 }
-
-function timer(action, duration, start)
-{
-  if(start)
-    wsping = setInterval(() => {
-      emit('wsOps', {action: action, data: Date.now()});
-    }, duration);
-  else
-    clearInterval(wsping);
-
-  return !start;
-}

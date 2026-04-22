@@ -83,7 +83,4 @@ function wsconnect(action){
   var tpt = document.getElementById("tpt").value;
   emit('wsOps', {action: action, data: tpt});
   document.getElementById("tpt").value = "";
-
-  var tAction = action === 'connect' ? true : false;
-  var status =  timer(action, 60000, tAction);
 }

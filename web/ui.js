@@ -42,7 +42,6 @@ function appendOrderRow(tr, isMultiple)
     tBody.innerHTML = '';
     tr.classList.remove('hover-row');
   }
-
   tBody.prepend(tr); 
 }
 
@@ -141,6 +140,7 @@ function displayOrderList(btn, event)
     newtr.title = symbol;
     var qty = o.state.startsWith('complete') ? o.filled_q : 0;
     tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
+
     newtr.childNodes[1].innerText = o.orderid;
     newtr.childNodes[3].innerText = o.action.slice(0, 1);
     newtr.childNodes[5].innerText = qty;
@@ -154,7 +154,6 @@ function displayOrderList(btn, event)
           
     document.querySelector('#order-list-tbody').append(newtr);
   });
-
   orderlistDiv.style.display = 'flex';
 }
 

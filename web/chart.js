@@ -7,8 +7,8 @@ function setFuturesChart(qs)
   {
     qs[i].time = sTVtime(qs[i].datetime);
     qs[i].value = (2/21) * qs[i].close + (1-2/21) * (i !== 0 ? qs[i-1].value : qs[0].close);
-    qs[i].customValues = (i !== 0 ? qs[i-1].value : qs[0].close) ;
   }
+  qs.at(-1).customValues = qs.at(-1).value;
   mainSeries.setData(qs);
   emaSeries.setData(qs);
 }
@@ -20,11 +20,11 @@ function futuresChart(q)
     var lastcandle = mainSeries.data().at(-1);
     if(lastcandle.time + 300 < nTVtime(q.ltt))
     {  
-      lastcandle.high = q.high;
-      lastcandle.low = q.low;
       lastcandle.close = q.close;
-      lastcandle.open = q.open
-      lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.value,
+      lastcandle.open = q.close;
+      lastcandle.high = q.close;
+      lastcandle.low = q.close;
+      lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues,
       lastcandle.customValues = lastcandle.value;
       lastcandle.time = lastcandle.time + 300;
     }
@@ -38,6 +38,14 @@ function futuresChart(q)
     mainSeries.update(lastcandle);
     emaSeries.update(lastcandle);
   }
+  /*else{
+    var firstCandle = q;
+    firstCandle.value = q.close;
+    firstCandle.time = nTVtime(q.ltt);
+
+    mainSeries.update(firstCandle);
+    emaSeries.update(firstCandle);
+  }*/
 }
 
 function vixChart(q)
