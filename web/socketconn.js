@@ -125,18 +125,8 @@ function rh(socket)
     p.orderupdate(exorder);
   });
 
-  socket.on('ws-position', (pmsg) => {
-    console.log("position message " + pmsg)
-    var sp = pmsg.data;
-    positions.map((p) => {
-      if(p.symbol === sp.symbol){
-        p.value(p.psize === (sp.flBuyQty - sp.ftSellQty) ? 1 : 0);
-      }
-    });
-  });
-
   socket.on('ws-hb', (state) => {
-    if(state === 'connected' || Number(state) === 1)
+    if(Number(state) === 1)
       document.getElementById('socn').style.backgroundColor = '#4CAF50';
     else
       document.getElementById('socn').style.backgroundColor = '#f44336';

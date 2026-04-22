@@ -6,7 +6,7 @@ const sb = require('./binarysearch');
 
 const appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55367877";
+const sessionId = "55379900";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -112,9 +112,9 @@ function wssub(list, callback)
         }
         breeze.subscribeFeeds(b)
         .then((resp) => {
-            console.log(JSON.stringify(resp))
+            console.log('ICICI feed subs: ' + JSON.stringify(resp))
         }).catch((error) => {
-            console.log(error);
+            console.log('ICICI feed subs error: ' + error);
         });
     });
 }
@@ -126,11 +126,13 @@ function wsunsub(list)
             exchangeCode: e.exchange, 
             stockCode: e.stockCode, 
             getExchangeQuotes:true, 
-            interval:"1minute"
+            interval:"1second"
         }
         breeze.unsubscribeFeeds(b)
         .then((resp) => {
-            console.log(JSON.stringify(resp))
+            console.log('ICICI feed unsubs: ' + JSON.stringify(resp))
+        }).catch((error) => {
+            console.log('ICICI feed unsubs error: ' + error);
         });
     });
 }
