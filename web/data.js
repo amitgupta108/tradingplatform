@@ -67,7 +67,7 @@ instrumentMap.set('NL2', {
 });
 
 instrumentMap.set('ML',{
-  simStartTime: new Date(Date.now()),
+  simStartTime: Date.now(),
   fExpiry: "18MAY26",
   oExpiry: "14MAY26",
   oExpiryNxt: "16JUN26",

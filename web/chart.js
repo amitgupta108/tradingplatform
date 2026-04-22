@@ -7,45 +7,49 @@ function setFuturesChart(qs)
   {
     qs[i].time = sTVtime(qs[i].datetime);
     qs[i].value = (2/21) * qs[i].close + (1-2/21) * (i !== 0 ? qs[i-1].value : qs[0].close);
+    qs.at(-1).customValues = qs.at(-1).value;
   }
-  qs.at(-1).customValues = qs.at(-1).value;
   mainSeries.setData(qs);
   emaSeries.setData(qs);
 }
 
+function fetchLastCandle(q)
+{
+  if(mainSeries.data().length !== 0)
+    return mainSeries.data().at(-1);
+  else
+    return {
+        time: nTVtime(q.ltt) - nTVtime(q.ltt) % 300, 
+        close: q.close,
+        open: q.close,
+        high: q.close,
+        low: q.close,         
+        customValues: q.close
+      };
+}
+
 function futuresChart(q)
 {
-  if(mainSeries.data().length > 0)
-  {
-    var lastcandle = mainSeries.data().at(-1);
-    if(lastcandle.time + 300 < nTVtime(q.ltt))
-    {  
-      lastcandle.close = q.close;
-      lastcandle.open = q.close;
-      lastcandle.high = q.close;
-      lastcandle.low = q.close;
-      lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues,
-      lastcandle.customValues = lastcandle.value;
-      lastcandle.time = lastcandle.time + 300;
-    }
-    else
-    {
-      lastcandle.high = Math.max(q.close, lastcandle.high);
-      lastcandle.low = Math.min(q.close, lastcandle.low);
-      lastcandle.close = q.close;
-      lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues;
-    }      
-    mainSeries.update(lastcandle);
-    emaSeries.update(lastcandle);
+  var lastcandle = fetchLastCandle(q); 
+  if(lastcandle.time + 300 < nTVtime(q.ltt))
+  {  
+    lastcandle.close = q.close;
+    lastcandle.open = q.close;
+    lastcandle.high = q.close;
+    lastcandle.low = q.close;
+    lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues;
+    lastcandle.customValues = lastcandle.value;
+    lastcandle.time = lastcandle.time + 300;
   }
-  /*else{
-    var firstCandle = q;
-    firstCandle.value = q.close;
-    firstCandle.time = nTVtime(q.ltt);
-
-    mainSeries.update(firstCandle);
-    emaSeries.update(firstCandle);
-  }*/
+  else
+  {
+    lastcandle.high = Math.max(q.close, lastcandle.high);
+    lastcandle.low = Math.min(q.close, lastcandle.low);
+    lastcandle.close = q.close;
+    lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues;
+  }      
+  mainSeries.update(lastcandle);
+  emaSeries.update(lastcandle);
 }
 
 function vixChart(q)

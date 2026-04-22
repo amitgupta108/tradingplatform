@@ -109,7 +109,7 @@ function wssub(list, callback)
             stockCode: e.stockCode, 
             getExchangeQuotes:true, 
             interval:"1second"
-        }
+        };
         breeze.subscribeFeeds(b)
         .then((resp) => {
             console.log('ICICI feed subs: ' + JSON.stringify(resp))
@@ -127,7 +127,7 @@ function wsunsub(list)
             stockCode: e.stockCode, 
             getExchangeQuotes:true, 
             interval:"1second"
-        }
+        };
         breeze.unsubscribeFeeds(b)
         .then((resp) => {
             console.log('ICICI feed unsubs: ' + JSON.stringify(resp))

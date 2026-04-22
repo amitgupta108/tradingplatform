@@ -47,7 +47,10 @@ class Position
     this.value('unbookedPL', unbookedPL.toFixed(2));
     this.value('totalPL', totalPL.toFixed(2));
     
-    writeProfitLoss();
+    var vUnbookedPL = Number(document.getElementById("vUnbookedPL").innerText);
+    document.getElementById("vUnbookedPL").innerText = (vUnbookedPL - prevPL + unbookedPL).toFixed(2);
+    var vTotalPL = Number(document.getElementById("vTotalPL").innerText);
+    document.getElementById("vTotalPL").innerText = (vTotalPL - prevPL + unbookedPL).toFixed(2);
   }
 
   value(p, v = undefined){
@@ -135,8 +138,11 @@ class Position
     writeProfitLoss();
   }
 
-  static findPositionRow(symbol)
+  static findPosition(symbol, newp)
   {
-    return positions.find((e) => symbol === e.#pRow.title);
+    var p = positions.find((e) => symbol === e.symbol);
+    if(newp)
+      p = new Position(symbol);
+    return p;
   }
 }

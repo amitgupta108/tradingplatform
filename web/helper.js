@@ -52,29 +52,12 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
 
 function addPositionRow(symbol) {
 
-  var template = document.importNode(position_table_row_template.content, true);
-  var positionrow = template.querySelector('tr');
+  var positionrow = tRow(t_position_table_row);
   positionrow.title = symbol;
-  template.querySelector('#orderdisplay-btn').title = symbol;
+  positionrow.querySelector('#orderdisplay-btn').title = symbol;
   document.getElementById('tblBody').append(positionrow);
   
   return positionrow;
-}
-
-function createOCTable(oTblBody, nStrikes)
-{
-  const tblBody = document.getElementById(oTblBody);
-  var rows = tblBody.getElementsByTagName('tr');
-  
-  var template = rows[rows.length -1].cloneNode(true);
-  oTblBody.innerHTML = '';
-    
-  while(rows.length <= nStrikes)
-  {
-    var clone = template.cloneNode(true);
-    oTblBody.append(clone);
-  }
-  return oTblBody.getElementsByTagName('tr');
 }
 
 function symtoinstrument(symbol)
@@ -104,4 +87,8 @@ function generateEvent(type, nv)
     bubbles: true,   // Allow the event to bubble up the DOM
     cancelable: true // Allow event.preventDefault()
   });
+}
+
+function tRow(template){
+  return document.importNode(template.content, true).querySelector('tr');
 }

@@ -32,19 +32,15 @@ class OptionChain
     const oTblBody = document.getElementById(tblBody);
     const oTblHead = oTblBody.previousElementSibling;
 
-    var clone = document.importNode(option_chain_header.content, true);
-    var newtr = clone.querySelector('tr');
+    var newhtr = tRow(t_option_chain_header);
     if(tblBody === 'ocHead2')
-      newtr.childNodes[1].style.color = 'black';
+      newhtr.childNodes[1].style.color = 'black';
 
-    oTblHead.append(newtr);
-
-    const template = document.getElementById('option-chain-row');
+    oTblHead.append(newhtr);
     
     for(var i = 0; i < lscount; i++)
     {
-      var tContent = document.importNode(template.content, true);
-      var newtr = tContent.querySelector('tr');
+      var newtr = tRow(t_option_chain_row);
       oTblBody.append(newtr);
     }
   }
