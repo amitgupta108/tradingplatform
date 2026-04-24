@@ -1,51 +1,37 @@
-function prepareOrderWindow(clickedBtn)
+function prepareOrderWindow(event)
 {
-  let symbol = clickedBtn.parentNode.parentNode.nextElementSibling.innerText;
-  let action = clickedBtn.innerText;
-
   toggle.disabled = true;    
-  var isMultiple = toggle.checked;
 
-  var tr = createOrderRow(new Order(symbol, action));
-  appendOrderRow(tr, isMultiple)
-  showOrderWindow();
-}
+  let symbol = event.currentTarget.title;
+  let clickedBtn = event.target;
+  const action = clickedBtn.innerText;
 
-function createOrderRow(order)
-{
-  var scripName = symtoinstrument(order.symbol).name;
+  const neworder = new Order(symbol, action);
+  var scripName = symtoinstrument(neworder.symbol).name;
 
-  var tr = tRow(t_order_window_row);
-  tr.querySelector('#owsymbol').innerText  = order.symbol;
+  var tr = tRow(t_order_window_row, true);
+  tr.querySelector('#owsymbol').innerText  = neworder.symbol;
   tr.querySelector('#scripName').innerText  = scripName;
-  tr.querySelector('#lmtprice').innerText  = "";
-  if(order.quantity != undefined)
-    tr.querySelector('#lotselect').value = order.quantity / instrument.lotsize;
-  if(order.pricetype !== undefined)
-    tr.querySelector('#ordertype').innerText = order.pricetype;
+  tr.querySelector('#lotselect').value = neworder.quantity;
+  tr.querySelector('#ordertype').innerText = neworder.pricetype;
+  
+  const order_row_btn = tr.querySelector('#owaction');
+  order_row_btn.innerText = neworder.action;
 
-  const rowBtn = tr.querySelector("#owaction");
-  rowBtn.innerText = order.action;
-  if(order.action === 'B')
-    rowBtn.classList.replace('sell', 'buy');
-  else 
-    rowBtn.classList.replace('buy', 'sell');
+  neworder.action === 'B' ? 
+      order_row_btn.classList.replace('sell', 'buy') :
+      order_row_btn.classList.replace('buy', 'sell') ;
 
-  return tr;
-}
-
-function appendOrderRow(tr, isMultiple)
-{
-  if(!isMultiple) {
-    ordersubmitBody.innerHTML = '';
+  if(!toggle.checked) {
+    order_rows_tbody.innerHTML = '';
     tr.classList.remove('hover-row');
   }
-  ordersubmitBody.prepend(tr); 
+  order_rows_tbody.prepend(tr); 
+  showOrderWindow();
 }
 
 function showOrderWindow()
 {
-  toggle.disabled = true;
   var rows = oWindow.querySelectorAll('tr');
   oWindow.classList.remove('multi');
   oWindow.classList.remove('buy');
@@ -57,26 +43,11 @@ function showOrderWindow()
 
   setTimeout(() => {
       oWindow.classList.add('show');
-      qBox.addEventListener('strikex', orderPanelQuote);
     }, 10);
 }
 
 function removeOrderRow(target){
   target.parentNode.parentNode.parentNode.remove();
-}
-
-function orderPanelQuote(event)
-{
-  var rows = ordersubmitBody.rows;
-
-  rows.forEach((r) => {
-    if(event.detail.symbol === r.querySelector("#owsymbol").innerText) {
-      r.querySelector("#owprice").innerText = event.detail.close.toFixed(2);
-      
-      if(r.querySelector("#lmtprice").innerText === '')
-        r.querySelector("#lmtprice").innerText = event.detail.close.toFixed(2);
-    }
-  });
 }
 
 function flipAction(orderRowBtn)
@@ -86,7 +57,9 @@ function flipAction(orderRowBtn)
   if(action === 'B')
     orderRowBtn.classList.replace('buy', 'sell');
   else
-    orderRowBtn.classList.replace('sell', 'buy'); 
+    orderRowBtn.classList.replace('sell', 'buy');
+  
+  showOrderWindow();
 }
 
 function switchTabs(evt, container, tabName) {
@@ -102,10 +75,6 @@ function switchTabs(evt, container, tabName) {
   }
   document.getElementById(tabName).style.display = "block";  
   evt.currentTarget.className += " active-tab";
-}
-
-function changeText(self) {
-  self.innerText = self.innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
 }
 
 function writeProfitLoss()
@@ -144,7 +113,7 @@ function displayOrderList(btn, event)
     newtr.childNodes[5].innerText = qty;
     newtr.childNodes[7].innerText = o.pricetype.slice(0, 1);
     newtr.childNodes[9].innerText = tqty;
-    newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt).toFixed(2);
+    newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
     newtr.childNodes[13].innerText = o.state;
     newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'x' : '');
     if(o.state === 'opened') 

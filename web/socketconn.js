@@ -59,7 +59,7 @@ function rh(socket)
       timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString();
       
       if (OptionChain.get(instrument.oExpiry) === undefined)
-        new OptionChain(instrument.oExpiry, 'ocBody');
+        new OptionChain(instrument.oExpiry, 'c_option_chain');
       if(mainSeries.data().length === 0)
         loadPreData(socket.sTime);
     });

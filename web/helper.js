@@ -50,16 +50,6 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
   optionsChartConfig.push(chartConfigItem);
 }
 
-function addPositionRow(symbol) {
-
-  var positionrow = tRow(t_position_table_row);
-  positionrow.title = symbol;
-  positionrow.querySelector('#orderdisplay-btn').title = symbol;
-  document.getElementById('tblBody').append(positionrow);
-  
-  return positionrow;
-}
-
 function symtoinstrument(symbol)
 {
   var stk = symbol.slice(-9, -2);
@@ -89,6 +79,33 @@ function generateEvent(type, nv)
   });
 }
 
-function tRow(template){
-  return document.importNode(template.content, true).querySelector('tr');
+function qSel(element, name, type){
+  type = type === 'id' ? '#' : type === 'css' ? '.' : '';
+  return element.querySelector(type + name);
+}
+
+function tRow(template, withListener){
+  const new_row = document.importNode(template.content, true).querySelector('tr');
+  if(withListener){
+    new_row.addEventListener('click', (e) => {
+      handleRowEvent(e)}, true);
+  }
+  return new_row;
+}
+
+function handleRowEvent(e)
+{
+  const clickedElement = e.target;
+  const limitp = qSel(e.currentTarget, 'lmtprice', 'id');
+
+  if(clickedElement.innerText === 'MARKET'){
+    clickedElement.innerText = 'LIMIT';
+    limitp.disabled = false;
+  }
+  else if(clickedElement.innerText === 'LIMIT')
+  {
+    clickedElement.innerText = 'MARKET';
+    limitp.value = "";
+    limitp.disabled = true;
+  }
 }

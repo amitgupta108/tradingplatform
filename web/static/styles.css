@@ -7,25 +7,27 @@ body {
 .top {
     position: absolute; 
     display: flex;
-    justify-content: space-around;
+    gap: 6px;
+    justify-content:stretch;
     width: 99.2%;
-    min-height: 830px;
-    min-width: 1300px;
+    height: 99.3%;
+    border-radius: 5px;
 }
 
 .container {
+    display: inline-block;
     border: 1px solid #4CAF50;
-    height: 825px;
+    height: 99.6%;
     width: 50%;
-    min-width: 650px;
     border-radius: 5px;
-    overflow: auto;
+    padding: 1px;
 }  
 
 #timer {
-    height: 3.5%;
-    width: 100%;
+    height: 3.0%;
+    width: 99.2%;
     display: flex;
+    padding: 1px;
     align-items: center;
     justify-content:center;
     font-size: 14px;
@@ -33,11 +35,14 @@ body {
 
 .tab-content {
     display: none;
-    padding: 2px;
     background-color: white;
-    border: 1px solid #4CAF50;
     border-radius: 5px;
-    overflow-y:auto;
+    height: 34%;
+    width: 99.5%;
+}
+
+.active {
+    display:flex;
 }
 
 .tabs {
@@ -47,15 +52,15 @@ body {
     border-radius: 5px;
     overflow: hidden;
     height: 3.5%;
-    width:100%;
+    width:99.5%;
     font-size: 13px;
+    vertical-align: middle;
 }
 
 .tab {
     flex: content;
-    padding: 4px;
+    padding: 3px;
     text-align: center;
-    vertical-align: middle;
     color: white;
     transition: background-color 0.3s;
     justify-content:center;
@@ -68,48 +73,43 @@ body {
     background-color: #45a049;
 }
 
-.active {
-    display:block;
-}
-
 .active-tab {
-    flex: content;
     background-color: #1a9a20;
     justify-content: center;
     display: flex;
-    vertical-align: middle;
     justify-content: center;
+    padding: 3px;
+    gap: 10px;
 }
 
 .inert-tab {
-    flex: content;
     background-color: #50cd50;
-    justify-content: center;
-    display: flex;
-    vertical-align: middle;
+    display:flexbox;
     justify-content: center;
     font-size: 13px;
+    padding: 3px;
+    gap: 10px;
+    vertical-align: text-bottom;
 }
 
-#positions {
-    border: 0px solid lightgray;
-    width: 100%;
-    height:48.5%;
+#positions_div {
+    width: 99.4%;
+    height: 51.2%;
     border-radius: 5px;
-    overflow-y:auto;
-    font-size: 13px;
+    display: flex;
+    padding: 2px;
+    overflow: hidden;
 }
 
 #bottomPanel {
     display:flex;
     border: 1px solid #4CAF50;
-    width: 99.5%;
-    height: 3.7%;
+    width: 99.4%;
+    height: 3.5%;
     border-radius: 5px;
     vertical-align:auto;
     justify-content: space-between;
-    padding-top: 4px;
-    padding-left: 2px;
+    padding: 2px;
 }
 
 #bottomPLPanel {
@@ -122,24 +122,27 @@ body {
 }
 
 label {    
-    font-size: 14px;
+    font-size: 13px;
     vertical-align: middle;
     justify-items: center;
     justify-content: center;
-    padding: 3px;
+    padding: 2px;
 }
 
 table {
+    border-radius: 4px;
     width: 100%;
+    height:100%;
+    border: 0px;
+    padding: 0px;
     border-collapse: collapse;
-    margin-bottom: 2px;
-    border-radius: 5px;
     overflow: hidden;
 }
 
 tr {
     background-color: #f2f2f2;
-    border-radius: 5px;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 tr:hover {
@@ -149,16 +152,19 @@ tr:hover {
 th {
     background-color: #4CAF50;
     color: white;
-    padding: 3px;
     text-align: center;
     border: 1px solid #ddd;
     font-size: 13px;
+    overflow: hidden;
 }
 
 td {
-    padding: 3px;
     text-align: center;
+    vertical-align: middle;
     border: 1px solid #ddd;
+    font-size: 13px;
+    overflow: hidden;
+    padding: 1px;
 }
 
 button {
@@ -236,13 +242,13 @@ button:disabled {
 }
 
 select {
-    height: 20px;
+    height: 18px;
     padding: 2px;
     border: 1px solid #4CAF50;
     border-radius: 4px;
     background-color: #e8f5e9;
     color: #2e7d32;
-    font-size: 12px;
+    font-size: 11px;
     transition: border-color 0.3s;
 }
 
@@ -277,13 +283,13 @@ select:hover {
     top: 50px;
     left: 400px;
     width: 400px;
-    z-index: 1000;
+    z-index: 200;
     display: none;
-    border-radius: 4px;
-    padding: 2px;
+    border-radius: 5px;
+    padding: 3px;
     opacity: 0; /* Start hidden to use fade-in animation */
     transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-    border-radius: 4px;
+    overflow:auto;
 }
 
 .orderwindow.buy {
@@ -383,13 +389,14 @@ input:checked + .slider:before {
     color: black;
     border-radius: 4px;
     background-color: rgba(128, 128, 128, 0.423);
-    font-size: 12px;
+    font-size: 11px;
     vertical-align: middle;
     align-items: center;
 }
 
 .hover-row { 
     position: relative; 
+    padding: 3px;
 }
 
 .hover-row-content {
