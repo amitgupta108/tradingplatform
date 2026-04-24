@@ -35,7 +35,7 @@ function resumeSimulation()
     loadPreData(socket.sTime);
 
   if (OptionChain.get(instrument.oExpiry) === undefined)
-    new OptionChain(instrument.oExpiry, 'ocBody');
+    new OptionChain(instrument.oExpiry, 'c_option_chain');
   emit('resume', {continue: true});
 
 }
@@ -45,7 +45,7 @@ function start()
   loadPreData();
   emit('startstream', instrument); 
   if (OptionChain.get(instrument.oExpiry) === undefined)
-    new OptionChain(instrument.oExpiry, 'ocBody');
+    new OptionChain(instrument.oExpiry, 'c_option_chain');
 }
 
 function stopSimulation() 

@@ -15,7 +15,7 @@ instrumentMap.set('UI', {
 
 instrumentMap.set('NH2', {
   fExpiry: "24FEB26",
-  simStartTime: new Date("2026-02-12 09:21:00").getTime(),
+  simStartTime: new Date("2026-02-13 09:21:00").getTime(),
   oExpiry: "17FEB26",
   oExpiryNxt: "24FEB26",
   stockCode: 'NIFTY',
@@ -56,8 +56,8 @@ instrumentMap.set('NL1', {
 instrumentMap.set('NL2', {
   simStartTime: Date.now(),
   fExpiry: "28APR26",
-  oExpiry: "21APR26",
-  oExpiryNxt: "28APR26",
+  oExpiry: "28APR26",
+  oExpiryNxt: "05MAY26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 12,
@@ -86,7 +86,7 @@ const instrument = instrumentMap.get(i);
 const chbk = instrument.mode === 1 ? 'lightgray' : 'white';
 
 const chartOptions = {
-  width: 665, height: 790,
+  width: 730, height: 795,
   layout: {
       textColor: 'black',
       background: { type: 'solid', color: chbk},

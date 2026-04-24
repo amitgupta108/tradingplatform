@@ -9,49 +9,50 @@ class Order{
   symbol;
   action;
 
-  constructor(symbol, action)
+  constructor(symbol, action, quantity = 1)
   {
     this.symbol = symbol;
     this.action = action;
+    this.quantity = quantity
   }
-}
-
-function qSel(element, name, type){
-  type = type === 'id' ? '#' : type === 'css' ? '.' : '';
-  return element.querySelector(type + name);
 }
 
 function submitOrder(clickedBtn) 
 {  
   const rows = Array.from(ordersubmitBody.querySelectorAll('tr'));
-  var error = false;
+  var isError = false;
   var neworders = rows.map((r) => 
   {  
-    var symbol = qSel(r, 'owsymbol', 'id').innerText;
-    var action = r.querySelector('#owaction').innerText;
-    var price = r.querySelector('#lmtprice').value;
-    var lot = r.querySelector('#lotselect').value; 
-
-    let neworder = new Order(symbol, action);
-    neworder.quantity = lot * instrument.lotsize;
-    neworder.pricetype = r.querySelector('#ordertype').innerText;
-    if(price === "") {
-      error = true;
+    const pricetype = r.querySelector('#ordertype').innerText;
+    const price = r.querySelector('#lmtprice').value;
+    if(pricetype === 'LIMIT' && price === "") {
+      isError = true;
       qSel(r, 'lmtprice', 'id').style.border = '1px solid red';
+      return new Order('', '');
     }
-    var p = Position.findPosition(symbol, true);
-
-    p.orderlist(neworder);
-    return neworder;
+    else
+    {
+      var symbol = qSel(r, 'owsymbol', 'id').innerText;
+      var action = r.querySelector('#owaction').innerText;
+      var lot = r.querySelector('#lotselect').value; 
+      let neworder = new Order(symbol, action, lot * instrument.lotsize);
+      neworder.price = price;
+      neworder.pricetype = pricetype;
+      
+      var p = Position.findPosition(symbol, true);
+      p.orderlist(neworder);
+      return neworder;
+    }
   });
-  if(error)
+
+  if(isError)
     return;
 
   emit('order', neworders);
   sOrderSubmit.play();
 
   oWindow.style.display = 'none';
-  ordersubmitBody.innerHTML = '';
+  order_rows_tbody.innerHTML = '';
   var checkboxes = document.querySelectorAll('#exitcb');
   checkboxes.forEach(cb => cb.checked = false);
   toggle.disabled = false;
