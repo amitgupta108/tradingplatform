@@ -317,7 +317,7 @@ select:hover {
 
 .orderlist {
     position: fixed;
-    top: 350px;
+    top: 700px;
     left: 50px;
     width: 150px;
     z-index: 1000;
@@ -338,7 +338,7 @@ select:hover {
     padding: 2px;
     text-align: center;
     border: 0px solid #ddd;
-    font-size: 11px;
+    font-size: 12px;
     background-color: dimgray;
     color: lightgray;
 }

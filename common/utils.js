@@ -127,8 +127,8 @@ function strikes(a, n)
     var strikes = new Array(n * 2); 
 
     for(var j = 0; j < n ; j++) {
-        strikes[j] = {strike: (a - (n) + j+1) * 50, right: 'Put'};
-        strikes[j + n] = {strike: (a + j) * 50, right: 'Call'};
+        strikes[j] = {strike: (a - (n) + j) * 50, right: 'Put'};
+        strikes[j + n] = {strike: (a + j-1) * 50, right: 'Call'};
     }
     return strikes;
 }

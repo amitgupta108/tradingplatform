@@ -6,7 +6,7 @@ const sb = require('./binarysearch');
 
 const appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55407592";
+const sessionId = "55420315";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 

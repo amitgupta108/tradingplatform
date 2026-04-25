@@ -38,7 +38,7 @@ body {
     background-color: white;
     border-radius: 5px;
     height: 34%;
-    width: 99.5%;
+    width: 99.7%;
 }
 
 .active {
@@ -94,7 +94,7 @@ body {
 
 #positions_div {
     width: 99.4%;
-    height: 51.2%;
+    height: 51.4%;
     border-radius: 5px;
     display: flex;
     padding: 2px;
@@ -104,8 +104,8 @@ body {
 #bottomPanel {
     display:flex;
     border: 1px solid #4CAF50;
-    width: 99.4%;
-    height: 3.5%;
+    width: 99.2%;
+    height: 3.3%;
     border-radius: 5px;
     vertical-align:auto;
     justify-content: space-between;
@@ -164,7 +164,7 @@ td {
     border: 1px solid #ddd;
     font-size: 13px;
     overflow: hidden;
-    padding: 1px;
+    padding: 2px;
 }
 
 button {
@@ -331,7 +331,7 @@ select:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: opacity 1.0s ease-in-out, transform 1.0s ease-in-out;
     transform: translateY(-20px); /* Optional: add a slight slide-in effect */
-    background-color: dimgray;
+    background-color: gray;
 }
 
 .orderlist-td {
@@ -386,12 +386,14 @@ input:checked + .slider:before {
 
 .clickable {
     cursor:pointer;
-    color: black;
+    color: rgba(255, 255, 255, 0.836);
     border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.423);
-    font-size: 11px;
+    background-color: rgba(128, 128, 128, 0.223);
+    font-size: 12px;
     vertical-align: middle;
     align-items: center;
+    padding: 2px;
+    min-width: 30px;
 }
 
 .hover-row { 
@@ -429,7 +431,7 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     left: 0;
-    width: 60px;
+    width:100%;
     z-index: 200;
     height: 100%;
     display: none;
@@ -437,6 +439,6 @@ input:checked + .slider:before {
     justify-content:end;
     backdrop-filter: blur(0.5px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: rgba(79, 76, 76, 0.163);
-    color: #000;
+    background-color: rgba(79, 76, 76, 0.103);
+    color: white;
 }

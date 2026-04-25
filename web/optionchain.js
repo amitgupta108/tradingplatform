@@ -3,7 +3,7 @@ class OptionChain
   #expiry;
   #v_oc_id;
   atm;
-  qMap;
+  pMap;
 
   constructor(expiry, v_oc_id)
   {
@@ -11,14 +11,17 @@ class OptionChain
     this.#expiry = expiry;
     this.#buildHTMLOC(this.#v_oc_id)
     
-    this.qMap = new Map();
+    this.pMap = new Map();
     optionChains.push(this);
 
     qBox.addEventListener('strikex', this);
     qBox.addEventListener('index', (event) => {
-      this.atm = Math.round(event.detail.close / 50) * 50;
+      if(Math.round(this.atm - event.detail.close) > 60);
+        this.atm = Math.round(event.detail.close / 50) * 50;
     });
-    pBox.addEventListener('positions', ((e) => {} ));
+    pBox.addEventListener('position', ((e) => {
+      this.pMap.set(e.detail.symbol ,{psize: e.detail.unbookedQ});
+    } ));
   }
 
   #buildHTMLOC(v_oc_id)
@@ -49,7 +52,6 @@ class OptionChain
 
     if(q.expiry_date !== this.#expiry)
       return;
-    this.qMap.set(q.symbol, q);
 
     var offset = (this.atm - Number(q.strike_price)) / 50;
     offset = offset * (q.right === 'Call' ? -1 : 1);
@@ -71,16 +73,19 @@ class OptionChain
     row.cells[cIdx[1]].innerText = q.delta.toFixed(2);
     row.cells[cIdx[2]].innerText = q.close.toFixed(2);
     row.cells[cIdx[3]].childNodes[3].innerText = q.strike_price;
-    /*
-    var p = Position.findPosition(q.symbol, false);
-  
-    const unbookedQ =  (p != undefined && p.value('unbookedQ') != 0) ? p.value('unbookedQ') : '';
-    row.cells[cIdx[3]].childNodes[1].innerText =  unbookedQ;
+
+    const unbookedQ = this.pMap.get(q.symbol);
+    if(unbookedQ === undefined || unbookedQ.psize === 0 || unbookedQ.psize === '') {
+      row.cells[cIdx[3]].childNodes[1].innerText = '';
+      //row.cells[cIdx[3]].childNodes[1].classList.toggle();
+    }
+    else {
+      const psize = unbookedQ.psize;
+      row.cells[cIdx[3]].childNodes[1].innerText = psize;
     
-    if(unbookedQ !== '') {
-      row.cells[3].childNodes[1].classList.remove(p, (Number(unbookedQ) > 0 ? 'sell' : 'buy'));
-      row.cells[3].childNodes[1].classList.add(p, (Number(unbookedQ) > 0 ? 'buy' : 'sell'));
-    }*/
+      row.cells[cIdx[3]].childNodes[1].classList.remove((psize > 0 ? 'sell' : 'buy'));
+      row.cells[cIdx[3]].childNodes[1].classList.add((psize > 0 ? 'buy' : 'sell'));
+    }
   }
 
   static get(expiry)
