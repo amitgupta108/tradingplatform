@@ -6,14 +6,16 @@ class Order{
   state = 'created';
   pricetype = 'LIMIT';
   product = 'NRML';
+  price = 0;
   symbol;
   action;
-
+  quantity;
+  
   constructor(symbol, action, quantity = 1)
   {
     this.symbol = symbol;
     this.action = action;
-    this.quantity = quantity
+    this.quantity = quantity;
   }
 }
 

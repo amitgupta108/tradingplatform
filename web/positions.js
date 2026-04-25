@@ -119,7 +119,8 @@ class Position
         else
           this.finalorders.push(exorder);
         
-        this.pnlUpdate(exorder);
+        if(exorder.state !== 'caoncelled')
+          this.pnlUpdate(exorder);
       }
       var opencount = this.finalorders.filter((o) => o.state === 'opened').length;
       this.#pRow.querySelector('#orderdisplay-btn').innerText = (opencount === 0 ? 'N' : opencount);
@@ -162,9 +163,7 @@ class Position
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
     this.#pRow.querySelector('#exit_checkbox').disabled = psize === 0 ? true : false;
-    var scrip = symtoinstrument(lastorder.symbol);
-    this.value('scrip', scrip.expiry + ' ' 
-          + scrip.strike + ' ' + (scrip.right === 'CE' ? 'Call' : 'Put'));
+
     this.value('bookedQ', Math.min(sellq, buyq));
     this.value('bookedPL', bookedPL.toFixed(2));
     this.value('averageP', avgopnpr.toFixed(2));

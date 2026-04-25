@@ -26,7 +26,6 @@ instrumentMap.set('NH2', {
   uid: 'b6033d82-1d88-470a-bf28-58b217f098e7'
 });
 
-
 instrumentMap.set('NH1', {
   simStartTime: new Date("2026-02-10 10:21:00").getTime(),
   fExpiry: "24FEB26",
@@ -121,7 +120,6 @@ const ts = chart.timeScale();
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
 const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 const vixSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
-//const IVNxtSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(14, 122, 8)', lineWidth: 2 });
 
 chart.timeScale().fitContent();
 chart.timeScale().scrollToPosition(15);

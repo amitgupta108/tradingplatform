@@ -55,23 +55,23 @@ function dothings(stmrkey)
 {
     try
     {
-    var count = 0;
-    var usrSpdComb = utils.filter(userclocks.values().toArray(), {keys: [stmrkey]});
-    usrSpdComb.forEach((c) => {
-        var reqs = utils.filter(subsRequests, {uid: c.uid});
-        reqs.forEach((req) => {
-            count++;
-            var qt = q(req.uid, req.instrument, c.sTime);
-            if(qt !== undefined) {
-                qt.symbol = req.instrument.symbol;
-                qt.key = req.instrument.key;
-                futsocket.emit(qt.key, qt, req.uid, 'icicihistory');
-            }
+        var count = 0;
+        var usrSpdComb = utils.filter(userclocks.values().toArray(), {keys: [stmrkey]});
+        usrSpdComb.forEach((c) => {
+            var reqs = utils.filter(subsRequests, {uid: c.uid});
+            reqs.forEach((req) => {
+                count++;
+                var qt = q(req.uid, req.instrument, c.sTime);
+                if(qt !== undefined) {
+                    qt.symbol = req.instrument.symbol;
+                    qt.key = req.instrument.key;
+                    futsocket.emit(qt.key, qt, req.uid, 'icicihistory');
+                }
+            });
         });
-    });
-} catch (exception){
-    console.log(exception);
-}
+    } catch (exception){
+        console.log(exception);
+    }
     return {key: stmrkey, count: count};
 }
 
@@ -153,7 +153,6 @@ function q(uid, instrument, time)
         st.state = 'load requested';
         qw(st, instrument, time);
     }
-
     return idx > -1 ? st.quotes[idx] : undefined;
 }
 
