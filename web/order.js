@@ -19,48 +19,49 @@ class Order{
 
 function submitOrder(clickedBtn) 
 {  
-  const rows = Array.from(ordersubmitBody.querySelectorAll('tr'));
+  const rows = Array.from(order_rows_tbody.querySelectorAll('tr'));
   var isError = false;
-  var neworders = rows.map((r) => 
+  rows.forEach((r) => 
   {  
     const pricetype = r.querySelector('#ordertype').innerText;
     const price = r.querySelector('#lmtprice').value;
     if(pricetype === 'LIMIT' && price === "") {
       isError = true;
       qSel(r, 'lmtprice', 'id').style.border = '1px solid red';
-      return new Order('', '');
-    }
-    else
-    {
-      var symbol = qSel(r, 'owsymbol', 'id').innerText;
-      var action = r.querySelector('#owaction').innerText;
-      var lot = r.querySelector('#lotselect').value; 
-      let neworder = new Order(symbol, action, lot * instrument.lotsize);
-      neworder.price = price;
-      neworder.pricetype = pricetype;
-      
-      var p = Position.findPosition(symbol, true);
-      p.orderlist(neworder);
-      return neworder;
     }
   });
-
+   
   if(isError)
     return;
+  
+  const neworders = rows.map((r) => {
+    var symbol = qSel(r, 'owsymbol', 'id').innerText;
+    var action = r.querySelector('#owaction').innerText;
+    var lot = r.querySelector('#lotselect').value; 
+
+    let n_order = new Order(symbol, action, lot * instrument.lotsize);
+    n_order.pricetype = r.querySelector('#ordertype').innerText;
+    n_order.price = r.querySelector('#lmtprice').value;    
+
+    var p = Position.findPosition(symbol, true);
+    p.orderlist(n_order);
+    return n_order;
+  });
 
   emit('order', neworders);
   sOrderSubmit.play();
 
   oWindow.style.display = 'none';
   order_rows_tbody.innerHTML = '';
-  var checkboxes = document.querySelectorAll('#exitcb');
-  checkboxes.forEach(cb => cb.checked = false);
   toggle.disabled = false;
+
+  var checkboxes = document.querySelectorAll('#exit_checkbox');
+  checkboxes.forEach(cb => cb.checked = false);
 }
 
 function cancelorder(cancelBtn)
 {
-  var orderrow = cancelBtn.parentNode.parentNode;
+  var orderrow = cancelBtn.parentNode.parentNode.parentNode;
   var p = Position.findPosition(orderrow.title, false);
   emit('cancelorder', p.finalorders[orderrow.rowIndex-1]);
   orderlistDiv.style.display = 'none';
@@ -75,10 +76,11 @@ function dropcancelorder(dropcancelBtn)
 function loadOrders(orders)
 {
   orders.forEach((order) => {
+    console.log('Recovered Orders ' + JSON.stringify(order));
     if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
     {
       var p = Position.findPosition(order.symbol, true);
-      p.orderupdate(order);
+      p.orderupdate(order, true);
     }
   });
 }

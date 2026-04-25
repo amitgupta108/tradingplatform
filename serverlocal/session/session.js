@@ -33,7 +33,7 @@ class Session
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
-                this.st[i].n = i != 1? p.lscount : 0;
+                this.st[i].n = i != 1? p.lscount + 2: 0;
             }
         }
         this.subsupdate = callback;
@@ -109,7 +109,7 @@ class Session
         var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnxt'], toStream: [true] });
         for (var j = 0; j < ost.length; j++)
         {
-            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.close))  > 60)
+            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.close)) > 30)
                 this.#oq(uq, ost[j]);
         }
         this.status = 'streaming';

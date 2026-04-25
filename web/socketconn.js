@@ -123,7 +123,7 @@ function rh(socket)
       console.log("ws order message " + JSON.stringify(exorder));
 
       var p = positions.find((e) => e.symbol === exorder.symbol);
-      p.orderupdate(exorder);
+      p.orderupdate(exorder, false);
     });
 
     socket.on('ws-hb', (state) => {

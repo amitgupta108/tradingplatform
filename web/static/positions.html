@@ -82,11 +82,10 @@
                     <div id="ocNxt" class="smallbutton buy" onclick="runOptionChainNxt(event)">></div>
                 </div>
             </div>
-            
             <!------------------------------------------------------------------------------------------------------------------------------>                
             <div id="positions_div">    
                 <div style="width: 100%;height:min-content;">
-                <!--<div id="order-list" class="florderlist" style="display: none;">
+                <div id="order-list" class="orderlist" style="display: none;">
                     <table>
                         <tbody id="order-list-thead">
                             <tr>
@@ -100,7 +99,7 @@
 
                         </tbody>
                     </table>
-                </div> -->
+                </div>
                 <table id="positions_table">
                     <thead>
                         <tr>
@@ -177,11 +176,6 @@
     <button id="exitPositionBtn" style="position:absolute; top:450px; left:25px; display:none;">
         Exit
     </button>
-    <!--<div class="hover-row-content">
-        <button  id="buyCE" class="smallbutton buy" onclick="prepareOrderWindow(this)">B</button>
-        <button  id="attn" class="smallbutton order" onclick="">!</button>
-        <button  id="sellCE" class="smallbutton sell" onclick="prepareOrderWindow(this)">S</button> 
-    </div>-->   
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
    
 <template id="oc_header">
@@ -208,7 +202,7 @@
         <td class="orderlist-td" width="15%">Price</td>
         <td class="orderlist-td" width="18%">Status</td>
         <td class="orderlist-td" width="4%">
-            <button id="olactionBtn" onclick="confirmcancel(this)">x</button>
+            <button id="olactionBtn" onclick="confirmcancel(this)">X</button>
             <div class="orderlist-row-overlay">
                 <label class="clickable" onclick="cancelorder(this)">OK</label>
                 <label class="clickable" onclick="dropcancelorder(this)">Cancel</label>
@@ -263,10 +257,10 @@
                 <option value="3">4</option>
             </select>
         </td>
-        <td style='width:18%'>
+        <td style='width:17%'>
             <label class="clickable" id="ordertype">LIMIT</label>
         </td>
-        <td style='width:16%'>
+        <td style='width:17%'>
             <input type="number" id="lmtprice" step="0.5" style="width: 50px;border-radius: 3px;">
         </td>
     </tr>
@@ -274,7 +268,7 @@
 <template id="position-table-row">
     <tr>
         <td>
-            <input type='checkbox' id="exitcb" onchange="exitCBEvent()"></input>
+            <input type='checkbox' id="exit_checkbox" onchange="exitCBEvent()"></input>
         </td>
         <td><label id="Instrument"></label></td>
         <td>
@@ -289,11 +283,9 @@
         <td class="hover-cell">
             <label></label>
             <trade-buttons></trade-buttons>
-            <label hidden></label>
         </td>
     </tr>
 </template>
-
 <!------------------------------------------------------------------------------------------------------------------------------>    
 
     <script src="../data.js"></script>

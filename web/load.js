@@ -26,7 +26,7 @@ class TradeButtons extends HTMLElement {
 
     this.innerHTML = `
       <div class="hover-content">
-          <label id='ocsymbol' hidden></label>
+          <label id='symbol_any_row' hidden></label>
           <button  id="buyCE" class="smallbutton buy">B</button>
           <button  id="attn" class="smallbutton order" onclick="">!</button>
           <button  id="sellCE" class="smallbutton sell">S</button> 
@@ -63,7 +63,7 @@ qBox.addEventListener('strikex', (event) =>
 });
 
 cbAll.addEventListener('change', () => {
-  var checkboxes = document.querySelectorAll('#exitcb');
+  var checkboxes = document.querySelectorAll('#exit_checkbox');
   checkboxes.forEach(cb => cb.checked = cbAll.checked);
 });
 
@@ -72,7 +72,7 @@ const pBox = new EventTarget();
 exitPositionBtn.onclick = (event) => {
   
   toggle.disabled = true;    
-  var checkboxes = document.querySelectorAll('#exitcb');
+  var checkboxes = document.querySelectorAll('#exit_checkbox');
   const checkedIndexes = Array.from(checkboxes)
   .map((cb, i) => cb.checked ? i : null)
   .filter(val => val !== null);
@@ -95,10 +95,9 @@ exitPositionBtn.onclick = (event) => {
   showOrderWindow();
 }
 
-/*
 closeOListBtn.onclick = () => {
   orderlistDiv.style.display = 'none';
-}; */
+};
 
 closeOWinBtn.onclick = () => {
   oWindow.style.display = "none";

@@ -131,7 +131,7 @@ function confirmcancel(target) {
 
 function exitCBEvent()
 {
-  const checkboxes = document.querySelectorAll('#exitcb');
+  const checkboxes = document.querySelectorAll('#exit_checkbox');
   const checkedIdx = Array.from(checkboxes)
   .map((cb, i) => cb.checked ? i : null)
   .filter(val => val !== null);

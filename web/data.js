@@ -14,10 +14,10 @@ instrumentMap.set('UI', {
 });
 
 instrumentMap.set('NH2', {
-  fExpiry: "24FEB26",
-  simStartTime: new Date("2026-02-13 09:21:00").getTime(),
-  oExpiry: "17FEB26",
-  oExpiryNxt: "24FEB26",
+  fExpiry: "30MAR26",
+  simStartTime: new Date("2026-03-04 09:16:00").getTime(),
+  oExpiry: "10MAR26",
+  oExpiryNxt: "17MAR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 10,

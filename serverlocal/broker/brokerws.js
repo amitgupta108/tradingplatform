@@ -3,6 +3,7 @@ const qserver = require('../quotes');
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
 require('console-stamp')(console, '[HH:MM:ss.l]');
+var authdata;
 var wsping;
 var ws;
 
@@ -18,6 +19,7 @@ async function wsOps(uid, action, tpt)
                 'token': lr.data.token
             });
             wsconnect(vr.data.baseUrl.substring(8), lr.data.token, vr.data.sid, uid);
+            authdata = {sid: lr.data.sid, token: lr.data.token}; 
             response = 'connected';
         }
     }
@@ -121,7 +123,7 @@ function standardizeO(order)
     return uOrder;
 }
 
-function wshb(action)
+async function wshb(action)
 {
   if(action === 'start') {
     if(wsping !== undefined)
@@ -130,6 +132,15 @@ function wshb(action)
     wsping = setInterval(() => {
         qserver.broadcast({type: 'hb', data: ws.readyState});
     }, 60000);
+
+    if(ws.readyState !== 1) {
+        console.log('Attempting reconnection');
+        var vr = await apiValidate({
+            'sid': authdata.sid,
+            'token': authdata.token
+        });
+        wsconnect(vr.data.baseUrl.substring(8), authdata.token, authdata.sid, uid);
+    }
   }
   else
   {

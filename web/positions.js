@@ -8,7 +8,6 @@ class Position
     unbookedQ: [7, 0],
     unbookedPL: [8, 0],
     totalPL: [9, 1],
-    symbol: [9, 5]
   };
   raisedorders = new Array(0);
   finalorders = new Array(0);
@@ -52,10 +51,18 @@ class Position
   }
 
   value(p, v = undefined){
-    var i = Object.getOwnPropertyDescriptor(this.#m, p).value;
-    if(v != undefined)
-      this.#pRow.cells[i[0]].childNodes[i[1]].innerText = v;
-    return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
+    if(p === 'symbol')
+    {
+      if(v != undefined)
+        this.#pRow.querySelector('#symbol_any_row').innerText = v;
+      return this.#pRow.querySelector('#symbol_any_row').innerText;
+    }
+    else {
+      var i = Object.getOwnPropertyDescriptor(this.#m, p).value;
+      if(v != undefined)
+        this.#pRow.cells[i[0]].childNodes[i[1]].innerText = v;
+      return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
+    }
   }
 
   orderlist(neworder)
@@ -66,40 +73,52 @@ class Position
     return neworder;
   }
 
-  ini(order)
+  ini(order, recovery)
   {
     const symbol = order.symbol;
-    var prow = tRow(t_position_table_row);
-    prow.title = symbol;
-    prow.querySelector('#orderdisplay-btn').title = symbol;
-    document.getElementById('positions_tbody').append(prow);
+    if(this.#pRow === undefined)
+    {
+      var prow = tRow(t_position_table_row);
+      prow.title = symbol;
+      prow.querySelector('#orderdisplay-btn').title = symbol;
+      prow.addEventListener('click', (event) => {
+        if(event.target.id !== 'orderdisplay-btn')
+          prepareOrderWindow(event);
+      }, true);
+      document.getElementById('positions_tbody').append(prow);
 
-    this.#pRow = prow;
-    this.value('symbol', symbol);
-    this.value('scrip', symtoinstrument(symbol).name);
-    qBox.addEventListener('strikex', this);
+      this.#pRow = prow;
+      this.value('symbol', symbol);
+      this.value('scrip', symtoinstrument(symbol).name);
+      qBox.addEventListener('strikex', this);
+    }
   }
 
-  orderupdate(exorder)
+  orderupdate(exorder, recovery)
   {
-    if(!['complete', 'completed', 'partial', 'opened', 'cancelled'].includes(exorder.state))
+    if(!['completed', 'partial', 'opened', 'cancelled'].includes(exorder.state))
       this.transientorders.push(exorder);
     else 
     {
+      this.ini(exorder, recovery);
       if(exorder.state === 'opened') 
       {
         var idx = this.raisedorders.find((o) => o.orderid === exorder.orderid);
         if(idx !== -1)
           this.raisedorders.splice(idx, 1, exorder);
-        
+        else 
+          this.raisedorders.push(exorder);
+
         this.finalorders.push(exorder);
-        this.ini(exorder);
       }
       else 
       {
         var idx = this.finalorders.findIndex((o) => o.orderid === exorder.orderid);
         if(idx !== -1)
           this.finalorders.splice(idx, 1, exorder);
+        else
+          this.finalorders.push(exorder);
+        
         this.pnlUpdate(exorder);
       }
       var opencount = this.finalorders.filter((o) => o.state === 'opened').length;
@@ -142,7 +161,7 @@ class Position
     var totalPL = bookedPL + unbookedPL;
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
-    this.#pRow.querySelector('#exitcb').disabled = psize === 0 ? true : false;
+    this.#pRow.querySelector('#exit_checkbox').disabled = psize === 0 ? true : false;
     var scrip = symtoinstrument(lastorder.symbol);
     this.value('scrip', scrip.expiry + ' ' 
           + scrip.strike + ' ' + (scrip.right === 'CE' ? 'Call' : 'Put'));
@@ -161,7 +180,7 @@ class Position
   static findPosition(symbol, newp)
   {
     var p = positions.find((e) => symbol === e.symbol);
-    if(newp)
+    if(p === undefined && newp)
       p = new Position(symbol);
     return p;
   }
