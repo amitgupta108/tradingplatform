@@ -22,17 +22,6 @@ function addIVNDelta(q, uq)
     return q;
 }
 
-function trimQuotes(q, lt)
-{        
-    let { exchange_code, high, low, open, open_interest, product_type, volume, ...trimmedQuote} = q;
-    return trimmedQuote;
-}
-
-function printArguments(fArgs)
-{
-    console.log(this.name + " " + printObject(fArgs));
-}
-
 function printObject(element)
 {
     console.log(JSON.stringify(element, stringifyModifier));

@@ -96,8 +96,7 @@ function formatorder(orders)
     return orders.map((o) => {
         let { cprice, orderN, state, time, stockCode, ...trimmedOrder} = o;
         return trimmedOrder;
-    });
-    
+    });   
 }
 
 export { connect, order, subscribe, orderbook, disconnect };

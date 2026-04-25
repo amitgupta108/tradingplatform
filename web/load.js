@@ -70,21 +70,18 @@ cbAll.addEventListener('change', () => {
 const pBox = new EventTarget();
 
 exitPositionBtn.onclick = (event) => {
-  
-  toggle.disabled = true;    
+  toggle.disabled = true;
   var checkboxes = document.querySelectorAll('#exit_checkbox');
   const checkedIndexes = Array.from(checkboxes)
   .map((cb, i) => cb.checked ? i : null)
   .filter(val => val !== null);
   
-  console.log("Selected Indexes:", checkedIndexes);
   checkedIndexes.forEach((idx) => {
     var p = positions[idx];  
     var symbol = p.value('symbol');
     var action = Math.sign(p.value('unbookedQ')) === 1 ? 'S' : 'B';
     
-    let neworder = new Order(symbol, action);
-    neworder.quantity = Math.abs(p.value('unbookedQ'));
+    let neworder = new Order(symbol, action, Math.abs(p.value('unbookedQ')));
     neworder.cprice = p.value('LTP');
     neworder.pricetype = 'MARKET';
     neworder.price = 0;

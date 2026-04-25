@@ -25,11 +25,7 @@ class OptionChain
   }
 
   #buildHTMLOC(v_oc_id)
-  {
-    /*const t_head_row = document.getElementById('oc_header');
-    const htr = document.importNode(t_head_row.content, true);
-    h_oc_div.appendChild(htr);*/
-    
+  {    
     const tBodies = Array.from(h_oc_div.querySelectorAll('tbody'));
 
     tBodies.forEach((tb, idx) => {

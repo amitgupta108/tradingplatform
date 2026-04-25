@@ -115,7 +115,7 @@ function displayOrderList(btn, event)
     newtr.childNodes[9].innerText = tqty;
     newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
     newtr.childNodes[13].innerText = o.state;
-    newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'x' : '');
+    newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
     if(o.state === 'opened') 
       newtr.childNodes[15].childNodes[1].classList.add('clickable');
           
