@@ -89,12 +89,8 @@ io.on('connection', (s) => {
         us.push(sn);
     } else
     {
-        if(s.recovered === false) 
-        {
-            if(sn.lastuq() !== undefined)
-                s.emit('prevsession', sn.sTime);
-        }
-        console.log('prevsession ' +  uid + ' ' + s.recovered);
+        s.emit('prevsession', sn.status);
+        console.log('prevsession ' +  uid + ' ' + s.recovered + ' ' + sn.status);
     }
     s.sn = sn;
     s.onAny((event, msg) => {
@@ -106,7 +102,6 @@ io.on('connection', (s) => {
         if(reason === 'client namespace disconnect')
         {
             disconnect(sn.uid, sn.mode);
-            sn.clear();
             console.log('user exited:' + sn.uid);
             qserver.socketmap.delete(sn.uid);
             snDestroy(uid);

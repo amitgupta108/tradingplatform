@@ -11,14 +11,20 @@ class OptionChain
     this.#expiry = expiry;
     this.#buildHTMLOC(this.#v_oc_id)
     
-    this.pMap = new Map();
     optionChains.push(this);
 
     qBox.addEventListener('strikex', this);
+    
     qBox.addEventListener('index', (event) => {
-      if(Math.round(this.atm - event.detail.close) > 60);
-        this.atm = Math.round(event.detail.close / 50) * 50;
+      const q = event.detail;
+
+      if(this.atm === undefined)
+        this.atm = Math.round(q.close/50) * 50;
+      else if(Math.abs(this.atm - q.close) > 50)
+        this.atm = this.atm + Math.round((q.close - this.atm) / 50) * 50;
     });
+    
+    this.pMap = new Map();
     pBox.addEventListener('position', ((e) => {
       this.pMap.set(e.detail.symbol ,{psize: e.detail.unbookedQ});
     } ));
@@ -32,7 +38,7 @@ class OptionChain
       const t_row = idx === 0 ? t_option_chain_call_row : t_option_chain_put_row;
       for(var i = 0; i < lscount; i++)
       {
-        var new_tr = tRow(t_row);
+        var new_tr = tRow(t_row, false);
         new_tr.addEventListener('click', (event) => {
           prepareOrderWindow(event);
         }, true);
@@ -51,8 +57,8 @@ class OptionChain
 
     var offset = (this.atm - Number(q.strike_price)) / 50;
     offset = offset * (q.right === 'Call' ? -1 : 1);
-    if(offset >= 0 && offset < lscount) {
-      var rIdx = q.right === 'Put' ? lscount - 1 - offset: offset;
+    if(offset >= -1 && offset < lscount-1) {
+      var rIdx = q.right === 'Put' ? lscount - 2 - offset: offset + 1;
       this.#rowfill(rIdx, q); 
     }
   }

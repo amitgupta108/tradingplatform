@@ -2,7 +2,6 @@ import OpenAlgo from 'openalgo';
 import qserver from '../quotes.js';
 import adapter from '../adapter/histadapter.js';
 
-
 var uidscripmapping = new Array(0);
 const connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
 const client = new OpenAlgo(connkey);
@@ -15,9 +14,12 @@ function connect(cuid, scrip)
         throw Error('user scrip combination already exist'); //may be extendable using rooms?
     uidscripmapping.push({uid: cuid, scrip: scrip})
     */
-    client.connect();
-    uid = cuid;
-    
+    try {
+        client.connect();
+        uid = cuid;
+    } catch (error) {
+        console.error('Error connection to openalgo ' + error);
+    }
 }
 
 function disconnect(cuid, scrip)

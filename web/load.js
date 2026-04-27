@@ -4,7 +4,7 @@ const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
   
 const toggle = document.getElementById('toggleBasket');
-const cbAll = document.getElementById('exitAll');
+const exit_pos_btn = document.getElementById('exit_all_cb');
 const exitPositionBtn = document.getElementById('exitPositionBtn');
 const closeOWinBtn = document.getElementById('ow_close_btn');
 
@@ -62,7 +62,7 @@ qBox.addEventListener('strikex', (event) =>
   });
 });
 
-cbAll.addEventListener('change', () => {
+exit_pos_btn.addEventListener('change', () => {
   var checkboxes = document.querySelectorAll('#exit_checkbox');
   checkboxes.forEach(cb => cb.checked = cbAll.checked);
 });

@@ -157,7 +157,7 @@ class Position
     var price = Number(lastorder.pricedAt);
 
     bookedPL = (asp - abp) * Math.min(buyq, sellq);
-    unbookedPL = psize * (psize > 0 ? price - abp : asp - price);
+    unbookedPL = Math.abs(psize) * (psize > 0 ? price - abp : asp - price);
     
     var totalPL = bookedPL + unbookedPL;
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;

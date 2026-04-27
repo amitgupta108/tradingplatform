@@ -11,12 +11,16 @@ async function handleMessage(sn, event, msg)
         var bserver = sn.mode === 0 ? iBreeze : iKNeo;
         switch(event)
         {
-            case 'startstream':
-                sn.ini(msg, (action, list) => {
+            case 'start':
+                /*sn.ini(msg, (action, list) => {
                     bserver.subscribe(sn.uid, list, action);
-                });
+                });*/
+
                 bserver.connect(sn.uid, msg.simStartTime);
-                bserver.subscribe(sn.uid, sn.inqsub(), 'subs');
+                const stSubs = sn.inqsub(msg, (opSubs) => {
+                        bserver.subscribe(sn.uid, opSubs, 'subs');
+                    });
+                bserver.subscribe(sn.uid, stSubs, 'subs');
                 break;
             case 'resume':
                 if (msg.continue === true)

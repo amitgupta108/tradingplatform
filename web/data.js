@@ -15,7 +15,7 @@ instrumentMap.set('UI', {
 
 instrumentMap.set('NH2', {
   fExpiry: "30MAR26",
-  simStartTime: new Date("2026-03-04 09:16:00").getTime(),
+  simStartTime: new Date("2026-03-05 09:16:00").getTime(),
   oExpiry: "10MAR26",
   oExpiryNxt: "17MAR26",
   stockCode: 'NIFTY',

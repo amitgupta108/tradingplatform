@@ -15,8 +15,10 @@ const streamers = [
     ];  
 
 function connect(uid, simStartTime) {
-    userqcollmap.set(uid, new Array(0));
-    userclocks.set(uid, {uid: uid, sTime: simStartTime, key: '1x'});
+    if(userclocks.get(uid) === undefined) {
+        userqcollmap.set(uid, new Array(0));
+        userclocks.set(uid, {uid: uid, sTime: simStartTime, currentTime: simStartTime, key: '1x'});
+    }
 }
 
 function startStreamer(stmrkey){
@@ -31,7 +33,7 @@ function startStreamer(stmrkey){
                 runUserClocks(stmrkey);
                 if(resp.count === 0) 
                     stopStreamer(resp.key);
-            }, 900 / stmr.speed);
+            }, 980 / stmr.speed);
         } catch (err) {
             clearInterval(stmr.qsid);
             stmr.state = 'stopped';   
@@ -61,7 +63,7 @@ function dothings(stmrkey)
             var reqs = utils.filter(subsRequests, {uid: c.uid});
             reqs.forEach((req) => {
                 count++;
-                var qt = q(req.uid, req.instrument, c.sTime);
+                var qt = q(req.uid, req.instrument, c.currentTime);
                 if(qt !== undefined) {
                     qt.symbol = req.instrument.symbol;
                     qt.key = req.instrument.key;
@@ -79,7 +81,7 @@ function runUserClocks(stmrkey)
 {
     var usrSpdComb = utils.filter(userclocks.values().toArray(), {key: [stmrkey]});
     usrSpdComb.forEach((c) => {
-        c.sTime = c.sTime + 1000;
+        c.currentTime = c.currentTime + 1000;
     });
 }
 
@@ -168,6 +170,12 @@ function qw(st, instrument, time) {
 
 function getHistory(p, startTime, endTime, interval)
 {
+    const clock = userclocks.get(p.uid);
+    if(clock !== undefined)
+    {
+        startTime = clock.sTime;
+        endTime = clock.currentTime;
+    }
     return sutils.getHistory(p, startTime, endTime, interval);
 }
 
