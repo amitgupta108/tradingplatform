@@ -68,7 +68,7 @@
                     <label>Expiry1</label>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
-                    <input type="number" id="tpt" name="tpt" style="width: 60px;padding:1px;">
+                    <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;padding:1px;">
                     <div id="wsc" class="smallbutton buy" onclick="wsconnect('connect')">></div>
                     <div id="wsd" class="smallbutton buy" onclick="wsconnect('disconnect')">||</div>
                     <div id="socn" class="smallbutton buy">@</div>
@@ -103,7 +103,7 @@
                 <table id="positions_table">
                     <thead>
                         <tr>
-                            <th width="4%"><input type='checkbox' id="exitAll"></input></th>
+                            <th width="4%"><input type='checkbox' id="exit_all_cb"></input></th>
                             <th width="20%">Instrument</th>
                             <th colspan="3" width="20%">Booked</th>                        
                             <th width="12%">Avg Price</th>
@@ -173,7 +173,7 @@
             </tbody>
         </table>
     </div>
-    <button id="exitPositionBtn" style="position:absolute; top:450px; left:25px; display:none;">
+    <button id="exitPositionBtn" style="position:absolute; top:475px; left:20px; display:none;padding: 3px;">
         Exit
     </button>
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
@@ -261,14 +261,14 @@
             <label class="clickable" id="ordertype">LIMIT</label>
         </td>
         <td style='width:17%'>
-            <input type="number" id="lmtprice" step="0.5" style="width: 50px;border-radius: 3px;">
+            <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;">
         </td>
     </tr>
 </template>
 <template id="position-table-row">
     <tr>
         <td>
-            <input type='checkbox' id="exit_checkbox" onchange="exitCBEvent()"></input>
+            <input type='checkbox' id="exit_checkbox" onchange="position_cb_action()"></input>
         </td>
         <td><label id="Instrument"></label></td>
         <td>

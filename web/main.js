@@ -43,7 +43,7 @@ function resumeSimulation()
 function start()
 {
   loadPreData();
-  emit('startstream', instrument); 
+  emit('start', instrument); 
   if (OptionChain.get(instrument.oExpiry) === undefined)
     new OptionChain(instrument.oExpiry, 'c_option_chain');
 }

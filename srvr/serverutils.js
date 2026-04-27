@@ -6,7 +6,7 @@ const sb = require('./binarysearch');
 
 const appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55420315";
+const sessionId = "55427204";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -19,7 +19,7 @@ breeze.generateSession(appSecret, sessionId)
 
 function findQuoteByTime(q, lt)
 {
-    if(lt <= Date.parse(q[q.length-1].datetime))
+    if(lt <= Date.parse(q.at(-1).datetime))
         return sb.findByTime(q, lt);
     else
         return -2;

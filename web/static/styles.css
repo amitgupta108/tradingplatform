@@ -164,7 +164,7 @@ td {
     border: 1px solid #ddd;
     font-size: 13px;
     overflow: hidden;
-    padding: 2px;
+    padding: 3px;
 }
 
 button {
@@ -335,12 +335,13 @@ select:hover {
 }
 
 .orderlist-td {
-    padding: 2px;
+    padding: 3px;
     text-align: center;
     border: 0px solid #ddd;
-    font-size: 12px;
+    font-size: 13px;
     background-color: dimgray;
     color: lightgray;
+    vertical-align: middle;
 }
 
 /* Container for the switch */
@@ -386,13 +387,13 @@ input:checked + .slider:before {
 
 .clickable {
     cursor:pointer;
-    color: rgba(255, 255, 255, 0.836);
+    color: black;
     border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.223);
+    background-color: rgba(128, 128, 128, 0.123);
     font-size: 12px;
     vertical-align: middle;
     align-items: center;
-    padding: 2px;
+    padding: 3px;
     min-width: 30px;
 }
 

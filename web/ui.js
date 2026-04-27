@@ -129,7 +129,7 @@ function confirmcancel(target) {
   overlay.style.display = 'flex';
 }
 
-function exitCBEvent()
+function position_cb_action()
 {
   const checkboxes = document.querySelectorAll('#exit_checkbox');
   const checkedIdx = Array.from(checkboxes)
@@ -137,7 +137,7 @@ function exitCBEvent()
   .filter(val => val !== null);
 
   exitPositionBtn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
-  exitAll.checked = checkedIdx.length === checkboxes.length;
+  exit_all_cb.checked = checkedIdx.length === checkboxes.length;
 }
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
