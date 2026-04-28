@@ -1,12 +1,14 @@
-const BreezeConnect = require('breezeconnect').BreezeConnect;
-require('console-stamp')(console, '[HH:MM:ss.l]');
-const utils = require('../common/utils');
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
-const sb = require('./binarysearch');
+const BreezeConnect = require('breezeconnect').BreezeConnect;
+
+import utils from '../common/utils.mjs';
+import { findByTime } from './binarysearch.mjs';
 
 const appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55427204";
+const sessionId = "55448829";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 
@@ -20,7 +22,7 @@ breeze.generateSession(appSecret, sessionId)
 function findQuoteByTime(q, lt)
 {
     if(lt <= Date.parse(q.at(-1).datetime))
-        return sb.findByTime(q, lt);
+        return findByTime(q, lt);
     else
         return -2;
 }
@@ -142,7 +144,7 @@ function wsDisconnect()
     breeze.wsDisconnect();
 }
 
-module.exports = {
+export default {
     findQuoteByTime,
     getHistoricalData,
     getHistory,

@@ -40,7 +40,7 @@ class OptionChain
       {
         var new_tr = tRow(t_row, false);
         new_tr.addEventListener('click', (event) => {
-          prepareOrderWindow(event);
+          orderWindow(event);
         }, true);
         
         tb.append(new_tr);

@@ -1,35 +1,38 @@
-const qserver = require('./quotes');
-const iBreeze = require('./broker/breeze');
-const iKNeo = require('./broker/kotakneo');
-const ordersocket = require('./broker/brokerws');
-const utils = require('../common/utils')
-require('console-stamp')(console, '[HH:MM:ss.l]');
+import qserver from './quotes.mjs'; 
+import wsOps from './broker/brokerws.mjs';
+import iKotakNeo from './broker/kotakneo.mjs';
+import iBreeze from './broker/breeze.mjs';
+
+function getBrokerService(mode, name) 
+{
+    var service;
+    if (mode === 0 || name === 'breeze') {
+        service = iBreeze;
+    } else {
+        service = iKotakNeo;
+    }
+    return service;
+}
 
 async function handleMessage(sn, event, msg)
 {
     try {
-        var bserver = sn.mode === 0 ? iBreeze : iKNeo;
+        const bserver = getBrokerService(sn.mode);
         switch(event)
         {
             case 'start':
-                /*sn.ini(msg, (action, list) => {
-                    bserver.subscribe(sn.uid, list, action);
-                });*/
+                    if(sn.mode === 0)
+                        bserver.init(sn.uid, msg.simStartTime, '1x');
 
-                bserver.connect(sn.uid, msg.simStartTime);
-                const stSubs = sn.inqsub(msg, (opSubs) => {
+                    const stSubs = sn.inqsub(msg, (opSubs) => {
                         bserver.subscribe(sn.uid, opSubs, 'subs');
                     });
-                bserver.subscribe(sn.uid, stSubs, 'subs');
-                break;
-            case 'resume':
-                if (msg.continue === true)
-                    bserver.subscribe(sn.uid, sn.inqsub(), 'subs');
+                    bserver.subscribe(sn.uid, stSubs, 'subs');
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var prefq = iBreeze.preF(msg);
+                var prefq = getBrokerService(-1, 'breeze').preF(sn.uid, sn.stockCode, msg);
                 emit(sn.uid, "futuresPreData", await prefq);
 
                 /*var preUq = iBreeze.preU(msg);
@@ -39,7 +42,7 @@ async function handleMessage(sn, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                iBreeze.changeSpeed(sn.uid, msg);
+                getBrokerService(-1, 'breeze').changeSpeed(sn.uid, msg);
                 break;
             case 'stop':
                 bserver.subscribe(sn.uid, sn.unsuball(), 'unsuball');
@@ -48,8 +51,7 @@ async function handleMessage(sn, event, msg)
                 emit('prevsession', sn.status !== undefined)
             break;
             case 'ocnxt':
-                var fst = utils.filter(sn.st, {keys: ['ocnxt']})[0];
-                fst.toStream = msg === 'start' ? true : false;
+                sn.runOCNxt(true);
                 break
             case 'order':
                 var orsub = await bserver.order(sn.uid, msg);
@@ -62,7 +64,7 @@ async function handleMessage(sn, event, msg)
                 emit(sn.uid, event, response);
                 break;
             case 'wsOps':
-                var response = await ordersocket.wsOps(sn.uid, msg.action, msg.data, sn.mode);
+                var response = await wsOps(sn.uid, msg.action, msg.data, sn.mode);
                 console.log("wsOps response: " + response);
                 break;
             default:
@@ -77,6 +79,6 @@ function emit(uid, event, msg){
     qserver.emit(uid, event, msg);
 }
 
-module.exports = {
-    handleMessage,
-}
+export default {
+    handleMessage
+};

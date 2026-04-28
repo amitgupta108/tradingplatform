@@ -35,22 +35,12 @@ function logSocketEvent(message){
       console.log(message);
 }
 rh(socket);
-socket.sTime = instrument.simStartTime;
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 function rh(socket)
 {  
   try{
     socket.on("connect", () => {
-      var lt = new Date(socket.sTime);
-      timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString();
-
-      console.log('socket connected for uid' + socket.id + '-' + instrument.uid);
-      if(socket.recovered) {
-        console.log('connection recovered ' + socket.id);
-      }
-      else {
-        console.log('Freshly connected ' + socket.id);
-      }
+      console.log('socket connected for uid' + socket.id + '-' + instrument.uid + '-' + socket.recovered); 
     });
 
     socket.on('prevsession', (streamingstatus) => {

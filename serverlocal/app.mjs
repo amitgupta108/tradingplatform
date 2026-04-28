@@ -1,16 +1,30 @@
+
+import consoleStamp from 'console-stamp';
+consoleStamp(console, { format: ':date(HH:MM:ss)' });
+
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+import { fileURLToPath } from 'node:url';
+import {readFileSync} from 'node:fs';
+import path from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 var https  = require('https');
 var express = require('express');
 var session = require('express-session');
-const fs = require('fs');
-const path = require('path');
 const { Server } = require("socket.io");
 
-require('console-stamp')(console, '[HH:MM:ss.l]');
-const Session = require('./session/session');
-const apiserver = require('./apiserver');
-const qserver = require('./quotes');
-const iBreeze = require('./broker/breeze');
-const iKNeo = require('./broker/kotakneo');
+
+import Session from './session/session.mjs';
+import iBreeze from './broker/breeze.mjs';
+import ikNeo from './broker/kotakneo.mjs';
+import qserver from './quotes.mjs'; 
+import apiserver from './apiserver.mjs'; 
+
+
 
 const args = process.argv;
 
@@ -31,8 +45,8 @@ app.use(express.json());
 app.use(es);
 
 const options = {
-    key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem')),
+    key: readFileSync(path.join(__dirname, 'certs', 'key.pem'), 'utf8'),
+    cert: readFileSync(path.join(__dirname, 'certs', 'cert.pem'), 'utf8'),
 };
 
 const httpsServer = https.createServer(options, app);
@@ -89,7 +103,8 @@ io.on('connection', (s) => {
         us.push(sn);
     } else
     {
-        s.emit('prevsession', sn.status);
+        if(!(sn.status === 'initialized' || sn.status === 'stopped'))
+            s.emit('prevsession', sn.status);
         console.log('prevsession ' +  uid + ' ' + s.recovered + ' ' + sn.status);
     }
     s.sn = sn;
@@ -101,7 +116,7 @@ io.on('connection', (s) => {
     s.on("disconnect", (reason) => {
         if(reason === 'client namespace disconnect')
         {
-            disconnect(sn.uid, sn.mode);
+            exit(sn.uid, sn.mode);
             console.log('user exited:' + sn.uid);
             qserver.socketmap.delete(sn.uid);
             snDestroy(uid);
@@ -114,10 +129,11 @@ io.on('connection', (s) => {
     });
 });
 
-function disconnect(uid, mode)
+function exit(uid, mode)
 {
-    iBreeze.disconnect(uid);
-    iKNeo.disconnect(uid);
+    iBreeze.exit(uid);
+    if(mode === 1)
+        iKNeo.exit(uid);
 }
 
 function snDestroy(uid)

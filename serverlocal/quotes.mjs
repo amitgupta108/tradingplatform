@@ -1,5 +1,4 @@
-require('console-stamp')(console, '[HH:MM:ss.l]');
-const utils = require('./../common/utils');
+import utils from './../common/utils.mjs';
 const socketmap = new Map();
 
 function emitQs(uid, q)
@@ -57,7 +56,7 @@ function usn(uid){
     return s.sn;    
 }
 
-module.exports = {
+export default {
     socketmap,
     emitQs,
     emitUpdates,

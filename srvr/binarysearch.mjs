@@ -7,7 +7,7 @@
  * @return {number}
  */
 
-module.exports = {findByTime};
+export {findByTime};
 
 function findByTime(sortedArray, seekElement) {
   // Let's create comparator from the comparatorCallback function.

@@ -7,10 +7,10 @@ body {
 .top {
     position: absolute; 
     display: flex;
-    gap: 6px;
+    gap: 5px;
     justify-content:stretch;
-    width: 99.2%;
-    height: 99.3%;
+    width: 99.1%;
+    height: 99.2%;
     border-radius: 5px;
 }
 
@@ -281,7 +281,7 @@ select:hover {
     position: fixed;
     font-size: 12px;
     top: 50px;
-    left: 400px;
+    left: 600px;
     width: 400px;
     z-index: 200;
     display: none;
@@ -321,7 +321,7 @@ select:hover {
     display: flex;
 }
 
-.florderlist {
+.orderlist {
     position: absolute;
     top: 50px;
     left: 100px;
@@ -335,7 +335,7 @@ select:hover {
 }
 
 .orderlist-td {
-    padding: 3px;
+    padding: 2px;
     text-align: center;
     border: 0px solid #ddd;
     font-size: 13px;
@@ -348,7 +348,7 @@ select:hover {
 .switch {
     position: relative;
     display: inline-block;
-    width: 24px;
+    width: 25px;
     height: 10px;
     vertical-align: middle;
   }
@@ -363,7 +363,7 @@ select:hover {
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: #ccc;
     transition: .4s;
-    border-radius: 7px;
+    border-radius: 6px;
   }
   
   /* The sliding knob */
@@ -371,7 +371,7 @@ select:hover {
     position: absolute;
     content: "";
     height: 10px; width: 10px;
-    left: 4px; bottom: 3px;
+    left: 2px; bottom: 2px;
     background-color: white;
     transition: .3s;
     border-radius: 50%;
@@ -438,8 +438,8 @@ input:checked + .slider:before {
     display: none;
     align-items: end;
     justify-content:end;
+    vertical-align: middle;
     backdrop-filter: blur(0.5px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     background-color: rgba(79, 76, 76, 0.103);
-    color: white;
 }

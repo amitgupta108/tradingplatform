@@ -1,11 +1,13 @@
-const sutils = require('./serverutils');
-const utils = require('../common/utils');
-const EventEmitter = require('node:events');
+import sutils from './serverutils.mjs';
+import utils from '../common/utils.mjs';
+
+import EventEmitter  from 'node:events';
 const futsocket = new EventEmitter();
 
-const userclocks = new Map();
+const client_clocks = new Map();
+const client_store = new Map();
 var subsRequests = new Array(0);
-const userqcollmap = new Map();
+
 
 const streamers = [
         {key: '1x', speed: 1, qsid: 0, state: 'stopped'},
@@ -14,10 +16,10 @@ const streamers = [
         {key: '5x', speed: 5, qsid: 0, state: 'stopped'},
     ];  
 
-function connect(uid, simStartTime) {
-    if(userclocks.get(uid) === undefined) {
-        userqcollmap.set(uid, new Array(0));
-        userclocks.set(uid, {uid: uid, sTime: simStartTime, currentTime: simStartTime, key: '1x'});
+function clientInit(uid, simStartTime, speed = '1x') {
+    if(client_clocks.get(uid) === undefined) {
+        client_store.set(uid, new Array(0));
+        client_clocks.set(uid, {uid: uid, sTime: simStartTime, currentTime: simStartTime, key: speed});
     }
 }
 
@@ -30,7 +32,7 @@ function startStreamer(stmrkey){
             stmr.qsid = setInterval(() => {
             
                 var resp = dothings(stmrkey);
-                runUserClocks(stmrkey);
+                runclient_clocks(stmrkey);
                 if(resp.count === 0) 
                     stopStreamer(resp.key);
             }, 980 / stmr.speed);
@@ -58,7 +60,7 @@ function dothings(stmrkey)
     try
     {
         var count = 0;
-        var usrSpdComb = utils.filter(userclocks.values().toArray(), {keys: [stmrkey]});
+        var usrSpdComb = utils.filter(client_clocks.values().toArray(), {keys: [stmrkey]});
         usrSpdComb.forEach((c) => {
             var reqs = utils.filter(subsRequests, {uid: c.uid});
             reqs.forEach((req) => {
@@ -77,16 +79,16 @@ function dothings(stmrkey)
     return {key: stmrkey, count: count};
 }
 
-function runUserClocks(stmrkey) 
+function runclient_clocks(stmrkey) 
 {
-    var usrSpdComb = utils.filter(userclocks.values().toArray(), {key: [stmrkey]});
+    var usrSpdComb = utils.filter(client_clocks.values().toArray(), {key: [stmrkey]});
     usrSpdComb.forEach((c) => {
         c.currentTime = c.currentTime + 1000;
     });
 }
 
 function changeSpeed(uid, stmrkey){
-    var clock = userclocks.get(uid);
+    var clock = client_clocks.get(uid);
     clock.key = stmrkey;
     
     var stmr = streamers.find((s) => s.key === stmrkey);
@@ -104,7 +106,7 @@ function subscribe(requests) {
     });
 
     if(requests.length > 0) {
-        var stmrkey = userclocks.get(requests[0].uid).key;
+        var stmrkey = client_clocks.get(requests[0].uid).key;
         var streamer = streamers.find((s) => s.key === stmrkey);
         if(streamer.state !== 'stated')
             startStreamer(stmrkey);
@@ -129,17 +131,17 @@ function unsubscribeall(uid)
     subsRequests = others;
 }   
 
-function disconnect(uid)
+function exit(uid)
 {
     console.log('Drop user ' + uid);
-    userclocks.delete(uid);
-    userqcollmap.delete(uid);
+    client_clocks.delete(uid);
+    client_store.delete(uid);
     unsubscribeall(uid);
 }
 
 function q(uid, instrument, time)
 {
-    var qArray = userqcollmap.get(uid);
+    var qArray = client_store.get(uid);
     var st = qArray.find((q) => q.symbol === instrument.symbol);
     if(st === undefined) {
         st = {uid: uid, symbol: instrument.symbol, quotes: undefined, state: 'initialized', lastUpdated: time};
@@ -170,12 +172,10 @@ function qw(st, instrument, time) {
 
 function getHistory(p, startTime, endTime, interval)
 {
-    const clock = userclocks.get(p.uid);
+    const clock = client_clocks.get(p.uid);
     if(clock !== undefined)
-    {
-        startTime = clock.sTime;
         endTime = clock.currentTime;
-    }
+    
     return sutils.getHistory(p, startTime, endTime, interval);
 }
 
@@ -204,13 +204,13 @@ function wsmessage(uid, q)
     futsocket.emit(q.key, q, uid, 'icicilive');
 }
 
-module.exports = {
-    connect,
+export default {
+    clientInit,
     subscribe,
     unsubscribe,
     unsubscribeall,
     changeSpeed,
-    disconnect,
+    exit,
     getHistory,
     wsLive,
     addListener,

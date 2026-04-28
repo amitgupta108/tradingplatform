@@ -1,5 +1,4 @@
 class Order{
-  htmlelement;
   exchange = instrument.exc;
   stockCode = instrument.stockCode;
   time = Date.now();
@@ -10,12 +9,12 @@ class Order{
   symbol;
   action;
   quantity;
-  
-  constructor(symbol, action, quantity = 1)
+
+  constructor(symbol, action, quantity)
   {
     this.symbol = symbol;
     this.action = action;
-    this.quantity = quantity;
+    this.quantity = (quantity !== undefined) ? quantity : instrument.lotsize;
   }
 }
 
@@ -57,7 +56,7 @@ function submitOrder(clickedBtn)
   order_rows_tbody.innerHTML = '';
   toggle.disabled = false;
 
-  var checkboxes = document.querySelectorAll('#exit_checkbox');
+  var checkboxes = document.querySelectorAll('#pos_exit_cb');
   checkboxes.forEach(cb => cb.checked = false);
 }
 
@@ -77,6 +76,8 @@ function dropcancelorder(dropcancelBtn)
 
 function loadOrders(orders)
 {
+  positions_tBody.innerHTML = '';
+
   orders.forEach((order) => {
     console.log('Recovered Orders ' + JSON.stringify(order));
     if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)

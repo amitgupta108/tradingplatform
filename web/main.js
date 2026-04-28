@@ -13,10 +13,7 @@ function loadPreData(endtime)
   ls.setDate(newDate); ls.setHours(9); ls.setMinutes(15);
 
   const p = {
-    uid: instrument.uid,
-    stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
-    oExpiry: instrument.oExpiry,
     startTime: ls.getTime(),
     endTime: le,
   }
@@ -27,17 +24,6 @@ function changeSpeed()
 {
   var selectBoxValue = document.getElementById("optionSpeed").value;
   emit('speed', selectBoxValue);
-}
-
-function resumeSimulation()
-{
-  if(mainSeries.data().length === 0)
-    loadPreData(socket.sTime);
-
-  if (OptionChain.get(instrument.oExpiry) === undefined)
-    new OptionChain(instrument.oExpiry, 'c_option_chain');
-  emit('resume', {continue: true});
-
 }
 
 function start()

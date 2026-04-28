@@ -18,7 +18,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/serverlocal/app.js",
+            "program": "${workspaceFolder}/serverlocal/app.mjs",
             "args": ["80", "arg2"],
             "outputCapture": "std"
         },
@@ -29,7 +29,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/serverlocal/app.js",
+            "program": "${workspaceFolder}/serverlocal/app.mjs",
             "args": ["449", "arg2"],
             "outputCapture": "std"
         }

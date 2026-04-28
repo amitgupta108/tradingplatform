@@ -91,7 +91,7 @@
                             <tr>
                                 <td colspan="7" class="orderlist-td"></td>
                                 <td class="orderlist-td" >
-                                    <span id="closeOListBtn" class="close-btn">x</span>
+                                    <span id="closeOListBtn" class="close-btn">X</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -124,7 +124,6 @@
                 <div>
                     <button type="button" id="btnStartSim" onclick="start()">Start</button>
                     <button type="button" id="btnStopSim" onclick="stopSimulation()">Stop</button>
-                    <button type="button" id="btnResumeSim" onclick="resumeSimulation()">Resume</button>
                     <button type="button" id="btnExit" onclick="exit()">Exit</button>
                     <button type="button" id="btnListOrders" onclick="listOrders()">Orders</button>
                     <select id="optionSpeed" onchange="changeSpeed()">
@@ -173,7 +172,7 @@
             </tbody>
         </table>
     </div>
-    <button id="exitPositionBtn" style="position:absolute; top:475px; left:20px; display:none;padding: 3px;">
+    <button id="exitPositionBtn" style="position:absolute; top:500px; left:35px; display:none;padding: 3px;width: 50px;">
         Exit
     </button>
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
@@ -199,10 +198,10 @@
         <td class="orderlist-td" width="15%">Quatity</td>
         <td class="orderlist-td" width="8%">Type</td>
         <td class="orderlist-td" width="16%">0</td>
-        <td class="orderlist-td" width="15%">Price</td>
+        <td class="orderlist-td" width="16%">Price</td>
         <td class="orderlist-td" width="18%">Status</td>
-        <td class="orderlist-td" width="4%">
-            <button id="olactionBtn" onclick="confirmcancel(this)">X</button>
+        <td class="orderlist-td" width="3%">
+            <label id="clickable" onclick="confirmcancel(this)">X</label>
             <div class="orderlist-row-overlay">
                 <label class="clickable" onclick="cancelorder(this)">OK</label>
                 <label class="clickable" onclick="dropcancelorder(this)">Cancel</label>
@@ -254,7 +253,7 @@
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
-                <option value="3">4</option>
+                <option value="4">4</option>
             </select>
         </td>
         <td style='width:17%'>
@@ -268,7 +267,7 @@
 <template id="position-table-row">
     <tr>
         <td>
-            <input type='checkbox' id="exit_checkbox" onchange="position_cb_action()"></input>
+            <input type='checkbox' id="pos_exit_cb" onchange="position_cb_action(this)"></input>
         </td>
         <td><label id="Instrument"></label></td>
         <td>
