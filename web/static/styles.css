@@ -1,17 +1,21 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
-    margin: 3px;
+    justify-content:center;
+    align-items: center;
+    vertical-align: middle;
 }
 
 .top {
-    position: absolute; 
+    position:fixed; 
     display: flex;
     gap: 5px;
-    justify-content:stretch;
+    justify-content:center;
+    align-items: center;
     width: 99.1%;
-    height: 99.2%;
+    height: 99.1%;
     border-radius: 5px;
+    vertical-align: middle;
 }
 
 .container {
@@ -21,6 +25,7 @@ body {
     width: 50%;
     border-radius: 5px;
     padding: 1px;
+    vertical-align: middle;
 }  
 
 #timer {
@@ -54,7 +59,6 @@ body {
     height: 3.5%;
     width:99.5%;
     font-size: 13px;
-    vertical-align: middle;
 }
 
 .tab {
@@ -67,6 +71,7 @@ body {
     display: flex;
     gap: 10px;
     border-radius: 5px;
+    vertical-align: middle;
 }
 
 .tab:hover {
@@ -77,19 +82,19 @@ body {
     background-color: #1a9a20;
     justify-content: center;
     display: flex;
-    justify-content: center;
     padding: 3px;
     gap: 10px;
+    vertical-align: middle;
 }
 
 .inert-tab {
     background-color: #50cd50;
-    display:flexbox;
+    display:flex;
     justify-content: center;
     font-size: 13px;
     padding: 3px;
     gap: 10px;
-    vertical-align: text-bottom;
+    border-radius: 5px;
 }
 
 #positions_div {
@@ -107,9 +112,9 @@ body {
     width: 99.2%;
     height: 3.3%;
     border-radius: 5px;
-    vertical-align:auto;
     justify-content: space-between;
     padding: 2px;
+    vertical-align: middle;
 }
 
 #bottomPLPanel {
@@ -221,7 +226,7 @@ button:disabled {
 
 .icon {
     border-radius: 2px;
-    font-size: 11px;
+    font-size: 12px;
     margin-right: 5px;
     transition: all .2s ease-in-out;
     align-items: center;
@@ -242,13 +247,13 @@ button:disabled {
 }
 
 select {
-    height: 18px;
+    height: 20px;
     padding: 2px;
     border: 1px solid #4CAF50;
     border-radius: 4px;
     background-color: #e8f5e9;
     color: #2e7d32;
-    font-size: 11px;
+    font-size: 12px;
     transition: border-color 0.3s;
 }
 
@@ -321,7 +326,7 @@ select:hover {
     display: flex;
 }
 
-.orderlist {
+.florderlist {
     position: absolute;
     top: 50px;
     left: 100px;
@@ -389,7 +394,7 @@ input:checked + .slider:before {
     cursor:pointer;
     color: black;
     border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.123);
+    background-color: rgba(65, 63, 63, 0.281);
     font-size: 12px;
     vertical-align: middle;
     align-items: center;
@@ -405,8 +410,8 @@ input:checked + .slider:before {
 .hover-row-content {
     position: absolute;
     top: 0;
-    left: 25px;
-    width: 50%;
+    left: 60px;
+    width: 45%;
     z-index: 200;
     height: 100%;
     display: none;
@@ -432,14 +437,14 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     left: 0;
-    width:100%;
+    width:90%;
     z-index: 200;
     height: 100%;
     display: none;
     align-items: end;
     justify-content:end;
     vertical-align: middle;
-    backdrop-filter: blur(0.5px);
+    backdrop-filter: blur(0.3px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: rgba(79, 76, 76, 0.103);
+    background-color: rgba(241, 235, 235, 0.521);
 }

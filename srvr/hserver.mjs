@@ -8,7 +8,6 @@ const client_clocks = new Map();
 const client_store = new Map();
 var subsRequests = new Array(0);
 
-
 const streamers = [
         {key: '1x', speed: 1, qsid: 0, state: 'stopped'},
         {key: '2x', speed: 2, qsid: 0, state: 'stopped'},

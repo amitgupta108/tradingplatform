@@ -97,7 +97,7 @@ class Position
     else 
     {
       this.ini(exorder, recovery);
-      if(exorder.state === 'opened') 
+      if(exorder.state === 'opened' || exorder.state === 'open') 
       {
         var idx = this.raisedorders.find((o) => o.orderid === exorder.orderid);
         if(idx !== -1)

@@ -122,24 +122,24 @@ function standardizeO(order)
     return uOrder;
 }
 
-async function wshb(action)
+function wshb(action)
 {
   if(action === 'start') {
     if(wsping !== undefined)
       clearInterval(wsping);
 
-    wsping = setInterval(() => {
+    wsping = setInterval(async () => {
         qserver.broadcast({type: 'hb', data: ws.readyState});
+    
+        if(ws.readyState !== 1) {
+            console.log('Attempting reconnection');
+            var vr = await apiValidate({
+                'sid': authdata.sid,
+                'token': authdata.token
+            });
+            wsconnect(vr.data.baseUrl.substring(8), authdata.token, authdata.sid, uid);
+        }
     }, 60000);
-
-    if(ws.readyState !== 1) {
-        console.log('Attempting reconnection');
-        var vr = await apiValidate({
-            'sid': authdata.sid,
-            'token': authdata.token
-        });
-        wsconnect(vr.data.baseUrl.substring(8), authdata.token, authdata.sid, uid);
-    }
   }
   else
   {

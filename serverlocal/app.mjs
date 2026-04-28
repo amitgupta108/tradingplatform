@@ -1,9 +1,5 @@
-
 import consoleStamp from 'console-stamp';
 consoleStamp(console, { format: ':date(HH:MM:ss)' });
-
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 
 import { fileURLToPath } from 'node:url';
 import {readFileSync} from 'node:fs';
@@ -12,19 +8,15 @@ import path from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-var https  = require('https');
-var express = require('express');
-var session = require('express-session');
-const { Server } = require("socket.io");
-
-
+import express from 'express';
+import session from 'express-session';
+import https from 'node:https';
+import { Server } from "socket.io";
 import Session from './session/session.mjs';
 import iBreeze from './broker/breeze.mjs';
 import ikNeo from './broker/kotakneo.mjs';
 import qserver from './quotes.mjs'; 
 import apiserver from './apiserver.mjs'; 
-
-
 
 const args = process.argv;
 
