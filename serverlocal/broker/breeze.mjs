@@ -1,27 +1,25 @@
-const adapter = require('../adapter/histadapter');
-const qserver = require('../quotes');
-const utils = require('../../common/utils');
+import utils from '../../common/utils.mjs';
+import qserver from '../quotes.mjs';
+import adapter from '../adapter/histadapter.mjs';
 
-const EventEmitter = require('node:events');
+import EventEmitter from 'node:events';
 const wsServer = new EventEmitter();
 wsServer.setMaxListeners(1);
 wsServer.addListener('message', qserver.emitUpdates);
 
 var listener = false;
 
-require('console-stamp')(console, '[HH:MM:ss.l]');
-
 var counter = 50000;
 var ordermap = new Map();
 
-function connect(uid, time)
+function init(uid, startTime, speed)
 {
-    adapter.connect(uid, time);
+    adapter.init(uid, startTime, speed);
 }
 
-function disconnect(uid)
+function exit(uid)
 {
-    adapter.disconnect(uid);
+    adapter.exit(uid);
 }
 
 function subscribe(uid, instruments, action)
@@ -98,10 +96,12 @@ function preU(p) {
     return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 }
 
-function preF(p) {
+function preF(uid, stockCode, p) {
     p.expiry = p.fExpiry;
     p.type = "futures";
     p.exchange = 'NFO';
+    p.uid = uid;
+    p.stockCode = stockCode;
     return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');;
 }
 
@@ -120,14 +120,14 @@ function preD(p, uq) {
     return [pQ, cQ];
 }
 
-module.exports = {
+export default {
+    init,
+    exit,
     subscribe,
-    connect,
     preF,
     order,
     orderbook,
     changeSpeed,
-    disconnect,
     orderMatching,
     cancelorder
   };

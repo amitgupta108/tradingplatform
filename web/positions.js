@@ -31,9 +31,10 @@ class Position
     var prevQ = Number(this.value('LTP'));
     this.value('LTP', (q.close).toFixed(2));
 
-    if(Number(this.value('unbookedQ')) === 0)
-      return;    
-
+    if(Number(this.value('unbookedQ')) === 0) {
+        this.#pRow.querySelector('#pos_exit_cb').disabled = true;
+        return;    
+    }
     var prevPL = Number(this.value('unbookedPL'));
     var psize = Number(this.value('unbookedQ'));
     var unbookedPL = prevPL + (q.close - prevQ) * psize;
@@ -41,12 +42,7 @@ class Position
 
     this.value('unbookedPL', unbookedPL.toFixed(2));
     this.value('totalPL', totalPL.toFixed(2));
-    /*
-    var vUnbookedPL = Number(document.getElementById("vUnbookedPL").innerText);
-    document.getElementById("vUnbookedPL").innerText = (vUnbookedPL - prevPL + unbookedPL).toFixed(2);
-    var vTotalPL = Number(document.getElementById("vTotalPL").innerText);
-    document.getElementById("vTotalPL").innerText = (vTotalPL - prevPL + unbookedPL).toFixed(2);
-    */
+
     writeProfitLoss();
   }
 
@@ -78,12 +74,12 @@ class Position
     const symbol = order.symbol;
     if(this.#pRow === undefined)
     {
-      var prow = tRow(t_position_table_row);
+      var prow = tRow(t_position_table_row, false);
       prow.title = symbol;
       prow.querySelector('#orderdisplay-btn').title = symbol;
       prow.addEventListener('click', (event) => {
-        if(event.target.id !== 'orderdisplay-btn')
-          prepareOrderWindow(event);
+        if(event.target.id === 'div_trans_btn')
+          orderWindow(event);
       }, true);
       document.getElementById('positions_tbody').append(prow);
 
@@ -119,7 +115,7 @@ class Position
         else
           this.finalorders.push(exorder);
         
-        if(exorder.state !== 'caoncelled')
+        if(exorder.state !== 'cancelled')
           this.pnlUpdate(exorder);
       }
       var opencount = this.finalorders.filter((o) => o.state === 'opened').length;
@@ -162,7 +158,7 @@ class Position
     var totalPL = bookedPL + unbookedPL;
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
-    this.#pRow.querySelector('#exit_checkbox').disabled = psize === 0 ? true : false;
+    this.#pRow.querySelector('#pos_exit_cb').disabled = psize === 0 ? true : false;
 
     this.value('bookedQ', Math.min(sellq, buyq));
     this.value('bookedPL', bookedPL.toFixed(2));

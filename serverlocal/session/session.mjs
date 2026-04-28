@@ -1,4 +1,4 @@
-const utils = require('../../common/utils');
+import utils from '../../common/utils.mjs';
 
 class Session
 {
@@ -113,6 +113,11 @@ class Session
         return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
     }
 
+    runOCNxt(action)
+    {
+        this.st[3].toStream = action;
+    } 
+
     lastuq(uq)
     {
         var st = this.st.find((e) => e.key === 'index');
@@ -130,4 +135,4 @@ class Session
     }
 }
 
-module.exports = Session;
+export default Session;

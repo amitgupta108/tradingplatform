@@ -1,38 +1,23 @@
 import OpenAlgo from 'openalgo';
-import qserver from '../quotes.js';
-import adapter from '../adapter/histadapter.js';
+import qserver from '../quotes.mjs';
+import adapter from '../adapter/histadapter.mjs';
 
-var uidscripmapping = new Array(0);
-const connkey = '1b89491151323ed5f76d43ea762a4bae0c2e6086b08ea94bb57c774830f9d307';
-const client = new OpenAlgo(connkey);
+const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
+const client = new OpenAlgo(connkey).connect()
+        .then(() => console.log('openalgo client connected'))
+        .catch((error) => console.error('Error connecting to openalgo ' + error)
+    );
 var uid;
 
-function connect(cuid, scrip)
-{
-    /*var existing = uidscripmapping.find((s) => s.scrip === scrip);
-    if(existing !== undefined)
-        throw Error('user scrip combination already exist'); //may be extendable using rooms?
-    uidscripmapping.push({uid: cuid, scrip: scrip})
-    */
-    try {
-        client.connect();
-        uid = cuid;
-    } catch (error) {
-        console.error('Error connection to openalgo ' + error);
-    }
-}
-
-function disconnect(cuid, scrip)
-{
-    /*var idx = uidscripmapping.findIndex((s) => s.scrip === scrip);
-    uidscripmapping.splice(idx, 1);
-    */
-    client.disconnect();
-}
 
 function onQuotes(q)
 { 
     qserver.emitQs(uid, standardizeoq(q));
+}
+
+function exit(uid)
+{
+    subscribe(uid, 'unsuball');
 }
 
 function standardizeoq(q) 
@@ -88,7 +73,7 @@ async function order(uid, orders)
     if(fOrders.length === 1)
         response = await client.placeOrder(fOrders[0]);
     else if( fOrders.length > 1)
-        response = await client.basketOrder(fOrders);
+        response = await client.basketOrder({orders: fOrders});
     console.log(JSON.stringify(response));
     return response;
 }
@@ -101,4 +86,11 @@ function formatorder(orders)
     });   
 }
 
-export { connect, order, subscribe, orderbook, disconnect };
+function cancelorder(order)
+{
+    client.cancelOrder({orderId: order.orderid})
+    .then((resp) => {
+        console.log('order cancellation response ' + JSON.stringify(resp));
+    });
+}
+export default {order, subscribe, orderbook, cancelorder, exit };

@@ -1,5 +1,7 @@
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
 const vollib = require('../../js_vollib-master/build/js_vollib').js_vollib;
-require('console-stamp')(console, '[HH:MM:ss.l]');
 const regex = /Time/;
 
 function addIVNDelta(q, uq)
@@ -122,7 +124,7 @@ function strikes(a, n)
     return strikes;
 }
 
-module.exports = {
+export default {
     addIVNDelta,
     printObject,
     filter,

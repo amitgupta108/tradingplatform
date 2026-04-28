@@ -1,8 +1,7 @@
-const qserver = require('../quotes');
+import qserver from '../quotes.mjs';
 
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
-require('console-stamp')(console, '[HH:MM:ss.l]');
 var authdata;
 var wsping;
 var ws;
@@ -149,6 +148,4 @@ async function wshb(action)
   }
 }
 
-module.exports = {
-    wsOps
-  };
+export default wsOps;

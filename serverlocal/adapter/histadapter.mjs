@@ -1,16 +1,20 @@
-const historyserver = require('../../srvr/hserver');
-const qServer = require('../quotes');
+
+import historyserver from '../../srvr/hserver.mjs';
+import qServer from '../quotes.mjs';
+
 historyserver.addListener('strikex', receieveQs);
 historyserver.addListener('index', receieveQs);
 historyserver.addListener('vix', receieveQs);
 historyserver.addListener('futures', receieveQs);
 
-function connect(uid, time) {
-    historyserver.connect(uid, time);
+function init(uid, startTime, speed)
+{
+    historyserver.clientInit(uid, startTime, speed);
 }
 
-function disconnect(uid) {
-    historyserver.disconnect(uid);
+function exit(uid)
+{
+    historyserver.exit(uid);
 }
 
 function getHistoricalQuotes(p, startTime, endTime, interval) {
@@ -68,12 +72,12 @@ function standardizeiq(q)
     return q;
 }
 
-module.exports = {
-    connect,
+export default  {
+    init,
     getHistoricalQuotes,
     subscribe,  
     changeSpeed,
-    disconnect,
     wsLive,
-    addListener
+    addListener,
+    exit
 };

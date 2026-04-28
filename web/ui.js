@@ -1,18 +1,22 @@
-function prepareOrderWindow(event)
+function orderWindow(event)
 {
-  toggle.disabled = true;    
-
   let symbol = event.currentTarget.title;
   let clickedBtn = event.target;
   const action = clickedBtn.innerText;
 
-  const neworder = new Order(symbol, action);
+  appendOrderRow(new Order(symbol, action), toggle.checked);
+  showOrderWindow();
+}
+
+function appendOrderRow(neworder, isBasket)
+{
+  toggle.disabled = true;    
   var scripName = symtoinstrument(neworder.symbol).name;
 
   var tr = tRow(t_order_window_row, true);
   tr.querySelector('#owsymbol').innerText  = neworder.symbol;
   tr.querySelector('#scripName').innerText  = scripName;
-  tr.querySelector('#lotselect').value = neworder.quantity;
+  tr.querySelector('#lotselect').value = neworder.quantity / instrument.lotsize;
   tr.querySelector('#ordertype').innerText = neworder.pricetype;
   
   const order_row_btn = tr.querySelector('#owaction');
@@ -22,12 +26,11 @@ function prepareOrderWindow(event)
       order_row_btn.classList.replace('sell', 'buy') :
       order_row_btn.classList.replace('buy', 'sell') ;
 
-  if(!toggle.checked) {
+  if(!isBasket) {
     order_rows_tbody.innerHTML = '';
     tr.classList.remove('hover-row');
   }
   order_rows_tbody.prepend(tr); 
-  showOrderWindow();
 }
 
 function showOrderWindow()
@@ -102,7 +105,7 @@ function displayOrderList(btn, event)
   
   var tqty = 0;
   p.finalorders.forEach((o, idx) => {
-    var newtr = tRow(t_order_list_row);
+    var newtr = tRow(t_order_list_row, false);
 
     newtr.title = symbol;
     var qty = o.state.startsWith('complete') ? o.filled_q : 0;
@@ -127,17 +130,6 @@ function displayOrderList(btn, event)
 function confirmcancel(target) {
   var overlay = target.nextElementSibling;
   overlay.style.display = 'flex';
-}
-
-function position_cb_action()
-{
-  const checkboxes = document.querySelectorAll('#exit_checkbox');
-  const checkedIdx = Array.from(checkboxes)
-  .map((cb, i) => cb.checked ? i : null)
-  .filter(val => val !== null);
-
-  exitPositionBtn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
-  exit_all_cb.checked = checkedIdx.length === checkboxes.length;
 }
 
 document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
