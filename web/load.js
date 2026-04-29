@@ -18,7 +18,6 @@ const t_option_chain_put_row = document.getElementById('option-chain-put-row');
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
 const order_rows_tbody = document.getElementById('tbody-order-panel');
-const h_oc_div = document.getElementById('Exp1');
 const positions_tBody = document.getElementById('positions_tbody');
 
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
@@ -29,7 +28,7 @@ class TradeButtons extends HTMLElement {
       <div class="hover-content">
           <label id='symbol_any_row' hidden></label>
           <button  id="div_trans_btn" class="smallbutton buy">B</button>
-          <button  id="attn" class="smallbutton order" onclick="">!</button>
+          <button  id="row_attn_btn" class="smallbutton order" onclick="">!</button>
           <button  id="div_trans_btn" class="smallbutton sell">S</button> 
       </div>    
     `;

@@ -46,7 +46,7 @@ function rh(socket)
     socket.on('prevsession', (streamingstatus) => {
       
       if (OptionChain.get(instrument.oExpiry) === undefined)
-        new OptionChain(instrument.oExpiry, 'c_option_chain');
+        new OptionChain(instrument.oExpiry, 'c_oc_div');
       if(mainSeries.data().length === 0)
         loadPreData();
     });

@@ -19,7 +19,7 @@ async function wsOps(uid, action, tpt)
             });
             wsconnect(vr.data.baseUrl.substring(8), lr.data.token, vr.data.sid, uid);
             authdata = {sid: lr.data.sid, token: lr.data.token}; 
-            response = 'connected';
+            response = 'connection initiated';
         }
     }
     else if (ws != undefined && action === 'disconnect') {
@@ -84,7 +84,7 @@ function wsconnect(baseurl, token, sid, uid)
             const message = JSON.parse(event.data);
             console.log("message type: " + message.type)
             if(message.type === 'cn' && message.msg === "connected")
-                wshb('start');
+                wshb('start', uid);
             if(message.type === 'order')
                 message.data = standardizeO(message.data);
             qserver.emitUpdates(uid, message);
@@ -94,7 +94,7 @@ function wsconnect(baseurl, token, sid, uid)
     };
 
     ws.onerror = (event) => {
-        console.log("connection error " + event);
+        console.log("connection error " + JSON.stringify(event));
     }; 
     
     ws.onclose = (event) => {
@@ -122,7 +122,7 @@ function standardizeO(order)
     return uOrder;
 }
 
-function wshb(action)
+function wshb(action, uid)
 {
   if(action === 'start') {
     if(wsping !== undefined)
