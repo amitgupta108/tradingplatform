@@ -42,7 +42,8 @@ function submitOrder(clickedBtn)
 
     let n_order = new Order(symbol, action, lot * instrument.lotsize);
     n_order.pricetype = r.querySelector('#ordertype').innerText;
-    n_order.price = r.querySelector('#lmtprice').value;    
+    if(n_order.pricetype === 'LIMIT')
+      n_order.price = r.querySelector('#lmtprice').value;
 
     var p = Position.findPosition(symbol, true);
     p.orderlist(n_order);

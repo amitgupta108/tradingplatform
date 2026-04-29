@@ -34,7 +34,7 @@ function standardizeoq(q)
 
     const regex = /[0-9]/;
     const idx = q.symbol.search(regex);
-    q.stockCode = q.symbol.substring(0, idx);
+    q.stockCode = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
 
     if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
         q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
@@ -101,7 +101,7 @@ function formatorder(orders)
 
 function cancelorder(order)
 {
-    client.cancelOrder({orderid: order.orderid})
+    client.cancelOrder({orderId: order.orderid})
     .then((resp) => {
         console.log('order cancellation response ' + JSON.stringify(resp));
     });

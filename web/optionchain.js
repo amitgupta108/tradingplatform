@@ -3,18 +3,18 @@ class OptionChain
   #expiry;
   #v_oc_id;
   atm;
-  pMap;
+  pMap = new Map();
+  hl_symbol = new Array(0);
 
   constructor(expiry, v_oc_id)
   {
     this.#v_oc_id = v_oc_id;
     this.#expiry = expiry;
     this.#buildHTMLOC(this.#v_oc_id)
-    
-    optionChains.push(this);
 
-    qBox.addEventListener('strikex', this);
+    optionChains.push(this);
     
+    qBox.addEventListener('strikex', this);
     qBox.addEventListener('index', (event) => {
       const q = event.detail;
 
@@ -24,14 +24,15 @@ class OptionChain
         this.atm = this.atm + Math.round((q.close - this.atm) / 50) * 50;
     });
     
-    this.pMap = new Map();
     pBox.addEventListener('position', ((e) => {
-      this.pMap.set(e.detail.symbol ,{psize: e.detail.unbookedQ});
-    } ));
+        this.pMap.set(e.detail.symbol ,{psize: e.detail.unbookedQ});
+      })
+    );
   }
 
   #buildHTMLOC(v_oc_id)
   {    
+    const h_oc_div = document.getElementById(v_oc_id);
     const tBodies = Array.from(h_oc_div.querySelectorAll('tbody'));
 
     tBodies.forEach((tb, idx) => {
@@ -40,7 +41,14 @@ class OptionChain
       {
         var new_tr = tRow(t_row, false);
         new_tr.addEventListener('click', (event) => {
-          orderWindow(event);
+          
+          if(event.target.id === 'row_attn_btn') {
+            const hl_row = event.currentTarget;
+            this.hl_symbol.push(hl_row.title);
+            hl_row.classList.toggle('row_background');
+          } else {
+            orderWindow(event);
+          }
         }, true);
         
         tb.append(new_tr);
@@ -67,6 +75,7 @@ class OptionChain
   {
     const idx = q.right === 'Call' ? 0 : 1;
     const cIdx = q.right === 'Call' ? [0, 1, 2, 3] : [3, 2, 1, 0];
+    const h_oc_div = document.getElementById(this.#v_oc_id);
     const tbody = Array.from(h_oc_div.querySelectorAll('tbody'))[idx];
 
     const row = tbody.rows[rIdx];
@@ -75,6 +84,11 @@ class OptionChain
     row.cells[cIdx[1]].innerText = q.delta.toFixed(2);
     row.cells[cIdx[2]].innerText = q.close.toFixed(2);
     row.cells[cIdx[3]].childNodes[3].innerText = q.strike_price;
+
+    if(this.hl_symbol.includes(q.symbol))
+      row.classList.add('row_background');
+    else 
+      row.classList.remove('row_background');
 
     const unbookedQ = this.pMap.get(q.symbol);
     if(unbookedQ === undefined || unbookedQ.psize === 0 || unbookedQ.psize === '') {

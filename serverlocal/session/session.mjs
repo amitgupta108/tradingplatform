@@ -115,7 +115,7 @@ class Session
 
     runOCNxt(action)
     {
-        this.st[3].toStream = action;
+        this.st.find((e) => e.key === 'ocnxt').toStream = action === 'start' ? true : false;
     } 
 
     lastuq(uq)
