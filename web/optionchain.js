@@ -41,14 +41,18 @@ class OptionChain
       {
         var new_tr = tRow(t_row, false);
         new_tr.addEventListener('click', (event) => {
-          
-          if(event.target.id === 'row_attn_btn') {
+          if(event.target.id === 'row_attn_btn')
+          {
             const hl_row = event.currentTarget;
-            this.hl_symbol.push(hl_row.title);
-            hl_row.classList.toggle('row_background');
-          } else {
-            orderWindow(event);
+
+            var idx = this.hl_symbol.findIndex((r) => hl_row.title === r);
+            if(idx === -1)
+              this.hl_symbol.push(hl_row.title);
+            else
+              this.hl_symbol.splice(idx, 1);
           }
+          else
+            orderWindow(event);
         }, true);
         
         tb.append(new_tr);

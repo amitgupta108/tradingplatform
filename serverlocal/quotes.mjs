@@ -5,6 +5,9 @@ function emitQs(uid, q)
 {
     try {
         var sn = usn(uid);
+        if(sn === undefined)
+            return;
+        
         var key = 'strikex';
         if(q.stock_code === 'INDVIX')
             key = 'vix';

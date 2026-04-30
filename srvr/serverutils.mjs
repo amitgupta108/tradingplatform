@@ -8,7 +8,7 @@ import { findByTime } from './binarysearch.mjs';
 
 const appKey = "***REMOVED***";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55460672";
+const sessionId = "55473850";
 
 var breeze = new BreezeConnect({ "appKey": appKey });
 

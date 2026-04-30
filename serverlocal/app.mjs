@@ -124,8 +124,11 @@ io.on('connection', (s) => {
 function exit(uid, mode)
 {
     iBreeze.exit(uid);
-    if(mode === 1)
-        iKNeo.exit(uid);
+    if(mode === 1){
+        var sn = us.find((e) => e.uid === uid);
+
+        iKNeo.exit(uid, sn.unsuball());
+    }
 }
 
 function snDestroy(uid)

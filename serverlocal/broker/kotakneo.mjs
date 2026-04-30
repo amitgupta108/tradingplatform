@@ -17,9 +17,9 @@ function onQuotes(q)
     qserver.emitQs(appid, qt);
 }
 
-function exit(uid)
+function exit(uid, sublist)
 {
-    subscribe(uid, 'unsuball');
+    subscribe(uid, sublist, 'unsub');
 }
 
 function standardizeoq(q) 
@@ -30,7 +30,8 @@ function standardizeoq(q)
     q.open = q.ltp;
     q.high = q.ltp;
     q.low = q.ltp;
-    q.exchange = q.exchange === 'NSE_INDEX' ? 'NSE' : q.exchange;
+    if(q.exchange === 'NSE_INDEX')
+        q.exchange = 'NSE';
 
     const regex = /[0-9]/;
     const idx = q.symbol.search(regex);
@@ -38,11 +39,8 @@ function standardizeoq(q)
 
     if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
         q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
-
-        var strike = q.symbol.slice(-9, -2);
-        var digit5 = Number.isFinite(Number(strike));
-        q.strike_price = digit5 ? strike.slice(2, 7) : strike.slice(3, 7);
-        q.expiry_date = digit5 ? q.symbol.slice(-14, -7) : q.symbol.slice(-13, -6);
+        q.expiry_date = q.symbol.slice(idx, idx + 7);
+        q.strike_price = q.symbol.slice(idx + 7, -2);
     }
     return q;
 } 
