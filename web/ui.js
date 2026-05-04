@@ -19,7 +19,7 @@ function appendOrderRow(neworder, isBasket)
   tr.querySelector('#lotselect').value = neworder.quantity / instrument.lotsize;
   tr.querySelector('#ordertype').innerText = neworder.pricetype;
   
-  const order_row_btn = tr.querySelector('#owaction');
+  const order_row_btn = tr.querySelector('#ow_action_btn');
   order_row_btn.innerText = neworder.action;
 
   neworder.action === 'B' ? 
@@ -40,7 +40,7 @@ function showOrderWindow()
   oWindow.classList.remove('buy');
   oWindow.classList.remove('sell');
   
-  var wCSS = rows.length > 2 ? 'multi' : rows[0].querySelector("#owaction").innerText === 'B' ? 'buy' : 'sell';
+  var wCSS = rows.length > 2 ? 'multi' : rows[0].querySelector("#ow_action_btn").innerText === 'B' ? 'buy' : 'sell';
   oWindow.classList.add(wCSS);
   oWindow.style.display = "block";
 
@@ -49,11 +49,7 @@ function showOrderWindow()
     }, 10);
 }
 
-function removeOrderRow(target){
-  target.parentNode.parentNode.parentNode.remove();
-}
-
-function flipAction(orderRowBtn)
+function flipAction(orderRowBtn, orderRow)
 {
   var action = orderRowBtn.innerText;
   orderRowBtn.innerText = action === 'B' ? 'S' : 'B';
@@ -65,19 +61,12 @@ function flipAction(orderRowBtn)
   showOrderWindow();
 }
 
-function switchTabs(evt, container, tabName) {
-  var i, tabcontent, tablinks;
-  var tabcontainer = document.getElementById(container);
-  var tabcontent = tabcontainer.querySelectorAll('.tab-content');
-  for (i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].style.display = "none";
-  }
-  tablinks = tabcontainer.querySelectorAll('.tab');
-  for (i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[0].className.replace(" active-tab", "");
-  }
-  document.getElementById(tabName).style.display = "block";  
-  evt.currentTarget.className += " active-tab";
+function switchTabs(evt) {
+  document.getElementById('tabButton1').classList.toggle('active-tab');
+  document.getElementById('tabButton3').classList.toggle('active-tab');
+
+  document.getElementById('c_oc_div').classList.toggle('active');
+  document.getElementById('n_oc_div').classList.toggle('active');
 }
 
 function writeProfitLoss()
@@ -90,18 +79,18 @@ function writeProfitLoss()
     unbookedPL += Number(positions[i].value('unbookedPL')); 
   }
 
-  document.getElementById("vBookedPL").innerText = bookedPL.toFixed(2);
-  document.getElementById("vUnbookedPL").innerText = unbookedPL.toFixed(2);
-  document.getElementById("vTotalPL").innerText = (bookedPL + unbookedPL).toFixed(2);
+  total_booked = bookedPL.toFixed(2);
+  total_unbooked = unbookedPL.toFixed(2);
+  total_pnl = (bookedPL + unbookedPL).toFixed(2);
 }
 
-function displayOrderList(btn, event)
+function displayOrderList(btn, parent)
 {
-  const symbol = btn.parentNode.parentNode.title;
+  const symbol = parent.title;
   const p = Position.findPosition(symbol, false);
   orderlistDiv.querySelector('td').innerText = symtoinstrument(symbol).name;
 
-  orderlistDiv.querySelector('#order-list-tbody').innerHTML = "";
+  order_list_tbody.innerHTML = "";
   
   var tqty = 0;
   p.finalorders.forEach((o, idx) => {
@@ -122,7 +111,7 @@ function displayOrderList(btn, event)
     if(o.state === 'opened') 
       newtr.childNodes[15].childNodes[1].classList.add('clickable');
           
-    document.querySelector('#order-list-tbody').append(newtr);
+    order_list_tbody.append(newtr);
   });
   orderlistDiv.style.display = 'flex';
 }
@@ -131,6 +120,3 @@ function confirmcancel(target) {
   var overlay = target.nextElementSibling;
   overlay.style.display = 'flex';
 }
-
-document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
-document.getElementById("tabButton3").childNodes[1].innerText = instrument.oExpiryNxt;

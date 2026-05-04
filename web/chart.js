@@ -14,43 +14,49 @@ function setFuturesChart(qA)
   emaSeries.setData(qs);
 }
 
-function fetchLastCandle(q)
+function currentCandle(q)
 {
-  if(mainSeries.data().length !== 0)
-    return mainSeries.data().at(-1);
+  var curCandle;
+  if(mainSeries.data().length !== 0) {
+    curCandle = mainSeries.data().at(-1);
+    if(curCandle.time - nTVtime(q.ltt) > 300)
+      curCandle.time = nTVtime(q.ltt) - (nTVtime(q.ltt) % 300);
+  }
   else
-    return {
-        time: nTVtime(q.ltt) - nTVtime(q.ltt) % 300, 
-        close: q.close,
-        open: q.close,
-        high: q.close,
-        low: q.close,         
+  {  curCandle = { close: q.close,
+        open: q.open,
+        high: q.high,
+        low: q.low,         
         customValues: q.close
       };
+    curCandle.time = nTVtime(q.ltt) - (nTVtime(q.ltt) % 300);
+  }
+  return curCandle;
 }
 
 function futuresChart(q)
 {
-  var lastcandle = fetchLastCandle(q); 
-  if(lastcandle.time + 300 < nTVtime(q.ltt))
+  var curCandle = currentCandle(q); 
+  if(nTVtime(q.ltt) > curCandle.time + 299)
   {  
-    lastcandle.close = q.close;
-    lastcandle.open = q.close;
-    lastcandle.high = q.close;
-    lastcandle.low = q.close;
-    lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues;
-    lastcandle.customValues = lastcandle.value;
-    lastcandle.time = lastcandle.time + 300;
+    curCandle.close = q.close;
+    curCandle.open = q.open;
+    curCandle.high = q.high;
+    curCandle.low = q.low;
+    curCandle.value =  (2/21) * q.close + (1-2/21) * curCandle.customValues;
+    curCandle.customValues = curCandle.value;
+    
+    curCandle.time = curCandle.time + 300;
   }
   else
-  {
-    lastcandle.high = Math.max(q.close, lastcandle.high);
-    lastcandle.low = Math.min(q.close, lastcandle.low);
-    lastcandle.close = q.close;
-    lastcandle.value =  (2/21) * q.close + (1-2/21) * lastcandle.customValues;
+  { 
+    curCandle.high = Math.max(q.high, curCandle.high);
+    curCandle.low = Math.min(q.low, curCandle.low);
+    curCandle.close = q.close;
+    curCandle.value =  (2/21) * q.close + (1-2/21) * curCandle.customValues;
   }      
-  mainSeries.update(lastcandle);
-  emaSeries.update(lastcandle);
+  mainSeries.update(curCandle);
+  emaSeries.update(curCandle);
 }
 
 function vixChart(q)

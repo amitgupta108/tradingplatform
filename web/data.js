@@ -1,3 +1,4 @@
+
 const instrumentMap = new Map();
 
 instrumentMap.set('UI', {
@@ -78,17 +79,20 @@ instrumentMap.set('ML',{
   uid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
-const lscount = 10 ;
+const lscount = 10;
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
-const chbk = instrument.mode === 1 ? 'lightgray' : 'white';
+const simDate = new Date(instrument.simStartTime).toDateString();
+
+var timerText = document.getElementById("timer");
+timerText.innerText = simDate;
 
 const chartOptions = {
-  width: 730, height: 795,
+  height: 0, width: 0, 
   layout: {
       textColor: 'black',
-      background: { type: 'solid', color: chbk},
+      background: { type: 'solid', color: '#f4f4f4'},
   	},
     crosshair: {
       mode: 0, // CrosshairMode.Normal
@@ -114,19 +118,11 @@ const chartOptions = {
     },
 };
 
-const chart = LightweightCharts.createChart(document.getElementById('chart1'), chartOptions);
-const ts = chart.timeScale();
+const chart = LightweightCharts.createChart('futures_chart', chartOptions);
 
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
 const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 const vixSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
 
-chart.timeScale().fitContent();
-chart.timeScale().scrollToPosition(15);
-/*
-const chart2 = LightweightCharts.createChart(document.getElementById('chart2'), chartOptions);
-const peSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2});  
-const ceSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: 'rgb(242, 142, 44)', lineWidth: 2});
-const stratSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: 'rgb(225, 22, 22)', lineWidth: 2, title: 'QuaterDelta' });
-const nifty = chart2.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(12, 140, 14)', lineWidth: 2, title: 'Nifty' });  
-*/
+document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
+document.getElementById("tabButton3").childNodes[1].innerText = instrument.oExpiryNxt;
