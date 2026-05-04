@@ -64,7 +64,7 @@ async function handleMessage(sn, event, msg)
                 emit(sn.uid, event, response);
                 break;
             case 'wsOps':
-                var response = await wsOps(sn.uid, msg.action, msg.data, sn.mode);
+                var response = await wsOps(msg.action, msg.data);
                 console.log("wsOps response: " + response);
                 break;
             default:
@@ -79,6 +79,14 @@ function emit(uid, event, msg){
     qserver.emit(uid, event, msg);
 }
 
+function exit(sn)
+{
+    iBreeze.exit(sn.uid);
+    if(sn.mode === 1)
+        iKNeo.exit(uid, sn.unsuball());
+}
+
 export default {
-    handleMessage
+    handleMessage,
+    exit
 };

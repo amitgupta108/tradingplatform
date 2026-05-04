@@ -19,7 +19,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/serverlocal/app.mjs",
-            "args": ["80", "arg2"],
+            "args": ["80"],
             "outputCapture": "std"
         },
         {

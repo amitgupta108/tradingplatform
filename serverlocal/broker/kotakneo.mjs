@@ -1,5 +1,6 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../quotes.mjs';
+import Order_Service from '../service/order_engine.mjs';
 import adapter from '../adapter/histadapter.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
@@ -77,15 +78,28 @@ async function orderbook(uid, scrip)
     return orders;
 }
 
-async function order(uid, orders)
+async function order(appid, orders)
 {
     var fOrders = formatorder(orders);
+    
     var response;
-    if(fOrders.length === 1)
+    if(fOrders.length === 1) {
         response = await client.placeOrder(fOrders[0]);
-    else if( fOrders.length > 1)
+        fOrders[0].orderid = response.orderid;
+        Order_Service.neworders(fOrders);
+    }
+    else if( fOrders.length > 1) {
         response = await client.basketOrder({orders: fOrders});
+        response.forEach((r, idx) => {
+            fOrders[idx].orderid = r.orderid;
+        })
+        if(fOrders.length === response.length)
+            Order_Service.neworders(fOrders);
+        else 
+            console.error('Missing orders from submission');
+    }
     console.log(JSON.stringify(response));
+
     return response;
 }
 

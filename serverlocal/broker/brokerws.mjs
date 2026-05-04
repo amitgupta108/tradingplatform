@@ -1,4 +1,5 @@
 import qserver from '../quotes.mjs';
+import Order_Service from '../service/order_engine.mjs'
 
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
@@ -6,19 +7,16 @@ var authdata;
 var wsping;
 var ws;
 
-async function wsOps(uid, action, tpt)
+async function wsOps(action, tpt)
 {
     var response = 'failed to connect';
     if (action === 'connect') {
         var lr = await apiLogin(tpt);
 
         if (lr.data != undefined && lr.data.status === 'success') {
-            var vr = await apiValidate({
-                'sid': lr.data.sid,
-                'token': lr.data.token
-            });
-            wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid, uid);
-            authdata = {sid: vr.data.sid, token: vr.data.token}; 
+            authdata = {sid: lr.data.sid, token: lr.data.token}; 
+            var vr = await apiValidate(authdata);
+            wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid);
             response = 'connection initiated';
         }
     }
@@ -50,7 +48,7 @@ async function apiLogin(num)
     return await response.json();
 }
 
-async function apiValidate(headers) {
+async function apiValidate(authdata) {
     var headers = {
         method: "POST",
         timeout: 0,
@@ -58,8 +56,8 @@ async function apiValidate(headers) {
             'Authorization': '3ed099c0-1a60-4a65-b24f-8c42747ecffa',
             'neo-fin-key': 'neotradeapi',
             'Content-Type': "application/json",
-            'sid': headers.sid,
-            'Auth': headers.token
+            'sid': authdata.sid,
+            'Auth': authdata.token
         },
         body: JSON.stringify({
             mpin:'***REMOVED***' 
@@ -69,7 +67,7 @@ async function apiValidate(headers) {
     return await response.json();
 }
 
-function wsconnect(baseurl, token, sid, uid)
+function wsconnect(baseurl, token, sid)
 {
     ws = new WebSocket(`wss://${baseurl}/realtime`);
 
@@ -84,10 +82,11 @@ function wsconnect(baseurl, token, sid, uid)
             const message = JSON.parse(event.data);
             console.log("message type: " + message.type)
             if(message.type === 'cn' && message.msg === "connected")
-                wshb('start', uid);
-            if(message.type === 'order')
+                wshb('start');
+            else if(message.type === 'order') {
                 message.data = standardizeO(message.data);
-            qserver.emitUpdates(uid, message);
+                qserver.emitUpdates(message.data.appid, message);
+            }
         } catch(error) {
             console.log(error);
         }          
@@ -122,30 +121,29 @@ function standardizeO(order)
     return uOrder;
 }
 
-function wshb(action, uid)
+function wshb(action)
 {
-  if(action === 'start') {
-    if(wsping !== undefined)
-      clearInterval(wsping);
+    if(action === 'start') {
+        if(wsping !== undefined)
+            clearInterval(wsping);
 
-    wsping = setInterval(async () => {
-        qserver.broadcast({type: 'hb', data: ws.readyState});
+        var recon_attempt = 0;
+        wsping = setInterval(async (rn) => {
+            qserver.broadcast({type: 'hb', data: ws.readyState});
     
-        if(ws.readyState !== 1) {
-            console.log('Attempting reconnection');
-            var vr = await apiValidate({
-                'sid': authdata.sid,
-                'token': authdata.token
-            });
-            wsconnect(vr.data.baseUrl.substring(8), authdata.token, authdata.sid, uid);
-        }
-    }, 60000);
-  }
-  else
-  {
-    qserver.broadcast({type: 'hb', data: 0});
-    clearInterval(wsping);
-  }
+            if(ws.readyState !== 1 && rn <= 5) {
+                console.log('Attempting reconnection');
+                var vr = await apiValidate(authdata);
+                wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid);
+                rn++;
+            }
+        }, 60000, recon_attempt);
+    }
+    else
+    {
+        qserver.broadcast({type: 'hb', data: 0});
+        clearInterval(wsping);
+    }
 }
 
 export default wsOps;

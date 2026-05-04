@@ -13,8 +13,7 @@ import session from 'express-session';
 import https from 'node:https';
 import { Server } from "socket.io";
 import Session from './session/session.mjs';
-import iBreeze from './broker/breeze.mjs';
-import iKNeo from './broker/kotakneo.mjs';
+import wsOps from './broker/brokerws.mjs';
 import qserver from './quotes.mjs'; 
 import apiserver from './apiserver.mjs'; 
 
@@ -25,7 +24,9 @@ console.log(`Script file path: ${args[1]}`);
 console.log(`First argument: ${args[2]}`);
 console.log(`Second argument: ${args[3]}`);
 
-var port = args[2] === undefined ? 80 : Number(args[2]);
+const port = args[2] === undefined ? 80 : Number(args[2]);
+if(args[3] !== undefined)
+    wsOps('connect', args[3]);
 
 const es = session({secret: '***REMOVED***', 
         resave: true,
@@ -100,6 +101,7 @@ io.on('connection', (s) => {
         console.log('prevsession ' +  uid + ' ' + s.recovered + ' ' + sn.status);
     }
     s.sn = sn;
+
     s.onAny((event, msg) => {
         console.log("Received event " + event + " with data " + JSON.stringify(msg));
         apiserver.handleMessage(s.sn, event, msg);
@@ -108,7 +110,7 @@ io.on('connection', (s) => {
     s.on("disconnect", (reason) => {
         if(reason === 'client namespace disconnect')
         {
-            exit(sn.uid, sn.mode);
+            apiserver.exit(sn);
             console.log('user exited:' + sn.uid);
             qserver.socketmap.delete(sn.uid);
             snDestroy(uid);
@@ -120,16 +122,6 @@ io.on('connection', (s) => {
         }
     });
 });
-
-function exit(uid, mode)
-{
-    iBreeze.exit(uid);
-    if(mode === 1){
-        var sn = us.find((e) => e.uid === uid);
-
-        iKNeo.exit(uid, sn.unsuball());
-    }
-}
 
 function snDestroy(uid)
 {

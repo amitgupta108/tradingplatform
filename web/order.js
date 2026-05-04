@@ -1,4 +1,5 @@
 class Order{
+  appid = instrument.uid;
   exchange = instrument.exc;
   stockCode = instrument.stockCode;
   time = Date.now();
@@ -15,6 +16,7 @@ class Order{
     this.symbol = symbol;
     this.action = action;
     this.quantity = (quantity !== undefined) ? quantity : instrument.lotsize;
+    this.mode = instrument.mode === 0 ? 'history' : 'live';
   }
 }
 

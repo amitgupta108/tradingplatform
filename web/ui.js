@@ -119,14 +119,13 @@ function handleRowEvent(e)
     confirmCancel(clickedElement, parentElement);
   else if(clickedElement.id === 'drop_cancel_btn')
     dropCancelOrder(clickedElement, parentElement);
-
 }
 
 function flipOrderType(c, p)
 {
   c.innerText = c.innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
   const limitp = qSel(p, 'lmtprice', 'id');
-  limitp.disabled === c.innerText === 'MARKET' ? true: false;
+  limitp.disabled = c.innerText === 'MARKET' ? true: false;
   if(c.innerText === 'MARKET') 
     limitp.value = "";
 }
