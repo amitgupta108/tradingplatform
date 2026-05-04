@@ -173,7 +173,7 @@ td {
     text-align: center;
     align-items: center;
     vertical-align: middle;
-    border: 1px solid #ddd;
+    border: 0.5px solid #ddd;
     font-size: 13px;
     padding: 3px;
     height: 18px;
@@ -199,8 +199,8 @@ button:disabled {
 }
 
 .smallbutton {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -293,8 +293,8 @@ select:hover {
 .orderwindow {
     position: fixed;
     font-size: 12px;
-    top: 50px;
-    left: 500px;
+    top: 40px;
+    left: 425px;
     width: 400px;
     z-index: 200;
     display: none;

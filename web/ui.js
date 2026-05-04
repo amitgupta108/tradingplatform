@@ -84,39 +84,87 @@ function writeProfitLoss()
   total_pnl = (bookedPL + unbookedPL).toFixed(2);
 }
 
-function displayOrderList(btn, parent)
-{
-  const symbol = parent.title;
-  const p = Position.findPosition(symbol, false);
-  orderlistDiv.querySelector('td').innerText = symtoinstrument(symbol).name;
-
-  order_list_tbody.innerHTML = "";
-  
-  var tqty = 0;
-  p.finalorders.forEach((o, idx) => {
-    var newtr = tRow(t_order_list_row, false);
-
-    newtr.title = symbol;
-    var qty = o.state.startsWith('complete') ? o.filled_q : 0;
-    tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
-
-    newtr.childNodes[1].innerText = o.orderid;
-    newtr.childNodes[3].innerText = o.action.slice(0, 1);
-    newtr.childNodes[5].innerText = qty;
-    newtr.childNodes[7].innerText = o.pricetype.slice(0, 1);
-    newtr.childNodes[9].innerText = tqty;
-    newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
-    newtr.childNodes[13].innerText = o.state;
-    newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
-    if(o.state === 'opened') 
-      newtr.childNodes[15].childNodes[1].classList.add('clickable');
-          
-    order_list_tbody.append(newtr);
-  });
-  orderlistDiv.style.display = 'flex';
+function tRow(template, withListener){
+  const new_row = document.importNode(template.content, true).querySelector('tr');
+  if(withListener){
+    new_row.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(e.target !== new_row)
+        handleRowEvent(e);
+    }, true);
+  }
+  return new_row;
 }
 
-function confirmcancel(target) {
-  var overlay = target.nextElementSibling;
+function handleRowEvent(e)
+{
+  const clickedElement = e.target;
+  const parentElement = e.currentTarget;
+
+  if(clickedElement.id === 'ordertype')
+    flipOrderType(clickedElement, parentElement);
+  else if(clickedElement.id === 'div_trans_btn')
+    orderWindow(e);
+  else if(clickedElement.id === 'row_attn_btn')
+    hl_row(clickedElement, parentElement);
+  else if(clickedElement.id === 'ow_action_btn')
+    flipAction(clickedElement, parentElement);
+  else if(clickedElement.id === 'ow_row_rm_btn')
+    removeOrderRow(clickedElement, parentElement);
+  else if(clickedElement.id === 'orderdisplay-btn')
+    displayOrderList(clickedElement, parentElement);
+  else if(clickedElement.id === 'cancel_order_btn')
+    cancelOrder(clickedElement, parentElement);
+  else if(clickedElement.id === 'conf_cancel_lb')
+    confirmCancel(clickedElement, parentElement);
+  else if(clickedElement.id === 'drop_cancel_btn')
+    dropCancelOrder(clickedElement, parentElement);
+
+}
+
+function flipOrderType(c, p)
+{
+  c.innerText = c.innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
+  const limitp = qSel(p, 'lmtprice', 'id');
+  limitp.disabled === c.innerText === 'MARKET' ? true: false;
+  if(c.innerText === 'MARKET') 
+    limitp.value = "";
+}
+
+function hl_row(c, p)
+{
+  const symbol = p.title;
+  const oc = OptionChain.get(symtoinstrument(symbol).expiry);
+  var idx = oc.hl_symbol.findIndex((r) => p.title === r);
+  if(idx === -1)
+    oc.hl_symbol.push(p.title);
+  else
+    oc.hl_symbol.splice(idx, 1);
+}
+
+function removeOrderRow(c, p){
+  p.remove();
+}
+
+function cancelOrder(c, p)
+{
+  const symbol = order_list_thead.rows[0].title;
+  const postn = Position.findPosition(symbol, false);
+  const orderid = Number(p.title);
+  const c_order = postn.finalorders.find((o) => o.orderid === orderid);
+  if(c_order !== undefined && c_order.state === 'opened')
+    emit('cancelorder', c_order);
+  
+  orderlistDiv.style.display = 'none';
+  sOrderSubmit.play();
+}
+
+function confirmCancel(c, p) {
+  var overlay = c.nextElementSibling;
   overlay.style.display = 'flex';
+}
+
+function dropCancelOrder(c, p)
+{
+  p.style.display = 'none';
 }

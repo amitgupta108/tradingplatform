@@ -4,9 +4,10 @@ function emit(event, arg1, arg2) {
 
 function loadPreData(endtime)
 {
+  const last_working_date = 3;
   var ls = instrument.mode === 0 ? new Date(instrument.simStartTime) : new Date();
   var le = endtime === undefined ? ls.getTime() - 1000 : endtime; 
-  var newDate = ls.getDate()-1;
+  var newDate = ls.getDate() - (last_working_date === 0 ? 1 : last_working_date);
   var yesterdayoff = true;
   var holiday = ls.getDay() === 1 ? 2 : yesterdayoff ? 1 : 0;
   newDate = newDate - holiday;

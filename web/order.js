@@ -61,24 +61,8 @@ function submitOrder(clickedBtn)
   checkboxes.forEach(cb => cb.checked = false);
 }
 
-function cancelorder(cancelBtn)
-{
-  var orderrow = cancelBtn.parentNode.parentNode.parentNode;
-  var p = Position.findPosition(orderrow.title, false);
-  emit('cancelorder', p.finalorders[orderrow.rowIndex-1]);
-  orderlistDiv.style.display = 'none';
-  sOrderSubmit.play();
-}
-
-function dropcancelorder(dropcancelBtn)
-{
-  dropcancelBtn.parentNode.style.display = 'none';
-}
-
 function loadOrders(orders)
 {
-  positions_tBody.innerHTML = '';
-
   orders.forEach((order) => {
     console.log('Recovered Orders ' + JSON.stringify(order));
     if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
@@ -87,4 +71,38 @@ function loadOrders(orders)
       p.orderupdate(order, true);
     }
   });
+}
+
+
+function displayOrderList(btn, parent)
+{
+  const symbol = parent.title;
+  const p = Position.findPosition(symbol, false);
+  order_list_thead.querySelector('tr').title = symbol;
+  order_list_thead.querySelector('td').innerText = symtoinstrument(symbol).name;
+
+  order_list_tbody.innerHTML = "";
+  
+  var tqty = 0;
+  p.finalorders.forEach((o, idx) => {
+    var newtr = tRow(t_order_list_row, true);
+
+    newtr.title = o.orderid;
+    var qty = o.state.startsWith('complete') ? o.filled_q : 0;
+    tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
+
+    newtr.childNodes[1].innerText = o.orderid;
+    newtr.childNodes[3].innerText = o.action.slice(0, 1);
+    newtr.childNodes[5].innerText = qty;
+    newtr.childNodes[7].innerText = o.pricetype.slice(0, 1);
+    newtr.childNodes[9].innerText = tqty;
+    newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
+    newtr.childNodes[13].innerText = o.state;
+    newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
+    if(o.state === 'opened') 
+      newtr.childNodes[15].childNodes[1].classList.add('clickable');
+          
+    order_list_tbody.append(newtr);
+  });
+  orderlistDiv.style.display = 'flex';
 }

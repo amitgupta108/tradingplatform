@@ -139,7 +139,7 @@ class Position
     var totalPL = bookedPL + unbookedPL;
     var avgopnpr =  psize === 0 ? 0 : psize > 0 ? abp : asp;
 
-    this.#pRow.querySelector('#pos_exit_cb').disabled = psize === 0 ? true : false;
+    this.#pRow.querySelector('#pos_exit_cb').disabled = psize === 0 || psize === '' ? true : false;
 
     this.value('bookedQ', Math.min(sellq, buyq));
     this.value('bookedPL', bookedPL.toFixed(2));

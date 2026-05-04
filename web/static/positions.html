@@ -155,7 +155,7 @@
 
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
 
-    <template id="order-list-tr">
+    <template id="order-list-row">
         <tr style="position: relative;">
             <td class="orderlist-td" width="16%">OrderId</td>
             <td class="orderlist-td" width="8%">Action</td>
@@ -165,10 +165,10 @@
             <td class="orderlist-td" width="16%">Price</td>
             <td class="orderlist-td" width="18%">Status</td>
             <td class="orderlist-td" width="3%">
-                <label id="clickable" onclick="confirmcancel(this)">X</label>
+                <label id="conf_cancel_lb">X</label>
                 <div class="orderlist-row-overlay">
-                    <label class="clickable" onclick="cancelorder(this)">OK</label>
-                    <label class="clickable" onclick="dropcancelorder(this)">Cancel</label>
+                    <button id='cancel_order_btn' class="clickable">Delete</button>
+                    <button id='drop_cancel_btn' class="clickable">Cancel</button>
                 </div>
             </td>
         </tr>
@@ -190,7 +190,7 @@
             <td style='width:6%;justify-items: center;'>
                 <button  id='ow_action_btn' class="smallbutton buy"></button>
                 <div class="hover-row-content">
-                    <button id="ow_row_rm_btn" class="smallbutton order" onclick="removeOrderRow(this)">X</button>
+                    <button id="ow_row_rm_btn" class="smallbutton order">X</button>
                 </div>
             </td>
             <td style='width:32%'>
