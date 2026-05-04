@@ -5,10 +5,11 @@ const sOrderSubmit =  new Audio('./ordersubmit.wav');
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
 const order_list_tbody = document.getElementById('order-list-tbody');
+const order_list_thead = document.getElementById('order-list-thead');
 const order_rows_tbody = document.getElementById('tbody-order-panel');
 const positions_tBody = document.getElementById('positions_tbody');
 
-const t_order_list_row = document.getElementById('order-list-tr');
+const t_order_list_row = document.getElementById('order-list-row');
 const t_order_window_row = document.querySelector('#order-window-row');
 const t_position_table_row = document.querySelector('#position-table-row');
 const t_option_chain_header = document.querySelector('#oc-head-row');
@@ -19,9 +20,9 @@ const pos_all_cb = document.getElementById('exit_all_cb');
 const exit_pos_btn = document.getElementById('exitPositionBtn');
 const closeOWinBtn = document.getElementById('ow_close_btn');
 
-const total_booked =  document.getElementById("vBookedPL").innerText;
-const total_unbooked =  document.getElementById("vUnbookedPL").innerText;
-const total_pnl =  document.getElementById("vTotalPL").innerText;
+var total_booked =  document.getElementById("vBookedPL").innerText;
+var total_unbooked =  document.getElementById("vUnbookedPL").innerText;
+var total_pnl =  document.getElementById("vTotalPL").innerText;
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 class TradeButtons extends HTMLElement {
   connectedCallback() {

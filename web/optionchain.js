@@ -62,7 +62,7 @@ class OptionChain
   #rowfill(rIdx, q)
   {
     const tbl_nm = q.right === 'Call' ? 'oc_call_table' : 'oc_put_table';
-    const tbls = this.#h_oc_div.querySelector(tbl_nm);
+    const tbls = this.#h_oc_div.querySelector('#' + tbl_nm);
 
     const row = tbls.rows[rIdx];
     row.title = q.symbol;

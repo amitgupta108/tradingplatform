@@ -47,6 +47,7 @@ function order(uid, orders)
         order.orderid = oid;
         order.uid = uid;
         order.appid = uid;
+        order.filled_q = 0;
         
         ordermap.set(oid, order);
         order.state = 'opened';
