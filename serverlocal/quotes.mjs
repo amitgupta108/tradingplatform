@@ -7,7 +7,7 @@ function emitQs(uid, q)
         var sn = usn(uid);
         if(sn === undefined)
             return;
-        
+
         var key = 'strikex';
         if(q.stock_code === 'INDVIX')
             key = 'vix';
@@ -56,7 +56,7 @@ function broadcast(msg){
 
 function usn(uid){
     var s = socketmap.get(uid);
-    return s.sn;    
+    return s !== undefined ? s.sn : undefined;    
 }
 
 export default {

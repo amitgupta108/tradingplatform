@@ -28,16 +28,11 @@ class Position
     if(q.symbol !== this.symbol)
       return; 
     
-    var prevQ = Number(this.value('LTP'));
+    const psize = Number(this.value('unbookedQ'));
+    const avgP = Number(this.value('averageP'));
     this.value('LTP', (q.close).toFixed(2));
 
-    if(Number(this.value('unbookedQ')) === 0) {
-        this.#pRow.querySelector('#pos_exit_cb').disabled = true;
-        return;    
-    }
-    var prevPL = Number(this.value('unbookedPL'));
-    var psize = Number(this.value('unbookedQ'));
-    var unbookedPL = prevPL + (q.close - prevQ) * psize;
+    var unbookedPL = (q.close - avgP) * psize;
     var totalPL = unbookedPL + Number(this.value('bookedPL'));
 
     this.value('unbookedPL', unbookedPL.toFixed(2));
@@ -46,19 +41,13 @@ class Position
     writeProfitLoss();
   }
 
-  value(p, v = undefined){
-    if(p === 'symbol')
-    {
-      if(v != undefined)
-        this.#pRow.querySelector('#symbol_any_row').innerText = v;
-      return this.#pRow.querySelector('#symbol_any_row').innerText;
-    }
-    else {
-      var i = Object.getOwnPropertyDescriptor(this.#m, p).value;
-      if(v != undefined)
-        this.#pRow.cells[i[0]].childNodes[i[1]].innerText = v;
-      return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
-    }
+  value(p, v = undefined)
+  {
+    var i = Object.getOwnPropertyDescriptor(this.#m, p).value;
+    if(v != undefined)
+      this.#pRow.cells[i[0]].childNodes[i[1]].innerText = v;
+    
+    return this.#pRow.cells[i[0]].childNodes[i[1]].innerText;
   }
 
   orderlist(neworder)
@@ -69,22 +58,15 @@ class Position
     return neworder;
   }
 
-  ini(order, recovery)
+  ini(symbol, recovery)
   {
-    const symbol = order.symbol;
     if(this.#pRow === undefined)
     {
-      var prow = tRow(t_position_table_row, false);
-      prow.title = symbol;
-      prow.querySelector('#orderdisplay-btn').title = symbol;
-      prow.addEventListener('click', (event) => {
-        if(event.target.id === 'div_trans_btn')
-          orderWindow(event);
-      }, true);
-      document.getElementById('positions_tbody').append(prow);
+      this.#pRow = tRow(t_position_table_row, true);
+      this.#pRow.title = symbol;
+      this.#pRow.querySelector('#orderdisplay-btn').title = symbol;
+      document.getElementById('positions_tbody').append(this.#pRow);
 
-      this.#pRow = prow;
-      this.value('symbol', symbol);
       this.value('scrip', symtoinstrument(symbol).name);
       qBox.addEventListener('strikex', this);
     }
@@ -92,11 +74,11 @@ class Position
 
   orderupdate(exorder, recovery)
   {
-    if(!['completed', 'partial', 'opened', 'cancelled'].includes(exorder.state))
+    if(!['completed', 'partial', 'opened', 'open', 'cancelled'].includes(exorder.state))
       this.transientorders.push(exorder);
     else 
     {
-      this.ini(exorder, recovery);
+      this.ini(exorder.symbol, recovery);
       if(exorder.state === 'opened' || exorder.state === 'open') 
       {
         var idx = this.raisedorders.find((o) => o.orderid === exorder.orderid);
@@ -148,8 +130,7 @@ class Position
     var abp = (buyq === 0 ? 0 : buyv / buyq);
     var asp = (sellq === 0 ? 0 : sellv / sellq);
     var psize = buyq - sellq;
-    var bookedPL = 0;
-    var unbookedPL = 0;
+    var bookedPL = 0; var unbookedPL = 0;
     var price = Number(lastorder.pricedAt);
 
     bookedPL = (asp - abp) * Math.min(buyq, sellq);

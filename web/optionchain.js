@@ -1,16 +1,16 @@
 class OptionChain
 {
   #expiry;
-  #v_oc_id;
+  #h_oc_div;
   atm;
   pMap = new Map();
   hl_symbol = new Array(0);
 
   constructor(expiry, v_oc_id)
   {
-    this.#v_oc_id = v_oc_id;
+    this.#h_oc_div = document.getElementById(v_oc_id);
     this.#expiry = expiry;
-    this.#buildHTMLOC(this.#v_oc_id)
+    this.#buildHTMLOC(this.#h_oc_div)
 
     optionChains.push(this);
     
@@ -32,29 +32,14 @@ class OptionChain
 
   #buildHTMLOC(v_oc_id)
   {    
-    const h_oc_div = document.getElementById(v_oc_id);
-    const tBodies = Array.from(h_oc_div.querySelectorAll('tbody'));
+    const tbls = Array.from(this.#h_oc_div.querySelectorAll('table'));
 
-    tBodies.forEach((tb, idx) => {
-      const t_row = idx === 0 ? t_option_chain_call_row : t_option_chain_put_row;
+    tbls.forEach((tb, idx) => {
       for(var i = 0; i < lscount; i++)
       {
-        var new_tr = tRow(t_row, false);
-        new_tr.addEventListener('click', (event) => {
-          if(event.target.id === 'row_attn_btn')
-          {
-            const hl_row = event.currentTarget;
-
-            var idx = this.hl_symbol.findIndex((r) => hl_row.title === r);
-            if(idx === -1)
-              this.hl_symbol.push(hl_row.title);
-            else
-              this.hl_symbol.splice(idx, 1);
-          }
-          else
-            orderWindow(event);
-        }, true);
-        
+        var new_tr = tRow(t_option_chain_row, true);
+        var css = idx === 0 ? 'tr_straight' : 'tr_reverse';
+        new_tr.classList.add(css);
         tb.append(new_tr);
       }
     });
@@ -63,7 +48,6 @@ class OptionChain
   handleEvent(event)
   {
     var q = event.detail;
-
     if(q.expiry_date !== this.#expiry)
       return;
 
@@ -77,17 +61,15 @@ class OptionChain
 
   #rowfill(rIdx, q)
   {
-    const idx = q.right === 'Call' ? 0 : 1;
-    const cIdx = q.right === 'Call' ? [0, 1, 2, 3] : [3, 2, 1, 0];
-    const h_oc_div = document.getElementById(this.#v_oc_id);
-    const tbody = Array.from(h_oc_div.querySelectorAll('tbody'))[idx];
+    const tbl_nm = q.right === 'Call' ? 'oc_call_table' : 'oc_put_table';
+    const tbls = this.#h_oc_div.querySelector(tbl_nm);
 
-    const row = tbody.rows[rIdx];
+    const row = tbls.rows[rIdx];
     row.title = q.symbol;
-    row.cells[cIdx[0]].innerText = q.iv.toFixed(2);
-    row.cells[cIdx[1]].innerText = q.delta.toFixed(2);
-    row.cells[cIdx[2]].innerText = q.close.toFixed(2);
-    row.cells[cIdx[3]].childNodes[3].innerText = q.strike_price;
+    row.cells[0].innerText = q.iv.toFixed(2);
+    row.cells[1].innerText = q.delta.toFixed(2);
+    row.cells[2].innerText = q.close.toFixed(2);
+    row.cells[3].childNodes[3].innerText = q.strike_price;
 
     if(this.hl_symbol.includes(q.symbol))
       row.classList.add('row_background');
@@ -95,16 +77,15 @@ class OptionChain
       row.classList.remove('row_background');
 
     const unbookedQ = this.pMap.get(q.symbol);
+    const icn = row.cells[3].childNodes[1];
     if(unbookedQ === undefined || unbookedQ.psize === 0 || unbookedQ.psize === '') {
-      row.cells[cIdx[3]].childNodes[1].innerText = '';
-      //row.cells[cIdx[3]].childNodes[1].classList.toggle();
+      icn.innerText = '';
     }
     else {
       const psize = unbookedQ.psize;
-      row.cells[cIdx[3]].childNodes[1].innerText = psize;
-    
-      row.cells[cIdx[3]].childNodes[1].classList.remove((psize > 0 ? 'sell' : 'buy'));
-      row.cells[cIdx[3]].childNodes[1].classList.add((psize > 0 ? 'buy' : 'sell'));
+      icn.innerText = psize;
+      icn.classList.remove((psize > 0 ? 'sell' : 'buy'));
+      icn.classList.add((psize > 0 ? 'buy' : 'sell'));
     }
   }
 

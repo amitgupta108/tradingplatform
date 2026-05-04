@@ -37,7 +37,7 @@ function submitOrder(clickedBtn)
   
   const neworders = rows.map((r) => {
     var symbol = qSel(r, 'owsymbol', 'id').innerText;
-    var action = r.querySelector('#owaction').innerText;
+    var action = r.querySelector('#ow_action_btn').innerText;
     var lot = r.querySelector('#lotselect').value; 
 
     let n_order = new Order(symbol, action, lot * instrument.lotsize);

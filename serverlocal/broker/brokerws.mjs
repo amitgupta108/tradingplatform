@@ -17,8 +17,8 @@ async function wsOps(uid, action, tpt)
                 'sid': lr.data.sid,
                 'token': lr.data.token
             });
-            wsconnect(vr.data.baseUrl.substring(8), lr.data.token, vr.data.sid, uid);
-            authdata = {sid: lr.data.sid, token: lr.data.token}; 
+            wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid, uid);
+            authdata = {sid: vr.data.sid, token: vr.data.token}; 
             response = 'connection initiated';
         }
     }

@@ -83,9 +83,8 @@ function rh(socket)
       if(q.exchange === 'MCX')
         futuresChart(q);
       
-      socket.sTime = q.ltt;
-      var lt = new Date(socket.sTime);
-      timerText.innerText = lt.toDateString() + ", " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
+      var lt = new Date(q.ltt);
+      timerText.innerText = lt.toDateString() + " " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
     });
     
     socket.on('vix', (q) => {
@@ -110,7 +109,8 @@ function rh(socket)
       console.log("ws order message " + JSON.stringify(exorder));
 
       var p = positions.find((e) => e.symbol === exorder.symbol);
-      p.orderupdate(exorder, false);
+      if(p !== undefined)
+        p.orderupdate(exorder, false);
     });
 
     socket.on('ws-hb', (state) => {
