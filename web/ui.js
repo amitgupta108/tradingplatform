@@ -1,8 +1,7 @@
-function orderWindow(event)
+function orderWindow(clBtn, parent)
 {
-  let symbol = event.currentTarget.title;
-  let clickedBtn = event.target;
-  const action = clickedBtn.innerText;
+  let symbol = parent.title;
+  const action = clBtn.innerText;
 
   appendOrderRow(new Order(symbol, action), toggle.checked);
   showOrderWindow();
@@ -98,27 +97,27 @@ function tRow(template, withListener){
 
 function handleRowEvent(e)
 {
-  const clickedElement = e.target;
-  const parentElement = e.currentTarget;
+  const cl_el = e.target;
+  const pn_el = e.currentTarget;
 
-  if(clickedElement.id === 'ordertype')
-    flipOrderType(clickedElement, parentElement);
-  else if(clickedElement.id === 'div_trans_btn')
-    orderWindow(e);
-  else if(clickedElement.id === 'row_attn_btn')
-    hl_row(clickedElement, parentElement);
-  else if(clickedElement.id === 'ow_action_btn')
-    flipAction(clickedElement, parentElement);
-  else if(clickedElement.id === 'ow_row_rm_btn')
-    removeOrderRow(clickedElement, parentElement);
-  else if(clickedElement.id === 'orderdisplay-btn')
-    displayOrderList(clickedElement, parentElement);
-  else if(clickedElement.id === 'cancel_order_btn')
-    cancelOrder(clickedElement, parentElement);
-  else if(clickedElement.id === 'conf_cancel_lb')
-    confirmCancel(clickedElement, parentElement);
-  else if(clickedElement.id === 'drop_cancel_btn')
-    dropCancelOrder(clickedElement, parentElement);
+  if(cl_el.id === 'ordertype')
+    flipOrderType(cl_el, pn_el);
+  else if(cl_el.id === 'div_trans_btn')
+    orderWindow(cl_el, pn_el);
+  else if(cl_el.id === 'row_attn_btn')
+    hl_row(cl_el, pn_el);
+  else if(cl_el.id === 'ow_action_btn')
+    flipAction(cl_el, pn_el);
+  else if(cl_el.id === 'ow_row_rm_btn')
+    removeOrderRow(cl_el, pn_el);
+  else if(cl_el.id === 'orderdisplay-btn')
+    displayOrderList(cl_el, pn_el);
+  else if(cl_el.id === 'cancel_order_btn')
+    cancelOrder(cl_el, pn_el);
+  else if(cl_el.id === 'conf_cancel_lb')
+    confirmCancel(cl_el, pn_el);
+  else if(cl_el.id === 'drop_cancel_btn')
+    dropCancelOrder(cl_el, pn_el);
 }
 
 function flipOrderType(c, p)

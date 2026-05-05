@@ -10,7 +10,17 @@ client.connect()
         .catch((error) => console.error('Error connecting to openalgo ' + error)
     );
 const scrip_to_app_map = new Map();
+var live_order_unlocked = false;
 
+function unlockLiveOrders(key)
+{
+    const today = new Date();
+    if(key === today.toDateString())
+        live_order_unlocked = true;
+
+    console.log('live order state ' + live_order_unlocked);
+    return (key === today.toDateString());
+}
 function onQuotes(q)
 { 
     const qt = standardizeoq(q);
@@ -80,6 +90,9 @@ async function orderbook(uid, scrip)
 
 async function order(appid, orders)
 {
+    if(!live_order_unlocked)
+        return;
+
     var fOrders = formatorder(orders);
     
     var response;
@@ -106,7 +119,7 @@ async function order(appid, orders)
 function formatorder(orders)
 {
     return orders.map((o) => {
-        let { cprice, orderN, state, time, stockCode, ...trimmedOrder} = o;
+        let { orderN, state, time, stockCode, ...trimmedOrder} = o;
         return trimmedOrder;
     });   
 }
@@ -118,4 +131,4 @@ function cancelorder(order)
         console.log('order cancellation response ' + JSON.stringify(resp));
     });
 }
-export default {order, subscribe, orderbook, cancelorder, exit };
+export default {order, subscribe, orderbook, cancelorder, exit, unlockLiveOrders };

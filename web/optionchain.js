@@ -1,6 +1,6 @@
 class OptionChain
 {
-  #expiry;
+  expiry;
   #h_oc_div;
   atm;
   pMap = new Map();
@@ -9,7 +9,7 @@ class OptionChain
   constructor(expiry, v_oc_id)
   {
     this.#h_oc_div = document.getElementById(v_oc_id);
-    this.#expiry = expiry;
+    this.expiry = expiry;
     this.#buildHTMLOC(this.#h_oc_div)
 
     optionChains.push(this);
@@ -48,7 +48,7 @@ class OptionChain
   handleEvent(event)
   {
     var q = event.detail;
-    if(q.expiry_date !== this.#expiry)
+    if(q.expiry_date !== this.expiry)
       return;
 
     var offset = (this.atm - Number(q.strike_price)) / 50;
@@ -92,7 +92,14 @@ class OptionChain
   static get(expiry)
   {
     return optionChains.find((o) => {
-      return o.#expiry === expiry;
+      return o.expiry === expiry;
     });
   }
 }
+
+
+if (optionChains.findIndex((oc) => oc.expiry === instrument.oExpiry) === -1)
+  var c_option_chain = new OptionChain(instrument.oExpiry, 'c_oc_div');
+
+if (optionChains.findIndex((oc) => oc.expiry === instrument.oExpiryNxt) === -1)
+  var n_option_chain =  new OptionChain(instrument.oExpiryNxt, 'n_oc_div');

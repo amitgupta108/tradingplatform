@@ -1,23 +1,22 @@
 import qserver from './quotes.mjs'; 
 import wsOps from './broker/brokerws.mjs';
-import iKotakNeo from './broker/kotakneo.mjs';
 import iBreeze from './broker/breeze.mjs';
 
-function getBrokerService(mode, name) 
-{
-    var service;
-    if (mode === 0 || name === 'breeze') {
-        service = iBreeze;
-    } else {
-        service = iKotakNeo;
+var iKNeo;
+
+async function getBrokerService(mode) 
+{ 
+    if(mode === 1) {
+        var server = await import('./broker/kotakneo.mjs');
+        iKNeo = server.default;
+        return iKNeo;
     }
-    return service;
 }
 
 async function handleMessage(sn, event, msg)
 {
     try {
-        const bserver = getBrokerService(sn.mode);
+        const bserver = sn.mode === 0 ? iBreeze : await getBrokerService(sn.mode);
         switch(event)
         {
             case 'start':
@@ -32,7 +31,7 @@ async function handleMessage(sn, event, msg)
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var prefq = getBrokerService(-1, 'breeze').preF(sn.uid, sn.stockCode, msg);
+                var prefq = iBreeze.preF(sn.uid, sn.stockCode, msg);
                 emit(sn.uid, "futuresPreData", await prefq);
 
                 /*var preUq = iBreeze.preU(msg);
@@ -42,7 +41,7 @@ async function handleMessage(sn, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                getBrokerService(-1, 'breeze').changeSpeed(sn.uid, msg);
+                iBreeze.changeSpeed(sn.uid, msg);
                 break;
             case 'stop':
                 bserver.subscribe(sn.uid, sn.unsuball(), 'unsuball');
@@ -51,7 +50,7 @@ async function handleMessage(sn, event, msg)
                 emit('prevsession', sn.status !== undefined)
             break;
             case 'ocnxt':
-                sn.runOCNxt(true);
+                sn.runOCNxt('start');
                 break
             case 'order':
                 var orsub = await bserver.order(sn.uid, msg);
@@ -64,8 +63,11 @@ async function handleMessage(sn, event, msg)
                 emit(sn.uid, event, response);
                 break;
             case 'wsOps':
-                var response = await wsOps(msg.action, msg.data);
-                console.log("wsOps response: " + response);
+                if(msg.action === 'live')
+                    var response = bserver.unlockLiveOrders(msg.data);
+                else
+                    var response = await wsOps(msg.action, msg.data);
+                console.log("wsOps response: " + msg.action + ' ' + response);
                 break;
             default:
                 console.log("Unknown event " + event);
@@ -83,7 +85,7 @@ function exit(sn)
 {
     iBreeze.exit(sn.uid);
     if(sn.mode === 1)
-        iKNeo.exit(uid, sn.unsuball());
+        iKNeo.exit(sn.uid, sn.unsuball());
 }
 
 export default {

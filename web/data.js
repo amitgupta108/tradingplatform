@@ -43,8 +43,8 @@ instrumentMap.set('NH1', {
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "26MAY26",
-  oExpiry: "05APR26",
-  oExpiryNxt: "12MAY26",
+  oExpiry: "12MAY26",
+  oExpiryNxt: "19MAY26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 12,
@@ -90,6 +90,7 @@ timerText.innerText = simDate;
 
 const chartOptions = {
   height: 0, width: 0, 
+  autoSize: true,
   layout: {
       textColor: 'black',
       background: { type: 'solid', color: '#f4f4f4'},
