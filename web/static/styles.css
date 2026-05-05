@@ -71,11 +71,6 @@ body {
     background-color: #45a049;
 }
 
-.active-tab {
-    background-color: #1a9a20;
-    display: flex;
-}
-
 .inert-tab {
     background-color: #50cd50;
     display:flex;

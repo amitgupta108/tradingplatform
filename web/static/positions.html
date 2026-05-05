@@ -52,8 +52,9 @@
             <!------------------------------------------------------------------------------------------------------------------------------>    
             <div class="tabs">
                
-                <div id="tabButton1" class="tab active-tab" onclick="switchTabs(event)">
-                    <label>Expiry1</label>
+                <div id="tabButton1" class="tab" onclick="switchTabs(event)">
+                    <label id="oc_expiry_lb"></label>
+                    <button id="oc_action_btn" class="smallbutton order" onclick="streamOptionChain(event)">^</button>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
                     <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;height:18px;">
@@ -64,10 +65,6 @@
                         <input type="checkbox" id="toggleBasket">
                         <span class="slider round"></span>
                       </label>
-                </div>
-                <div id="tabButton3" class="tab" onclick="switchTabs(event)">
-                    <label>Expiry2</label>
-                    <button id="ocNxt" class="smallbutton order" onclick="runOptionChainNxt(event)">></button>
                 </div>
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>                

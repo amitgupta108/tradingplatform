@@ -124,6 +124,3 @@ const chart = LightweightCharts.createChart('futures_chart', chartOptions);
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
 const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 const vixSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
-
-document.getElementById("tabButton1").childNodes[1].innerText = instrument.oExpiry;
-document.getElementById("tabButton3").childNodes[1].innerText = instrument.oExpiryNxt;
