@@ -20,6 +20,9 @@ const pos_all_cb = document.getElementById('exit_all_cb');
 const exit_pos_btn = document.getElementById('exitPositionBtn');
 const closeOWinBtn = document.getElementById('ow_close_btn');
 
+var expiry_label = document.getElementById('oc_expiry_lb');
+expiry_label.innerText = instrument.oExpiry;
+
 var total_booked =  document.getElementById("vBookedPL").innerText;
 var total_unbooked =  document.getElementById("vUnbookedPL").innerText;
 var total_pnl =  document.getElementById("vTotalPL").innerText;

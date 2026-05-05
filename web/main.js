@@ -48,17 +48,10 @@ function listOrders()
   emit('orderbook', {stockCode: instrument.stockCode});
 }
   
-function runOptionChainNxt(event)
+function streamOptionChain(event)
 {  
-  if (event.currentTarget.innerText === '>') {
-    emit('ocnxt', 'start');
-    event.currentTarget.innerText = '| |';
-  }
-  else if (event.currentTarget.innerText === '| |')
-  {
-    emit('ocnxt', 'stop');
-    event.currentTarget.innerText = '>';
-  }
+  var oc_key = expiry_label === instrument.oExpiry ? 'occrnt' : 'ocnxt';
+  emit(oc_key, 'toggle');
 }
 
 function wsconnect(action){

@@ -16,10 +16,17 @@ function addIVNDelta(q, uq)
         const yearsToExpiry = ((new Date((e).concat(', 15:30'))).getTime() - q.ltt)/(1000*60*60*24*365);
         const flag = q.right === 'Call' ? 'c' : 'p';
 
-        var iv = vollib.black_scholes.implied_volatility.implied_volatility(q.close, uq.close, q.strike_price, yearsToExpiry, 0.05, flag);
-        var delta = vollib.black_scholes.greeks.analytical.delta(flag, uq.close, q.strike_price, yearsToExpiry, 0.05, iv);   
-        q.iv = Math.round(iv*10000)/100;
-        q.delta = Math.round(delta*10000)/100;
+        try{
+            var iv = vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, q.strike_price, yearsToExpiry, 0.05, flag);
+            var delta = vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, q.strike_price, yearsToExpiry, 0.05, iv);   
+        
+            q.iv = Math.round(iv*10000)/100;
+            q.delta = Math.round(delta*10000)/100;
+        } catch(error) {
+            console.log(error);
+            q.iv = 0;
+            q.delta = q.right === 'Call' ? 1 : -1;
+        }
     }
     return q;
 }

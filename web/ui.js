@@ -60,10 +60,9 @@ function flipAction(orderRowBtn, orderRow)
   showOrderWindow();
 }
 
-function switchTabs(evt) {
-  document.getElementById('tabButton1').classList.toggle('active-tab');
-  document.getElementById('tabButton3').classList.toggle('active-tab');
-
+function switchTabs(evt) 
+{  
+  expiry_label.innerText = expiry_label.innerText === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
   document.getElementById('c_oc_div').classList.toggle('active');
   document.getElementById('n_oc_div').classList.toggle('active');
 }
