@@ -31,8 +31,6 @@ function start()
 {
   loadPreData();
   emit('start', instrument); 
-  if (OptionChain.get(instrument.oExpiry) === undefined)
-    new OptionChain(instrument.oExpiry, 'c_oc_div');
 }
 
 function stopSimulation() 
@@ -51,10 +49,7 @@ function listOrders()
 }
   
 function runOptionChainNxt(event)
-{
-  if (OptionChain.get(instrument.oExpiryNxt) === undefined)
-    new OptionChain(instrument.oExpiryNxt, 'n_oc_div');
-  
+{  
   if (event.currentTarget.innerText === '>') {
     emit('ocnxt', 'start');
     event.currentTarget.innerText = '| |';
@@ -67,7 +62,10 @@ function runOptionChainNxt(event)
 }
 
 function wsconnect(action){
-  var tpt = document.getElementById("tpt").value;
+  const tpt = document.getElementById("tpt").value;
+  if(tpt.length === 15)
+    action = 'live';
+  
   emit('wsOps', {action: action, data: tpt});
   document.getElementById("tpt").value = "";
 }

@@ -16,8 +16,8 @@ class Session
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized',},
             {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized',},
-            {key: 'occrnt', stockCode: stockCode, toStream: true},
-            {key: 'ocnxt', stockCode: stockCode, toStream: false},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0},
             {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: true,
              symbol: 'INDVIX', streamState: 'initialized', source:'icicilive'},
         ];
