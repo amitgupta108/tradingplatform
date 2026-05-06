@@ -8,16 +8,17 @@ import { findByTime } from './binarysearch.mjs';
 
 const appKey = "72r5N3K05754+43ek796960QT96Hc8e1";
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-const sessionId = "55513449";
-
 var breeze = new BreezeConnect({ "appKey": appKey });
+connect('55529979');
 
-breeze.generateSession(appSecret, sessionId)
-.then((resp) => {
-    console.log("Session created");
-}).catch((err) => {
-    console.log(err);
-});
+function connect(sessionId){
+    breeze.generateSession(appSecret, sessionId)
+    .then((resp) => {
+        console.log("Session created");
+    }).catch((err) => {
+        console.log(err);
+    });
+}
 
 function findQuoteByTime(q, lt)
 {
