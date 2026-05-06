@@ -77,9 +77,9 @@ function writeProfitLoss()
     unbookedPL += Number(positions[i].value('unbookedPL')); 
   }
 
-  total_booked = bookedPL.toFixed(2);
-  total_unbooked = unbookedPL.toFixed(2);
-  total_pnl = (bookedPL + unbookedPL).toFixed(2);
+  total_booked.innerText = bookedPL.toFixed(2);
+  total_unbooked.innerText = unbookedPL.toFixed(2);
+  total_pnl.innerText = (bookedPL + unbookedPL).toFixed(2);
 }
 
 function tRow(template, withListener){

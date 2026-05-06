@@ -95,7 +95,7 @@ function displayOrderList(btn, parent)
 
     newtr.childNodes[1].innerText = o.orderid;
     newtr.childNodes[3].innerText = o.action.slice(0, 1);
-    newtr.childNodes[5].innerText = qty;
+    newtr.childNodes[5].innerText = o.filled_q + ' / ' + o.quantity;
     newtr.childNodes[7].innerText = o.pricetype.slice(0, 1);
     newtr.childNodes[9].innerText = tqty;
     newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);

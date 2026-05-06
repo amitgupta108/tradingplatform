@@ -62,14 +62,15 @@ function addListener(type, callback)
 function standardizeiq(q) 
 {
     q['exchange'] = q['exchange_code'];
-    q['type'] = q['product_type'];
+    q['ltp'] = q['close'];
+    q.ltt = Date.parse(q.datetime);
 
     if(q.exchange != 'NSE')
         q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
 
-    q.ltt = Date.parse(q.datetime);
-    
-    return q;
+    let {exchange_code, product_type, open_interest, volume , datetime, ...trimmedquote} = q;
+
+    return trimmedquote;
 }
 
 export default  {

@@ -84,8 +84,7 @@ function wsconnect(baseurl, token, sid)
             if(message.type === 'cn' && message.msg === "connected")
                 wshb('start');
             else if(message.type === 'order') {
-                message.data = standardizeO(message.data);
-                qserver.emitUpdates(message.data.appid, message);
+                Order_Service.liveOrderMatching(message);
             }
         } catch(error) {
             console.log(error);
@@ -99,26 +98,6 @@ function wsconnect(baseurl, token, sid)
     ws.onclose = (event) => {
         console.log("connection closed " + event.reason);
     };
-}
-
-function standardizeO(order)
-{
-    const {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode,
-            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
-            qty: quantity, prcTp: pricetype, ...rest} = order;
-
-    var uOrder = {orderid, state, pricedAt, price, product, stockCode, expiry_date, strike_price, right, action,
-                        filled_q, unfilled_q, quantity, pricetype, ...rest};
-    
-    if(uOrder.state === 'open')
-        uOrder.state = 'opened';
-    
-    uOrder.action = uOrder.action === 'B' ? 'BUY' : 'SELL';
-    uOrder.expiry_date = uOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
-    uOrder.strike_price = uOrder.strike_price.replace('.00', '');
-    uOrder.symbol = uOrder.stockCode + uOrder.expiry_date +  uOrder.strike_price + uOrder.right;
-
-    return uOrder;
 }
 
 function wshb(action)
