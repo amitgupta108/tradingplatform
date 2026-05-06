@@ -23,9 +23,9 @@ const closeOWinBtn = document.getElementById('ow_close_btn');
 var expiry_label = document.getElementById('oc_expiry_lb');
 expiry_label.innerText = instrument.oExpiry;
 
-var total_booked =  document.getElementById("vBookedPL").innerText;
-var total_unbooked =  document.getElementById("vUnbookedPL").innerText;
-var total_pnl =  document.getElementById("vTotalPL").innerText;
+var total_booked =  document.getElementById("vBookedPL");
+var total_unbooked =  document.getElementById("vUnbookedPL");
+var total_pnl =  document.getElementById("vTotalPL");
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 class TradeButtons extends HTMLElement {
   connectedCallback() {
@@ -68,7 +68,7 @@ qBox.addEventListener('strikex', (event) =>
 });
 
 pos_all_cb.onchange = (event) => {
-  var checkboxes = document.querySelectorAll('#pos_exit_cb');
+  var checkboxes = document.querySelectorAll(`input[type="checkbox"]#${pos_exit_cb}:not(:disabled)`);
   checkboxes.forEach(cb => cb.checked = pos_all_cb.checked);
 
   exit_pos_btn.style.display = pos_all_cb.checked ? 'block' : 'none';

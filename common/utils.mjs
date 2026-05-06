@@ -8,11 +8,8 @@ function addIVNDelta(q, uq)
 {
     if(q !== undefined && uq !== undefined)
     {    
-        if(q.expiry_date.length === 7)
-            var e = q.expiry_date.slice(0, 2).concat('-').concat(q.expiry_date.slice(2, 5)).concat('-20').concat(q.expiry_date.slice(5));
-        else
-            var e = q.expiry_date;
-
+        var e = q.expiry_date.slice(0, 2).concat('-').concat(q.expiry_date.slice(2, 5)).concat('-20').concat(q.expiry_date.slice(5));
+        
         const yearsToExpiry = ((new Date((e).concat(', 15:30'))).getTime() - q.ltt)/(1000*60*60*24*365);
         const flag = q.right === 'Call' ? 'c' : 'p';
 

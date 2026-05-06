@@ -73,7 +73,7 @@ function subscribe(uid, sublist, action)
     adapter.wsLive(uid, redirectedpath, action);
 }
 
-async function orderbook(uid, scrip)
+async function orderbook(uid, stockCode)
 {
     var response = await client.orderbook();
     if(response.status === 'success')
@@ -82,7 +82,7 @@ async function orderbook(uid, scrip)
             o.state = o.order_status;
             if(o.order_status === 'open')
                 o.state = 'opened';
-            return o.symbol.startsWith(scrip.stockCode);
+            return o.symbol.startsWith(stockCode);
         });
     }
     return orders;
@@ -98,16 +98,16 @@ async function order(appid, orders)
     var response;
     if(fOrders.length === 1) {
         response = await client.placeOrder(fOrders[0]);
-        fOrders[0].orderid = response.orderid;
-        Order_Service.neworders(fOrders);
+        orders[0].orderid = response.orderid;
+        Order_Service.neworders(orders);
     }
     else if( fOrders.length > 1) {
         response = await client.basketOrder({orders: fOrders});
         response.forEach((r, idx) => {
-            fOrders[idx].orderid = r.orderid;
+            orders[idx].orderid = r.orderid;
         })
-        if(fOrders.length === response.length)
-            Order_Service.neworders(fOrders);
+        if(orders.length === response.length)
+            Order_Service.neworders(orders);
         else 
             console.error('Missing orders from submission');
     }
@@ -119,7 +119,7 @@ async function order(appid, orders)
 function formatorder(orders)
 {
     return orders.map((o) => {
-        let { orderN, state, time, stockCode, ...trimmedOrder} = o;
+        let {mode, appid, orderN, state, time, stockCode, ...trimmedOrder} = o;
         return trimmedOrder;
     });   
 }
@@ -129,6 +129,8 @@ function cancelorder(order)
     client.cancelOrder({orderId: order.orderid})
     .then((resp) => {
         console.log('order cancellation response ' + JSON.stringify(resp));
+        Order_Service.cancelOrder(order);
     });
 }
+
 export default {order, subscribe, orderbook, cancelorder, exit, unlockLiveOrders };

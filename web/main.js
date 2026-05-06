@@ -45,7 +45,7 @@ function exit()
 
 function listOrders()
 {
-  emit('orderbook', {stockCode: instrument.stockCode});
+  emit('orderbook', instrument.stockCode);
 }
   
 function streamOptionChain(event)
