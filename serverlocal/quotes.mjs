@@ -1,68 +1,54 @@
-import utils from './../common/utils.mjs';
+import utils from '../common/utils.mjs';
+import Order_Notifier from '../serverlocal/service/order_engine.mjs';
+Order_Notifier.addOrderUpdateListener(emitUpdates);
 const socketmap = new Map();
 
-function emitQs(uid, q)
-{
-    try {
-        var sn = usn(uid);
-        if(sn === undefined)
-            return;
-
-        var key = 'strikex';
-        if(q.stock_code === 'INDVIX')
-            key = 'vix';
-        else if (q.exchange === 'NSE' || (q.exchange === 'MCX' && q.symbol.endsWith('FUT')))
-        {
-            sn.lastuq(q);
-            key = 'index';
-        }
-        else if (q.exchange === 'NFO' && q.symbol.endsWith('FUT'))
-            key = 'futures';
-        else if (q.symbol.endsWith('CE') || q.symbol.endsWith('PE'))
-            utils.addIVNDelta(q, sn.lastuq());
-
-        emit(uid, key, q);
-    } catch(error){
-        console.log(error);
-    }
-}
-
-function emitUpdates(uid, message)
+function emitUpdates(appid, type, message)
 {
     try {
         console.log("ws message: ", JSON.stringify(message));
-
-        if (message.type === "cn")
-            emit(uid, 'ws-' + message.type, message.msg);
-        else
-            emit(uid, 'ws-' + message.type, message.data);
+        var s = socketmap.get(appid).socket;
+        s.emit(appid, type, message);
     } catch (error) {
         console.log(error);
     }
 }
 
-function emit(uid, event, msg){
-    var s = socketmap.get(uid);
-    s.emit(event, msg);
+function emitQs(appid, q)
+{
+    try {
+        var s = socketmap.get(appid).socket;
+        if(s === undefined)
+            return;
+
+        if(q.key === 'index' || (q.exchange === 'MCX' && q.key === 'futures'))
+            s.sn.lastuq(q);
+        else if (q.key === 'strikex')
+            utils.addIVNDelta(q, s.sn.lastuq());
+        
+        s.emit(q.key, q);
+    } catch(error){
+        console.error(error);
+    }
 }
 
-function broadcast(msg){
-    console.log("ws-hb: ", JSON.stringify(msg));
+function broadcast(type, msg){
 
-    socketmap.values().toArray().forEach((s) => {
-        s.emit('ws-' + msg.type, msg.data);
+    socketmap.keys().toArray().forEach((appid) => {
+        var app_obj = socketmap.get(appid);
+
+        if(app_obj.mode !== 0) {
+            if(type === 'hb')
+                emitUpdates(appid, type, msg)
+            else (type === 'quote' && app_obj.stockCode === msg.stockCode)
+                emitQs(appid, msg);
+        }
     });
-}
-
-function usn(uid){
-    var s = socketmap.get(uid);
-    return s !== undefined ? s.sn : undefined;    
 }
 
 export default {
     socketmap,
     emitQs,
     emitUpdates,
-    emit,
     broadcast
 }

@@ -108,7 +108,7 @@ function wshb(action)
 
         var recon_attempt = 0;
         wsping = setInterval(async (rn) => {
-            qserver.broadcast({type: 'hb', data: ws.readyState});
+            qserver.broadcast('hb', ws.readyState);
     
             if(ws.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
@@ -116,11 +116,11 @@ function wshb(action)
                 wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid);
                 rn++;
             }
-        }, 60000, recon_attempt);
+        }, 120000, recon_attempt);
     }
     else
     {
-        qserver.broadcast({type: 'hb', data: 0});
+        qserver.broadcast('hb', 0);
         clearInterval(wsping);
     }
 }

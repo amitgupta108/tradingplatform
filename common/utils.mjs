@@ -71,8 +71,8 @@ function filter(collection, fO)
         if (fO.symbol != undefined)
             k = fO.symbol.includes(element.symbol);
 
-        if (fO.uid != undefined)
-            l = fO.uid.includes(element.uid);
+        if (fO.appid != undefined)
+            l = fO.appid.includes(element.appid);
 
         if (fO.speed != undefined)
             m = fO.speed.includes(element.speed);

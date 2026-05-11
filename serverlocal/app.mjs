@@ -17,114 +17,101 @@ import wsOps from './broker/brokerws.mjs';
 import qserver from './quotes.mjs'; 
 import apiserver from './apiserver.mjs'; 
 
-const args = process.argv;
-
-console.log(`Node executable path: ${args[0]}`);
-console.log(`Script file path: ${args[1]}`);
-console.log(`First argument: ${args[2]}`);
-console.log(`Second argument: ${args[3]}`);
-
-const port = args[2] === undefined ? 80 : Number(args[2]);
-if(args[3] !== undefined)
-    wsOps('connect', args[3]);
-
-const es = session({secret: '***REMOVED***', 
-        resave: true,
-        saveUninitialized: true,});
-
-const app = express();
-app.use(express.static('web/'));
-app.use(express.json());
-app.use(es);
-
-const options = {
-    key: readFileSync(path.join(__dirname, 'certs', 'key.pem'), 'utf8'),
-    cert: readFileSync(path.join(__dirname, 'certs', 'cert.pem'), 'utf8'),
-};
-
-const httpsServer = https.createServer(options, app);
-httpsServer.listen(port, () => {
-    console.log(`Server running at https://localhost:${port}/`);
-});
-
-const io = new Server(httpsServer, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-    },
-    connectionStateRecovery: {
-        maxDisconnectionDuration: 3 * 60 * 1000,
-        // whether to skip middlewares upon successful recovery
-        skipMiddlewares: true,
-      },
-    pingInterval: 30000,
-    pingTimeout: 30000
-});
-
-const us = new Array(0);
-
-io.use((s, next) => {
-    var uid = s.handshake.auth.token;
-    var mode = s.handshake.auth.mode;
-    var stockCode = s.handshake.auth.stockCode;
-    
-    if(mode === 1)
-    {
-        const idx = us.findIndex((s) => {return s.mode === mode && s.stockCode === stockCode});
-        if(idx !== -1 && us[idx].uid !== uid)
-            next(new Error('Live mode for this user not available'));
-    }
-    next();
-});
-//io.use(es);
-
-io.on('connection', (s) => {
-    
-    const uid = s.handshake.auth.token;
-    const mode = s.handshake.auth.mode;
-    const stockCode = s.handshake.auth.stockCode;
-
-    console.log('user connected with socket ' + uid + ' ' + s.id);        
-    qserver.socketmap.set(uid, s);
-    var sn = us.find((e) => {
-        return e.mode === mode 
-         && e.stockCode === stockCode
-        && e.uid === uid});
-
-    if(sn === undefined){
-        sn = new Session(uid, mode, stockCode);
-        us.push(sn);
-    } else
-    {
-        if(!(sn.status === 'initialized' || sn.status === 'stopped'))
-            s.emit('prevsession', sn.status);
-        console.log('prevsession ' +  uid + ' ' + s.recovered + ' ' + sn.status);
-    }
-    s.sn = sn;
-
-    s.onAny((event, msg) => {
-        console.log("Received event " + event + " with data " + JSON.stringify(msg));
-        apiserver.handleMessage(s.sn, event, msg);
-    });
-    
-    s.on("disconnect", (reason) => {
-        if(reason === 'client namespace disconnect')
-        {
-            apiserver.exit(sn);
-            console.log('user exited:' + sn.uid);
-            qserver.socketmap.delete(sn.uid);
-            snDestroy(uid);
-        }
-        else if(['server namespace disconnect',
-            'server shutting down', 'transport close', 'transport error'].includes(reason))
-        {
-            console.log("socket disconnected  " + reason);
-        }
-    });
-});
-
-function snDestroy(uid)
+if(!global.server)
 {
-    var idx = us.findIndex((e) => e.uid === uid);
-    us.splice(idx, 1);
+    const args = process.argv;
+
+    console.log(`Node executable path: ${args[0]}`);
+    console.log(`Script file path: ${args[1]}`);
+    console.log(`First argument: ${args[2]}`);
+    console.log(`Second argument: ${args[3]}`);
+
+    const port = args[2] === undefined ? 80 : Number(args[2]);
+    if(args[3] !== undefined)
+        wsOps('connect', args[3]);
+
+    const es = session({secret: '***REMOVED***', 
+            resave: true,
+            saveUninitialized: true,});
+
+    const app = express();
+    app.use(express.static('web/'));
+    app.use(express.json());
+    app.use(es);
+
+    const options = {
+        key: readFileSync(path.join(__dirname, 'certs', 'key.pem'), 'utf8'),
+        cert: readFileSync(path.join(__dirname, 'certs', 'cert.pem'), 'utf8'),
+    };
+
+    const httpsServer = https.createServer(options, app);
+    httpsServer.listen(port, () => {
+        console.log(`Server running at https://localhost:${port}/`);
+    });
+
+    const io = new Server(httpsServer, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"],
+        },
+        connectionStateRecovery: {
+            maxDisconnectionDuration: 3 * 60 * 1000,
+            // whether to skip middlewares upon successful recovery
+            skipMiddlewares: true,
+        },
+        pingInterval: 30000,
+        pingTimeout: 30000
+    });
+
+    const us = new Array(0);
+    //io.use(es);
+
+    io.on('connection', (s) => {
+        
+        const appid = s.handshake.auth.token;
+        const mode = s.handshake.auth.mode;
+        const stockCode = s.handshake.auth.stockCode;
+
+        console.log('user connected with socket ' + appid + ' ' + s.id);                
+        qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});
+
+        var sn = us.find((e) => {
+            return e.mode === mode 
+            && e.stockCode === stockCode
+            && e.appid === appid});
+
+        if(sn === undefined){
+            sn = new Session(appid, mode, stockCode);
+            us.push(sn);
+        } else
+        {
+            if(sn.status === 'streaming')
+                s.emit('prevsession', sn.status);
+            
+            console.log('prevsession ' +  appid + ' ' + s.recovered + ' ' + sn.status);
+        }
+        s.sn = sn;
+
+        s.onAny((event, msg) => {
+            console.log("Received event " + event + " with data " + JSON.stringify(msg));
+            apiserver.handleMessage(s.sn, event, msg);
+        });
+        
+        s.on("disconnect", (reason) => {
+            if(reason === 'client namespace disconnect')
+            {
+                apiserver.exit(sn);
+                console.log('user exited:' + sn.appid);
+                qserver.socketmap.delete(sn.appid);
+                var idx = us.findIndex((e) => e.appid === appid);
+                us.splice(idx, 1);
+            }
+            else if(['server namespace disconnect',
+                'server shutting down', 'transport close', 'transport error'].includes(reason))
+            {
+                console.log("socket disconnected  " + reason);
+            }
+        });
+    });
+    global.server = true;
 }

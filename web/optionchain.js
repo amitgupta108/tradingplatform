@@ -3,6 +3,7 @@ class OptionChain
   expiry;
   #h_oc_div;
   atm;
+  atm_move;
   pMap = new Map();
   hl_symbol = new Array(0);
 
@@ -17,11 +18,12 @@ class OptionChain
     qBox.addEventListener('strikex', this);
     qBox.addEventListener('index', (event) => {
       const q = event.detail;
+      this.atm_move = Math.round((q.ltp - this.atm) / 50);
 
       if(this.atm === undefined)
-        this.atm = Math.round(q.close/50) * 50;
-      else if(Math.abs(this.atm - q.close) > 50)
-        this.atm = this.atm + Math.round((q.close - this.atm) / 50) * 50;
+        this.atm = Math.round(q.ltp/50) * 50;
+      else if(Math.abs(this.atm - q.ltp) > 50)
+        this.atm = this.atm + this.atm_move * 50;
     });
     
     pBox.addEventListener('position', ((e) => {
@@ -68,7 +70,7 @@ class OptionChain
     row.title = q.symbol;
     row.cells[0].innerText = q.iv.toFixed(2);
     row.cells[1].innerText = q.delta.toFixed(2);
-    row.cells[2].innerText = q.close.toFixed(2);
+    row.cells[2].innerText = q.ltp.toFixed(2);
     row.cells[3].childNodes[3].innerText = q.strike_price;
 
     if(this.hl_symbol.includes(q.symbol))
@@ -78,7 +80,7 @@ class OptionChain
 
     const unbookedQ = this.pMap.get(q.symbol);
     const icn = row.cells[3].childNodes[1];
-    if(unbookedQ === undefined || unbookedQ.psize === 0 || unbookedQ.psize === '') {
+    if(unbookedQ === undefined || unbookedQ.psize === 0) {
       icn.innerText = '';
     }
     else {

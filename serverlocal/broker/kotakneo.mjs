@@ -9,7 +9,7 @@ client.connect()
         .then(() => console.log('openalgo client connected'))
         .catch((error) => console.error('Error connecting to openalgo ' + error)
     );
-const scrip_to_app_map = new Map();
+
 var live_order_unlocked = false;
 
 function unlockLiveOrders(key)
@@ -21,16 +21,16 @@ function unlockLiveOrders(key)
     console.log('live order state ' + live_order_unlocked);
     return (key === today.toDateString());
 }
+
 function onQuotes(q)
 { 
     const qt = standardizeoq(q);
-    const appid = scrip_to_app_map.get(qt.stockCode).appid;
-    qserver.emitQs(appid, qt);
+    qserver.broadcast('quote', qt);
 }
 
-function exit(uid, sublist)
+function exit(appid, sublist)
 {
-    subscribe(uid, sublist, 'unsub');
+    subscribe(appid, sublist, 'unsub');
 }
 
 function standardizeoq(q) 
@@ -41,39 +41,44 @@ function standardizeoq(q)
     q.open = q.ltp;
     q.high = q.ltp;
     q.low = q.ltp;
-    if(q.exchange === 'NSE_INDEX')
-        q.exchange = 'NSE';
-
+    
     const regex = /[0-9]/;
     const idx = q.symbol.search(regex);
     q.stockCode = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
 
-    if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
+    if(q.exchange === 'NSE_INDEX') {
+        q.exchange = 'NSE';
+        q.key = 'index';
+    }
+    else if (q.symbol.endsWith('FUT')) {
+        q.key = q.exchange === 'MCX' ? 'index' : 'futures';
+    }
+    else if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
         q.right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
         q.expiry_date = q.symbol.slice(idx, idx + 7);
         q.strike_price = q.symbol.slice(idx + 7, -2);
-    }
+        q.key = 'strikex';
+    }        
+
     return q;
 } 
 
-function subscribe(uid, sublist, action)
+function subscribe(appid, sublist, action)
 {
     if(sublist.length === 0)
         return;
 
-    scrip_to_app_map.set(sublist.at(0).stockCode, {uid: uid, appid: uid});
-
-    var originalpath = sublist.filter((item) => item.source !== 'icicilive');
+    var originalpath = sublist.filter((item) => item.source !== 'icici');
     if(action === 'subs')
         client.subscribe_ltp(originalpath, onQuotes);
     else 
         client.unsubscribe_ltp(originalpath, onQuotes);
     
-    var redirectedpath = sublist.filter((item) => item.source === 'icicilive');
-    adapter.wsLive(uid, redirectedpath, action);
+    var redirectedpath = sublist.filter((item) => item.source === 'icici');
+    adapter.subscribe(appid, redirectedpath, action);
 }
 
-async function orderbook(uid, stockCode)
+async function orderbook(appid, stockCode)
 {
     var response = await client.orderbook();
     if(response.status === 'success')
@@ -111,7 +116,7 @@ async function order(appid, orders)
         else 
             console.error('Missing orders from submission');
     }
-    console.log(JSON.stringify(response));
+    console.log('Live order response ' + JSON.stringify(response));
 
     return response;
 }

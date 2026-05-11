@@ -1,23 +1,17 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const BreezeConnect = require('breezeconnect').BreezeConnect;
-
 import utils from '../common/utils.mjs';
 import { findByTime } from './binarysearch.mjs';
 
-const appKey = "***REMOVED***";
+const { BreezeConnect } = await import('breezeconnect');
+const breeze = new BreezeConnect({ "appKey": '***REMOVED***'});
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-var breeze = new BreezeConnect({ "appKey": appKey });
-connect('55529979');
 
-function connect(sessionId){
-    breeze.generateSession(appSecret, sessionId)
-    .then((resp) => {
-        console.log("Session created");
-    }).catch((err) => {
-        console.log(err);
-    });
+connect(appSecret, '55578502');
+
+function connect(appSecret, sessionId){
+    breeze.generateSession(appSecret, sessionId);
+    breeze.wsConnect();
+    
+    console.log("Session created");
 }
 
 function findQuoteByTime(q, lt)
@@ -94,25 +88,18 @@ function ISODate(datetime) {
 
 function formatExpiry(expiry) {
     
-    if(expiry === undefined)
-        return
-    
-    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
-    return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
+    if(expiry !== undefined) {
+        var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
+        return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
+    }
 }
 
 function wssub(list, callback)
 {
-    breeze.wsConnect();
     breeze.onTicks = callback;
 
     list.forEach((e) => {
-        var b = {
-            exchangeCode: e.exchange, 
-            stockCode: e.stockCode, 
-            getExchangeQuotes:true, 
-            interval:"1second"
-        };
+        var b = breeze_input(e);
         breeze.subscribeFeeds(b)
         .then((resp) => {
             console.log('ICICI feed subs: ' + JSON.stringify(resp))
@@ -125,12 +112,8 @@ function wssub(list, callback)
 function wsunsub(list)
 {
     list.forEach((e) => {
-        var b = {
-            exchangeCode: e.exchange, 
-            stockCode: e.stockCode, 
-            getExchangeQuotes:true, 
-            interval:"1second"
-        };
+        var b = breeze_input(e);
+        
         breeze.unsubscribeFeeds(b)
         .then((resp) => {
             console.log('ICICI feed unsubs: ' + JSON.stringify(resp))
@@ -143,6 +126,21 @@ function wsunsub(list)
 function wsDisconnect()
 {
     breeze.wsDisconnect();
+}
+
+function breeze_input(instrument)
+{       
+    var b = {};
+    b.productType = instrument.right != undefined ? 'options' : 'futures';
+    b.expiryDate = formatExpiry(instrument.expiry);
+    b.exchangeCode = instrument.exchange;
+    b.stockCode = instrument.stockCode;
+    b.strikePrice = instrument.strike;
+    b.right = instrument.right;
+    b.getExchangeQuotes = true;
+    b.interval = "1second";
+    
+    return b;
 }
 
 export default {

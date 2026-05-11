@@ -20,7 +20,14 @@ const pos_all_cb = document.getElementById('exit_all_cb');
 const exit_pos_btn = document.getElementById('exitPositionBtn');
 const closeOWinBtn = document.getElementById('ow_close_btn');
 
-var expiry_label = document.getElementById('oc_expiry_lb');
+const date_label = document.getElementById('timer_date_lb');
+const time_label = document.getElementById('timer_time_lb');
+const spot_label = document.getElementById('timer_spot_lb');
+const latency_label = document.getElementById('timer_latency_lb');
+const expiry_label = document.getElementById('oc_expiry_lb');
+const simDate = new Date(instrument.simStartTime).toDateString();
+
+date_label.innerText = simDate;
 expiry_label.innerText = instrument.oExpiry;
 
 var total_booked =  document.getElementById("vBookedPL");
@@ -68,7 +75,7 @@ qBox.addEventListener('strikex', (event) =>
 });
 
 pos_all_cb.onchange = (event) => {
-  var checkboxes = document.querySelectorAll(`input[type="checkbox"]#${pos_exit_cb}:not(:disabled)`);
+  var checkboxes = positions_tBody.querySelectorAll(`input[type="checkbox"]:not(:disabled)`);
   checkboxes.forEach(cb => cb.checked = pos_all_cb.checked);
 
   exit_pos_btn.style.display = pos_all_cb.checked ? 'block' : 'none';

@@ -2,33 +2,34 @@ import utils from '../../common/utils.mjs';
 
 class Session
 {
-    uid;    
+    appid;    
     mode;
     stockCode;
     st;
     subsupdate;
-    status;
-    constructor(uid, mode, stockCode)
+    status = 'skeletal';
+    constructor(appid, mode, stockCode)
     {
-        this.uid = uid;
+        this.appid = appid;
         this.mode = mode;
         this.stockCode = stockCode;
         this.st = [
-            {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized',},
-            {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized',},
+            {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized'},
+            {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized'},
             {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0},
             {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0},
-            {key: 'vix', exchange: 'NSE', stockCode: 'INDVIX', toStream: true,
-             symbol: 'INDVIX', streamState: 'initialized', source:'icicilive'},
+            {key: 'vix', stockCode: 'INDVIX', toStream: true, streamState: 'initialized', source:'icici'},
         ];
     }
 
     ini(p, callback) 
     {
-        for(var i = 0; i < 4; i++)
+        for(var i = 0; i < 5; i++)
         {
             this.st[i].exchange = p.exc === 'MCX' ? p.exc : (i != 0 && i != 4) ? 'NFO' : this.mode === 0 ? 'NSE' : 'NSE_INDEX';
-            this.st[i].symbol = i === 1 || p.exc === 'MCX' ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.stockCode;
+            this.st[i].mode = this.mode === 0 ? 'history' : 'live';
+            this.st[i].symbol = i === 1 || p.exc === 'MCX' ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[j].stockCode;
+            this.st[i].toStream = i === 4 && p.exc === 'MCX' ? false : true;
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
@@ -41,11 +42,11 @@ class Session
 
     #oq(uq, ost)
     {
-        if(ost.atm !== undefined)
-            ost.atm = ost.atm + Math.round((uq.close - ost.atm) / 50) * 50;
-        else
+        if(ost.atm === undefined || ost.atm === 0)
             ost.atm = Math.round(uq.close/50) * 50;
-
+        else
+            ost.atm = ost.atm + Math.round((uq.close - ost.atm) / 50) * 50;
+        
         var sks = utils.strikes(ost.atm, ost.n);
 
         for (var i = 0; i < sks.length; i++) 
@@ -67,6 +68,7 @@ class Session
                     expiry: ost.expiry,
                     strike: sks[i].strike,
                     right: sks[i].right,
+                    mode: this.mode === 0 ? 'history' : 'live',
                     symbol: (ost.stockCode + ost.expiry +
                         sks[i].strike +
                         (sks[i].right === 'Call' ? 'CE' : 'PE').toUpperCase())
@@ -113,9 +115,10 @@ class Session
         return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
     }
 
-    runOCNxt(action)
+    option_chain(key, action)
     {
-        this.st.find((e) => e.key === 'ocnxt').toStream = action === 'start' ? true : false;
+        var oc_state = this.st.find((e) => e.key === key).toStream;
+        oc_state = oc_state === true ? false : true;
     } 
 
     lastuq(uq)

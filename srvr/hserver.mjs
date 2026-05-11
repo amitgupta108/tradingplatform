@@ -15,10 +15,10 @@ const streamers = [
         {key: '5x', speed: 5, qsid: 0, state: 'stopped'},
     ];  
 
-function clientInit(uid, simStartTime, speed = '1x') {
-    if(client_clocks.get(uid) === undefined) {
-        client_store.set(uid, new Array(0));
-        client_clocks.set(uid, {uid: uid, sTime: simStartTime, currentTime: simStartTime, key: speed});
+function clientInit(appid, simStartTime, speed = '1x') {
+    if(client_clocks.get(appid) === undefined) {
+        client_store.set(appid, new Array(0));
+        client_clocks.set(appid, {appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed});
     }
 }
 
@@ -61,14 +61,12 @@ function dothings(stmrkey)
         var count = 0;
         var usrSpdComb = utils.filter(client_clocks.values().toArray(), {keys: [stmrkey]});
         usrSpdComb.forEach((c) => {
-            var reqs = utils.filter(subsRequests, {uid: c.uid});
+            var reqs = subsRequests.filter((s) => s.appid === c.appid && s.instrument.mode === 'history');
             reqs.forEach((req) => {
                 count++;
-                var qt = q(req.uid, req.instrument, c.currentTime);
+                var qt = q(req.appid, req.instrument, c.currentTime);
                 if(qt !== undefined) {
-                    qt.symbol = req.instrument.symbol;
-                    qt.key = req.instrument.key;
-                    futsocket.emit(qt.key, qt, req.uid, 'icicihistory');
+                    futsocket.emit('quote', qt, 'history', req.appid);
                 }
             });
         });
@@ -86,12 +84,12 @@ function runclient_clocks(stmrkey)
     });
 }
 
-function changeSpeed(uid, stmrkey){
-    var clock = client_clocks.get(uid);
+function changeSpeed(appid, stmrkey){
+    var clock = client_clocks.get(appid);
     clock.key = stmrkey;
     
     var stmr = streamers.find((s) => s.key === stmrkey);
-    var exReq = utils.filter(subsRequests, {uid: [uid]});
+    var exReq = utils.filter(subsRequests, {appid: [appid]});
     if(stmr.state === 'stopped' && exReq.length > 0)
         startStreamer(stmrkey);
 }
@@ -99,15 +97,22 @@ function changeSpeed(uid, stmrkey){
 function subscribe(requests) {
     
     requests.forEach((request) => {
-        var exReqs = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]});
+        var exReqs = subsRequests.filter((s) => 
+            s.appid === request.appid 
+            && s.symbol === request.symbol
+            && s.instrument.mode === request.instrument.mode);
+        
         if(exReqs.length === 0)
-            subsRequests.push(request);
+            subsRequests.push(request);            
     });
 
-    if(requests.length > 0) {
-        var stmrkey = client_clocks.get(requests[0].uid).key;
+    const live_ones = requests.filter((r) => r.instrument.mode === 'live');
+    live_sub(live_ones, 'subs');
+
+    if(requests.length > 0 && requests.length > live_ones.length) {
+        var stmrkey = client_clocks.get(requests[0].appid).key;
         var streamer = streamers.find((s) => s.key === stmrkey);
-        if(streamer.state !== 'stated')
+        if(streamer.state !== 'started')
             startStreamer(stmrkey);
     }
 }
@@ -115,7 +120,7 @@ function subscribe(requests) {
 function unsubscribe(requests) {
     requests.forEach((request) => {
         
-        var exReqs = utils.filter(subsRequests, {uid: [request.uid], symbol: [request.symbol]});   
+        var exReqs = utils.filter(subsRequests, {appid: [request.appid], symbol: [request.symbol]});   
         if (exReqs.length > 0) {
             exReqs.forEach((r) => {
                 subsRequests.splice(subsRequests.indexOf(r), 1);
@@ -124,26 +129,26 @@ function unsubscribe(requests) {
     });
 }   
 
-function unsubscribeall(uid)
+function unsubscribeall(appid)
 {
-    var others = subsRequests.filter((s) => s.uid !== uid);   
+    var others = subsRequests.filter((s) => s.appid !== appid);   
     subsRequests = others;
 }   
 
-function exit(uid)
+function exit(appid)
 {
-    console.log('Drop user ' + uid);
-    client_clocks.delete(uid);
-    client_store.delete(uid);
-    unsubscribeall(uid);
+    console.log('Drop user ' + appid);
+    client_clocks.delete(appid);
+    client_store.delete(appid);
+    unsubscribeall(appid);
 }
 
-function q(uid, instrument, time)
+function q(appid, instrument, time)
 {
-    var qArray = client_store.get(uid);
+    var qArray = client_store.get(appid);
     var st = qArray.find((q) => q.symbol === instrument.symbol);
     if(st === undefined) {
-        st = {uid: uid, symbol: instrument.symbol, quotes: undefined, state: 'initialized', lastUpdated: time};
+        st = {appid: appid, symbol: instrument.symbol, quotes: undefined, state: 'initialized', lastUpdated: time};
         qArray.push(st);
     }
 
@@ -171,7 +176,7 @@ function qw(st, instrument, time) {
 
 function getHistory(p, startTime, endTime, interval)
 {
-    const clock = client_clocks.get(p.uid);
+    const clock = client_clocks.get(p.appid);
     if(clock !== undefined)
         endTime = clock.currentTime;
     
@@ -182,12 +187,12 @@ function addListener(eventName, callback){
     futsocket.addListener(eventName, callback);
 }
 
-function wsLive(uid, list, action)
+function live_sub(list, action)
 {
     try {
         if(action === 'subs')
             sutils.wssub(list, (q) => {
-                wsmessage(uid, q);
+                wsmessage(q);
             });
         else
             sutils.wsunsub(list);
@@ -196,11 +201,9 @@ function wsLive(uid, list, action)
     }
 }
 
-function wsmessage(uid, q)
+function wsmessage(q)
 {
-    q.symbol = 'INDVIX';
-    q.key = 'vix';
-    futsocket.emit(q.key, q, uid, 'icicilive');
+    futsocket.emit('quote', q, 'live', undefined);
 }
 
 export default {
@@ -211,6 +214,5 @@ export default {
     changeSpeed,
     exit,
     getHistory,
-    wsLive,
     addListener,
 };

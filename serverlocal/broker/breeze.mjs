@@ -1,34 +1,36 @@
 import adapter from '../adapter/histadapter.mjs';
 import Order_Service from '../service/order_engine.mjs';
+import qServer from '../quotes.mjs';
 
+adapter.addQuoteListener(onQuotes);
 var counter = 50000;
 
-function init(uid, startTime, speed)
+function init(appid, startTime, speed)
 {
-    adapter.init(uid, startTime, speed);
+    adapter.init(appid, startTime, speed);
 }
 
-function exit(uid)
+function exit(appid)
 {
-    adapter.exit(uid);
+    adapter.exit(appid);
 }
 
-function subscribe(uid, instruments, action)
+function subscribe(appid, instruments, action)
 {
-    adapter.subscribe(uid, instruments, action);
+    adapter.subscribe(appid, instruments, action);
 }
 
-function changeSpeed(uid, speed)
+function changeSpeed(appid, speed)
 {
-    adapter.changeSpeed(uid, speed);
+    adapter.changeSpeed(appid, speed);
 }
 
-function orderbook(uid, stockCode)
+function orderbook(appid, stockCode)
 {
-    return Order_Service.orderbook(uid, stockCode);
+    return Order_Service.orderbook(appid, stockCode);
 }
 
-function order(uid, orders)
+function order(appid, orders)
 {
     orders.forEach((order) => {
         var oid = ++counter;
@@ -39,9 +41,48 @@ function order(uid, orders)
     Order_Service.neworders(orders);
 }
 
-function cancelorder(uid, order)
+function cancelorder(appid, order)
 {
     Order_Service.cancelOrder(order);
+}
+
+function onQuotes(q, imode, appid)
+{
+    var q = standardizeiq(q);
+    if(appid !== undefined)
+        qServer.emitQs(appid, q);
+    else
+        qServer.broadcast('quote', q)
+
+    if(q.key === 'strikex')
+        Order_Service.orderExecutionSim(q);
+}
+
+function standardizeiq(q) 
+{
+    q['exchange'] = q['exchange_code'];
+    q['ltp'] = q['close'];
+    q.ltt = Date.parse(q.datetime);
+
+    if(q.exchange != 'NSE')
+        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+
+    if(q.product_type === 'Futures') {
+        q.key = 'futures';
+        q.symbol = q.stock_code + q.expiry_date + 'FUT';
+    }
+    else if(q.product_type === 'Options'){
+        q.key = 'strikex';
+        q.symbol = q.stock_code + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');
+    }
+    else {
+        q.key = q.stock_code.endsWith('VIX') ? 'vix' : 'index';
+        q.symbol = q.stock_code;
+    }
+    
+    let {exchange_code, product_type, open_interest, volume , datetime, ...trimmedquote} = q;
+
+    return trimmedquote;
 }
 
 function preU(p) {
@@ -49,11 +90,11 @@ function preU(p) {
     return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 }
 
-function preF(uid, stockCode, p) {
+function preF(appid, stockCode, p) {
     p.expiry = p.fExpiry;
     p.type = "futures";
     p.exchange = 'NFO';
-    p.uid = uid;
+    p.appid = appid;
     p.stockCode = stockCode;
     return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');;
 }

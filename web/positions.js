@@ -9,9 +9,7 @@ class Position
     unbookedPL: [8, 0],
     totalPL: [9, 1],
   };
-  raisedorders = new Array(0);
-  finalorders = new Array(0);
-  transientorders = new Array(0);
+  orders = new Map();
   #pRow;
   orderN = 0;
   symbol;
@@ -54,7 +52,6 @@ class Position
   {
     neworder.orderN = ++this.orderN;
     neworder.action = neworder.action === 'B' ? 'BUY' : 'SELL';
-    this.raisedorders.push(neworder);
     return neworder;
   }
 
@@ -74,44 +71,23 @@ class Position
 
   orderupdate(exorder, recovery)
   {
-    if(!['completed', 'partial', 'opened', 'open', 'cancelled'].includes(exorder.state))
-      this.transientorders.push(exorder);
-    else 
-    {
-      this.ini(exorder.symbol, recovery);
-      if(exorder.state === 'opened' || exorder.state === 'open') 
-      {
-        var idx = this.raisedorders.find((o) => o.orderid === exorder.orderid);
-        if(idx !== -1)
-          this.raisedorders.splice(idx, 1, exorder);
-        else 
-          this.raisedorders.push(exorder);
-
-        this.finalorders.push(exorder);
-      }
-      else 
-      {
-        var idx = this.finalorders.findIndex((o) => o.orderid === exorder.orderid);
-        if(idx !== -1)
-          this.finalorders.splice(idx, 1, exorder);
-        else
-          this.finalorders.push(exorder);
-        
-        if(exorder.state !== 'cancelled')
-          this.pnlUpdate(exorder);
-      }
-      var opencount = this.finalorders.filter((o) => o.state === 'opened').length;
-      this.#pRow.querySelector('#orderdisplay-btn').innerText = (opencount === 0 ? 'N' : opencount);
-      this.#pRow.querySelector('#orderdisplay-btn').style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');
-    }
+    this.ini(exorder.symbol, recovery);
+    this.orders.set(exorder.orderid, exorder);
+    this.pnlUpdate(exorder);
+    
+    var opencount = this.orders.values().toArray().filter((o) => o.state === 'opened').length;
+    var label = this.#pRow.querySelector('#orderdisplay-btn');
+    label.innerText = (opencount === 0 ? 'N' : opencount);
+    label.style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');
   }
+  
 
   pnlUpdate(lastorder) 
   {  
     var buyq = 0; var sellq = 0;
     var buyv = 0; var sellv = 0;
     
-    this.finalorders.forEach((o)  => {
+    this.orders.forEach((o)  => {
       if(['complete', 'completed', 'partial'].includes(o.state))
       {
         if(o.action === 'BUY')

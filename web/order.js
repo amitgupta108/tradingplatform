@@ -1,5 +1,5 @@
 class Order{
-  appid = instrument.uid;
+  appid = instrument.appid;
   exchange = instrument.exc;
   stockCode = instrument.stockCode;
   time = Date.now();
@@ -10,6 +10,8 @@ class Order{
   symbol;
   action;
   quantity;
+  filled_q = 0;
+  unfilled_q = 0;
 
   constructor(symbol, action, quantity)
   {
@@ -22,15 +24,18 @@ class Order{
 
 function submitOrder(clickedBtn) 
 {  
-  const rows = Array.from(order_rows_tbody.querySelectorAll('tr'));
+  const rows = Array.from(order_rows_tbody.rows);
   var isError = false;
   rows.forEach((r) => 
   {  
     const pricetype = r.querySelector('#ordertype').innerText;
-    const price = r.querySelector('#lmtprice').value;
-    if(pricetype === 'LIMIT' && price === "") {
-      isError = true;
-      qSel(r, 'lmtprice', 'id').style.border = '1px solid red';
+    if(pricetype === 'LIMIT')
+    {
+      const price = r.querySelector('#lmtprice').value;
+      if( price === "") {
+        isError = true;
+        qSel(r, 'lmtprice', 'id').style.border = '1px solid red';
+      }
     }
   });
    
@@ -86,7 +91,7 @@ function displayOrderList(btn, parent)
   order_list_tbody.innerHTML = "";
   
   var tqty = 0;
-  p.finalorders.forEach((o, idx) => {
+  p.orders.forEach((o, idx) => {
     var newtr = tRow(t_order_list_row, true);
 
     newtr.title = o.orderid;

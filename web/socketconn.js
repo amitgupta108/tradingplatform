@@ -3,7 +3,7 @@ var socket;
 if(instrument.mode !== 3) {
   socket = io(`https://localhost:${window.location.port}`, {
     auth: {
-      token: instrument.uid,
+      token: instrument.appid,
       mode: instrument.mode,
       stockCode: instrument.stockCode
     },
@@ -40,7 +40,7 @@ function rh(socket)
 {  
   try{
     socket.on("connect", () => {
-      console.log('socket connected for uid' + socket.id + '-' + instrument.uid + '-' + socket.recovered); 
+      console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered); 
     });
 
     socket.on('prevsession', (streamingstatus) => {
@@ -50,7 +50,7 @@ function rh(socket)
     });
 
     socket.on("connect_error", (error) => {
-      console.log('connection error for uid' + socket.id + '-' + instrument.uid + '-' + error.message);
+      console.log('connection error for appid' + socket.id + '-' + instrument.appid + '-' + error.message);
       if (socket.active) {
         console.log('connection error reconnection to be tried ' + socket.id);
       } else {
@@ -61,7 +61,7 @@ function rh(socket)
     });
 
     socket.on("disconnect", (reason, details) => {
-      console.log('disconnected for uid' + socket.id + '-' + instrument.uid + '-' + reason + '-' + JSON.stringify(details));
+      console.log('disconnected for appid' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
     });
 
     socket.on('futuresPreData', (fQuotes) => {
@@ -82,7 +82,10 @@ function rh(socket)
         futuresChart(q);
       
       var lt = new Date(q.ltt);
-      timerText.innerText = lt.toDateString() + " " + lt.toLocaleTimeString() + " |   Spot: " + q.close.toFixed(2);
+      time_label.innerText = lt.toLocaleTimeString();
+      spot_label.innerText = q.close.toFixed(2);
+      latency_label.innerText = Date.now() - q.ltt;
+
     });
     
     socket.on('vix', (q) => {
@@ -103,7 +106,7 @@ function rh(socket)
       loadOrders(response);
     });
 
-    socket.on('ws-order', (exorder) => {
+    socket.on('order', (exorder) => {
       console.log("ws order message " + JSON.stringify(exorder));
 
       var p = positions.find((e) => e.symbol === exorder.symbol);
@@ -111,14 +114,14 @@ function rh(socket)
         p.orderupdate(exorder, false);
     });
 
-    socket.on('ws-hb', (state) => {
+    socket.on('hb', (state) => {
       if(Number(state) === 1)
         document.getElementById('socn').style.backgroundColor = '#4CAF50';
       else
         document.getElementById('socn').style.backgroundColor = '#f44336';
     });
 
-    socket.on('ws-cn', (msg) => {
+    socket.on('cn', (msg) => {
       console.log("connection message " + msg)  
       document.getElementById('socn').style.backgroundColor = '#4CAF50';
     });

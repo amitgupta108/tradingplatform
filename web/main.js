@@ -50,6 +50,7 @@ function listOrders()
   
 function streamOptionChain(event)
 {  
+  event.stopPropagation();
   var oc_key = expiry_label === instrument.oExpiry ? 'occrnt' : 'ocnxt';
   emit(oc_key, 'toggle');
 }
@@ -57,7 +58,7 @@ function streamOptionChain(event)
 function wsconnect(action){
   const tpt = document.getElementById("tpt").value;
   if(tpt.length === 15)
-    action = 'live';
+    action = 'unlock_live';
   
   emit('wsOps', {action: action, data: tpt});
   document.getElementById("tpt").value = "";

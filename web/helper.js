@@ -69,6 +69,19 @@ function symtoinstrument(symbol)
   return instrument;
 }
 
+function expandSymbol(symbol)
+{
+    const regex = /[0-9]/;
+    const idx = q.symbol.search(regex);
+    const s = {};
+    s.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
+
+    s.right = symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
+    s.expiry_date = symbol.slice(idx, idx + 7);
+    s.strike_price = symbol.slice(idx + 7, -2);
+
+    return s;
+}
 function generateEvent(type, nv)
 {
   return new CustomEvent(type, {

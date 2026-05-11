@@ -19,7 +19,7 @@ function currentCandle(q)
   var curCandle;
   if(mainSeries.data().length !== 0) {
     curCandle = mainSeries.data().at(-1);
-    if(curCandle.time - nTVtime(q.ltt) > 300)
+    if(nTVtime(q.ltt) - curCandle.time > 300)
       curCandle.time = nTVtime(q.ltt) - (nTVtime(q.ltt) % 300);
   }
   else

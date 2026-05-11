@@ -1,38 +1,38 @@
 import qserver from './quotes.mjs'; 
 import wsOps from './broker/brokerws.mjs';
-import iBreeze from './broker/breeze.mjs';
 
-var iKNeo;
-
-async function getBrokerService(mode) 
+async function getService(mode, name) 
 { 
-    if(mode === 1) {
-        var server = await import('./broker/kotakneo.mjs');
-        iKNeo = server.default;
-        return iKNeo;
-    }
+    var type = mode === 1 ? './broker/kotakneo.mjs' : './broker/breeze.mjs'; 
+    
+    if(name === 'icici')
+        type = './broker/breeze.mjs'; 
+
+    const impl = await import(type);
+    return impl.default;
 }
 
 async function handleMessage(sn, event, msg)
 {
     try {
-        const bserver = sn.mode === 0 ? iBreeze : await getBrokerService(sn.mode);
+        const bservice = await getService(sn.mode);
         switch(event)
         {
             case 'start':
                     if(sn.mode === 0)
-                        bserver.init(sn.uid, msg.simStartTime, '1x');
+                        bservice.init(sn.appid, msg.simStartTime, '1x');
 
                     const stSubs = sn.inqsub(msg, (opSubs) => {
-                        bserver.subscribe(sn.uid, opSubs, 'subs');
+                        bservice.subscribe(sn.appid, opSubs, 'subs');
                     });
-                    bserver.subscribe(sn.uid, stSubs, 'subs');
+                    bservice.subscribe(sn.appid, stSubs, 'subs');
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var prefq = iBreeze.preF(sn.uid, sn.stockCode, msg);
-                emit(sn.uid, "futuresPreData", await prefq);
+                var preDService = await getService(sn.mode, 'icici');
+                var prefq = await preDService.preF(sn.appid, sn.stockCode, msg);
+                emit(sn.appid, "futuresPreData", prefq);
 
                 /*var preUq = iBreeze.preU(msg);
                 var uq = await preUq;
@@ -41,30 +41,30 @@ async function handleMessage(sn, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                iBreeze.changeSpeed(sn.uid, msg);
+                bservice.changeSpeed(sn.appid, msg);
                 break;
             case 'stop':
-                bserver.subscribe(sn.uid, sn.unsuball(), 'unsuball');
+                bservice.subscribe(sn.appid, sn.unsuball(), 'unsuball');
                 break;
             case 'prevsession':
                 emit('prevsession', sn.status !== undefined)
             break;
             case 'ocnxt':
-                sn.runOCNxt('start');
+                sn.option_chain(msg.key, msg.action);
                 break
             case 'order':
-                var orsub = await bserver.order(sn.uid, msg);
+                var orsub = await bservice.order(sn.appid, msg);
                 break;
             case 'cancelorder':
-                await bserver.cancelorder(sn.uid, msg);
+                await bservice.cancelorder(sn.appid, msg);
                 break;
             case 'orderbook':
-                var response = await bserver.orderbook(sn.uid, msg);
-                emit(sn.uid, event, response);
+                var response = await bservice.orderbook(sn.appid, msg);
+                emit(sn.appid, event, response);
                 break;
             case 'wsOps':
-                if(msg.action === 'live')
-                    var response = bserver.unlockLiveOrders(msg.data);
+                if(msg.action === 'unlock_live')
+                    var response = bservice.unlockLiveOrders(msg.data);
                 else
                     var response = await wsOps(msg.action, msg.data);
                 console.log("wsOps response: " + msg.action + ' ' + response);
@@ -77,15 +77,19 @@ async function handleMessage(sn, event, msg)
     }
 }
 
-function emit(uid, event, msg){
-    qserver.emit(uid, event, msg);
+function emit(appid, event, msg){
+    qserver.emitUpdates(appid, event, msg);
 }
 
-function exit(sn)
+async function exit(sn)
 {
-    iBreeze.exit(sn.uid);
-    if(sn.mode === 1)
-        iKNeo.exit(sn.uid, sn.unsuball());
+    var s1 = await getService(0);
+    s1.exit(sn.appid);
+    
+    if(sn.mode === 1) {
+        var s2 = await getService(1);
+        s2.exit(sn.appid, sn.unsuball());
+    }
 }
 
 export default {
