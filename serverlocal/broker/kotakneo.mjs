@@ -68,14 +68,21 @@ function subscribe(appid, sublist, action)
     if(sublist.length === 0)
         return;
 
-    var originalpath = sublist.filter((item) => item.source !== 'icici');
+    var redirectedpath = sublist.filter((item) => item.source === 'icici');
+    adapter.subscribe(appid, redirectedpath, action);
+
+    var originalpath = sublist.filter((item) => {
+        if(item.key === 'index' && item.exchange === 'NSE')
+            item.exchange = 'NSE_INDEX';
+        return item.source !== 'icici'
+    });
+
     if(action === 'subs')
         client.subscribe_ltp(originalpath, onQuotes);
     else 
         client.unsubscribe_ltp(originalpath, onQuotes);
     
-    var redirectedpath = sublist.filter((item) => item.source === 'icici');
-    adapter.subscribe(appid, redirectedpath, action);
+
 }
 
 async function orderbook(appid, stockCode)

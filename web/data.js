@@ -142,6 +142,8 @@ const chartOptions = {
 };
 
 const chart = LightweightCharts.createChart('futures_chart', chartOptions);
+chart.timeScale().fitContent();
+chart.timeScale().scrollToPosition(15);
 
 const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
 const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });

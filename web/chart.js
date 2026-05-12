@@ -3,6 +3,7 @@ const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
 
 function setFuturesChart(qA)
 {
+
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') || e.datetime.includes('9:05')));
   for(var i = 0; i < qs.length; i++)
   {

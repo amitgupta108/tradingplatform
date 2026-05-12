@@ -5,7 +5,7 @@ const { BreezeConnect } = await import('breezeconnect');
 const breeze = new BreezeConnect({ "appKey": '72r5N3K05754+43ek796960QT96Hc8e1'});
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
 
-connect(appSecret, '55578502');
+connect(appSecret, '55593957');
 
 function connect(appSecret, sessionId){
     breeze.generateSession(appSecret, sessionId);
@@ -87,11 +87,9 @@ function ISODate(datetime) {
 }
 
 function formatExpiry(expiry) {
-    
-    if(expiry !== undefined) {
-        var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
-        return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
-    }
+    //var d = new Date(expiry).toString();
+    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
+    return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
 }
 
 function wssub(list, callback)
@@ -99,10 +97,10 @@ function wssub(list, callback)
     breeze.onTicks = callback;
 
     list.forEach((e) => {
-        var b = breeze_input(e);
+        var b = breeze_input(e.instrument);
         breeze.subscribeFeeds(b)
         .then((resp) => {
-            console.log('ICICI feed subs: ' + JSON.stringify(resp))
+            console.log('ICICI feed subs: ' + JSON.stringify(resp));
         }).catch((error) => {
             console.log('ICICI feed subs error: ' + error);
         });
@@ -112,11 +110,11 @@ function wssub(list, callback)
 function wsunsub(list)
 {
     list.forEach((e) => {
-        var b = breeze_input(e);
+        var b = breeze_input(e.instrument);
         
         breeze.unsubscribeFeeds(b)
         .then((resp) => {
-            console.log('ICICI feed unsubs: ' + JSON.stringify(resp))
+            console.log('ICICI feed unsubs: ' + resp)
         }).catch((error) => {
             console.log('ICICI feed unsubs error: ' + error);
         });
@@ -128,15 +126,14 @@ function wsDisconnect()
     breeze.wsDisconnect();
 }
 
-function breeze_input(instrument)
+function breeze_input(scrip)
 {       
-    var b = {};
-    b.productType = instrument.right != undefined ? 'options' : 'futures';
-    b.expiryDate = formatExpiry(instrument.expiry);
-    b.exchangeCode = instrument.exchange;
-    b.stockCode = instrument.stockCode;
-    b.strikePrice = instrument.strike;
-    b.right = instrument.right;
+    var b = {expiryDate: formatExpiry(scrip.expiry)};
+    b.productType = scrip.right != undefined ? 'options' : 'futures';
+    b.exchangeCode = scrip.stockCode === 'INDVIX' ? 'NSE' : scrip.exchange;
+    b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
+    b.strikePrice = scrip.strike;
+    b.right = scrip.right;
     b.getExchangeQuotes = true;
     b.interval = "1second";
     

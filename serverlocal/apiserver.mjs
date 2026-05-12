@@ -1,4 +1,3 @@
-import qserver from './quotes.mjs'; 
 import wsOps from './broker/brokerws.mjs';
 
 async function getService(mode, name) 
@@ -12,9 +11,10 @@ async function getService(mode, name)
     return impl.default;
 }
 
-async function handleMessage(sn, event, msg)
+async function handleMessage(s, event, msg)
 {
     try {
+        const sn = s.sn;
         const bservice = await getService(sn.mode);
         switch(event)
         {
@@ -32,7 +32,7 @@ async function handleMessage(sn, event, msg)
 
                 var preDService = await getService(sn.mode, 'icici');
                 var prefq = await preDService.preF(sn.appid, sn.stockCode, msg);
-                emit(sn.appid, "futuresPreData", prefq);
+                s.emit("futuresPreData", prefq);
 
                 /*var preUq = iBreeze.preU(msg);
                 var uq = await preUq;
@@ -41,15 +41,16 @@ async function handleMessage(sn, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                bservice.changeSpeed(sn.appid, msg);
+                var sim = await getService(sn.mode, 'icici');
+                sim.changeSpeed(sn.appid, msg);
                 break;
             case 'stop':
                 bservice.subscribe(sn.appid, sn.unsuball(), 'unsuball');
                 break;
             case 'prevsession':
-                emit('prevsession', sn.status !== undefined)
+                s.emit('prevsession', sn.status !== undefined)
             break;
-            case 'ocnxt':
+            case 'option_chain':
                 sn.option_chain(msg.key, msg.action);
                 break
             case 'order':
@@ -60,7 +61,7 @@ async function handleMessage(sn, event, msg)
                 break;
             case 'orderbook':
                 var response = await bservice.orderbook(sn.appid, msg);
-                emit(sn.appid, event, response);
+                s.emit(event, response);
                 break;
             case 'wsOps':
                 if(msg.action === 'unlock_live')
@@ -75,10 +76,6 @@ async function handleMessage(sn, event, msg)
     } catch (error) {
         console.log('Error ' + error.stack);
     }
-}
-
-function emit(appid, event, msg){
-    qserver.emitUpdates(appid, event, msg);
 }
 
 async function exit(sn)
