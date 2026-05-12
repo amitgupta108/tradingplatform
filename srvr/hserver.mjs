@@ -61,7 +61,7 @@ function dothings(stmrkey)
         var count = 0;
         var usrSpdComb = utils.filter(client_clocks.values().toArray(), {keys: [stmrkey]});
         usrSpdComb.forEach((c) => {
-            var reqs = subsRequests.filter((s) => s.appid === c.appid && s.instrument.mode === 'history');
+            var reqs = subsRequests.filter((s) => s.appid === c.appid && s.instrument.model === 'history');
             reqs.forEach((req) => {
                 count++;
                 var qt = q(req.appid, req.instrument, c.currentTime);
@@ -100,13 +100,13 @@ function subscribe(requests) {
         var exReqs = subsRequests.filter((s) => 
             s.appid === request.appid 
             && s.symbol === request.symbol
-            && s.instrument.mode === request.instrument.mode);
+            && s.instrument.model === request.instrument.model);
         
         if(exReqs.length === 0)
             subsRequests.push(request);            
     });
 
-    const live_ones = requests.filter((r) => r.instrument.mode === 'live');
+    const live_ones = requests.filter((r) => r.instrument.model === 'live');
     live_sub(live_ones, 'subs');
 
     if(requests.length > 0 && requests.length > live_ones.length) {
@@ -191,9 +191,7 @@ function live_sub(list, action)
 {
     try {
         if(action === 'subs')
-            sutils.wssub(list, (q) => {
-                wsmessage(q);
-            });
+            sutils.wssub(list, wsmessage);
         else
             sutils.wsunsub(list);
     } catch (error) {

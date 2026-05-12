@@ -26,10 +26,10 @@ class Session
     {
         for(var i = 0; i < 5; i++)
         {
-            this.st[i].exchange = p.exc === 'MCX' ? p.exc : (i != 0 && i != 4) ? 'NFO' : this.mode === 0 ? 'NSE' : 'NSE_INDEX';
-            this.st[i].mode = this.mode === 0 ? 'history' : 'live';
-            this.st[i].symbol = i === 1 || p.exc === 'MCX' ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[j].stockCode;
-            this.st[i].toStream = i === 4 && p.exc === 'MCX' ? false : true;
+            this.st[i].exchange = (i === 0 || i === 4) && p.exc === 'NFO' ? 'NSE' : p.exc;
+            this.st[i].model = this.mode === 0 ? 'history' : 'live';
+            this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
+            this.st[i].toStream = (i === 0 || i === 4) && p.exc === 'MCX' ? false : true;
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
@@ -68,7 +68,7 @@ class Session
                     expiry: ost.expiry,
                     strike: sks[i].strike,
                     right: sks[i].right,
-                    mode: this.mode === 0 ? 'history' : 'live',
+                    model: this.mode === 0 ? 'history' : 'live',
                     symbol: (ost.stockCode + ost.expiry +
                         sks[i].strike +
                         (sks[i].right === 'Call' ? 'CE' : 'PE').toUpperCase())
@@ -78,7 +78,7 @@ class Session
             {
                 lst[0].toStream = true;
                 if(lst.length > 1)
-                    console.error('Possible stream confir duplication in session ' + lst[1].symbol);
+                    console.error('Possible stream config duplication in session ' + lst[1].symbol);
             }
 
         }
@@ -97,14 +97,12 @@ class Session
     }
     
     inqsub(p, callback) {
-        if(this.status !== 'initialized')
+        if(['skeletal', 'stopped'].includes(this.status))
             this.ini(p, callback);
 
-        var fst = utils.filter(this.st, {keys: ['index', 'futures', 'vix', 'occrnt']});
-        fst.forEach((e) => e.toStream = true);
         this.status = 'stream requested';
         
-        return utils.filter(this.st, {keys: ['index', 'futures', 'vix']});
+        return utils.filter(this.st, {keys: ['index', 'futures', 'vix'], toStream: [true]});
     }
     
     unsuball() {

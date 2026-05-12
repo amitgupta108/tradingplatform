@@ -6,9 +6,9 @@ const socketmap = new Map();
 function emitUpdates(appid, type, message)
 {
     try {
-        console.log("ws message: ", JSON.stringify(message));
+        console.log("ws message: " + JSON.stringify(message));
         var s = socketmap.get(appid).socket;
-        s.emit(appid, type, message);
+        s.emit(type, message);
     } catch (error) {
         console.log(error);
     }

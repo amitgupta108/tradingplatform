@@ -52,7 +52,7 @@ function streamOptionChain(event)
 {  
   event.stopPropagation();
   var oc_key = expiry_label === instrument.oExpiry ? 'occrnt' : 'ocnxt';
-  emit(oc_key, 'toggle');
+  emit('option_chain', {key: oc_key, action:'toggle'});
 }
 
 function wsconnect(action){
