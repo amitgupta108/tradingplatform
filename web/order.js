@@ -10,8 +10,6 @@ class Order{
   symbol;
   action;
   quantity;
-  filled_q = 0;
-  unfilled_q = 0;
 
   constructor(symbol, action, quantity)
   {

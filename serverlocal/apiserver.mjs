@@ -1,37 +1,31 @@
 import wsOps from './broker/brokerws.mjs';
-
-async function getService(mode, name) 
-{ 
-    var type = mode === 1 ? './broker/kotakneo.mjs' : './broker/breeze.mjs'; 
-    
-    if(name === 'icici')
-        type = './broker/breeze.mjs'; 
-
-    const impl = await import(type);
-    return impl.default;
-}
+import hist_service from './broker/breeze.mjs'
+import live_kotak from './broker/kotakneo.mjs'
+import live_icici from './broker/breeze.mjs'
+import paper_trading from './broker/breeze.mjs'
 
 async function handleMessage(s, event, msg)
 {
     try {
         const sn = s.sn;
-        const bservice = await getService(sn.mode);
+        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_icici;
+        const trading_service  = sn.mode === 1 ? live_kotak : paper_trading;
+        
         switch(event)
         {
             case 'start':
                     if(sn.mode === 0)
-                        bservice.init(sn.appid, msg.simStartTime, '1x');
+                        market_service.init(sn.appid, msg.simStartTime, '1x');
 
                     const stSubs = sn.inqsub(msg, (opSubs) => {
-                        bservice.subscribe(sn.appid, opSubs, 'subs');
+                        market_service.subscribe(sn.appid, opSubs, 'subs');
                     });
-                    bservice.subscribe(sn.appid, stSubs, 'subs');
+                    market_service.subscribe(sn.appid, stSubs, 'subs');
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var preDService = await getService(sn.mode, 'icici');
-                var prefq = await preDService.preF(sn.appid, sn.stockCode, msg);
+                var prefq = await hist_service.preF(sn.appid, sn.stockCode, msg);
                 s.emit("futuresPreData", prefq);
 
                 /*var preUq = iBreeze.preU(msg);
@@ -41,31 +35,30 @@ async function handleMessage(s, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                var sim = await getService(sn.mode, 'icici');
-                sim.changeSpeed(sn.appid, msg);
+                hist_service.changeSpeed(sn.appid, msg);
                 break;
             case 'stop':
-                bservice.subscribe(sn.appid, sn.unsuball(), 'unsuball');
+                market_service.subscribe(sn.appid, sn.unsuball(), 'unsuball');
                 break;
             case 'prevsession':
-                s.emit('prevsession', sn.status !== undefined)
+                s.emit('prevsession', sn.status)
             break;
             case 'option_chain':
                 sn.option_chain(msg.key, msg.action);
                 break
             case 'order':
-                var orsub = await bservice.order(sn.appid, msg);
+                var orsub = await trading_service.order(sn.appid, msg);
                 break;
             case 'cancelorder':
-                await bservice.cancelorder(sn.appid, msg);
+                await trading_service.cancelorder(sn.appid, msg);
                 break;
             case 'orderbook':
-                var response = await bservice.orderbook(sn.appid, msg);
+                var response = await trading_service.orderbook(sn.appid, msg);
                 s.emit(event, response);
                 break;
             case 'wsOps':
                 if(msg.action === 'unlock_live')
-                    var response = bservice.unlockLiveOrders(msg.data);
+                    var response = live_kotak.unlockLiveOrders(msg.data);
                 else
                     var response = await wsOps(msg.action, msg.data);
                 console.log("wsOps response: " + msg.action + ' ' + response);
@@ -80,13 +73,9 @@ async function handleMessage(s, event, msg)
 
 async function exit(sn)
 {
-    var s1 = await getService(0);
-    s1.exit(sn.appid);
-    
-    if(sn.mode === 1) {
-        var s2 = await getService(1);
-        s2.exit(sn.appid, sn.unsuball());
-    }
+    hist_service.exit(sn.appid);   
+    if(sn.mode === 1) 
+        live_kotak.exit(sn.appid, sn.unsuball());
 }
 
 export default {

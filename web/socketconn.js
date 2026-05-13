@@ -61,7 +61,7 @@ function rh(socket)
     });
 
     socket.on("disconnect", (reason, details) => {
-      console.log('disconnected for appid' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
+      console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
     });
 
     socket.on('futuresPreData', (fQuotes) => {
@@ -84,7 +84,6 @@ function rh(socket)
       var lt = new Date(q.ltt);
       time_label.innerText = lt.toLocaleTimeString();
       spot_label.innerText = q.close.toFixed(2);
-      latency_label.innerText = Date.now() - q.ltt;
 
     });
     
@@ -96,6 +95,7 @@ function rh(socket)
     socket.on('futures', (q) => {    
         qBox.dispatchEvent(generateEvent('futures', q));
         document.title = "Futures " + q.close.toFixed(2);
+        latency_label.innerText = Date.now() - q.ltt;
     });
 
     socket.on('strikex', (q) => {
@@ -114,8 +114,8 @@ function rh(socket)
         p.orderupdate(exorder, false);
     });
 
-    socket.on('hb', (state) => {
-      if(Number(state) === 1)
+    socket.on('hb', (resp) => {
+      if(resp.order_socket === 1)
         document.getElementById('socn').style.backgroundColor = '#4CAF50';
       else
         document.getElementById('socn').style.backgroundColor = '#f44336';
