@@ -43,8 +43,8 @@ instrumentMap.set('NH1', {
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "26MAY26",
-  oExpiry: "12MAY26",
-  oExpiryNxt: "19MAY26",
+  oExpiry: "19MAY26",
+  oExpiryNxt: "26MAY26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 12,
@@ -56,8 +56,8 @@ instrumentMap.set('NL1', {
 instrumentMap.set('NL2', {
   simStartTime: Date.now(),
   fExpiry: "26MAY26",
-  oExpiry: "05MAY26",
-  oExpiryNxt: "12MAY26",
+  oExpiry: "19MAY26",
+  oExpiryNxt: "26MAY26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 12,

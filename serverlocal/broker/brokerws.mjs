@@ -21,7 +21,6 @@ async function wsOps(action, tpt)
         }
     }
     else if (ws != undefined && action === 'disconnect') {
-        wshb('stop');
         ws.close();
         response = 'disconnected';
     }
@@ -64,7 +63,7 @@ async function apiValidate(authdata) {
         }),
     };
     const response = await fetch(ValURL, headers);
-    return await response.json();
+    return response.json();
 }
 
 function wsconnect(baseurl, token, sid)
@@ -96,19 +95,22 @@ function wsconnect(baseurl, token, sid)
     }; 
     
     ws.onclose = (event) => {
+        wshb('stop');
         console.log("connection closed " + event.reason);
     };
 }
 
 function wshb(action)
 {
+    qserver.broadcast('hb', {order_socket: ws.readyState});
+
     if(action === 'start') {
         if(wsping !== undefined)
             clearInterval(wsping);
 
         var recon_attempt = 0;
         wsping = setInterval(async (rn) => {
-            qserver.broadcast('hb', ws.readyState);
+            qserver.broadcast('hb', {order_socket: ws.readyState});
     
             if(ws.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
@@ -120,7 +122,7 @@ function wshb(action)
     }
     else
     {
-        qserver.broadcast('hb', 0);
+        qserver.broadcast('hb', {order_socket: ws.readyState});
         clearInterval(wsping);
     }
 }

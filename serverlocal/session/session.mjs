@@ -29,7 +29,7 @@ class Session
             this.st[i].exchange = (i === 0 || i === 4) && p.exc === 'NFO' ? 'NSE' : p.exc;
             this.st[i].model = this.mode === 0 ? 'history' : 'live';
             this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
-            this.st[i].toStream = (i === 0 || i === 4) && p.exc === 'MCX' ? false : true;
+            this.st[i].toStream = (i === 0 || i === 4) && p.exc === 'MCX' ? false : this.st[i].toStream;
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;

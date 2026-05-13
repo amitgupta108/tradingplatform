@@ -28,8 +28,8 @@ function liveOrderMatching(message)
     if(local_order === undefined)
         neworders([live_order]);
         
-    if(['completed', 'opened', 'cancelled'].includes(live_order_state))
-        OrderNotifier.emit('order', order.appid, 'order', live_order);
+    if(['completed', 'opened', 'cancelled'].includes(live_order.state))
+        OrderNotifier.emit('order', live_order.appid, 'order', live_order);
 }
 
 function orderExecutionSim(q)
@@ -64,7 +64,7 @@ function orderExecutionSim(q)
 
 function formatLiveOrder(order)
 {
-    const {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode,
+    var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode,
             expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
             qty: quantity, prcTp: pricetype, ...rest} = order;
 
@@ -93,7 +93,7 @@ function cancelOrder(order)
     if(found !== undefined && found.state === 'opened') {
         found.state = 'cancelled';
         if(found.mode !== 'live')
-            OrderNotifier.emit('order', order.appid, 'order', found);
+            OrderNotifier.emit('order', found.appid, 'order', found);
     }
     else
         console.error('requested order cancellation failed - order not found or not open');

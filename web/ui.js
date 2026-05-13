@@ -148,7 +148,7 @@ function cancelOrder(c, p_row)
   const symbol = order_list_thead.rows[0].title;
   const postn = Position.findPosition(symbol, false);
   const orderid = Number(p_row.title);
-  const c_order = postn.orders.find((o) => o.orderid === orderid);
+  const c_order = postn.orders.get(orderid);
   if(c_order !== undefined && c_order.state === 'opened') {
     emit('cancelorder', c_order);
     sOrderSubmit.play();
