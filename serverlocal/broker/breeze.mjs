@@ -2,8 +2,9 @@ import adapter from '../adapter/histadapter.mjs';
 import Order_Service from '../service/order_engine.mjs';
 import qServer from '../quotes.mjs';
 
-adapter.addQuoteListener(onQuotes);
+const mode_icici_live = 2;
 var counter = 50000;
+adapter.addQuoteListener(onQuotes);
 
 function init(appid, startTime, speed)
 {
@@ -52,7 +53,7 @@ function onQuotes(q, imode, appid)
     if(appid !== undefined)
         qServer.emitQs(appid, q);
     else
-        qServer.broadcast('quote', q)
+        qServer.emitQs(q.stockCode + mode_icici_live, q)
 
     if(q.key === 'strikex')
         Order_Service.orderExecutionSim(q);

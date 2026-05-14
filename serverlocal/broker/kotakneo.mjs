@@ -11,7 +11,7 @@ client.connect()
     );
 
 var live_order_unlocked = false;
-
+const mode_kotak_live = 1;
 function unlockLiveOrders(key)
 {
     const today = new Date();
@@ -25,7 +25,7 @@ function unlockLiveOrders(key)
 function onQuotes(q)
 { 
     const qt = standardizeoq(q);
-    qserver.broadcast('quote', qt);
+    qserver.emitQs(qt.stockCode + mode_kotak_live, qt);
 }
 
 function exit(appid, sublist)

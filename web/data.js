@@ -87,7 +87,7 @@ instrumentMap.set('MP1',{
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
   lscount: 10,
-  mode: 1,
+  mode: 2,
   lotsize: 100,
   appid: 'sM2wzV0S-x3Ca-SVQI-AAAH-940b886ee155'
 });

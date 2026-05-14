@@ -1,18 +1,23 @@
 import utils from '../../common/utils.mjs';
 
+const us = new Array(0);
+
 class Session
 {
-    appid;    
-    mode;
-    stockCode;
-    st;
-    subsupdate;
+    appids = new Array(0);    
     status = 'skeletal';
     constructor(appid, mode, stockCode)
     {
-        this.appid = appid;
+        if(mode === 0 && this.appids.length !== 0)
+            throw error('Invalid session creation attempted');
+
+        if(mode !== 0 && this.appids.length === 0)
+            this.appids.push(stockCode + mode);
+
+        this.appids.push(appid);
         this.mode = mode;
         this.stockCode = stockCode;
+        us.push(this);
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized'},
             {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized'},
@@ -33,7 +38,7 @@ class Session
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
-                this.st[i].n = i != 1? p.lscount + 2: 0;
+                this.st[i].n = (i === 2 || i === 3)? p.lscount + 2: 0;
             }
         }
         this.subsupdate = callback;
@@ -133,6 +138,25 @@ class Session
         }
         this.status = 'streaming';
         st.uq = uq;
+    }
+
+    static filter(appid, mode, stockCode)
+    {
+        const b_appid = appid === undefined ? true : false;
+        const b_stock = stockCode === undefined ? true : false;
+        const b_mode = mode === undefined ? true : false;
+
+        return us.filter((e) => {
+                return e.stockCode === stockCode || b_stock
+                    && e.mode === mode || b_mode
+                    && e.appids[0] === appid || b_appid;
+        });
+    }
+
+    static exit(sn, appid)
+    {
+        var idx = sn.appids.findIndex((e) => e.appid === appid);
+        sn.appids.splice(idx, 1);
     }
 }
 

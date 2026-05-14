@@ -62,8 +62,6 @@ if(!global.server)
         pingInterval: 30000,
         pingTimeout: 30000
     });
-
-    const us = new Array(0);
     //io.use(es);
 
     io.on('connection', (s) => {
@@ -73,38 +71,33 @@ if(!global.server)
         const stockCode = s.handshake.auth.stockCode;
 
         console.log('user connected with socket ' + appid + ' ' + s.id);                
-        qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});
+        qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
 
-        var sn = us.find((e) => {
-            return e.mode === mode 
-            && e.stockCode === stockCode
-            && e.appid === appid});
+        const i_appid = mode === 0 ? appid : undefined;
+        var sn = Session.filter(i_appid).at(0);
 
         if(sn === undefined){
             sn = new Session(appid, mode, stockCode);
-            us.push(sn);
         } else
         {
             if(sn.status === 'streaming')
                 s.emit('prevsession', sn.status);
-            
             console.log('prevsession ' +  appid + ' ' + s.recovered + ' ' + sn.status);
         }
         s.sn = sn;
 
         s.onAny((event, msg) => {
             console.log("Received event " + event + " with data " + JSON.stringify(msg));
-            apiserver.handleMessage(s, event, msg);
+            apiserver.handleMessage(s, appid, event, msg);
         });
         
         s.on("disconnect", (reason) => {
             if(reason === 'client namespace disconnect')
             {
-                apiserver.exit(sn);
-                console.log('user exited:' + sn.appid);
-                qserver.socketmap.delete(sn.appid);
-                var idx = us.findIndex((e) => e.appid === appid);
-                us.splice(idx, 1);
+                apiserver.exit(s.sn.appids[0]);
+                console.log('user exited:' + appid);
+                qserver.socketmap.delete(appid);
+                Session.exit(s.sn, appid)
             }
             else if(['server namespace disconnect',
                 'server shutting down', 'transport close', 'transport error'].includes(reason))

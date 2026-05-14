@@ -4,28 +4,28 @@ import live_kotak from './broker/kotakneo.mjs'
 import live_icici from './broker/breeze.mjs'
 import paper_trading from './broker/breeze.mjs'
 
-async function handleMessage(s, event, msg)
+async function handleMessage(s, appid, event, msg)
 {
     try {
         const sn = s.sn;
-        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_icici;
+        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_kotak;
         const trading_service  = sn.mode === 1 ? live_kotak : paper_trading;
         
         switch(event)
         {
             case 'start':
                     if(sn.mode === 0)
-                        market_service.init(sn.appid, msg.simStartTime, '1x');
+                        market_service.init(sn.appids[0], msg.simStartTime, '1x');
 
                     const stSubs = sn.inqsub(msg, (opSubs) => {
-                        market_service.subscribe(sn.appid, opSubs, 'subs');
+                        market_service.subscribe(sn.appids[0], opSubs, 'subs');
                     });
-                    market_service.subscribe(sn.appid, stSubs, 'subs');
+                    market_service.subscribe(sn.appids[0], stSubs, 'subs');
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var prefq = await hist_service.preF(sn.appid, sn.stockCode, msg);
+                var prefq = await hist_service.preF(sn.appids[0], sn.stockCode, msg);
                 s.emit("futuresPreData", prefq);
 
                 /*var preUq = iBreeze.preU(msg);
@@ -35,10 +35,10 @@ async function handleMessage(s, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                hist_service.changeSpeed(sn.appid, msg);
+                hist_service.changeSpeed(sn.appids[0], msg);
                 break;
             case 'stop':
-                market_service.subscribe(sn.appid, sn.unsuball(), 'unsuball');
+                market_service.subscribe(sn.appids[0], sn.unsuball(), 'unsuball');
                 break;
             case 'prevsession':
                 s.emit('prevsession', sn.status)
@@ -47,13 +47,13 @@ async function handleMessage(s, event, msg)
                 sn.option_chain(msg.key, msg.action);
                 break
             case 'order':
-                var orsub = await trading_service.order(sn.appid, msg);
+                var orsub = await trading_service.order(appid, msg);
                 break;
             case 'cancelorder':
-                await trading_service.cancelorder(sn.appid, msg);
+                await trading_service.cancelorder(appid, msg);
                 break;
             case 'orderbook':
-                var response = await trading_service.orderbook(sn.appid, msg);
+                var response = await trading_service.orderbook(appid, msg);
                 s.emit(event, response);
                 break;
             case 'wsOps':
@@ -73,9 +73,8 @@ async function handleMessage(s, event, msg)
 
 async function exit(sn)
 {
-    hist_service.exit(sn.appid);   
-    if(sn.mode === 1) 
-        live_kotak.exit(sn.appid, sn.unsuball());
+    if(sn.mode === 0)
+        hist_service.exit(sn.appids[0]);
 }
 
 export default {
