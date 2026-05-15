@@ -18,6 +18,7 @@ class OptionChain
     qBox.addEventListener('strikex', this);
     qBox.addEventListener('index', (event) => {
       const q = event.detail;
+      if(!q || q.ltp === undefined) return;
       this.atm_move = Math.round((q.ltp - this.atm) / 50);
 
       if(this.atm === undefined)

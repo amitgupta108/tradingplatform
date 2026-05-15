@@ -1,60 +1,50 @@
 const nTVtime = unixtime => Math.round(unixtime/1000) + 330 * 60;
 const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
+const ema_alpha = 2/21;
+const ema_beta = 1 - ema_alpha;
 
 function setFuturesChart(qA)
 {
-
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') || e.datetime.includes('9:05')));
   for(var i = 0; i < qs.length; i++)
   {
     qs[i].time = sTVtime(qs[i].datetime);
-    qs[i].value = (2/21) * qs[i].close + (1-2/21) * (i !== 0 ? qs[i-1].value : qs[0].close);
+    qs[i].value = ema_alpha * qs[i].close + ema_beta * (i !== 0 ? qs[i-1].value : qs[0].close);
     qs.at(-1).customValues = qs.at(-1).value;
   }
   mainSeries.setData(qs);
   emaSeries.setData(qs);
 }
 
-function currentCandle(q)
+function futuresQuote(q)
 {
-  var curCandle;
-  if(mainSeries.data().length !== 0) {
-    curCandle = mainSeries.data().at(-1);
-    if(nTVtime(q.ltt) - curCandle.time > 300)
-      curCandle.time = nTVtime(q.ltt) - (nTVtime(q.ltt) % 300);
-  }
-  else
-  {  curCandle = { close: q.close,
-        open: q.open,
-        high: q.high,
-        low: q.low,         
-        customValues: q.close
-      };
-    curCandle.time = nTVtime(q.ltt) - (nTVtime(q.ltt) % 300);
-  }
-  return curCandle;
+  qBox.dispatchEvent(generateEvent('futures', q));
+  document.title = "Futures " + q.close.toFixed(2);
+  latency_label.innerText = Date.now() - q.ltt;
 }
 
 function futuresChart(q)
 {
-  var curCandle = currentCandle(q); 
-  if(nTVtime(q.ltt) > curCandle.time + 299)
+  var curCandle = mainSeries.data().at(-1);
+  if(curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
   {  
+    curCandle = {time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300)};
+
     curCandle.close = q.close;
     curCandle.open = q.open;
     curCandle.high = q.high;
     curCandle.low = q.low;
-    curCandle.value =  (2/21) * q.close + (1-2/21) * curCandle.customValues;
+    if(curCandle.customValues === undefined)
+      curCandle.customValues = q.close;
+    curCandle.value =  ema_alpha * q.close + ema_beta * curCandle.customValues;
     curCandle.customValues = curCandle.value;
-    
-    curCandle.time = curCandle.time + 300;
   }
   else
   { 
     curCandle.high = Math.max(q.high, curCandle.high);
     curCandle.low = Math.min(q.low, curCandle.low);
     curCandle.close = q.close;
-    curCandle.value =  (2/21) * q.close + (1-2/21) * curCandle.customValues;
+    curCandle.value =  ema_alpha * q.close + ema_beta * curCandle.customValues;
   }      
   mainSeries.update(curCandle);
   emaSeries.update(curCandle);

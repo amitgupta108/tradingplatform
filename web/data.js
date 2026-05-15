@@ -82,7 +82,7 @@ instrumentMap.set('NP1', {
 instrumentMap.set('MP1',{
   simStartTime: Date.now(),
   fExpiry: "18MAY26",
-  oExpiry: "14MAY26",
+  oExpiry: "16JUN26",
   oExpiryNxt: "16JUN26",
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
@@ -95,7 +95,7 @@ instrumentMap.set('MP1',{
 instrumentMap.set('ML',{
   simStartTime: Date.now(),
   fExpiry: "18MAY26",
-  oExpiry: "14MAY26",
+  oExpiry: "16JUN26",
   oExpiryNxt: "16JUN26",
   stockCode: 'CRUDEOIL',
   exc: 'MCX',

@@ -5,7 +5,7 @@ const { BreezeConnect } = await import('breezeconnect');
 const breeze = new BreezeConnect({ "appKey": '72r5N3K05754+43ek796960QT96Hc8e1'});
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
 
-connect(appSecret, '55613340');
+connect(appSecret, '55636510');
 
 function connect(appSecret, sessionId){
     breeze.generateSession(appSecret, sessionId);
