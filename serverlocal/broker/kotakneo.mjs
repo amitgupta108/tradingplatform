@@ -81,8 +81,6 @@ function subscribe(appid, sublist, action)
         client.subscribe_ltp(originalpath, onQuotes);
     else 
         client.unsubscribe_ltp(originalpath, onQuotes);
-    
-
 }
 
 async function orderbook(appid, stockCode)

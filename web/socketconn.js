@@ -7,8 +7,8 @@ if(instrument.mode !== 3) {
       mode: instrument.mode,
       stockCode: instrument.stockCode
     },
-    timeout: 60000,
-    reconnectionDelay: 5000,
+    timeout: 20000,
+    reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
   });
 }
@@ -79,12 +79,11 @@ function rh(socket)
       qBox.dispatchEvent(generateEvent('index', q));
     
       if(q.exchange === 'MCX')
-        futuresChart(q);
-      
+        futuresQuote(q);
+
       var lt = new Date(q.ltt);
       time_label.innerText = lt.toLocaleTimeString();
       spot_label.innerText = q.close.toFixed(2);
-
     });
     
     socket.on('vix', (q) => {
@@ -93,9 +92,7 @@ function rh(socket)
     });
 
     socket.on('futures', (q) => {    
-        qBox.dispatchEvent(generateEvent('futures', q));
-        document.title = "Futures " + q.close.toFixed(2);
-        latency_label.innerText = Date.now() - q.ltt;
+      futuresQuote(q);
     });
 
     socket.on('strikex', (q) => {

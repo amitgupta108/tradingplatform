@@ -16,6 +16,7 @@ import Session from './session/session.mjs';
 import wsOps from './broker/brokerws.mjs';
 import qserver from './quotes.mjs'; 
 import apiserver from './apiserver.mjs'; 
+import { error } from 'node:console';
 
 if(!global.server)
 {
@@ -73,16 +74,16 @@ if(!global.server)
         console.log('user connected with socket ' + appid + ' ' + s.id);                
         qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
 
-        const i_appid = mode === 0 ? appid : undefined;
-        var sn = Session.filter(i_appid).at(0);
+        const i_appid = mode === 0 ? appid : stockCode + mode;
+        let sn = Session.sn(i_appid);
 
-        if(sn === undefined){
+        if(sn === undefined)
             sn = new Session(appid, mode, stockCode);
-        } else
-        {
+        else
+        {    
+            sn.shared_with.set(appid, sn);
             if(sn.status === 'streaming')
                 s.emit('prevsession', sn.status);
-            console.log('prevsession ' +  appid + ' ' + s.recovered + ' ' + sn.status);
         }
         s.sn = sn;
 
@@ -94,10 +95,10 @@ if(!global.server)
         s.on("disconnect", (reason) => {
             if(reason === 'client namespace disconnect')
             {
-                apiserver.exit(s.sn.appids[0]);
-                console.log('user exited:' + appid);
+                Session.exit(sn);
                 qserver.socketmap.delete(appid);
-                Session.exit(s.sn, appid)
+                apiserver.exit(appid);
+                console.log('user exited:' + appid);
             }
             else if(['server namespace disconnect',
                 'server shutting down', 'transport close', 'transport error'].includes(reason))

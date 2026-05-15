@@ -1,57 +1,66 @@
 import utils from '../common/utils.mjs';
+import Session from './session/session.mjs';
 import Order_Notifier from '../serverlocal/service/order_engine.mjs';
 Order_Notifier.addOrderUpdateListener(emitOrders);
 const socketmap = new Map();
 
-function emitOrders(appid, type, message)
+function emitOrders(appid, type, order)
 {
-    console.log("ws update message: " + JSON.stringify(message));
-    var app_obj = socketmap.get(appid);
-    if(app_obj != undefined)
-        emit(app_obj.socket, type, message);
-    else
+    if(appid !== undefined){
+        const app_obj = socketmap.get(appid);
+        if(app_obj !== undefined)
+            emit(app_obj.socket, type, message);
+        else
+            console.error('Orphan order ' + JSON.stringify(order));
+    }
+    else //externally actioned orders
     {    
-        const ssn = Session.filter(appid);
-        ssn[0].appids.forEach((a) => {
-            const app_obj = socketmap.get(a);
-            emit(a.socket, q.key, q);
-        });
+        const sn = Session.sn(order.stockCode);
+        group_emit(sn, type, order);
     }
 }
 
-function broadcast(type, msg){
+function emitQs(appid, q)
+{
+    const sn = Session.sn(appid);
+    if(sn !== undefined)
+    {
+        if(q.key === 'index')
+            sn.lastuq(q);
+        else if (q.key === 'strikex')
+            utils.addIVNDelta(q, sn.lastuq());
 
+        group_emit(sn, q.key, q);
+    }
+}
+
+function shared_emit(sn, type, q)
+{
+    sn.shared_with.keys().forEach((a) => {
+        const app_obj = socketmap.get(a);
+        emit(app_obj.socket, type, q);
+    });
+}
+
+function broadcast(type, msg, group)
+{
     socketmap.keys().toArray().forEach((appid) => {
         var app_obj = socketmap.get(appid);
         
         if(app_obj.mode !== 0) {
-            if(type === 'hb')
+            if(type === 'hb' || type === 'vix')
                 emit(app_obj.socket, type, msg);
         }
     });
 }
 
-function emitQs(appid, q)
-{
-    const ssn = Session.filter(appid);
-    if(ssn !== undefined && ssn.length === 1)
-    {
-        const sn = ssn[0];
-        if(q.key === 'index' || (q.exchange === 'MCX' && q.key === 'futures'))
-            sn.lastuq(q);
-        else if (q.key === 'strikex')
-            utils.addIVNDelta(q, s.sn.lastuq());
-    
-        sn.appids.forEach((a) => {
-            const app_obj = socketmap.get(a);
-            emit(a.socket, q.key, q);
-        });
-    }
-}
-
 function emit(s, type, msg)
 {
-    s.emit(type, msg);
+    try{
+        s.emit(type, msg);
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 export default {

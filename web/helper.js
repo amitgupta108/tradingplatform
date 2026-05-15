@@ -50,29 +50,10 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
   optionsChartConfig.push(chartConfigItem);
 }
 
-function symtoinstrument(symbol)
-{
-  var stk = symbol.slice(-9, -2);
-  var digit5 = Number.isFinite(Number(stk));
-  var strike = digit5 ? stk.slice(2, 7) : stk.slice(3, 7);
-  var expiry = digit5 ? symbol.slice(-14, -7) : symbol.slice(-13, -6);
-  var stockCode = digit5 ? symbol.slice(0, -14) : symbol.slice(0, -13);
-
-  var instrument = {
-    stockCode: stockCode,
-    expiry: expiry,
-    strike: strike,
-    right: symbol.slice(-2),
-    name: expiry + ' ' + strike + ' ' + symbol.slice(-2)
-  };
-
-  return instrument;
-}
-
 function expandSymbol(symbol)
 {
     const regex = /[0-9]/;
-    const idx = q.symbol.search(regex);
+    const idx = symbol.search(regex);
     const s = {};
     s.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
 
@@ -82,6 +63,7 @@ function expandSymbol(symbol)
 
     return s;
 }
+
 function generateEvent(type, nv)
 {
   return new CustomEvent(type, {

@@ -47,13 +47,18 @@ function cancelorder(appid, order)
     Order_Service.cancelOrder(order);
 }
 
-function onQuotes(q, imode, appid)
+function onQuotes(q, mode, appid)
 {
     var q = standardizeiq(q);
+    if(q.key === 'vix' && mode === 'live') {
+        qServer.broadcast('vix', q, 'all_nse_live');
+        return;
+    }
+
     if(appid !== undefined)
         qServer.emitQs(appid, q);
     else
-        qServer.emitQs(q.stockCode + mode_icici_live, q)
+        qServer.emitQs(q.stockCode + mode_icici_live, q);
 
     if(q.key === 'strikex')
         Order_Service.orderExecutionSim(q);

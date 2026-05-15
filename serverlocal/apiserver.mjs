@@ -1,8 +1,9 @@
 import wsOps from './broker/brokerws.mjs';
-import hist_service from './broker/breeze.mjs'
-import live_kotak from './broker/kotakneo.mjs'
-import live_icici from './broker/breeze.mjs'
-import paper_trading from './broker/breeze.mjs'
+import hist_service from './broker/breeze.mjs';
+import live_kotak from './broker/kotakneo.mjs';
+import live_icici from './broker/breeze.mjs';
+import paper_trading from './broker/breeze.mjs';
+import Session from './session/session.mjs';
 
 async function handleMessage(s, appid, event, msg)
 {
@@ -15,17 +16,17 @@ async function handleMessage(s, appid, event, msg)
         {
             case 'start':
                     if(sn.mode === 0)
-                        market_service.init(sn.appids[0], msg.simStartTime, '1x');
+                        market_service.init(sn.appid, msg.simStartTime, '1x');
 
                     const stSubs = sn.inqsub(msg, (opSubs) => {
-                        market_service.subscribe(sn.appids[0], opSubs, 'subs');
+                        market_service.subscribe(sn.appid, opSubs, 'subs');
                     });
-                    market_service.subscribe(sn.appids[0], stSubs, 'subs');
+                    market_service.subscribe(sn.appid, stSubs, 'subs');
                 break;
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var prefq = await hist_service.preF(sn.appids[0], sn.stockCode, msg);
+                var prefq = await hist_service.preF(sn.appid, sn.stockCode, msg);
                 s.emit("futuresPreData", prefq);
 
                 /*var preUq = iBreeze.preU(msg);
@@ -35,10 +36,10 @@ async function handleMessage(s, appid, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                hist_service.changeSpeed(sn.appids[0], msg);
+                hist_service.changeSpeed(sn.appid, msg);
                 break;
             case 'stop':
-                market_service.subscribe(sn.appids[0], sn.unsuball(), 'unsuball');
+                market_service.subscribe(sn.appid, sn.unsuball(appid), 'unsuball');
                 break;
             case 'prevsession':
                 s.emit('prevsession', sn.status)
@@ -71,10 +72,17 @@ async function handleMessage(s, appid, event, msg)
     }
 }
 
-async function exit(sn)
+async function exit(appid)
 {
+    const sn = Session.sn(appid);
+    if(sn === undefined)
+        return;
+    
     if(sn.mode === 0)
-        hist_service.exit(sn.appids[0]);
+        hist_service.exit(appid);
+    else
+        if(sn.shared_with.size === 2)
+            live_kotak.exit(appid);
 }
 
 export default {

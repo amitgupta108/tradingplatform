@@ -27,6 +27,9 @@ function liveOrderMatching(message)
     
     if(local_order === undefined)
         neworders([live_order]);
+    else 
+        live_order.appid = local_order.appid;
+
         
     if(['completed', 'opened', 'cancelled'].includes(live_order.state))
         OrderNotifier.emit('order', live_order.appid, 'order', live_order);
@@ -34,7 +37,7 @@ function liveOrderMatching(message)
 
 function orderExecutionSim(q)
 {
-    const openorders = order_map.values().toArray().filter((order) => {
+    const openorders = Array.from(order_map.values()).filter((order) => {
         return (order.state === 'opened'
             && order.symbol === q.symbol
             && order.mode !== 'live');
@@ -76,7 +79,7 @@ function formatLiveOrder(order)
         filled_q = 0;
     }
     else if(fOrder.state === 'complete')
-        fOrder.state === 'completed';
+        fOrder.state = 'completed';
     
     fOrder.action = fOrder.action === 'B' ? 'BUY' : 'SELL';
     fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
@@ -101,7 +104,7 @@ function cancelOrder(order)
 
 function orderbook(appid, stockCode)
 {
-    return order_map.values().toArray().filter((order) => {
+    return Array.from(order_map.values()).filter((order) => {
         return (order.appid === appid
         && order.stockCode === stockCode
         && order.mode !== 'live');

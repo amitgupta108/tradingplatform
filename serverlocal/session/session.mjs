@@ -1,23 +1,26 @@
 import utils from '../../common/utils.mjs';
 
-const us = new Array(0);
+const us = new Map();
 
 class Session
 {
-    appids = new Array(0);    
+    appid;
+    shared_with = new Map();    
     status = 'skeletal';
     constructor(appid, mode, stockCode)
     {
-        if(mode === 0 && this.appids.length !== 0)
+        const i_appid = mode === 0 ? appid : stockCode + mode;
+
+        if(mode === 0 && this.shared_with.size !== 0)
             throw error('Invalid session creation attempted');
+        
+        this.appid = i_appid;
 
-        if(mode !== 0 && this.appids.length === 0)
-            this.appids.push(stockCode + mode);
-
-        this.appids.push(appid);
+        this.shared_with.set(appid, this);
         this.mode = mode;
         this.stockCode = stockCode;
-        us.push(this);
+
+        us.set(i_appid, this);
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized'},
             {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized'},
@@ -110,12 +113,20 @@ class Session
         return utils.filter(this.st, {keys: ['index', 'futures', 'vix'], toStream: [true]});
     }
     
-    unsuball() {
-        this.st.forEach((e) => e.toStream = false);
-        var ist = this.st.find((e) => e.key === 'index');
-        ist.uq = undefined;
-        this.status = 'stopped';
-        return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
+    unsuball(appid)
+    {
+        
+        this.shared_with.delete(appid);
+        if(this.shared_with.size > 1)
+            return new Array();
+        else
+        {
+            this.st.forEach((e) => e.toStream = false);
+            var ist = this.st.find((e) => e.key === 'index');
+            ist.uq = undefined;
+            this.status = 'stopped';
+            return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
+        }
     }
 
     option_chain(key, action)
@@ -140,23 +151,21 @@ class Session
         st.uq = uq;
     }
 
-    static filter(appid, mode, stockCode)
+    static sn(appid)
     {
-        const b_appid = appid === undefined ? true : false;
-        const b_stock = stockCode === undefined ? true : false;
-        const b_mode = mode === undefined ? true : false;
-
-        return us.filter((e) => {
-                return e.stockCode === stockCode || b_stock
-                    && e.mode === mode || b_mode
-                    && e.appids[0] === appid || b_appid;
-        });
+        return us.get(appid);
     }
 
-    static exit(sn, appid)
+    static exit(appid)
     {
-        var idx = sn.appids.findIndex((e) => e.appid === appid);
-        sn.appids.splice(idx, 1);
+        const sn = us.get(appid);
+        if(sn === undefined)
+            return;
+        
+        if(sn.mode !== 0 && sn.shared_with.size > 1)
+            sn.shared_with.delete(appid);
+        else
+            us.delete(appid);
     }
 }
 
