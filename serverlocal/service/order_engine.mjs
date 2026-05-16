@@ -2,7 +2,10 @@ import EventEmitter from 'node:events';
 const OrderNotifier = new EventEmitter();
 OrderNotifier.setMaxListeners(1);
 
-const order_map = new Map();
+const mode_kotak_live = 1;
+const sim_order_map = new Map();
+const live_order_map = new Map();
+var counter = 50000;
 
 function addOrderUpdateListener(callback)
 {
@@ -12,9 +15,17 @@ function addOrderUpdateListener(callback)
 function neworders(orders)
 {
     orders.forEach((order) => {
-        
-        order.state = 'opened';
-        order_map.set(order.orderid, order);
+    
+        order.orderid = ++counter;
+        order.filled_q = 0;
+        if(order.mode === 'live') {
+            order.state = 'submitted';
+            live_order_map.set(order.localid, order);
+        } else {
+            order.state = 'opened';
+            sim_order_map.set(order.orderid, order);
+        }
+
         if(order.mode !== 'live')
             OrderNotifier.emit('order', order.appid, 'order', order);
     });
@@ -22,22 +33,33 @@ function neworders(orders)
 
 function liveOrderMatching(message)
 {
-    const live_order = formatLiveOrder(message.data);
-    const local_order = order_map.get(live_order.orderid);
+    const live_order = formatLiveOrder(message);
+    const local_order = live_order_map.get(live_order.orderid);
     
-    if(local_order === undefined)
-        neworders([live_order]);
-    else 
+    if(local_order !== undefined) 
         live_order.appid = local_order.appid;
-
-        
+    else
+    {    
+        var found = Array.from(live_order_map.values()).find((order) => {
+            return order.orderid === undefined
+            && order.stockCode === live_order.stockCode
+            && order.action === live_order.action
+            && order.pricetype === live_order.pricetype
+            && order.quantity >= live_order.filled_q
+            && order.pricedAt === undefined
+            && order.state === 'created';
+        });
+        if(found !== undefined)
+            live_order.appid = found.appid;
+    }    
+    live_order_map.set(live_order.orderid, live_order);    
     if(['completed', 'opened', 'cancelled'].includes(live_order.state))
         OrderNotifier.emit('order', live_order.appid, 'order', live_order);
 }
 
 function orderExecutionSim(q)
 {
-    const openorders = Array.from(order_map.values()).filter((order) => {
+    const openorders = Array.from(sim_order_map.values()).filter((order) => {
         return (order.state === 'opened'
             && order.symbol === q.symbol
             && order.mode !== 'live');
@@ -92,7 +114,7 @@ function formatLiveOrder(order)
 
 function cancelOrder(order)
 {
-    var found = order_map.get(order.orderid);
+    var found = sim_order_map.get(order.orderid);
     if(found !== undefined && found.state === 'opened') {
         found.state = 'cancelled';
         if(found.mode !== 'live')
@@ -104,7 +126,7 @@ function cancelOrder(order)
 
 function orderbook(appid, stockCode)
 {
-    return Array.from(order_map.values()).filter((order) => {
+    return Array.from(sim_order_map.values()).filter((order) => {
         return (order.appid === appid
         && order.stockCode === stockCode
         && order.mode !== 'live');

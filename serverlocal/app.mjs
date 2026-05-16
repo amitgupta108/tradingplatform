@@ -95,7 +95,7 @@ if(!global.server)
         s.on("disconnect", (reason) => {
             if(reason === 'client namespace disconnect')
             {
-                Session.exit(sn);
+                Session.exit(appid, sn);
                 qserver.socketmap.delete(appid);
                 apiserver.exit(appid);
                 console.log('user exited:' + appid);

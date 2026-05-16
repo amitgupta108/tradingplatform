@@ -70,7 +70,7 @@ function loadOrders(orders)
 {
   orders.forEach((order) => {
     console.log('Recovered Orders ' + JSON.stringify(order));
-    if(symtoinstrument(order.symbol).stockCode === instrument.stockCode)
+    if(expandSymbol(order.symbol).stockCode === instrument.stockCode)
     {
       var p = Position.findPosition(order.symbol, true);
       p.orderupdate(order, true);
@@ -84,7 +84,7 @@ function displayOrderList(btn, parent)
   const symbol = parent.title;
   const p = Position.findPosition(symbol, false);
   order_list_thead.querySelector('tr').title = symbol;
-  order_list_thead.querySelector('td').innerText = symtoinstrument(symbol).name;
+  order_list_thead.querySelector('td').innerText = expandSymbol(symbol).name;
 
   order_list_tbody.innerHTML = "";
   

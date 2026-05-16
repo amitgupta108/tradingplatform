@@ -9,7 +9,7 @@ function emitOrders(appid, type, order)
     if(appid !== undefined){
         const app_obj = socketmap.get(appid);
         if(app_obj !== undefined)
-            emit(app_obj.socket, type, message);
+            emit(app_obj.socket, type, order);
         else
             console.error('Orphan order ' + JSON.stringify(order));
     }
@@ -34,7 +34,7 @@ function emitQs(appid, q)
     }
 }
 
-function shared_emit(sn, type, q)
+function group_emit(sn, type, q)
 {
     sn.shared_with.keys().forEach((a) => {
         const app_obj = socketmap.get(a);

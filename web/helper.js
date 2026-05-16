@@ -60,7 +60,7 @@ function expandSymbol(symbol)
     s.right = symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
     s.expiry_date = symbol.slice(idx, idx + 7);
     s.strike_price = symbol.slice(idx + 7, -2);
-
+    s.name = s.expiry_date + ' ' + s.strike_price + ' ' + s.right;
     return s;
 }
 

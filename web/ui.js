@@ -10,7 +10,8 @@ function orderWindow(clBtn, parent)
 function appendOrderRow(neworder, isBasket)
 {
   toggle.disabled = true;    
-  var scripName = symtoinstrument(neworder.symbol).name;
+  const s = expandSymbol(neworder.symbol);
+  const scripName = s.expiry_date + ' ' + s.strike_price + ' ' + s.right;
 
   var tr = tRow(t_order_window_row, true);
   tr.querySelector('#owsymbol').innerText  = neworder.symbol;
@@ -165,5 +166,5 @@ function confirmCancel(c, p) {
 
 function dropCancelOrder(c, p)
 {
-  p.style.display = 'none';
+  c.parentElement.style.display = 'none';
 }

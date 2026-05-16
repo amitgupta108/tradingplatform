@@ -26,7 +26,7 @@ async function handleMessage(s, appid, event, msg)
             case 'preData':
                 console.log("Pre data request " + new Date(msg.startTime));
 
-                var prefq = await hist_service.preF(sn.appid, sn.stockCode, msg);
+                var prefq = await hist_service.preF(appid, sn.stockCode, msg);
                 s.emit("futuresPreData", prefq);
 
                 /*var preUq = iBreeze.preU(msg);
@@ -36,10 +36,11 @@ async function handleMessage(s, appid, event, msg)
                 //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
-                hist_service.changeSpeed(sn.appid, msg);
+                if(sn.mode === 0)
+                    hist_service.changeSpeed(appid, msg);
                 break;
             case 'stop':
-                market_service.subscribe(sn.appid, sn.unsuball(appid), 'unsuball');
+                market_service.subscribe(appid, sn.unsuball(appid), 'unsuball');
                 break;
             case 'prevsession':
                 s.emit('prevsession', sn.status)

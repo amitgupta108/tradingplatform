@@ -71,7 +71,6 @@ function rh(socket)
     socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
       setUpInitialNiftyChart(uQuotes);
       setUpInitialOptionsChart(peQuotes, ceQuotes, instrument.oExpiry); 
-      document.getElementById("btnStartSim").disabled = false;
     });
 
     socket.on('index', (q) => 
@@ -113,14 +112,14 @@ function rh(socket)
 
     socket.on('hb', (resp) => {
       if(resp.order_socket === 1)
-        document.getElementById('socn').style.backgroundColor = '#4CAF50';
+        socn.style.backgroundColor = '#4CAF50';
       else
-        document.getElementById('socn').style.backgroundColor = '#f44336';
+        socn.style.backgroundColor = '#f44336';
     });
 
     socket.on('cn', (msg) => {
       console.log("connection message " + msg)  
-      document.getElementById('socn').style.backgroundColor = '#4CAF50';
+      socn.style.backgroundColor = '#4CAF50';
     });
   } catch(error){
     console.log(error);

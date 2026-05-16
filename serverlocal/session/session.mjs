@@ -115,7 +115,6 @@ class Session
     
     unsuball(appid)
     {
-        
         this.shared_with.delete(appid);
         if(this.shared_with.size > 1)
             return new Array();
@@ -156,16 +155,12 @@ class Session
         return us.get(appid);
     }
 
-    static exit(appid)
-    {
-        const sn = us.get(appid);
-        if(sn === undefined)
-            return;
-        
+    static exit(appid, sn)
+    {        
         if(sn.mode !== 0 && sn.shared_with.size > 1)
             sn.shared_with.delete(appid);
         else
-            us.delete(appid);
+            us.delete(sn.appid);
     }
 }
 

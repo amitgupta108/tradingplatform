@@ -28,16 +28,17 @@ function futuresChart(q)
   var curCandle = mainSeries.data().at(-1);
   if(curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
   {  
-    curCandle = {time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300)};
+    const ema = ema_alpha * q.close + ema_beta * (curCandle !== undefined ? curCandle.customValues : q.close);
 
-    curCandle.close = q.close;
-    curCandle.open = q.open;
-    curCandle.high = q.high;
-    curCandle.low = q.low;
-    if(curCandle.customValues === undefined)
-      curCandle.customValues = q.close;
-    curCandle.value =  ema_alpha * q.close + ema_beta * curCandle.customValues;
-    curCandle.customValues = curCandle.value;
+    curCandle = {
+      time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300), 
+      open: q.open, 
+      high: q.high, 
+      low: q.low, 
+      close: q.close,
+      value: ema,
+      customValues: ema,
+    };
   }
   else
   { 

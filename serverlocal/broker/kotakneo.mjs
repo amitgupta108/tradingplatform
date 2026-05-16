@@ -5,13 +5,14 @@ import adapter from '../adapter/histadapter.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
-client.connect()
-        .then(() => console.log('openalgo client connected'))
-        .catch((error) => console.error('Error connecting to openalgo ' + error)
-    );
+//client.connect()
+//        .then(() => console.log('openalgo client connected'))
+//        .catch((error) => console.error('Error connecting to openalgo ' + error)
+//  );
 
 var live_order_unlocked = false;
 const mode_kotak_live = 1;
+
 function unlockLiveOrders(key)
 {
     const today = new Date();
@@ -98,32 +99,29 @@ async function orderbook(appid, stockCode)
     return orders;
 }
 
-async function order(appid, orders)
+function order(appid, orders)
 {
     if(!live_order_unlocked)
         return;
 
     var fOrders = formatorder(orders);
-    
-    var response;
-    if(fOrders.length === 1) {
-        response = await client.placeOrder(fOrders[0]);
-        orders[0].orderid = response.orderid;
-        Order_Service.neworders(orders);
-    }
-    else if( fOrders.length > 1) {
-        response = await client.basketOrder({orders: fOrders});
-        response.forEach((r, idx) => {
-            orders[idx].orderid = r.orderid;
-        })
-        if(orders.length === response.length)
-            Order_Service.neworders(orders);
-        else 
-            console.error('Missing orders from submission');
-    }
-    console.log('Live order response ' + JSON.stringify(response));
+    Order_Service.neworders(orders);
 
-    return response;
+    var response;
+    if(fOrders.length === 1)
+        response = client.placeOrder(fOrders[0]);
+    else if( fOrders.length > 1) 
+        response = client.basketOrder({orders: fOrders});
+
+    return response.then((conf) => {
+        const orderids = conf.isArray() ? conf : [conf];
+        orderids.forEach((conf, index) => {
+            if(orders[index].orderid === undefined) {
+                orders[index].orderid = conf.orderid;
+                orders[index].status = conf.status;
+            }
+        });
+    });
 }
 
 function formatorder(orders)

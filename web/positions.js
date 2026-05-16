@@ -64,7 +64,7 @@ class Position
       this.#pRow.querySelector('#orderdisplay-btn').title = symbol;
       document.getElementById('positions_tbody').append(this.#pRow);
 
-      this.value('scrip', symtoinstrument(symbol).name);
+      this.value('scrip', expandSymbol(symbol).name);
       qBox.addEventListener('strikex', this);
     }
   }

@@ -3,7 +3,6 @@ import Order_Service from '../service/order_engine.mjs';
 import qServer from '../quotes.mjs';
 
 const mode_icici_live = 2;
-var counter = 50000;
 adapter.addQuoteListener(onQuotes);
 
 function init(appid, startTime, speed)
@@ -33,13 +32,7 @@ function orderbook(appid, stockCode)
 
 function order(appid, orders)
 {
-    orders.forEach((order) => {
-        var oid = ++counter;
-        order.orderid = oid;
-        order.filled_q = 0;
-    });
-    
-    Order_Service.neworders(orders);
+   Order_Service.neworders(orders);
 }
 
 function cancelorder(appid, order)
