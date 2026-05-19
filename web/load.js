@@ -32,9 +32,9 @@ const simDate = new Date(instrument.simStartTime).toDateString();
 date_label.innerText = simDate;
 expiry_label.innerText = instrument.oExpiry;
 
-var total_booked =  document.getElementById("vBookedPL");
-var total_unbooked =  document.getElementById("vUnbookedPL");
-var total_pnl =  document.getElementById("vTotalPL");
+var gtotal_booked =  document.getElementById("vBookedPL");
+var gtotal_unbooked =  document.getElementById("vUnbookedPL");
+var gtotal_pnl =  document.getElementById("vTotalPL");
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 class TradeButtons extends HTMLElement {
   connectedCallback() {

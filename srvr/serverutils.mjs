@@ -5,13 +5,16 @@ const { BreezeConnect } = await import('breezeconnect');
 const breeze = new BreezeConnect({ "appKey": '***REMOVED***'});
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
 
-connect(appSecret, '55650852');
+connect(appSecret, '55656102');
 
 function connect(appSecret, sessionId){
-    breeze.generateSession(appSecret, sessionId);
+    breeze.generateSession(appSecret, sessionId)
+    .then((resp) => {
+        console.log("Breeze session generated");
+    }).catch((error) => {
+        console.log("Error generating Breeze session " + error);
+    });
     breeze.wsConnect();
-    
-    console.log("Session created");
 }
 
 function findQuoteByTime(q, lt)

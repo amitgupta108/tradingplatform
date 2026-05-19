@@ -23,6 +23,7 @@ function neworders(orders)
             live_order_map.set(order.localid, order);
         } else {
             order.state = 'opened';
+            order.pricedAt = 0;
             sim_order_map.set(order.orderid, order);
         }
 
@@ -89,12 +90,12 @@ function orderExecutionSim(q)
 
 function formatLiveOrder(order)
 {
-    var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode,
+    var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: trd_symbol, 
             expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
-            qty: quantity, prcTp: pricetype, ...rest} = order;
+            qty: quantity, prcTp: pricetype, strategyCode: symbol, ordSrc: source, ...rest} = order;
 
-    var fOrder = {orderid, state, pricedAt, price, product, stockCode, expiry_date, strike_price, right, action,
-                        filled_q, unfilled_q, quantity, pricetype, ...rest};
+    var fOrder = {orderid, state, pricedAt, price, product, stockCode, trd_symbol, expiry_date, strike_price, right, action,
+                        filled_q, unfilled_q, quantity, pricetype, symbol, source, ...rest};
     
     if(fOrder.state === 'open') {
         fOrder.state = 'opened';
@@ -139,5 +140,6 @@ export default {
     orderbook,
     liveOrderMatching,
     addOrderUpdateListener,
-    orderExecutionSim
+    orderExecutionSim,
+    formatLiveOrder
 }

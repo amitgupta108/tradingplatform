@@ -5,6 +5,9 @@ const ema_beta = 1 - ema_alpha;
 
 function setFuturesChart(qA)
 {
+  if(qA === undefined || qA === null || qA.length === 0)
+    return;
+
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') || e.datetime.includes('9:05')));
   for(var i = 0; i < qs.length; i++)
   {

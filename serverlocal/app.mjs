@@ -9,11 +9,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import express from 'express';
-import session from 'express-session';
 import https from 'node:https';
 import { Server } from "socket.io";
 import Session from './session/session.mjs';
-import wsOps from './broker/brokerws.mjs';
+import kotak_socket from './broker/brokerws.mjs';
 import qserver from './quotes.mjs'; 
 import apiserver from './apiserver.mjs'; 
 import { error } from 'node:console';
@@ -22,23 +21,16 @@ if(!global.server)
 {
     const args = process.argv;
 
-    console.log(`Node executable path: ${args[0]}`);
-    console.log(`Script file path: ${args[1]}`);
     console.log(`First argument: ${args[2]}`);
     console.log(`Second argument: ${args[3]}`);
 
     const port = args[2] === undefined ? 80 : Number(args[2]);
     if(args[3] !== undefined)
-        wsOps('connect', args[3]);
-
-    const es = session({secret: '***REMOVED***', 
-            resave: true,
-            saveUninitialized: true,});
+        kotak_socket.wsOps('connect', args[3]);
 
     const app = express();
     app.use(express.static('web/'));
     app.use(express.json());
-    app.use(es);
 
     const options = {
         key: readFileSync(path.join(__dirname, 'certs', 'key.pem'), 'utf8'),
@@ -47,12 +39,12 @@ if(!global.server)
 
     const httpsServer = https.createServer(options, app);
     httpsServer.listen(port, () => {
-        console.log(`Server running at https://localhost:${port}/`);
+        console.log(`Server running at https://127.0.0.1:${port}/`);
     });
 
     const io = new Server(httpsServer, {
         cors: {
-            origin: "*",
+            origin: `https://127.0.0.1:${port}`,
             methods: ["GET", "POST"],
         },
         connectionStateRecovery: {
@@ -63,7 +55,6 @@ if(!global.server)
         pingInterval: 30000,
         pingTimeout: 30000
     });
-    //io.use(es);
 
     io.on('connection', (s) => {
         

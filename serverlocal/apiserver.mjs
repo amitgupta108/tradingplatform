@@ -1,16 +1,25 @@
-import wsOps from './broker/brokerws.mjs';
+import kotak_socket from './broker/brokerws.mjs';
 import hist_service from './broker/breeze.mjs';
 import live_kotak from './broker/kotakneo.mjs';
+import live_kotak_neo from './broker/kotakneo-api.mjs';
 import live_icici from './broker/breeze.mjs';
 import paper_trading from './broker/breeze.mjs';
 import Session from './session/session.mjs';
+
+/* mode
+0: historical backtest
+1: live kotak-openalgo data and orders 
+2: live kotak-openalgo data, orders simulated
+3: live kotak-openalgo data, kotak-neo-api orders
+4: live icici data and kotak-openalgo orders
+*/
 
 async function handleMessage(s, appid, event, msg)
 {
     try {
         const sn = s.sn;
-        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_kotak;
-        const trading_service  = sn.mode === 1 ? live_kotak : paper_trading;
+        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_kotak_neo;
+        const trading_service  = sn.mode === 1 ? live_kotak_neo : paper_trading;
         
         switch(event)
         {
@@ -51,6 +60,9 @@ async function handleMessage(s, appid, event, msg)
             case 'order':
                 var orsub = await trading_service.order(appid, msg);
                 break;
+            case 'modifyorder':
+                var mres = await trading_service.modifyorder(appid, msg);
+                break;
             case 'cancelorder':
                 await trading_service.cancelorder(appid, msg);
                 break;
@@ -62,7 +74,7 @@ async function handleMessage(s, appid, event, msg)
                 if(msg.action === 'unlock_live')
                     var response = live_kotak.unlockLiveOrders(msg.data);
                 else
-                    var response = await wsOps(msg.action, msg.data);
+                    var response = await kotak_socket.wsOps(msg.action, msg.data);
                 console.log("wsOps response: " + msg.action + ' ' + response);
                 break;
             default:

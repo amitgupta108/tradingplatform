@@ -1,5 +1,8 @@
+import 'dotenv/config';
 import qserver from '../quotes.mjs';
 import Order_Service from '../service/order_engine.mjs'
+import fs from 'fs';
+import { get } from 'http';
 
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
@@ -7,18 +10,47 @@ var authdata;
 var wsping;
 var ws;
 
+if(getAuthData() !== null && getAuthData() !== undefined)
+{
+    authdata = getAuthData();
+    wsconnect(authdata);
+}
+
+async function saveAuthData(data){
+    const filePath = '../.env';
+    try 
+    {
+        authdata = data;
+        var cred_string = `BASE_URL=${authdata.baseUrl}\nSID=${authdata.sid}\nTOKEN=${authdata.token}`;
+        await fs.promises.writeFile(filePath, cred_string, 'utf8');
+        console.log('Auth data saved successfully.');
+    } catch (error) {
+        console.error('Error saving auth data:', error);
+    }
+}
+
+async function connect(tpt)
+{
+    var response = 'failed to connect';
+    var lr = await apiLogin(tpt);
+    if (lr.data != undefined && lr.data.status === 'success') 
+    {
+        var vr = await apiValidate({sid: lr.data.sid, token: lr.data.token});
+        await saveAuthData({baseUrl: vr.data.baseUrl, sid: vr.data.sid, token: vr.data.token});
+        wsconnect(authdata);
+        response = 'connection initiated';
+    }
+    else
+        response = 'connection failed';
+
+    return response;
+}
+
 async function wsOps(action, tpt)
 {
     var response = 'failed to connect';
     if (action === 'connect') {
-        var lr = await apiLogin(tpt);
-
-        if (lr.data != undefined && lr.data.status === 'success') {
-            authdata = {sid: lr.data.sid, token: lr.data.token}; 
-            var vr = await apiValidate(authdata);
-            wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid);
-            response = 'connection initiated';
-        }
+        response = await connect(tpt);
     }
     else if (ws != undefined && action === 'disconnect') {
         ws.close();
@@ -66,12 +98,12 @@ async function apiValidate(authdata) {
     return response.json();
 }
 
-function wsconnect(baseurl, token, sid)
+function wsconnect(authdata)
 {
-    ws = new WebSocket(`wss://${baseurl}/realtime`);
+    ws = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
 
     ws.onopen = (event) => {
-        const payload = `{type:cn,Authorization:${token},Sid:${sid},src:WEB}`;
+        const payload = `{type:cn,Authorization:${authdata.token},Sid:${authdata.sid},src:WEB}`;
         ws.send(payload);
         console.log('On open ');
     };
@@ -80,7 +112,7 @@ function wsconnect(baseurl, token, sid)
         try {
             const message = JSON.parse(event.data);
             console.log("message type: " + message.type)
-            if(message.type === 'cn' && message.msg === "connected")
+            if(message.type === 'cn' && message.msg === 'connected')
                 wshb('start');
             else if(message.type === 'order') {
                 Order_Service.liveOrderMatching(message, 'kotak');
@@ -114,8 +146,7 @@ function wshb(action)
     
             if(ws.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
-                var vr = await apiValidate(authdata);
-                wsconnect(vr.data.baseUrl.substring(8), vr.data.token, vr.data.sid);
+                wsconnect(authdata);
                 rn++;
             }
         }, 120000, recon_attempt);
@@ -127,4 +158,18 @@ function wshb(action)
     }
 }
 
-export default wsOps;
+function getAuthData()
+{
+    if(authdata === undefined)
+    {
+        authdata = process.env;
+        if(authdata.BASE_URL === undefined)
+        {
+            console.log('Auth data not found in environment variables');
+            return null;
+        }
+    }
+    return authdata;
+}
+
+export default { wsOps, getAuthData };

@@ -5,10 +5,10 @@ import adapter from '../adapter/histadapter.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
-//client.connect()
-//        .then(() => console.log('openalgo client connected'))
-//        .catch((error) => console.error('Error connecting to openalgo ' + error)
-//  );
+client.connect()
+        .then(() => console.log('openalgo client connected'))
+        .catch((error) => console.error('Error connecting to openalgo ' + error)
+);
 
 var live_order_unlocked = false;
 const mode_kotak_live = 1;
@@ -91,53 +91,63 @@ async function orderbook(appid, stockCode)
     {
         var orders = response.data.orders.filter((o) => {
             o.state = o.order_status;
+            o.filled_q = o.quantity;
+            o.pricedAt = o.price;
             if(o.order_status === 'open')
                 o.state = 'opened';
+            if(o.order_status === 'complete')
+                o.state = 'completed';
             return o.symbol.startsWith(stockCode);
         });
     }
     return orders;
 }
 
-function order(appid, orders)
+async function order(appid, orders)
 {
     if(!live_order_unlocked)
         return;
 
-    var fOrders = formatorder(orders);
+    const fOrders = formatorder(orders);
     Order_Service.neworders(orders);
 
-    var response;
+    let response;
     if(fOrders.length === 1)
-        response = client.placeOrder(fOrders[0]);
-    else if( fOrders.length > 1) 
-        response = client.basketOrder({orders: fOrders});
+        response = await client.placeOrder(fOrders[0]);
+    else if(fOrders.length > 1)
+        response = await client.basketOrder({orders: fOrders});
 
-    return response.then((conf) => {
-        const orderids = conf.isArray() ? conf : [conf];
-        orderids.forEach((conf, index) => {
-            if(orders[index].orderid === undefined) {
-                orders[index].orderid = conf.orderid;
-                orders[index].status = conf.status;
-            }
-        });
+    if(response === undefined || response === null)
+        return response;
+
+    const orderids = Array.isArray(response) ? response : [response];
+    orderids.forEach((conf, index) => {
+        if(orders[index].orderid === undefined) {
+            orders[index].orderid = conf.orderid ?? conf.orderId;
+            orders[index].status = conf.status;
+        }
     });
+
+    return response;
 }
 
 function formatorder(orders)
 {
     return orders.map((o) => {
         let {mode, appid, orderN, state, time, stockCode, ...trimmedOrder} = o;
+        trimmedOrder.strategy = o.symbol;
         return trimmedOrder;
     });   
 }
 
-function cancelorder(order)
+function cancelorder(appid, order)
 {
-    client.cancelOrder({orderId: order.orderid})
+    const kotakOrder = {orderId: order.orderid ?? order.orderId};
+    return client.cancelOrder(kotakOrder)
     .then((resp) => {
         console.log('order cancellation response ' + JSON.stringify(resp));
         Order_Service.cancelOrder(order);
+        return resp;
     });
 }
 

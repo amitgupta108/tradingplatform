@@ -14,26 +14,21 @@ if(instrument.mode !== 3) {
 }
 
 socket.io.on("reconnect", (attempt) => {
-    logSocketEvent("Reconnected on attempt # " + attempt);
+    console.log("Reconnected on attempt # " + attempt);
 });
 
 socket.io.on("reconnect_attempt", (attempt) => {
-    logSocketEvent("Reconnection being tried attempt # " + attempt);
+    console.log("Reconnection being tried attempt # " + attempt);
 });
 
 socket.io.on("reconnect_error", (error) => {
-    logSocketEvent("Reconnection error " + error.message);
+    console.log("Reconnection error " + error.message);
 });
 
 socket.io.on("reconnect_failed", () => {
-    logSocketEvent("Reconnection not possible");
+    console.log("Reconnection not possible");
 });
 
-const socketEventLogging = false;
-function logSocketEvent(message){
-  if(socketEventLogging)
-      console.log(message);
-}
 rh(socket);
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 function rh(socket)

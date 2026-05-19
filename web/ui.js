@@ -1,6 +1,6 @@
 function orderWindow(clBtn, parent)
 {
-  let symbol = parent.title;
+  const symbol = parent.title;
   const action = clBtn.innerText;
 
   appendOrderRow(new Order(symbol, action), toggle.checked);
@@ -10,8 +10,7 @@ function orderWindow(clBtn, parent)
 function appendOrderRow(neworder, isBasket)
 {
   toggle.disabled = true;    
-  const s = expandSymbol(neworder.symbol);
-  const scripName = s.expiry_date + ' ' + s.strike_price + ' ' + s.right;
+  const scripName = expandSymbol(neworder.symbol).name;
 
   var tr = tRow(t_order_window_row, true);
   tr.querySelector('#owsymbol').innerText  = neworder.symbol;
@@ -36,9 +35,7 @@ function appendOrderRow(neworder, isBasket)
 function showOrderWindow()
 {
   var rows = oWindow.querySelectorAll('tr');
-  oWindow.classList.remove('multi');
-  oWindow.classList.remove('buy');
-  oWindow.classList.remove('sell');
+  oWindow.classList.remove('multi', 'buy', 'sell');
   
   var wCSS = rows.length > 2 ? 'multi' : rows[0].querySelector("#ow_action_btn").innerText === 'B' ? 'buy' : 'sell';
   oWindow.classList.add(wCSS);
@@ -66,21 +63,6 @@ function switchTabs(evt)
   expiry_label.innerText = expiry_label.innerText === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
   document.getElementById('c_oc_div').classList.toggle('active');
   document.getElementById('n_oc_div').classList.toggle('active');
-}
-
-function writeProfitLoss()
-{  
-  let bookedPL = 0; let unbookedPL = 0;
-
-  for (let i = 0; i < positions.length ; i++)
-  {
-    bookedPL += Number(positions[i].value('bookedPL'));
-    unbookedPL += Number(positions[i].value('unbookedPL')); 
-  }
-
-  total_booked.innerText = bookedPL.toFixed(2);
-  total_unbooked.innerText = unbookedPL.toFixed(2);
-  total_pnl.innerText = (bookedPL + unbookedPL).toFixed(2);
 }
 
 function tRow(template, withListener){
@@ -132,7 +114,7 @@ function flipOrderType(c, p)
 function hl_row(c, p)
 {
   const symbol = p.title;
-  const oc = OptionChain.get(symtoinstrument(symbol).expiry);
+  const oc = OptionChain.get(expandSymbol(symbol).expiry_date);
   var idx = oc.hl_symbol.findIndex((r) => p.title === r);
   if(idx === -1)
     oc.hl_symbol.push(p.title);
