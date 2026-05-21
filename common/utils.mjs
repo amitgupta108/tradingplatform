@@ -21,7 +21,7 @@ function addIVNDelta(q, uq)
             q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;
         } catch(error) {
-            console.log(error);
+            console.log(error.message);
             q.iv = 0;
             q.delta = q.right === 'Call' ? 1 : -1;
         }

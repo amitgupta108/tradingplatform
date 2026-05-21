@@ -130,8 +130,8 @@ class Session
 
     option_chain(key, action)
     {
-        var oc_state = this.st.find((e) => e.key === key).toStream;
-        oc_state = oc_state === true ? false : true;
+        var oc = this.st.find((e) => e.key === key);
+        oc.toStream = oc.toStream === true ? false : true;
     } 
 
     lastuq(uq)

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import EventEmitter from 'node:events';
 const OrderNotifier = new EventEmitter();
 OrderNotifier.setMaxListeners(1);
@@ -16,14 +17,14 @@ function neworders(orders)
 {
     orders.forEach((order) => {
     
-        order.orderid = ++counter;
         order.filled_q = 0;
+        order.pricedAt = 0;
+        order.orderid = ++counter;
         if(order.mode === 'live') {
-            order.state = 'submitted';
-            live_order_map.set(order.localid, order);
+            order.localid = order.orderid;
+            live_order_map.set(order.orderid, order);
         } else {
             order.state = 'opened';
-            order.pricedAt = 0;
             sim_order_map.set(order.orderid, order);
         }
 
@@ -32,30 +33,40 @@ function neworders(orders)
     });
 }
 
-function liveOrderMatching(message)
+function liveOrderMatching(message, mode)
 {
-    const live_order = formatLiveOrder(message);
-    const local_order = live_order_map.get(live_order.orderid);
-    
-    if(local_order !== undefined) 
-        live_order.appid = local_order.appid;
+    if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
+        return;
+
+    /*
+        1. externally placed order - no orderid
+        2. app triggered order with orderid available
+        3. app triggered order with orderid not yet available
+    */
+    const live_order = formatLiveOrder(message.data, false);
+    var found = Array.from(live_order_map.values()).find((order) => {
+        return (order.orderid === live_order.orderid)
+                || (order.stockCode === live_order.stockCode
+                && order.action === live_order.action
+                && order.pricetype === live_order.pricetype
+                && order.quantity === live_order.quantity
+                && order.quantity >= live_order.filled_q
+                && order.symbol === live_order.symbol); 
+    });
+
+    if(found !== undefined)
+    {
+        live_order.appid = found.appid;
+        if(found.orderid === found.localid) //orderid matched - update existing order
+            live_order_map.delete(found.orderid);
+    }
     else
-    {    
-        var found = Array.from(live_order_map.values()).find((order) => {
-            return order.orderid === undefined
-            && order.stockCode === live_order.stockCode
-            && order.action === live_order.action
-            && order.pricetype === live_order.pricetype
-            && order.quantity >= live_order.filled_q
-            && order.pricedAt === undefined
-            && order.state === 'created';
-        });
-        if(found !== undefined)
-            live_order.appid = found.appid;
-    }    
-    live_order_map.set(live_order.orderid, live_order);    
-    if(['completed', 'opened', 'cancelled'].includes(live_order.state))
-        OrderNotifier.emit('order', live_order.appid, 'order', live_order);
+        live_order.appid = live_order.stockCode + mode;
+    
+    console.log('live order matching status: ' + live_order.appid);
+    live_order_map.set(live_order.orderid, live_order);
+
+    OrderNotifier.emit('order', live_order.appid, 'order', live_order);
 }
 
 function orderExecutionSim(q)
@@ -88,14 +99,14 @@ function orderExecutionSim(q)
     });
 }
 
-function formatLiveOrder(order)
+function formatLiveOrder(order, insert = false)
 {
-    var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: trd_symbol, 
+    var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol, 
             expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
-            qty: quantity, prcTp: pricetype, strategyCode: symbol, ordSrc: source, ...rest} = order;
+            qty: quantity, prcTp: pricetype, strategyCode: _appid, ordSrc: source, ...rest} = order;
 
-    var fOrder = {orderid, state, pricedAt, price, product, stockCode, trd_symbol, expiry_date, strike_price, right, action,
-                        filled_q, unfilled_q, quantity, pricetype, symbol, source, ...rest};
+    var fOrder = {orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
+                        filled_q, unfilled_q, quantity, pricetype, _appid, source, ...rest};
     
     if(fOrder.state === 'open') {
         fOrder.state = 'opened';
@@ -104,11 +115,14 @@ function formatLiveOrder(order)
     else if(fOrder.state === 'complete')
         fOrder.state = 'completed';
     
+    fOrder.pricetype = fOrder.pricetype === 'L' ? 'LIMIT' : 'MARKET';
     fOrder.action = fOrder.action === 'B' ? 'BUY' : 'SELL';
     fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
     fOrder.strike_price = fOrder.strike_price.replace('.00', '');
     fOrder.symbol = fOrder.stockCode + fOrder.expiry_date +  fOrder.strike_price + fOrder.right;
     fOrder.mode = 'live';
+    if(insert && !live_order_map.has(fOrder.orderid))
+        live_order_map.set(fOrder.orderid, fOrder);
 
     return fOrder;
 }

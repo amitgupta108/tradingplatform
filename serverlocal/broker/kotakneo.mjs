@@ -2,6 +2,7 @@ import OpenAlgo from 'openalgo';
 import qserver from '../quotes.mjs';
 import Order_Service from '../service/order_engine.mjs';
 import adapter from '../adapter/histadapter.mjs';
+import Kotak_Direct from './kotakneo-api.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
@@ -86,21 +87,7 @@ function subscribe(appid, sublist, action)
 
 async function orderbook(appid, stockCode)
 {
-    var response = await client.orderbook();
-    if(response.status === 'success')
-    {
-        var orders = response.data.orders.filter((o) => {
-            o.state = o.order_status;
-            o.filled_q = o.quantity;
-            o.pricedAt = o.price;
-            if(o.order_status === 'open')
-                o.state = 'opened';
-            if(o.order_status === 'complete')
-                o.state = 'completed';
-            return o.symbol.startsWith(stockCode);
-        });
-    }
-    return orders;
+    return await Kotak_Direct.orderbook(appid, stockCode);
 }
 
 async function order(appid, orders)
@@ -117,15 +104,12 @@ async function order(appid, orders)
     else if(fOrders.length > 1)
         response = await client.basketOrder({orders: fOrders});
 
-    if(response === undefined || response === null)
-        return response;
-
     const orderids = Array.isArray(response) ? response : [response];
     orderids.forEach((conf, index) => {
-        if(orders[index].orderid === undefined) {
-            orders[index].orderid = conf.orderid ?? conf.orderId;
+            orders[index].state = 'submitted';
+            orders[index].orderid = conf.orderid;
             orders[index].status = conf.status;
-        }
+            console.log('order confirmation ' + JSON.stringify(conf) + ' for order ' + JSON.stringify(orders[index]));
     });
 
     return response;
@@ -135,7 +119,7 @@ function formatorder(orders)
 {
     return orders.map((o) => {
         let {mode, appid, orderN, state, time, stockCode, ...trimmedOrder} = o;
-        trimmedOrder.strategy = o.symbol;
+        trimmedOrder.strategy = o.appid;
         return trimmedOrder;
     });   
 }
