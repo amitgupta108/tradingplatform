@@ -8,9 +8,9 @@ import Session from './session/session.mjs';
 
 /* mode
 0: historical backtest
-1: live kotak-openalgo data and orders 
+1: live kotak-openalgo data, kotak-neo-api orders
 2: live kotak-openalgo data, orders simulated
-3: live kotak-openalgo data, kotak-neo-api orders
+3: live kotak-openalgo data and orders submission openalgo orderconf kotakws
 4: live icici data and kotak-openalgo orders
 */
 
@@ -19,7 +19,7 @@ async function handleMessage(s, appid, event, msg)
     try {
         const sn = s.sn;
         const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_kotak_neo;
-        const trading_service  = sn.mode === 1 ? live_kotak_neo : paper_trading;
+        const trading_service  = sn.mode === 1 ?  live_kotak: live_kotak_neo;
         
         switch(event)
         {

@@ -43,8 +43,8 @@ instrumentMap.set('NH1', {
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "26MAY26",
-  oExpiry: "19MAY26",
-  oExpiryNxt: "26MAY26",
+  oExpiry: "26MAY26",
+  oExpiryNxt: "02JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 12,
@@ -56,8 +56,8 @@ instrumentMap.set('NL1', {
 instrumentMap.set('NL2', {
   simStartTime: Date.now(),
   fExpiry: "26MAY26",
-  oExpiry: "19MAY26",
-  oExpiryNxt: "26MAY26",
+  oExpiry: "26MAY26",
+  oExpiryNxt: "02JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 12,
@@ -81,7 +81,7 @@ instrumentMap.set('NP1', {
 
 instrumentMap.set('MP1',{
   simStartTime: Date.now(),
-  fExpiry: "18MAY26",
+  fExpiry: "18JUN26",
   oExpiry: "16JUN26",
   oExpiryNxt: "16JUN26",
   stockCode: 'CRUDEOIL',
@@ -94,7 +94,7 @@ instrumentMap.set('MP1',{
 
 instrumentMap.set('ML1',{
   simStartTime: Date.now(),
-  fExpiry: "18MAY26",
+  fExpiry: "18JUN26",
   oExpiry: "16JUN26",
   oExpiryNxt: "16JUL26",
   stockCode: 'CRUDEOIL',
@@ -107,7 +107,7 @@ instrumentMap.set('ML1',{
 
 instrumentMap.set('ML2',{
   simStartTime: Date.now(),
-  fExpiry: "18MAY26",
+  fExpiry: "18JUN26",
   oExpiry: "16JUN26",
   oExpiryNxt: "16JUL26",
   stockCode: 'CRUDEOIL',

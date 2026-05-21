@@ -1,8 +1,6 @@
 import kotak_socket from './brokerws.mjs';
 import Order_Service from '../service/order_engine.mjs';
 
-const API_PREFIX = '/tradeApi';
-
 function authHeaders(urlEncoded = true)
 {
     const auth_data = kotak_socket.getAuthData();
@@ -183,7 +181,7 @@ async function orderbook(appid, stockCode)
 {
     const response =  await get('quick/user/orders', true);
     const orders = response.data.map((order) => {
-        return Order_Service.formatLiveOrder(order);
+        return Order_Service.formatLiveOrder(order, true);
     }).filter((order) => {
         return order.stockCode === stockCode;
     });

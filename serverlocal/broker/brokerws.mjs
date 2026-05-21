@@ -1,27 +1,17 @@
-import 'dotenv/config';
 import qserver from '../quotes.mjs';
 import Order_Service from '../service/order_engine.mjs'
 import fs from 'fs';
-import { get } from 'http';
 
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
-var authdata;
 var wsping;
 var ws;
 
-if(getAuthData() !== null && getAuthData() !== undefined)
-{
-    authdata = getAuthData();
-    wsconnect(authdata);
-}
-
 async function saveAuthData(data){
-    const filePath = '../.env';
     try 
     {
         authdata = data;
-        var cred_string = `BASE_URL=${authdata.baseUrl}\nSID=${authdata.sid}\nTOKEN=${authdata.token}`;
+        var cred_string = `baseUrl=${authdata.baseUrl}\nsid=${authdata.sid}\ntoken=${authdata.token}`;
         await fs.promises.writeFile(filePath, cred_string, 'utf8');
         console.log('Auth data saved successfully.');
     } catch (error) {
@@ -115,7 +105,7 @@ function wsconnect(authdata)
             if(message.type === 'cn' && message.msg === 'connected')
                 wshb('start');
             else if(message.type === 'order') {
-                Order_Service.liveOrderMatching(message, 'kotak');
+                Order_Service.liveOrderMatching(message, 1);
             }
         } catch(error) {
             console.log(error);
@@ -162,8 +152,15 @@ function getAuthData()
 {
     if(authdata === undefined)
     {
-        authdata = process.env;
-        if(authdata.BASE_URL === undefined)
+        if(process.env.baseUrl !== undefined)
+        {
+            authdata = {
+                baseUrl: process.env.baseUrl,
+                sid: process.env.sid,
+                token: process.env.token
+            }
+        }
+        else
         {
             console.log('Auth data not found in environment variables');
             return null;
@@ -171,5 +168,9 @@ function getAuthData()
     }
     return authdata;
 }
+
+var authdata = getAuthData();
+if(authdata !== null)
+    wsconnect(authdata);
 
 export default { wsOps, getAuthData };

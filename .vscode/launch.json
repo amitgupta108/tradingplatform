@@ -9,8 +9,7 @@
                 "<node_internals>/**"
             ],
             "args": [
-                "449",
-                "arg2"
+                "449"
             ],
             "type": "node",
             "outputCapture": "std"
@@ -23,9 +22,9 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/serverlocal/app.mjs",
+            "envFile": "${workspaceFolder}/../.env",
             "args": [
-                "449",
-                "arg2"
+                "449"
             ],
             "outputCapture": "std"
         }
