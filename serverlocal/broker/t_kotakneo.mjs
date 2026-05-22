@@ -1,5 +1,5 @@
-import kotak_socket from './brokerws.mjs';
-import Order_Service from '../service/order_engine.mjs';
+import kotak_socket from './tradeupdater.mjs';
+import Order_Service from '../service/ordersimulator.mjs';
 
 function authHeaders()
 {
@@ -122,18 +122,6 @@ function toKotakModifyOrder(order)
     const kotakOrder = toKotakOrder(order);
     kotakOrder.nOrdNo = order.orderid ?? order.orderId;
     return kotakOrder;
-}
-
-var live_order_unlocked = false;
-
-function unlockLiveOrders(key)
-{
-    const today = new Date();
-    if(key === today.toDateString())
-        live_order_unlocked = true;
-
-    console.log('neo api live order state ' + live_order_unlocked);
-    return (key === today.toDateString());
 }
 
 async function order(appid, orders)

@@ -100,6 +100,9 @@ function rh(socket)
     socket.on('order', (exorder) => {
       console.log("ws order message " + JSON.stringify(exorder));
       
+      if(exorder.appid !== instrument.appid)
+        return;
+      
       var p = Position.findPosition(exorder.symbol, true);
       p.orderupdate(exorder, false);
     });

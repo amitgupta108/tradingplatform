@@ -1,14 +1,19 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../quotes.mjs';
-import Order_Service from '../service/order_engine.mjs';
+import Order_Service from '../service/ordersimulator.mjs';
 import adapter from '../adapter/histadapter.mjs';
-import Kotak_Direct from './kotakneo-api.mjs';
+import live_kotak from './t_kotakneo.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
 client.connect()
-        .then(() => console.log('openalgo client connected'))
-        .catch((error) => console.error('Error connecting to openalgo ' + error)
+    .then(() => {
+        console.log('openalgo client connected');
+        client._wsClient.ws.addEventListener('close', () => {
+            console.log('ws_direct websocket state ' + client._wsClient.ws.readyState);
+        });
+    })
+    .catch((error) => console.error('Error connecting to openalgo ' + error)
 );
 
 var live_order_unlocked = false;
@@ -87,7 +92,7 @@ function subscribe(appid, sublist, action)
 
 async function orderbook(appid, stockCode)
 {
-    return await Kotak_Direct.orderbook(appid, stockCode);
+    return await live_kotak.orderbook(appid, stockCode);
 }
 
 async function order(appid, orders)
@@ -126,7 +131,7 @@ function formatorder(orders)
 
 async function cancelorder(appid, order)
 {
-    return await Kotak_Direct.cancelorder(appid, order);
+    return await live_kotak.cancelorder(appid, order);
 }
 
 export default {order, subscribe, orderbook, cancelorder, exit, unlockLiveOrders };

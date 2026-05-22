@@ -22,7 +22,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/serverlocal/app.mjs",
-            "envFile": "${workspaceFolder}/../.env",
+            "envFile": "${workspaceFolder}/serverlocal/config/.env",
             "args": [
                 "449"
             ],
