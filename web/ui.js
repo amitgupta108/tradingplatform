@@ -12,7 +12,7 @@ function appendOrderRow(neworder, isBasket)
   toggle.disabled = true;    
   const scripName = expandSymbol(neworder.symbol).name;
 
-  var tr = tRow(t_order_window_row, true);
+  var tr = tRow(t_order_window_row);
   tr.querySelector('#owsymbol').innerText  = neworder.symbol;
   tr.querySelector('#scripName').innerText  = scripName;
   tr.querySelector('#lotselect').value = neworder.quantity / instrument.lotsize;
@@ -40,10 +40,7 @@ function showOrderWindow()
   var wCSS = rows.length > 2 ? 'multi' : rows[0].querySelector("#ow_action_btn").innerText === 'B' ? 'buy' : 'sell';
   oWindow.classList.add(wCSS);
   oWindow.style.display = "block";
-
-  setTimeout(() => {
-      oWindow.classList.add('show');
-    }, 10);
+  oWindow.classList.add('show');
 }
 
 function flipAction(orderRowBtn, orderRow)
@@ -65,7 +62,7 @@ function switchTabs(evt)
   document.getElementById('n_oc_div').classList.toggle('active');
 }
 
-function tRow(template, withListener){
+function tRow(template, withListener = true){
   const new_row = document.importNode(template.content, true).querySelector('tr');
   if(withListener){
     new_row.addEventListener('click', (e) => {
@@ -128,17 +125,9 @@ function removeOrderRow(c, p){
 
 function cancelOrder(c, p_row)
 {
-  const symbol = order_list_thead.rows[0].title;
-  const postn = Position.findPosition(symbol, false);
-  const orderid = Number(p_row.title);
-  const c_order = postn.orders.get(orderid);
-  if(c_order !== undefined && c_order.state === 'opened') {
-    emit('cancelorder', c_order);
-    sOrderSubmit.play();
-      orderlistDiv.style.display = 'none';
-  }
-  else 
-    console.log('open order not found ' + orderid);
+  emit('cancelorder', {orderid: p_row.title});
+  sOrderSubmit.play();
+  orderlistDiv.style.display = 'none';
 }
 
 function confirmCancel(c, p) {

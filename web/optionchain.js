@@ -37,7 +37,7 @@ class OptionChain
     tbls.forEach((tb, idx) => {
       for(var i = 0; i < lscount; i++)
       {
-        var new_tr = tRow(t_option_chain_row, true);
+        var new_tr = tRow(t_option_chain_row);
         var css = idx === 0 ? 'tr_straight' : 'tr_reverse';
         new_tr.classList.add(css);
         tb.append(new_tr);

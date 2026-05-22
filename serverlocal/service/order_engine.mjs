@@ -106,7 +106,7 @@ function formatLiveOrder(order, insert = false)
             qty: quantity, prcTp: pricetype, strategyCode: _appid, ordSrc: source, ...rest} = order;
 
     var fOrder = {orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
-                        filled_q, unfilled_q, quantity, pricetype, _appid, source, ...rest};
+                        filled_q, unfilled_q, quantity, pricetype, _appid, source};
     
     if(fOrder.state === 'open') {
         fOrder.state = 'opened';
@@ -127,13 +127,12 @@ function formatLiveOrder(order, insert = false)
     return fOrder;
 }
 
-function cancelOrder(order)
+function cancelOrder(sim_order)
 {
     var found = sim_order_map.get(order.orderid);
     if(found !== undefined && found.state === 'opened') {
         found.state = 'cancelled';
-        if(found.mode !== 'live')
-            OrderNotifier.emit('order', found.appid, 'order', found);
+        OrderNotifier.emit('order', found.appid, 'order', found);
     }
     else
         console.error('requested order cancellation failed - order not found or not open');

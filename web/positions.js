@@ -20,6 +20,18 @@ class Position
   {
     this.symbol = symbol;
     positions.push(this);
+    this.ini(symbol, false);
+  }
+
+  ini(symbol, recovery)
+  {
+    this.#pRow = tRow(t_position_table_row);
+    this.#pRow.title = symbol;
+    this.#pRow.querySelector('#orderdisplay-btn').title = symbol;
+    document.getElementById('positions_tbody').append(this.#pRow);
+
+    this.value('scrip', expandSymbol(symbol).name);
+    qBox.addEventListener('strikex', this);
   }
 
   handleEvent(event)
@@ -47,23 +59,8 @@ class Position
     return neworder;
   }
 
-  ini(symbol, recovery)
-  {
-    if(this.#pRow === undefined)
-    {
-      this.#pRow = tRow(t_position_table_row, true);
-      this.#pRow.title = symbol;
-      this.#pRow.querySelector('#orderdisplay-btn').title = symbol;
-      document.getElementById('positions_tbody').append(this.#pRow);
-
-      this.value('scrip', expandSymbol(symbol).name);
-      qBox.addEventListener('strikex', this);
-    }
-  }
-
   orderupdate(exorder, recovery)
   {
-    this.ini(exorder.symbol, recovery);
     this.orders.set(exorder.orderid, exorder);
     this.pnlUpdate(exorder);
     

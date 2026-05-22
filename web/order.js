@@ -4,7 +4,7 @@ class Order{
   stockCode = instrument.stockCode;
   time = Date.now();
   state = 'created';
-  pricetype = 'LIMIT';
+  pricetype = 'MARKET';
   product = 'NRML';
   price = 0;
   symbol;
@@ -18,6 +18,10 @@ class Order{
     this.quantity = (quantity !== undefined) ? quantity : instrument.lotsize;
     this.mode = instrument.mode === 0 ? 'history' : 'live';
   }
+}
+
+class OrderWindow{
+  orders = [];
 }
 
 function submitOrder(clickedBtn) 
@@ -90,7 +94,7 @@ function displayOrderList(btn, parent)
   
   var tqty = 0;
   p.orders.forEach((o, idx) => {
-    var newtr = tRow(t_order_list_row, true);
+    var newtr = tRow(t_order_list_row);
 
     newtr.title = o.orderid;
     var qty = o.state.startsWith('complete') ? o.filled_q : 0;

@@ -12,7 +12,8 @@ async function saveAuthData(data){
     {
         authdata = data;
         var cred_string = `baseUrl=${authdata.baseUrl}\nsid=${authdata.sid}\ntoken=${authdata.token}`;
-        await fs.promises.writeFile(filePath, cred_string, 'utf8');
+        await fs.promises.writeFile(
+            '../.env', cred_string, 'utf8');
         console.log('Auth data saved successfully.');
     } catch (error) {
         console.error('Error saving auth data:', error);

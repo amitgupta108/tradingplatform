@@ -124,15 +124,9 @@ function formatorder(orders)
     });   
 }
 
-function cancelorder(appid, order)
+async function cancelorder(appid, order)
 {
-    const kotakOrder = {orderId: order.orderid ?? order.orderId};
-    return client.cancelOrder(kotakOrder)
-    .then((resp) => {
-        console.log('order cancellation response ' + JSON.stringify(resp));
-        Order_Service.cancelOrder(order);
-        return resp;
-    });
+    return await Kotak_Direct.cancelorder(appid, order);
 }
 
 export default {order, subscribe, orderbook, cancelorder, exit, unlockLiveOrders };
