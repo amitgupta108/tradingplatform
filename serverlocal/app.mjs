@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 import express from 'express';
 import https from 'node:https';
 import { Server } from "socket.io";
+import ScripServer from './service/scrip.mjs';
 import Session from './session/session.mjs';
 import kotak_socket from './broker/brokerws.mjs';
 import qserver from './quotes.mjs'; 
@@ -55,6 +56,8 @@ if(!global.server)
         pingInterval: 30000,
         pingTimeout: 30000
     });
+
+    ScripServer.start();
 
     io.on('connection', (s) => {
         

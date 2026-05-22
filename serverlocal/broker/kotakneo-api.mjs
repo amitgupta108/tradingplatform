@@ -1,7 +1,7 @@
 import kotak_socket from './brokerws.mjs';
 import Order_Service from '../service/order_engine.mjs';
 
-function authHeaders(urlEncoded = true)
+function authHeaders()
 {
     const auth_data = kotak_socket.getAuthData();
     return {
@@ -9,7 +9,7 @@ function authHeaders(urlEncoded = true)
         'neo-fin-key': 'neotradeapi',
         'sid': auth_data.sid,
         'Auth': auth_data.token,
-        'Content-Type': urlEncoded ? 'application/x-www-form-urlencoded' : 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'accept': 'application/json'
     };
 }
@@ -26,7 +26,7 @@ async function request(path, options)
     return await fetch(url, options);
 }
 
-async function post(path, body, urlEncoded = false)
+async function post(path, body, urlEncoded = true)
 {
     const requestBody = urlEncoded
         ? new URLSearchParams({ jData: JSON.stringify(body) }).toString()
@@ -34,7 +34,7 @@ async function post(path, body, urlEncoded = false)
 
     return await request(path, {
         method: 'POST',
-        headers: authHeaders(urlEncoded),
+        headers: authHeaders(),
         body: requestBody
     });
 }
@@ -172,27 +172,24 @@ async function modifyorder(appid, order)
 
 async function cancelorder(appid, order)
 {
-    const resp = await post('order/cancelOrder', {orderId: order.orderid ?? order.orderId}, true);
-    Order_Service.cancelOrder(order);
+    const resp = await post('quick/order/cancel', {on: order.orderid}, true);
+    console.log('cancel response ' + JSON.stringify(resp) + ' for order ' + JSON.stringify(order));
     return resp;
 }
 
 async function orderbook(appid, stockCode)
 {
-    const response =  await get('quick/user/orders', true);
+    const response =  await get('quick/user/orders', false);
     const orders = response.data.map((order) => {
         return Order_Service.formatLiveOrder(order, true);
     }).filter((order) => {
         return order.stockCode === stockCode;
     });
 
-    return orders.sort((a, b) => b.orderid - a.orderid);
+    return orders.sort((a, b) => a.orderid - b.orderid);
 }
 
 export default {
-    order,
-    modifyorder,
     cancelorder,
-    orderbook,
-    unlockLiveOrders
+    orderbook
 };

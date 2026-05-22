@@ -11,11 +11,15 @@ function emitOrders(appid, type, order)
         if(app_obj !== undefined)
             emit(app_obj.socket, type, order);
         else
-            console.error('Orphan order ' + JSON.stringify(order));
+        {
+            const sn = Session.sn(order.appid);
+            group_emit(sn, type, order);
+        }
     }
     else //externally actioned orders
     {    
-        const sn = Session.sn(order.stockCode);
+        console.error('Orphan order ' + JSON.stringify(order));
+        const sn = Session.sn(order.stockCode); //stockCode search is to be built
         group_emit(sn, type, order);
     }
 }
