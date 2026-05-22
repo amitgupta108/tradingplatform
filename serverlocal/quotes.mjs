@@ -1,7 +1,6 @@
 import utils from '../common/utils.mjs';
 import Session from './session/session.mjs';
-import Order_Notifier from '../serverlocal/service/order_engine.mjs';
-Order_Notifier.addOrderUpdateListener(emitOrders);
+
 const socketmap = new Map();
 
 function emitOrders(appid, type, order)
@@ -38,11 +37,13 @@ function emitQs(appid, q)
     }
 }
 
-function group_emit(sn, type, q)
+function group_emit(sn, type, msg)
 {
     sn.shared_with.keys().forEach((a) => {
         const app_obj = socketmap.get(a);
-        emit(app_obj.socket, type, q);
+        if(type === 'order')
+            msg.appid = a;
+        emit(app_obj.socket, type, msg);
     });
 }
 

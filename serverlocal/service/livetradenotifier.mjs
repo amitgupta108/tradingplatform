@@ -1,53 +1,76 @@
 import qserver from '../quotes.mjs';
-import Order_Service from '../service/order_engine.mjs'
+import trade_updater from '../broker/tradeupdater.mjs';
 import fs from 'fs';
+import path from 'path';
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const config_path = path.join(__dirname, '..', 'config', '.env');
 
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const ValURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
 var wsping;
 var ws;
 
-async function saveAuthData(data){
+async function saveAuthData(data)
+{
     try 
     {
         authdata = data;
         var cred_string = `baseUrl=${authdata.baseUrl}\nsid=${authdata.sid}\ntoken=${authdata.token}`;
-        await fs.promises.writeFile(
-            '../.env', cred_string, 'utf8');
+        await fs.promises.writeFile(config_path, cred_string, 'utf8');
         console.log('Auth data saved successfully.');
     } catch (error) {
         console.error('Error saving auth data:', error);
     }
+    
 }
-
 async function connect(tpt)
 {
-    var response = 'failed to connect';
     var lr = await apiLogin(tpt);
     if (lr.data != undefined && lr.data.status === 'success') 
     {
         var vr = await apiValidate({sid: lr.data.sid, token: lr.data.token});
         await saveAuthData({baseUrl: vr.data.baseUrl, sid: vr.data.sid, token: vr.data.token});
         wsconnect(authdata);
-        response = 'connection initiated';
     }
-    else
-        response = 'connection failed';
-
-    return response;
 }
 
-async function wsOps(action, tpt)
+function wsconnect(authdata)
 {
-    var response = 'failed to connect';
-    if (action === 'connect') {
-        response = await connect(tpt);
-    }
-    else if (ws != undefined && action === 'disconnect') {
-        ws.close();
-        response = 'disconnected';
-    }
-    return response;
+    ws = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
+
+    ws.onopen = (event) => {
+        const payload = `{type:cn,Authorization:${authdata.token},Sid:${authdata.sid},src:WEB}`;
+        ws.send(payload);
+        console.log('On open ');
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const message = JSON.parse(event.data);
+            console.log("message type: " + message.type)
+            if(message.type === 'cn' && message.msg === 'connected')
+                wshb('start');
+            else if(message.type === 'order') {
+                trade_updater.notifyme(message, 0);
+            }
+        } catch(error) {
+            console.log(error);
+        }          
+    };
+
+    ws.onerror = (event) => {
+        console.log("connection error " + JSON.stringify(event));
+    }; 
+    
+    ws.onclose = (event) => {
+        console.log("connection closed " + event.reason);
+    };
 }
 
 async function apiLogin(num)
@@ -89,38 +112,11 @@ async function apiValidate(authdata) {
     return response.json();
 }
 
-function wsconnect(authdata)
+function disconnect()
 {
-    ws = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
-
-    ws.onopen = (event) => {
-        const payload = `{type:cn,Authorization:${authdata.token},Sid:${authdata.sid},src:WEB}`;
-        ws.send(payload);
-        console.log('On open ');
-    };
-
-    ws.onmessage = (event) => {
-        try {
-            const message = JSON.parse(event.data);
-            console.log("message type: " + message.type)
-            if(message.type === 'cn' && message.msg === 'connected')
-                wshb('start');
-            else if(message.type === 'order') {
-                Order_Service.liveOrderMatching(message, 1);
-            }
-        } catch(error) {
-            console.log(error);
-        }          
-    };
-
-    ws.onerror = (event) => {
-        console.log("connection error " + JSON.stringify(event));
-    }; 
-    
-    ws.onclose = (event) => {
-        wshb('stop');
-        console.log("connection closed " + event.reason);
-    };
+    clearInterval(wsping);
+    if(ws !== undefined)
+        ws.close();
 }
 
 function wshb(action)
@@ -132,14 +128,14 @@ function wshb(action)
             clearInterval(wsping);
 
         var recon_attempt = 0;
-        wsping = setInterval(async (rn) => {
-            qserver.broadcast('hb', {order_socket: ws.readyState});
-    
+        wsping = setInterval(async (rn) => 
+        {
             if(ws.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
                 wsconnect(authdata);
                 rn++;
             }
+            qserver.broadcast('hb', {order_socket: ws.readyState});
         }, 120000, recon_attempt);
     }
     else
@@ -174,4 +170,4 @@ var authdata = getAuthData();
 if(authdata !== null)
     wsconnect(authdata);
 
-export default { wsOps, getAuthData };
+export default { connect, disconnect};

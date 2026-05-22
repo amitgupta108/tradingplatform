@@ -73,7 +73,7 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.strikePrice = instrument.strike;
     b.right = instrument.right;
     b.productType = instrument.right != undefined ? 'options' : 'futures';
-    b.expiryDate = instrument.exchange != 'NSE' ? formatExpiry(instrument.expiry) : undefined;
+    b.expiryDate = instrument.exchange != 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
     b.fromDate = ISODate(sTime);
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
@@ -89,10 +89,9 @@ function ISODate(datetime) {
     return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
 }
 
-function formatExpiry(expiry) {
-    //var d = new Date(expiry).toString();
-    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 5)).concat('-20').concat(expiry.slice(5));
-    return (new Date((e).concat(', 21:00'))).toISOString(); // add 5.30 to 15:30 to get 21:00 UTC
+function formatExpiry(expiry, type) {
+    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 3)).concat(expiry.slice(3, 5).toLowerCase()).concat('-20').concat(expiry.slice(5));
+    return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
 }
 
 function wssub(list, callback)
@@ -131,7 +130,7 @@ function wsDisconnect()
 
 function breeze_input(scrip)
 {       
-    var b = {expiryDate: formatExpiry(scrip.expiry)};
+    var b = {expiryDate: formatExpiry(scrip.expiry, 'date')};
     b.productType = scrip.right != undefined ? 'options' : 'futures';
     b.exchangeCode = scrip.stockCode === 'INDVIX' ? 'NSE' : scrip.exchange;
     b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;

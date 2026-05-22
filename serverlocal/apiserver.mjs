@@ -1,10 +1,10 @@
-import kotak_socket from './broker/brokerws.mjs';
-import hist_service from './broker/breeze.mjs';
-import live_kotak from './broker/kotakneo.mjs';
-import live_kotak_neo from './broker/kotakneo-api.mjs';
-import live_icici from './broker/breeze.mjs';
-import paper_trading from './broker/breeze.mjs';
+import hist_service from './broker/m_breeze.mjs';
+import live_openalgo from './broker/m_t_openalgo.mjs';
+import live_kotak from './broker/t_kotakneo.mjs';
+import live_icici from './broker/m_breeze.mjs';
+import paper_trading from './broker/m_breeze.mjs';
 import Session from './session/session.mjs';
+import livetradenotifier from './service/livetradenotifier.mjs';
 
 /* mode
 0: historical backtest
@@ -18,8 +18,8 @@ async function handleMessage(s, appid, event, msg)
 {
     try {
         const sn = s.sn;
-        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_kotak : live_kotak_neo;
-        const trading_service  = sn.mode === 1 ?  live_kotak: live_kotak_neo;
+        const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_openalgo : live_kotak;
+        const trading_service  = sn.mode === 1 ?  live_openalgo: live_kotak;
         
         switch(event)
         {
@@ -72,10 +72,12 @@ async function handleMessage(s, appid, event, msg)
                 break;
             case 'wsOps':
                 if(msg.action === 'unlock_live')
-                    var response = live_kotak.unlockLiveOrders(msg.data);
+                    var response = live_openalgo.unlockLiveOrders(msg.data);
                 else
-                    var response = await kotak_socket.wsOps(msg.action, msg.data);
-                console.log("wsOps response: " + msg.action + ' ' + response);
+                    if(msg.action === 'connect')
+                        var response = await livetradenotifier.connect(msg.data);
+                    else if(msg.action === 'disconnect')
+                        var response = await livetradenotifier.disconnect(msg.data);
                 break;
             default:
                 console.log("Unknown event " + event);
@@ -95,7 +97,7 @@ async function exit(appid)
         hist_service.exit(appid);
     else
         if(sn.shared_with.size === 2)
-            live_kotak.exit(appid);
+            live_openalgo.exit(appid);
 }
 
 export default {
