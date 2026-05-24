@@ -19,41 +19,23 @@ function connect(appSecret, sessionId){
 
 function findQuoteByTime(q, lt)
 {
-    if(lt <= Date.parse(q.at(-1).datetime))
+    const lastQuote = q.at(-1);
+    if(lt <= lastQuote.ltt)
         return findByTime(q, lt);
     else
         return -2;
 }
 
-function findQuote(q, lt)
-{
-    var firstTick = Date.parse(q[0].datetime);
-    var lastTick = Date.parse(q[q.length-1].datetime);
-
-    var startIndex = Math.floor(Math.max((lt - firstTick)/(lastTick - firstTick) - .10, 0) * q.length);
-    
-    var quoteIndex = -2;
-    if(lt <= lastTick) {
-        quoteIndex = -1;
-        while(quoteIndex === -1 && startIndex < q.length)
-        {
-            if(Date.parse(q[startIndex].datetime) === lt)
-                quoteIndex = startIndex;
-            else if(Date.parse(q[startIndex].datetime) > lt)
-                quoteIndex = startIndex - 1;
-            startIndex++;
-        }
-    }
-    if (quoteIndex === -1 || quoteIndex === -2) 
-        console.log("Quote not found " + quoteIndex + " " + startIndex + " " + printObject({q: q[q.length - 1], Time: lt,}));
-
-    return quoteIndex;
-}
-
 async function getHistoricalData(st, instrument, sTime) 
 {
     var resp = await getHistoricalDatav2(instrument, sTime);
-    st.quotes = await resp.Success;
+    var quotes = resp.Success;
+    if (Array.isArray(quotes)) {
+        quotes.forEach((q) => {
+            q.ltt = Date.parse(q.datetime);
+        });
+    }
+    st.quotes = quotes;
     st.state = 'ready to stream';
     st.lastUpdated = sTime;
     return st;
@@ -62,7 +44,13 @@ async function getHistoricalData(st, instrument, sTime)
 async function getHistory(instrument, sTime, endTime, interval) 
 {
     var resp = await getHistoricalDatav2(instrument, sTime, endTime, interval);
-    return resp.Success;
+    var quotes = resp.Success;
+    if (Array.isArray(quotes)) {
+        quotes.forEach((q) => {
+            q.ltt = Date.parse(q.datetime);
+        });
+    }
+    return quotes;
 }
 
 function getHistoricalDatav2(instrument, sTime, endTime, interval) 
