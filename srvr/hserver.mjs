@@ -59,17 +59,18 @@ function dothings(stmrkey)
     try
     {
         var count = 0;
-        var usrSpdComb = utils.filter(client_clocks.values().toArray(), {keys: [stmrkey]});
-        usrSpdComb.forEach((c) => {
-            var reqs = subsRequests.filter((s) => s.appid === c.appid && s.instrument.model === 'history');
-            reqs.forEach((req) => {
-                count++;
-                var qt = q(req.appid, req.instrument, c.currentTime);
-                if(qt !== undefined) {
-                    futsocket.emit('quote', qt, 'history', req.appid);
-                }
-            });
-        });
+        for (const c of client_clocks.values()) {
+            if (c.key === stmrkey) {
+                var reqs = subsRequests.filter((s) => s.appid === c.appid && s.instrument.model === 'history');
+                reqs.forEach((req) => {
+                    count++;
+                    var qt = q(req.appid, req.instrument, c.currentTime);
+                    if(qt !== undefined) {
+                        futsocket.emit('quote', qt, 'history', req.appid);
+                    }
+                });
+            }
+        }
     } catch (exception){
         console.log(exception);
     }
@@ -78,10 +79,11 @@ function dothings(stmrkey)
 
 function runclient_clocks(stmrkey) 
 {
-    var usrSpdComb = utils.filter(client_clocks.values().toArray(), {key: [stmrkey]});
-    usrSpdComb.forEach((c) => {
-        c.currentTime = c.currentTime + 1000;
-    });
+    for (const c of client_clocks.values()) {
+        if (c.key === stmrkey) {
+            c.currentTime = c.currentTime + 1000;
+        }
+    }
 }
 
 function changeSpeed(appid, stmrkey){
