@@ -53,12 +53,11 @@ function wsconnect(authdata)
     ws.onmessage = (event) => {
         try {
             const message = JSON.parse(event.data);
-            console.log("message type: " + message.type)
-            if(message.type === 'cn' && message.msg === 'connected')
+
+            if(message.type === 'order')
+                trade_updater.notifyme(message);
+            else if(message.type === 'cn' && message.msg === 'connected')
                 wshb('start');
-            else if(message.type === 'order') {
-                trade_updater.notifyme(message, 0);
-            }
         } catch(error) {
             console.log(error);
         }          
@@ -121,6 +120,7 @@ function disconnect()
 
 function wshb(action)
 {
+    console.log("websocket heartbeat: " + action);
     qserver.broadcast('hb', {order_socket: ws.readyState});
 
     if(action === 'start') {
@@ -170,4 +170,4 @@ var authdata = getAuthData();
 if(authdata !== null)
     wsconnect(authdata);
 
-export default { connect, disconnect};
+export default { connect, disconnect, getAuthData };

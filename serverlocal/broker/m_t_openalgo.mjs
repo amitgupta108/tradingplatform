@@ -1,33 +1,23 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../quotes.mjs';
-import Order_Service from '../service/ordersimulator.mjs';
+import trade_utils from './tradeupdater.mjs';
 import adapter from '../adapter/histadapter.mjs';
 import live_kotak from './t_kotakneo.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
+
 client.connect()
     .then(() => {
         console.log('openalgo client connected');
-        client._wsClient.ws.addEventListener('close', () => {
-            console.log('ws_direct websocket state ' + client._wsClient.ws.readyState);
+        client._wsClient.ws.addEventListener('open', () => {
+            console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
         });
     })
     .catch((error) => console.error('Error connecting to openalgo ' + error)
 );
 
-var live_order_unlocked = false;
 const mode_kotak_live = 1;
-
-function unlockLiveOrders(key)
-{
-    const today = new Date();
-    if(key === today.toDateString())
-        live_order_unlocked = true;
-
-    console.log('live order state ' + live_order_unlocked);
-    return (key === today.toDateString());
-}
 
 function onQuotes(q)
 { 
@@ -97,20 +87,32 @@ async function orderbook(appid, stockCode)
 
 async function order(appid, orders)
 {
-    if(!live_order_unlocked)
-        return;
+    const promises = orders.map((order) => live_kotak.placeOrder(appid, order));
+    return await Promise.all(promises);
+}
 
-    const fOrders = formatorder(orders);
-    Order_Service.neworders(orders);
+async function placeOrder(appid, order)
+{
+    const clone = structuredClone(order);
+    trade_utils.neworders(appid, [order]);
 
-    let response;
-    if(fOrders.length === 1)
-        response = await client.placeOrder(fOrders[0]);
-    else if(fOrders.length > 1)
-        response = await client.basketOrder({orders: fOrders});
+    let response = await client.placeOrder(clone);
+    if(order.state === 'created') {
+        order.state = 'submitted';
+        order.orderid = response.orderid;
+        order.status = response.status;
+    };
+    console.log('order confirmation ' + JSON.stringify(response) + ' for order ' + JSON.stringify(order));
+    return response;
+}
 
-    const orderids = Array.isArray(response) ? response : [response];
-    orderids.forEach((conf, index) => {
+async function basketorder(appid, orders)
+{
+    trade_utils.neworders(appid, orders);
+
+    let response = await client.basketOrder({orders: orders});
+
+    response.forEach((conf, index) => {
             orders[index].state = 'submitted';
             orders[index].orderid = conf.orderid;
             orders[index].status = conf.status;
@@ -120,18 +122,9 @@ async function order(appid, orders)
     return response;
 }
 
-function formatorder(orders)
-{
-    return orders.map((o) => {
-        let {mode, appid, orderN, state, time, stockCode, ...trimmedOrder} = o;
-        trimmedOrder.strategy = o.appid;
-        return trimmedOrder;
-    });   
-}
-
 async function cancelorder(appid, order)
 {
     return await live_kotak.cancelorder(appid, order);
 }
 
-export default {order, subscribe, orderbook, cancelorder, exit, unlockLiveOrders };
+export default {order, basketorder, subscribe, orderbook, cancelorder, exit };

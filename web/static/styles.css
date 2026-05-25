@@ -281,7 +281,7 @@ select:hover {
 }
   
 .hover-cell:hover .hover-content {
-    display: flex; /* 5. Shows the div when the parent .hover-cell is hovered. */
+    display: flex; 
     justify-content:space-evenly;
 }
 
@@ -295,8 +295,6 @@ select:hover {
     display: none;
     border-radius: 5px;
     padding: 3px;
-    opacity: 0; /* Start hidden to use fade-in animation */
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
     overflow:auto;
 }
 
@@ -310,11 +308,6 @@ select:hover {
 
 .orderwindow.multi {
     background-color: dimgray;
-}
-
-.orderwindow.show {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 .close-btn {

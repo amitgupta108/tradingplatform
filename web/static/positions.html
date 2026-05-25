@@ -145,8 +145,9 @@
                 </tbody>
                 <tbody id="tbody-submit-panel">
                     <tr> 
-                        <td colspan="6" style="text-align: right;padding: 3px; border-radius: 4px;">
-                            <button type="button" onclick="submitOrder(this)">Order</button>
+                        <td colspan="6" style="text-align: right;padding: 3px; border-radius: 4px; gap: 10px">
+                            <button type="button" onclick="validate(this)">Validate</button>
+                            <button type="button" id="ow_submit_btn" onclick="submitOrder(this)" disabled >Order</button>
                         </td>
                     </tr>
                 </tbody>
@@ -206,28 +207,28 @@
             </td>
             <td style='width:14%'>
                 <select id="lotselect">
-                    <option value="1">1</option>
+                    <option value="1" selected>1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
                     <option value="4">4</option>
                 </select>
             </td>
             <td style='width:17%'>
-                <label class="clickable" id="ordertype">LIMIT</label>
+                <label class="clickable" id="ordertype">MARKET</label>
             </td>
             <td style='width:17%'>
-                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;">
+                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;" disabled>
             </td>
         </tr>
     </template>
     <template id="position-table-row">
         <tr>
             <td>
-                <input type='checkbox' id="pos_exit_cb" onchange="position_cb_action(this)"></input>
+                <input type='checkbox' id="pos_exit_cb" onchange="position_cb_action(this)" disabled></input>
             </td>
             <td><label id="Instrument"></label></td>
             <td>
-                <button id="orderdisplay-btn" class="smallbutton order">O</button>
+                <button id="orderdisplay-btn" class="smallbutton order">N</button>
             </td>
             <td><label id="BQ"></label></td>
             <td><label id="BP"></label></td>

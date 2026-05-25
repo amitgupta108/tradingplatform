@@ -19,8 +19,7 @@ function orderExecutionSim(q)
 {
     const openorders = Array.from(sim_order_map.values()).filter((order) => {
         return (order.state === 'opened'
-            && order.symbol === q.symbol
-            && order.mode !== 'live');
+            && order.symbol === q.symbol);
     });
     
     if(openorders.length === 0)

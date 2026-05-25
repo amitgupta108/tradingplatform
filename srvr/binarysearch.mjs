@@ -143,7 +143,8 @@ class QuoteComparator {
    * @returns {number}
    */
   static defaultCompareFunction(q, t) {
-    if (qt.ltt === t) {
+    var qt = q.ltt;
+    if (qt === t) {
       return 0;
     }
     return qt < t ? -1 : 1;
