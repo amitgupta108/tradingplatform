@@ -1,5 +1,5 @@
 import consoleStamp from 'console-stamp';
-consoleStamp(console, { format: ':date(HH:MM:ss)' });
+consoleStamp(console, { format: ':date(HH:MM:ss.l)' });
 
 import { fileURLToPath } from 'node:url';
 import {readFileSync} from 'node:fs';

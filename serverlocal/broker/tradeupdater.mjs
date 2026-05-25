@@ -2,7 +2,7 @@ import qs from '../quotes.mjs';
 const live_order_map = new Map();
 var counter = 10000;
 
-function neworders(orders)
+function neworders(appid, orders)
 {
     orders.forEach((order) => {
     
@@ -10,20 +10,17 @@ function neworders(orders)
         order.pricedAt = 0;
         order.orderid = ++counter;
         order.localid = order.orderid;
+        order.appid = appid;
+        order.state = 'created';
         live_order_map.set(order.orderid, order);
     });
 }
 
-function notifyme(event, mode)
+function notifyme(message)
 {    
-    try {
-        const message = JSON.parse(event.data);
-        console.log("message type: " + message.type)
-        if(message.type === 'order') {
-            liveOrderMatching(message, 1);
-        }
-    } catch(error) {
-        console.log(error);
+    console.log("message: " + JSON.stringify(message));
+    if(message.type === 'order') {
+        liveOrderMatching(message, 1);
     }
 }
 
@@ -31,13 +28,13 @@ function liveOrderMatching(message, mode)
 {
     if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         return;
-
+    console.log('live order update received ' + JSON.stringify(message.data));
     /*
         1. externally placed order - no orderid
         2. app triggered order with orderid available
         3. app triggered order with orderid not yet available
     */
-    const live_order = formatLiveOrder(message.data, false);
+    const live_order = formatLiveOrder(message.data);
     var found = Array.from(live_order_map.values()).find((order) => {
         return (order.orderid === live_order.orderid)
                 || (order.stockCode === live_order.stockCode
@@ -62,7 +59,7 @@ function liveOrderMatching(message, mode)
     qs.emitOrders(live_order.appid, 'order', live_order);
 }
 
-function formatLiveOrder(order, insert = false)
+function formatLiveOrder(order)
 {
     var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol, 
             expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
@@ -84,10 +81,8 @@ function formatLiveOrder(order, insert = false)
     fOrder.strike_price = fOrder.strike_price.replace('.00', '');
     fOrder.symbol = fOrder.stockCode + fOrder.expiry_date +  fOrder.strike_price + fOrder.right;
     fOrder.mode = 'live';
-    if(insert && !live_order_map.has(fOrder.orderid))
-        live_order_map.set(fOrder.orderid, fOrder);
 
     return fOrder;
 }
 
-export default { notifyme, neworders};
+export default { notifyme, neworders, formatLiveOrder };

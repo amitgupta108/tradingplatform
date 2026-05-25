@@ -39,24 +39,23 @@ function emitQs(appid, q)
 
 function group_emit(sn, type, msg)
 {
-    sn.shared_with.keys().forEach((a) => {
-        const app_obj = socketmap.get(a);
-        if(type === 'order')
-            msg.appid = a;
+    for (const appid of socketmap.keys()) {
+        const app_obj = socketmap.get(appid);
+        if(app_obj && type === 'order')
+            msg.appid = appid;
         emit(app_obj.socket, type, msg);
-    });
+    };
 }
 
 function broadcast(type, msg, group)
 {
-    socketmap.keys().toArray().forEach((appid) => {
+    for (const appid of socketmap.keys()) {
         var app_obj = socketmap.get(appid);
-        
-        if(app_obj.mode !== 0) {
-            if(type === 'hb' || type === 'vix')
+        if (app_obj && app_obj.mode !== 0) {
+            if (type === 'hb' || type === 'vix')
                 emit(app_obj.socket, type, msg);
         }
-    });
+    }
 }
 
 function emit(s, type, msg)

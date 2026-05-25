@@ -1,9 +1,6 @@
 class Order{
-  appid = instrument.appid;
   exchange = instrument.exc;
-  stockCode = instrument.stockCode;
-  time = Date.now();
-  state = 'created';
+  strategy = instrument.appid;
   pricetype = 'MARKET';
   product = 'NRML';
   price = 0;
@@ -14,60 +11,52 @@ class Order{
   constructor(symbol, action, quantity)
   {
     this.symbol = symbol;
-    this.action = action;
+    this.action = action === 'B' ? 'BUY' : 'SELL';
     this.quantity = (quantity !== undefined) ? quantity : instrument.lotsize;
-    this.mode = instrument.mode === 0 ? 'history' : 'live';
   }
 }
 
-class OrderWindow{
-  orders = [];
+function validate(clickedBtn)
+{
+  var isError = false;
+  const rows = Array.from(order_rows_tbody.rows);
+  const neworders = rows.map((r) => {
+    const symbol = qSel(r, 'owsymbol', 'id').innerText;
+    const action = r.querySelector('#ow_action_btn').innerText;
+    const lot = r.querySelector('#lotselect').value; 
+    const pricetype = r.querySelector('#ordertype').innerText;
+
+    let n_order = new Order(symbol, action, lot * instrument.lotsize);
+    n_order.pricetype = pricetype;
+    if(pricetype === 'LIMIT') 
+    {
+      const h_price = qSel(r, 'lmtprice', 'id');
+      if(h_price.value === "") {
+        h_price.style.border = '1px solid red';
+        isError = true;
+      }
+    else 
+      n_order.price = Number(h_price.value);
+    }
+    return n_order;
+  });
+  in_prep_orders.error = isError;
+  in_prep_orders.orders = neworders;
+  submitOWinBtn.disabled = isError;
 }
 
 function submitOrder(clickedBtn) 
 {  
-  const rows = Array.from(order_rows_tbody.rows);
-  var isError = false;
-  rows.forEach((r) => 
-  {  
-    const pricetype = r.querySelector('#ordertype').innerText;
-    if(pricetype === 'LIMIT')
-    {
-      const price = r.querySelector('#lmtprice').value;
-      if( price === "") {
-        isError = true;
-        qSel(r, 'lmtprice', 'id').style.border = '1px solid red';
-      }
-    }
-  });
-   
-  if(isError)
+  if(in_prep_orders.isError)
     return;
   
-  const neworders = rows.map((r) => {
-    var symbol = qSel(r, 'owsymbol', 'id').innerText;
-    var action = r.querySelector('#ow_action_btn').innerText;
-    var lot = r.querySelector('#lotselect').value; 
-
-    let n_order = new Order(symbol, action, lot * instrument.lotsize);
-    n_order.pricetype = r.querySelector('#ordertype').innerText;
-    if(n_order.pricetype === 'LIMIT')
-      n_order.price = r.querySelector('#lmtprice').value;
-
-    var p = Position.findPosition(symbol, true);
-    p.orderlist(n_order);
-    return n_order;
-  });
-
-  emit('order', neworders);
+  emit('order', in_prep_orders.orders[0]);
+  in_prep_orders.orders.forEach((o) => {
+    Position.findPosition(o.symbol, true);
+  })
   sOrderSubmit.play();
-
-  oWindow.style.display = 'none';
-  order_rows_tbody.innerHTML = '';
-  toggle.disabled = false;
-
-  var checkboxes = document.querySelectorAll('#pos_exit_cb');
-  checkboxes.forEach(cb => cb.checked = false);
+  console.log('submitted orders ' + JSON.stringify(in_prep_orders.orders));
+  hideOWin();
 }
 
 function loadOrders(orders)
@@ -81,7 +70,6 @@ function loadOrders(orders)
     }
   });
 }
-
 
 function displayOrderList(btn, parent)
 {

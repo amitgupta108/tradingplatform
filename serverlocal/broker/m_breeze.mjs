@@ -61,7 +61,8 @@ function standardizeiq(q)
 {
     q['exchange'] = q['exchange_code'];
     q['ltp'] = q['close'];
-    q.ltt = Date.parse(q.datetime);
+    if(q.ltt === undefined)
+        q.ltt = Date.parse(q.datetime);
 
     if(q.exchange != 'NSE')
         q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');

@@ -6,6 +6,8 @@ import paper_trading from './broker/m_breeze.mjs';
 import Session from './session/session.mjs';
 import livetradenotifier from './service/livetradenotifier.mjs';
 
+var live_order_locked = true;
+
 /* mode
 0: historical backtest
 1: live kotak-openalgo data, kotak-neo-api orders
@@ -21,6 +23,9 @@ async function handleMessage(s, appid, event, msg)
         const market_service = sn.mode === 0 ? hist_service : sn.mode === 1 ? live_openalgo : live_kotak;
         const trading_service  = sn.mode === 1 ?  live_openalgo: live_kotak;
         
+        if(['order', 'modifyorder', 'cancelorder'].includes(event) && sn.mode !== 0 && live_order_locked)
+            console.log('Live orders are locked');
+
         switch(event)
         {
             case 'start':
@@ -37,12 +42,6 @@ async function handleMessage(s, appid, event, msg)
 
                 var prefq = await hist_service.preF(appid, sn.stockCode, msg);
                 s.emit("futuresPreData", prefq);
-
-                /*var preUq = iBreeze.preU(msg);
-                var uq = await preUq;
-                //var preDq = iBreeze.preD(msg, uq[uq.length - 1]);
-                //var pq = await preDq[0]; var cq = await preDq[1];
-                //emit(sn.s, "qdeltastrikes", uq, pq, cq);*/
                 break;
             case 'speed':
                 if(sn.mode === 0)
@@ -72,12 +71,12 @@ async function handleMessage(s, appid, event, msg)
                 break;
             case 'wsOps':
                 if(msg.action === 'unlock_live')
-                    var response = live_openalgo.unlockLiveOrders(msg.data);
+                    unlockLiveOrders(msg.data);
                 else
                     if(msg.action === 'connect')
-                        var response = await livetradenotifier.connect(msg.data);
+                        livetradenotifier.connect(msg.data);
                     else if(msg.action === 'disconnect')
-                        var response = await livetradenotifier.disconnect(msg.data);
+                        livetradenotifier.disconnect(msg.data);
                 break;
             default:
                 console.log("Unknown event " + event);
@@ -98,6 +97,16 @@ async function exit(appid)
     else
         if(sn.shared_with.size === 2)
             live_openalgo.exit(appid);
+}
+
+function unlockLiveOrders(key)
+{
+    const today = new Date();
+    if(key === today.toDateString())
+        live_order_locked = false;
+
+    console.log('live order state ' + live_order_locked);
+    return (key === today.toDateString());
 }
 
 export default {

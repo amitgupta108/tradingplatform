@@ -1,4 +1,5 @@
-const positions = new Array(0);
+const positions = new Map();
+let in_prep_orders = {};
 const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
   
@@ -16,10 +17,11 @@ const t_position_table_row = document.getElementById('position-table-row');
 const t_option_chain_header = document.getElementById('oc-head-row');
 const t_option_chain_row = document.getElementById('option-chain-row');
 
-const toggle = document.getElementById('toggleBasket');
+const basket = document.getElementById('toggleBasket');
 const pos_all_cb = document.getElementById('exit_all_cb');
 const exit_pos_btn = document.getElementById('exitPositionBtn');
 const closeOWinBtn = document.getElementById('ow_close_btn');
+const submitOWinBtn = document.getElementById('ow_submit_btn');
 
 const socn = document.getElementById('socn');
 const date_label = document.getElementById('timer_date_lb');
@@ -61,6 +63,12 @@ qBox.addEventListener('futures', (event) => {
   futuresChart(event.detail);
 });
 
+qBox.addEventListener('strikex', (event) => {
+    var pos = positions.get(event.detail.symbol);
+    if(pos !== undefined)
+      pos.updateUnbookedPL(event.detail.close, 'quote');
+});
+
 qBox.addEventListener('strikex', (event) =>
 {
   var rows = Array.from(order_rows_tbody.rows);
@@ -97,17 +105,13 @@ exit_pos_btn.onclick = (event) => {
   const checkboxes = 
     Array.from(positions_tBody.querySelectorAll('input[type="checkbox"]:checked'));
   
-  const isBasket = checkboxes.length > 1;
+  const action;
   checkboxes.forEach((cb) => {
-    const pRow = cb.parentNode.parentNode;
-    const symbol = pRow.title;
+    const symbol = cb.parentNode.parentNode.title;
     const p = Position.findPosition(symbol, false);
-    const psize = p.value('unbookedQ');
-    var action = Math.sign(psize) === 1 ? 'S' : 'B';
+    action = Math.sign(p.psize) === 1 ? 'S' : 'B';
     
-    let neworder = new Order(symbol, action, Math.abs(psize));
-    neworder.pricetype = 'MARKET';
-    appendOrderRow(neworder, isBasket);
+    appendOrderRow(symbol, action, Math.abs(p.psize));
   });
   event.target.style.display = 'none';
   showOrderWindow();
@@ -118,8 +122,6 @@ closeOListBtn.onclick = () => {
 }
 
 closeOWinBtn.onclick = () => {
-  oWindow.style.display = "none";
-  order_rows_tbody.innerHTML = "";
-  toggle.disabled = false;
+  hideOWin();
 }
 /*--------------------------------------------------------------------------------------------------------------------------------*/
