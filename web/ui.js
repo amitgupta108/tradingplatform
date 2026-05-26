@@ -4,17 +4,19 @@ function createOrder(btn, parent)
   const action = btn.innerText;
   
   const rows = order_rows_tbody.rows;
+
   if(rows.length === 0)
     appendOrderRow(symbol, action);
   else if(rows.length > 0)
   {
     var idx = Array.from(rows).findIndex((r) => {
-      r.querySelector('#owsymbol').innerText === symbol;
+      return r.querySelector('#owsymbol').innerText === symbol;
     });
-    if (idx !== -1 || !basket.checked)
-      rows[idx].remove();
-    else
-      appendOrderRow(symbol, action);
+    const r_row = !basket.checked ? 0 : idx;
+    if(r_row !== -1)
+      rows[r_row].remove();
+    
+    appendOrderRow(symbol, action);
   }
   showOrderWindow();
 }
@@ -34,9 +36,11 @@ function appendOrderRow(symbol, action, quantity = 1)
   if(!basket.checked)
     tr.classList.remove('hover-row');
 
-  action === 'B' ? 
-      action_btn.classList.replace('sell', 'buy') :
-      action_btn.classList.replace('buy', 'sell') ;
+  if(action === 'B') {
+    action_btn.classList.replace('sell', 'buy');
+  } else {
+    action_btn.classList.replace('buy', 'sell');
+  }
 
   order_rows_tbody.prepend(tr);
   submitOWinBtn.disabled = true;
@@ -57,9 +61,11 @@ function showOrderWindow()
   else if(rows.length  === 1)
   {
     const action = rows[0].querySelector('#ow_action_btn').innerText;
-    action === 'B' ? 
-      oWindow.classList.replace('sell', 'buy'):
-      oWindow.classList.replace('buy', 'sell');
+    oWindow.classList.remove('buy', 'sell');
+    if(action === 'B') 
+      oWindow.classList.add('buy');
+    else
+      oWindow.classList.add('sell');
   }
   if(oWindow.style.display !== "block")
     oWindow.style.display = "block";

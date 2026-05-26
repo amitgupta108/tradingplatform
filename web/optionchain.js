@@ -24,7 +24,7 @@ class OptionChain
       const q = event.detail;
       const atm_move = q.ltp - this.atm;
       const atm_shift = Math.round(atm_move/50);
-      this.atm = atm_shift !== 0 ? true : false;
+      //this.atm = atm_shift !== 0 ? true : false;
 
       if(Math.abs(atm_move) > 50)
         this.atm = this.atm + atm_shift * 50;

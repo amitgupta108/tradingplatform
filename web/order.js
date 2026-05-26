@@ -50,7 +50,7 @@ function submitOrder(clickedBtn)
   if(in_prep_orders.isError)
     return;
   
-  emit('order', in_prep_orders.orders[0]);
+  emit('order', in_prep_orders.orders);
   in_prep_orders.orders.forEach((o) => {
     Position.findPosition(o.symbol, true);
   })

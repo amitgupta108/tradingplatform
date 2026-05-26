@@ -24,8 +24,11 @@ async function handleMessage(s, appid, event, msg)
         const trading_service  = sn.mode === 1 ?  live_openalgo: live_kotak;
         
         if(['order', 'modifyorder', 'cancelorder'].includes(event) && sn.mode !== 0 && live_order_locked)
+        {
             console.log('Live orders are locked');
-
+            return;
+        }
+        
         switch(event)
         {
             case 'start':
@@ -105,7 +108,7 @@ function unlockLiveOrders(key)
     if(key === today.toDateString())
         live_order_locked = false;
 
-    console.log('live order state ' + live_order_locked);
+    console.log('live order lock ' + live_order_locked);
     return (key === today.toDateString());
 }
 

@@ -105,7 +105,7 @@ exit_pos_btn.onclick = (event) => {
   const checkboxes = 
     Array.from(positions_tBody.querySelectorAll('input[type="checkbox"]:checked'));
   
-  const action;
+  let action;
   checkboxes.forEach((cb) => {
     const symbol = cb.parentNode.parentNode.title;
     const p = Position.findPosition(symbol, false);

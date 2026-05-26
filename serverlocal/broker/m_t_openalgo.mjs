@@ -6,12 +6,18 @@ import live_kotak from './t_kotakneo.mjs';
 
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
+let streaming_status = false;
 
 client.connect()
     .then(() => {
         console.log('openalgo client connected');
         client._wsClient.ws.addEventListener('open', () => {
             console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+        });
+
+        client._wsClient.ws.addEventListener('close', () => {
+            console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+            streaming_status = false;
         });
     })
     .catch((error) => console.error('Error connecting to openalgo ' + error)
@@ -87,8 +93,13 @@ async function orderbook(appid, stockCode)
 
 async function order(appid, orders)
 {
-    const promises = orders.map((order) => live_kotak.placeOrder(appid, order));
-    return await Promise.all(promises);
+
+    var res = await live_kotak.order(appid, orders);
+    console.log('order response ' + JSON.stringify(res));
+    return res;
+
+    //const promises = orders.map((order) => live_kotak.placeOrder(appid, order));
+    //return await Promise.all(promises);
 }
 
 async function placeOrder(appid, order)

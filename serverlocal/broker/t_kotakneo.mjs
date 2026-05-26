@@ -5,15 +5,13 @@ import trade_utils from './tradeupdater.mjs';
 function authHeaders()
 {
     const auth_data = kotak_socket.getAuthData();
-    return {
-        'Authorization': '3ed099c0-1a60-4a65-b24f-8c42747ecffa',
-        'neo-fin-key': 'neotradeapi',
+    return {headers: {
+        'accept': 'application/json',
         'sid': auth_data.sid,
         'Auth': auth_data.token,
-        'baseUrl': auth_data.baseUrl,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'accept': 'application/json'
-    };
+        'neo-fin-key': 'neotradeapi',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }, baseUrl: auth_data.baseUrl};
 }
 
 function apiUrl(path)
@@ -30,12 +28,12 @@ async function request(path, options)
 
 async function post(path, body)
 {
-    const requestBody = new URLSearchParams({ jData: JSON.stringify(body) }).toString();
+    const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
 
     return await request(path, {
         method: 'POST',
-        headers: authHeaders(),
-        body: requestBody
+        headers: authHeaders().headers,
+        body: requestBody.toString()
     });
 }
 
@@ -43,13 +41,15 @@ async function get(path)
 {
     var response = await request(path, {
         method: 'GET',
-        headers: authHeaders()
+        headers: authHeaders().headers
     });
     return await response.json();
 }
 
 function toKotakOrder(order)
 {    
+    const symbol = order.symbol.slice(0, -2);
+    const key = order.symbol.endsWith('PE') ? symbol.concat('.00PE') : symbol.concat('.00CE');
     const kotakOrder = {
         am: 'NO',
         dq: '0',
@@ -61,7 +61,8 @@ function toKotakOrder(order)
         pt: order.pricetype === 'MARKET' ? 'MKT' : 'L',
         qt: String(order.quantity),
         rt: 'DAY',
-        ts: scriptstore.findScripByKey('scripReferenceKey', symbol).tradingSymbol,
+        tp: '0',
+        ts: scripstore.findScripByKey('scripReferenceKey', key).tradingSymbol,
         tt: order.action === 'BUY' ? 'B' : 'S'
     };
 
@@ -86,11 +87,15 @@ async function placeOrder(appid, order)
     const clone = toKotakOrder(order);
     trade_utils.neworders(appid, [order]);
 
+    console.log('placing order ' + JSON.stringify(clone));
     let response = await post('quick/order/rule/ms/place', clone);
+    response = JSON.parse(response);
     if(order.state === 'created') {
         order.state = 'submitted';
-        order.orderid = response.orderid;
-        order.status = response.status;
+        order.orderid = response.nOrdNo;
+        order.status = response.stat;
+        order.stCode = response.stCode;
+        order.error = response.emsg;
     };
     console.log('order confirmation ' + JSON.stringify(response) + ' for order ' + JSON.stringify(order));
     return response;
@@ -124,5 +129,7 @@ async function orderbook(appid, stockCode)
 export default {
     order,
     cancelorder,
-    orderbook
+    orderbook,
+    placeOrder,
+    modifyorder
 };

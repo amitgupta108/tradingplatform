@@ -28,7 +28,7 @@ function addIVNDelta(q, uq)
             q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;
         } catch(error) {
-            console.log(error.message);
+            console.log('Error occurred while calculating IV and Delta: ' + JSON.stringify(error));
             q.iv = 0;
             q.delta = q.right === 'Call' ? 1 : -1;
         }

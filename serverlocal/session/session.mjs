@@ -24,8 +24,8 @@ class Session
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized'},
             {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized'},
-            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0},
-            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 12},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 12},
             {key: 'vix', stockCode: 'INDVIX', toStream: true, streamState: 'initialized', source:'icici'},
         ];
     }
@@ -105,7 +105,7 @@ class Session
     }
     
     inqsub(p, callback) {
-        if(['skeletal', 'stopped'].includes(this.status))
+        //if(['skeletal', 'stopped'].includes(this.status))
             this.ini(p, callback);
 
         this.status = 'stream requested';
