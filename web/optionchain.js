@@ -23,12 +23,13 @@ class OptionChain
     qBox.addEventListener('index', (event) => {
       const q = event.detail;
       const atm_move = q.ltp - this.atm;
-      const atm_shift = Math.round(atm_move/50);
-      //this.atm = atm_shift !== 0 ? true : false;
 
-      if(Math.abs(atm_move) > 50)
+      if(Math.abs(atm_move) > 50) {
+        const atm_shift = Math.round(atm_move/50);
         this.atm = this.atm + atm_shift * 50;
-    });
+        this.atm_changed = true;
+      }
+    }); 
     
     pBox.addEventListener('position', ((e) => {
         this.p_changed = true;
