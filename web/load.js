@@ -71,6 +71,10 @@ qBox.addEventListener('strikex', (event) => {
 
 qBox.addEventListener('strikex', (event) =>
 {
+  const n_rows = order_rows_tbody.rows.length;
+  if(n_rows === 0)
+    return;
+
   var rows = Array.from(order_rows_tbody.rows);
   rows.forEach((r) => {
     if(event.detail.symbol === r.querySelector("#owsymbol").innerText) {
@@ -78,7 +82,7 @@ qBox.addEventListener('strikex', (event) =>
       
       const lml_price_tb = qSel(r, 'lmtprice', 'id');
       const price_type_lb = qSel(r, 'ordertype', 'id');
-      if(lml_price_tb.value === '' && price_type_lb.innerHTML === 'LIMIT')
+      if(lml_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
         lml_price_tb.value = event.detail.close.toFixed(2);
     }
   });
