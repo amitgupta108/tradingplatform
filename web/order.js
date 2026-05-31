@@ -1,6 +1,6 @@
 class Order{
   exchange = instrument.exc;
-  strategy = instrument.appid;
+  appid = instrument.appid;
   pricetype = 'MARKET';
   product = 'NRML';
   price = 0;

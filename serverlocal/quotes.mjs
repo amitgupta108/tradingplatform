@@ -28,7 +28,7 @@ function emitQs(appid, q)
     const sn = Session.sn(appid);
     if(sn !== undefined)
     {
-        if(q.key === 'index')
+        if(q.key === 'futures')
             sn.lastuq(q);
         else if (q.key === 'strikex')
             utils.addIVNDelta(q, sn.lastuq());
@@ -39,12 +39,17 @@ function emitQs(appid, q)
 
 function group_emit(sn, type, msg)
 {
-    for (const appid of socketmap.keys()) {
-        const app_obj = socketmap.get(appid);
-        if(app_obj && type === 'order')
-            msg.appid = appid;
-        emit(app_obj.socket, type, msg);
-    };
+    if(sn.mode !== 0)
+    {
+        sn.shared_with.forEach((v, k) => {
+            if(v.m_subs !== 'stopped' || type !== 'quote')
+                emit(socketmap.get(k).socket, type, msg);
+        });
+    }
+    else
+    {   
+        emit(socketmap.get(sn.appid).socket, type, msg)
+    }
 }
 
 function broadcast(type, msg, group)

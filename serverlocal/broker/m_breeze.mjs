@@ -25,21 +25,6 @@ function changeSpeed(appid, speed)
     adapter.changeSpeed(appid, speed);
 }
 
-function orderbook(appid, stockCode)
-{
-    return Order_Service.orderbook(appid, stockCode);
-}
-
-function order(appid, orders)
-{
-   Order_Service.neworders(orders);
-}
-
-function cancelorder(appid, order)
-{
-    Order_Service.cancelOrder(order);
-}
-
 function onQuotes(q, mode, appid)
 {
     var q = standardizeiq(q);
@@ -85,9 +70,15 @@ function standardizeiq(q)
     return trimmedquote;
 }
 
-function preU(p) {
-    p.exchange = 'NSE';
-    return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
+function preQ(key, p) {
+    if(p.exchange === 'MCX')
+        return null;
+
+    p.exchange = key === 'index' || key === 'vix' ? 'NSE' : 'NFO';
+    p.stockCode = key === 'vix' ? 'INDVIX' : p.stockCode;
+    p.expiry = p.fExpiry;
+
+    return adapter.getHistoricalQuotes(p);
 }
 
 function preF(appid, stockCode, p) {
@@ -96,7 +87,7 @@ function preF(appid, stockCode, p) {
     p.exchange = 'NFO';
     p.appid = appid;
     p.stockCode = stockCode;
-    return adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');;
+    return adapter.getHistoricalQuotes(p);
 }
 
 function preD(p, uq) {
@@ -119,8 +110,6 @@ export default {
     exit,
     subscribe,
     preF,
-    order,
-    orderbook,
-    changeSpeed,
-    cancelorder
+    preQ,
+    changeSpeed
   };

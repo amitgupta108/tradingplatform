@@ -87,18 +87,22 @@ async function placeOrder(appid, order)
     const clone = toKotakOrder(order);
     trade_utils.neworders(appid, [order]);
 
-    console.log('placing order ' + JSON.stringify(clone));
     let response = await post('quick/order/rule/ms/place', clone);
-    response = JSON.parse(response);
+    console.log('order placed ' + JSON.stringify(clone));
+    if(!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+    }
+
+    const status = await response.json();
     if(order.state === 'created') {
         order.state = 'submitted';
-        order.orderid = response.nOrdNo;
-        order.status = response.stat;
-        order.stCode = response.stCode;
-        order.error = response.emsg;
+        order.orderid = status.nOrdNo;
+        order.status = status.stat;
+        order.stCode = status.stCode;
+        order.error = status.emsg;
     };
-    console.log('order confirmation ' + JSON.stringify(response) + ' for order ' + JSON.stringify(order));
-    return response;
+    console.log('order confirmation ' + JSON.stringify(status) + ' for order ' + JSON.stringify(order));
+    return status;
 }
 
 async function modifyorder(appid, order)
@@ -109,9 +113,12 @@ async function modifyorder(appid, order)
 
 async function cancelorder(appid, order)
 {
-    const resp = await post('quick/order/cancel', {on: order.orderid});
-    console.log('cancel response ' + JSON.stringify(resp) + ' for order ' + JSON.stringify(order));
-    return resp;
+    const response = await post('quick/order/cancel', {on: order.orderid});
+    if(!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+    }
+    console.log('cancel response ' + JSON.stringify(response) + ' for order ' + JSON.stringify(order));
+    return response.json();
 }
 
 async function orderbook(appid, stockCode)

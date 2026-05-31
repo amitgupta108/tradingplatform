@@ -34,7 +34,7 @@ instrumentMap.set('NH1', {
   oExpiryNxt: "24FEB26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 10,
+  lscount: 9,
   mode: 0,
   lotsize: 65,
   appid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
@@ -124,13 +124,19 @@ const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
 
 const chartOptions = {
-  height: 0, width: 0, 
-  autoSize: true,
   layout: {
-      textColor: 'black',
-      background: { type: 'solid', color: '#f4f4f4'},
-  	},
-    crosshair: {
+    textColor: 'black',
+    background: { type: 'solid', color: '#f4f4f4'},
+    rendering: {
+      type: 'canvas',
+    },
+    attributionLogo: false,
+  },
+  grid: {
+    vertLines: { color: '#e0e0e0' },
+    horzLines: { color: '#e0e0e0' },
+  },
+  crosshair: {
       mode: 0, // CrosshairMode.Normal
     },
     timeScale: {		
@@ -140,24 +146,37 @@ const chartOptions = {
       secondsVisible: false,
       tickMarkMaxCharacterLength: 5,
 	  },
-    rightPriceScale: {
-      visible: true,
-    },
-    leftPriceScale: {
-      visible: true,
-    },
+    defaultVisiblePriceScaleId: 'left', 
     handleScale: {
       axisPressedMouseMove: {
-          time: true,
-          price: true,
+          timeScale: true,
+          priceScale: true,
       },
     },
 };
 
-const chart = LightweightCharts.createChart('futures_chart', chartOptions);
-chart.timeScale().fitContent();
-chart.timeScale().scrollToPosition(15);
+const chart1 = LightweightCharts.createChart('futures_chart', chartOptions);
 
-const mainSeries = chart.addSeries(LightweightCharts.CandlestickSeries);
-const emaSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
-const vixSeries = chart.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'left', color: 'rgb(242, 142, 44)', lineWidth: 2 });
+chart1.priceScale('left').applyOptions({
+    visible: true,
+    autoScale: true,
+    mode: 0,
+});
+chart1.priceScale('right').applyOptions({
+    visible: true,
+    autoScale: true,
+    mode: 0,
+});
+
+const vixSeries = chart1.addSeries(LightweightCharts.CandlestickSeries, {});
+const futuresSeries = chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'right'});
+const fEmaSeries = chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 });
+chart1.timeScale().fitContent();
+chart1.timeScale().scrollToPosition(15);
+
+const chart2 = LightweightCharts.createChart('index_chart', chartOptions);
+const indexSeries = chart2.addSeries(LightweightCharts.CandlestickSeries, {});
+const iEmaSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
+chart2.timeScale().fitContent();
+chart2.timeScale().scrollToPosition(15);
+

@@ -2,21 +2,21 @@ function emit(event, arg1, arg2) {
   socket.emit(event, arg1, arg2);
 }
 
-function loadPreData(endtime)
+function loadPreData()
 {
-  const last_working_date = 3;
-  var ls = instrument.mode === 0 ? new Date(instrument.simStartTime) : new Date();
-  var le = endtime === undefined ? ls.getTime() - 1000 : endtime; 
-  var newDate = ls.getDate() - (last_working_date === 0 ? 1 : last_working_date);
-  var yesterdayoff = true;
-  var holiday = ls.getDay() === 1 ? 2 : yesterdayoff ? 1 : 0;
-  newDate = newDate - holiday;
-  ls.setDate(newDate); ls.setHours(9); ls.setMinutes(15);
+  const endTime = instrument.simStartTime;
+  const startTime = endTime - (simDate.getDay() === 1 ? 3 : 2) * 24 * 60 * 60 * 1000; // 2 days back
+  const keys = ['futures', 'index', 'vix'];
 
   const p = {
+    appid: instrument.appid,
+    exchange: instrument.exc,
+    stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
-    startTime: ls.getTime(),
-    endTime: le,
+    startTime: startTime,
+    endTime: endTime - 1000,
+    interval: '5minute',
+    keys: keys
   }
   emit('preData', p);
 }
@@ -51,7 +51,7 @@ function listOrders()
 function streamOptionChain(event)
 {  
   event.stopPropagation();
-  var oc_key = expiry_label === instrument.oExpiry ? 'occrnt' : 'ocnxt';
+  var oc_key = expiry_label.innerText === instrument.oExpiry ? 'occrnt' : 'ocnxt';
   emit('option_chain', {key: oc_key, action:'toggle'});
 }
 

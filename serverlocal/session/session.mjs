@@ -16,7 +16,7 @@ class Session
         
         this.appid = i_appid;
 
-        this.shared_with.set(appid, this);
+        this.shared_with.set(appid, {});
         this.mode = mode;
         this.stockCode = stockCode;
 
@@ -51,9 +51,9 @@ class Session
     #oq(uq, ost)
     {
         if(ost.atm === undefined || ost.atm === 0)
-            ost.atm = Math.round(uq.close/50) * 50;
+            ost.atm = Math.round(uq.ltp/50) * 50;
         else
-            ost.atm = ost.atm + Math.round((uq.close - ost.atm) / 50) * 50;
+            ost.atm = ost.atm + Math.round((uq.ltp - ost.atm) / 50) * 50;
         
         var sks = utils.strikes(ost.atm, ost.n);
 
@@ -104,46 +104,42 @@ class Session
         this.subsupdate(sublist);
     }
     
-    inqsub(p, callback) {
-        //if(['skeletal', 'stopped'].includes(this.status))
+    inqsub(p, callback)
+    {    
+        if(this.status !== 'streaming')
+            this.status = 'stream requested';
+        if(this.status === 'skeletal')
             this.ini(p, callback);
-
-        this.status = 'stream requested';
         
-        return utils.filter(this.st, {keys: ['index', 'futures', 'vix'], toStream: [true]});
+        return this.status === 'stream requested' ? utils.filter(this.st, { toStream: [true] }) : new Array();
     }
     
     unsuball(appid)
     {
-        this.shared_with.delete(appid);
-        if(this.shared_with.size > 1)
-            return new Array();
-        else
-        {
-            this.st.forEach((e) => e.toStream = false);
-            var ist = this.st.find((e) => e.key === 'index');
-            ist.uq = undefined;
-            this.status = 'stopped';
-            return utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']});
-        }
+        const sub_ref = this.mode === 0 ? this.status : this.shared_with.get(appid).m_subs;
+        sub_ref = 'stopped';
+
+        return this.mode === 0 ? utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']}) : new Array();
     }
 
     option_chain(key, action)
     {
         var oc = this.st.find((e) => e.key === key);
         oc.toStream = oc.toStream === true ? false : true;
+        if(this.st[2].toStream === false)
+            this.st[3].toStream = true;
     } 
 
     lastuq(uq)
     {
-        var st = this.st.find((e) => e.key === 'index');
+        var st = this.st.find((e) => e.key === 'futures');
         if(uq === undefined)
             return st.uq;
 
         var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnxt'], toStream: [true] });
         for (var j = 0; j < ost.length; j++)
         {
-            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.close)) > 50)
+            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > 50)
                 this.#oq(uq, ost[j]);
         }
         this.status = 'streaming';

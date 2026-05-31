@@ -1,123 +1,118 @@
 class OptionChain
 {
   expiry;
-  #h_oc_div;
   h_call_tbl;
   h_put_tbl;
   atm = 0;
-  pMap = new Map();
-  hl_symbol = new Array(0);
-  p_changed = true;
-  atm_changed = true;
+  row_map = new Map();
 
   constructor(expiry, v_oc_id)
   {
-    this.#h_oc_div = document.getElementById(v_oc_id);
-    const tbls = Array.from(this.#h_oc_div.querySelectorAll('table'));
-    this.#buildHTMLOC(tbls)
-    
     this.expiry = expiry;
-    optionChains.push(this);
+    this.#buildHTMLOC(v_oc_id);
     
+    optionChains.push(this);
     qBox.addEventListener('strikex', this);
-    qBox.addEventListener('index', (event) => {
-      const q = event.detail;
-      const atm_move = q.ltp - this.atm;
-
-      if(Math.abs(atm_move) > 50) {
-        const atm_shift = Math.round(atm_move/50);
-        this.atm = this.atm + atm_shift * 50;
-        this.atm_changed = true;
-      }
+    
+    qBox.addEventListener('futures', (event) => {
+      this.handleUnderlying(event.detail);
     }); 
     
-    pBox.addEventListener('position', ((e) => {
-        this.p_changed = true;
-        this.pMap.set(e.detail.symbol ,{psize: e.detail.unbookedQ});
-      })
-    );
-  }
-
-  #buildHTMLOC(tbls)
-  {    
-    [this.h_call_tbl, this.h_put_tbl] = tbls;
-
-    tbls.forEach((tb, idx) => {
-      for(var i = 0; i < lscount; i++)
-      {
-        var css = idx === 0 ? 'tr_straight' : 'tr_reverse';
-        var new_tr = tRow(t_option_chain_row);
-        new_tr.classList.add(css);
-        tb.append(new_tr);
+    pBox.addEventListener('position', (event) => {
+        const symbol = event.detail.symbol;
+        const unbookedQ = event.detail.unbookedQ;
+        const r = this.row_map.get(symbol);
+        if(r !== undefined) {
+          r.psize = unbookedQ;
+          r.row.cells[3].childNodes[1].innerText = unbookedQ;
+          r.row.cells[3].childNodes[1].classList.remove('buy', 'sell');
+          
+          if(!(unbookedQ === '' || unbookedQ === 0))
+            r.row.cells[3].childNodes[1].classList.add((Number(unbookedQ) > 0 ? 'buy' : 'sell'));
       }
     });
+  }
+
+  #buildHTMLOC(v_oc_id)
+  {    
+    const h_oc_div = document.getElementById(v_oc_id);
+    const tbls = Array.from(h_oc_div.querySelectorAll('table'));
+    [this.h_call_tbl, this.h_put_tbl] = tbls;
+
+    for(var i = 0; i < lscount; i++)
+    {
+      var new_tr_c = tRow(t_option_chain_row);
+      var new_tr_p = tRow(t_option_chain_row);
+      new_tr_c.classList.add('tr_straight');
+      new_tr_p.classList.add('tr_reverse');
+      
+      tbls[0].append(new_tr_c);
+      tbls[1].append(new_tr_p);
+    }
   }
 
   handleEvent(event)
   {
     var q = event.detail;
-    if(q.expiry_date !== this.expiry)
+    if(q === undefined || q.expiry_date !== this.expiry)
+      return;
+      
+    const r = this.row_map.get(q.symbol);
+    if(r === undefined)
       return;
 
-    const isCE = q.right === 'Call';
-    var offset = (this.atm - Number(q.strike_price)) / 50;
-    offset = Math.round(offset) * (isCE ? -1 : 1);
+    r.row.cells[2].textContent = q.ltp.toFixed(2);
     
-    if(offset >= -1 && offset < lscount-1)
-   {
-      const rIdx = isCE ? offset + 1 : lscount - 2 - offset;
-      const tbl = isCE ? this.h_call_tbl : this.h_put_tbl;
+    if(Math.abs(Number(r.row.cells[0].textContent) - q.iv) > 0.5)
+      r.row.cells[0].textContent = q.iv.toFixed(2);
+    
+    if(Math.abs(Number(r.row.cells[1].textContent) - q.delta) > 0.5)
+      r.row.cells[1].textContent = q.delta.toFixed(2);
+  }
+
+  handleUnderlying(q)
+  {
+    const atm_move = q.ltp - this.atm;
+
+    if(Math.abs(atm_move) > 50) {
+      const atm_shift = Math.round(atm_move/50);
+      this.atm = this.atm + atm_shift * 50;
+      this.atm_reset();
+    }
+  }
+
+  atm_reset()
+  {
+    const size = this.row_map.size;  
+    for(var i = 0; i < lscount * 2; i++)
+    {
+      const cg = i < lscount ? 
+        {right: 'CE', sign: 1, idx: i, offset: i - 1, tbl: this.h_call_tbl} : 
+        {right: 'PE', sign: -1, idx: i - lscount, offset: 2 * lscount - i - 2, tbl: this.h_put_tbl};
+
+      const strike = this.atm + (cg.offset * cg.sign) * 50;
+      const symbol = instrument.stockCode + this.expiry + strike + cg.right;
       
-      this.#rowfill_1(rIdx, q, tbl); 
-      if(this.p_changed) 
-        this.#rowfill_2(rIdx, q, tbl); 
-      this.#rowfill_3(rIdx, q, tbl); 
-    }
-  }
+      cg.tbl.rows[cg.idx].title = symbol;
+      cg.tbl.rows[cg.idx].cells[3].childNodes[3].innerText = strike;
 
-  #rowfill_1(rIdx, q, tbl)
-  {
-    const row = tbl.rows[rIdx];
-    row.cells[2].innerText = q.ltp.toFixed(2);
-
-    if(row.title !== q.symbol)
-      row.title = q.symbol;
-        
-    if(row.cells[3].childNodes[3].innerText !== q.strike_price)
-      row.cells[3].childNodes[3].innerText = q.strike_price;
-
-    const should_hl = this.hl_symbol.includes(q.symbol);
-    if(should_hl && !row.classList.contains('row_background'))
-      row.classList.add('row_background');
-    else if(!should_hl && row.classList.contains('row_background'))
-      row.classList.remove('row_background');
-  }
-
-  #rowfill_2(rIdx, q, tbl)
-  {
-    this.p_changed = false;
-    const row = tbl.rows[rIdx];
-    const unbookedQ = this.pMap.get(q.symbol);
-    const psize = unbookedQ !== undefined ? unbookedQ.psize : '';
-    
-    const icn = row.cells[3].childNodes[1];
-    if(icn.innerText !== psize) {
-      icn.innerText = psize;
-      icn.classList.remove('buy', 'sell');
-      if(psize !== '')
-        icn.classList.add((Number(psize) > 0 ? 'buy' : 'sell'));      
-    }
-  }
-
-  #rowfill_3(rIdx, q, tbl)
-  {
-    const row = tbl.rows[rIdx];
-    
-    if(row.cells[0].innerText !== q.iv.toFixed(2))
-      row.cells[0].innerText = q.iv.toFixed(2);
-    
-    if(row.cells[1].innerText !== q.delta.toFixed(2))
-      row.cells[1].innerText = q.delta.toFixed(2);
+      const r = this.row_map.get(symbol);
+      if(size === 0 || r === undefined)
+        this.row_map.set(symbol, {row: cg.tbl.rows[cg.idx]});
+      else { 
+        if(r.hl === true) {
+          r.row.classList.remove('row_background');
+          cg.tbl.rows[cg.idx].classList.add('row_background');
+        }
+        if(r.psize !== '') {
+          cg.tbl.rows[cg.idx].cells[3].childNodes[1].innerText = r.psize;
+          cg.tbl.rows[cg.idx].cells[3].childNodes[1].classList.add((Number(r.psize) > 0 ? 'buy' : 'sell'));
+          r.row.cells[3].childNodes[1].innerText = '';
+          r.row.cells[3].childNodes[1].classList.remove('buy', 'sell');
+        }
+        r.row = cg.tbl.rows[cg.idx];
+      }
+    }    
   }
 
   static get(expiry)

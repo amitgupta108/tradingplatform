@@ -2,7 +2,7 @@ import qServer from '../quotes.mjs';
 const sim_order_map = new Map();
 var counter = 50000;
 
-function neworders(orders)
+function neworders(appid, orders)
 {
     orders.forEach((order) => {
         order.filled_q = 0;
@@ -44,7 +44,7 @@ function orderExecutionSim(q)
     });
 }
 
-function cancelOrder(sim_order)
+function cancelOrder(appid, sim_order)
 {
     var found = sim_order_map.get(order.orderid);
     if(found !== undefined && found.state === 'opened') {
@@ -58,8 +58,7 @@ function cancelOrder(sim_order)
 function orderbook(appid, stockCode)
 {
     return Array.from(sim_order_map.values()).filter((order) => {
-        return (order.appid === appid
-        && order.stockCode === stockCode);
+        return order.appid === appid
     });
 }
 

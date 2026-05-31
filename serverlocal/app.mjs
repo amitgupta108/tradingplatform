@@ -84,6 +84,8 @@ if(!global.server)
         s.onAny((event, msg) => {
             console.log("Received event " + event + " with data " + JSON.stringify(msg));
             apiserver.handleMessage(s, appid, event, msg);
+            if(mode === 1)
+                apiserver.handleAdminMessage(s, event, msg);
         });
         
         s.on("disconnect", (reason) => {

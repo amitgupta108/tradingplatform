@@ -8,6 +8,7 @@ const expiryTimestampCache = new Map();
 
 function addIVNDelta(q, uq)
 {
+    const tStart = process.hrtime.bigint();
     if(q !== undefined && uq !== undefined)
     {    
         let expiryTime = expiryTimestampCache.get(q.expiry_date);
@@ -22,8 +23,8 @@ function addIVNDelta(q, uq)
         const flag = q.right === 'Call' ? 'c' : 'p';
 
         try{
-            var iv = vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, q.strike_price, yearsToExpiry, 0.05, flag);
-            var delta = vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, q.strike_price, yearsToExpiry, 0.05, iv);   
+            var iv = vollib.black.implied_volatility.implied_volatility(q.ltp, uq.ltp, q.strike_price, 0.0, yearsToExpiry, flag);
+            var delta = vollib.black.greeks.analytical.delta(flag, uq.ltp, q.strike_price, yearsToExpiry, 0.0, iv);   
         
             q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;
@@ -33,12 +34,9 @@ function addIVNDelta(q, uq)
             q.delta = q.right === 'Call' ? 1 : -1;
         }
     }
+    const tEnd = process.hrtime.bigint();
+    const tDiff = tEnd - tStart;
     return q;
-}
-
-function printObject(element)
-{
-    console.log(JSON.stringify(element, stringifyModifier));
 }
 
 function filter(collection, fO)
@@ -90,16 +88,6 @@ function filter(collection, fO)
     return fResults;
 }
 
-function stringifyModifier(key, value)
-{
-    if(key === 'quotes' && value != undefined)
-        return "quotes array present " + value.length;
-    else if(regex.test(key))
-        return new Date(value).toLocaleTimeString();
-    else
-        return value;
-}
-
 function useMeToCallAnything(f, a)
 {
   var startTime = Date.now();
@@ -138,7 +126,6 @@ function strikes(a, n)
 
 export default {
     addIVNDelta,
-    printObject,
     filter,
     compareExecTime,
     strikes
