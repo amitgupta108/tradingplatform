@@ -92,7 +92,7 @@ class Position
     
     this.updateUnbookedPL(price, 'position', bookedPLChange);
     
-    this.#pRow.querySelector('#pos_exit_cb').disabled = this.psize > 0 ? false : true;
+    this.#pRow.querySelector('#pos_exit_cb').disabled = this.psize === 0 ? true : false;
     this.#pRow.style.display = 'table-row';
   }
 

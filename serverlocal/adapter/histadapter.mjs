@@ -15,8 +15,8 @@ function addQuoteListener(callback)
     historyserver.addListener('quote', callback);
 }
 
-function getHistoricalQuotes(p, startTime, endTime, interval) {
-    return historyserver.getHistory(p, startTime, endTime, interval);
+function getHistoricalQuotes(p) {
+    return historyserver.getHistory(p);
 }
 
 function subscribe(appid, instruments, action) 

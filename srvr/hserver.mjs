@@ -1,12 +1,11 @@
 import sutils from './serverutils.mjs';
-import utils from '../common/utils.mjs';
 
 import EventEmitter  from 'node:events';
 const futsocket = new EventEmitter();
 
 const client_clocks = new Map();
 const client_store = new Map();
-var subsRequests = new Array(0);
+const subsRequests = new Map();
 
 const streamers = [
         {key: '1x', speed: 1, qsid: 0, state: 'stopped'},
@@ -23,7 +22,7 @@ function clientInit(appid, simStartTime, speed = '1x') {
 }
 
 function startStreamer(stmrkey){
-    const stmr = utils.filter(streamers, {keys: [stmrkey] })[0];
+    const stmr = streamers.find((s) => s.key === stmrkey);
     
     if(stmr.state === 'stopped') 
     {
@@ -61,7 +60,7 @@ function dothings(stmrkey)
         var count = 0;
         for (const c of client_clocks.values()) {
             if (c.key === stmrkey) {
-                var reqs = subsRequests.filter((s) => s.appid === c.appid && s.instrument.model === 'history');
+                var reqs = subsRequests.get(c.appid)?.filter((s) => s.instrument.model === 'history') || [];
                 reqs.forEach((req) => {
                     count++;
                     var qt = q(req.appid, req.instrument, c.currentTime);
@@ -91,7 +90,7 @@ function changeSpeed(appid, stmrkey){
     clock.key = stmrkey;
     
     var stmr = streamers.find((s) => s.key === stmrkey);
-    var exReq = utils.filter(subsRequests, {appid: [appid]});
+    var exReq = subsRequests.get(appid) || [];
     if(stmr.state === 'stopped' && exReq.length > 0)
         startStreamer(stmrkey);
 }
@@ -99,13 +98,12 @@ function changeSpeed(appid, stmrkey){
 function subscribe(requests) {
     
     requests.forEach((request) => {
-        var exReqs = subsRequests.filter((s) => 
-            s.appid === request.appid 
-            && s.symbol === request.symbol
+        var exReqs = (subsRequests.get(request.appid))?.filter((s) => 
+            s.symbol === request.symbol
             && s.instrument.model === request.instrument.model);
         
         if(exReqs.length === 0)
-            subsRequests.push(request);            
+            subsRequests.get(request.appid)?.push(request);            
     });
 
     const live_ones = requests.filter((r) => r.instrument.model === 'live');
@@ -122,10 +120,12 @@ function subscribe(requests) {
 function unsubscribe(requests) {
     requests.forEach((request) => {
         
-        var exReqs = utils.filter(subsRequests, {appid: [request.appid], symbol: [request.symbol]});   
+        const i_reqs = subsRequests.get(request.appid);
+        var exReqs = i_reqs?.filter((s) => s.symbol === request.symbol) || [];
+        
         if (exReqs.length > 0) {
             exReqs.forEach((r) => {
-                subsRequests.splice(subsRequests.indexOf(r), 1);
+                i_reqs.splice(i_reqs.indexOf(r), 1);
             });
         }
     });
@@ -133,8 +133,7 @@ function unsubscribe(requests) {
 
 function unsubscribeall(appid)
 {
-    var others = subsRequests.filter((s) => s.appid !== appid);   
-    subsRequests = others;
+    var others = subsRequests.delete(appid); 
 }   
 
 function exit(appid)
@@ -176,13 +175,12 @@ function qw(st, instrument, time) {
     });
 }
 
-function getHistory(p, startTime, endTime, interval)
+function getHistory(p)
 {
     const clock = client_clocks.get(p.appid);
-    if(clock !== undefined)
-        endTime = clock.currentTime;
-    
-    return sutils.getHistory(p, startTime, endTime, interval);
+    const endTime = clock !== undefined ? clock.currentTime : p.endTime;
+
+    return sutils.getHistory(p, p.startTime, endTime, p.interval);
 }
 
 function addListener(eventName, callback){

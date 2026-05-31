@@ -1,11 +1,10 @@
-import utils from '../common/utils.mjs';
 import { findByTime } from './binarysearch.mjs';
 
 const { BreezeConnect } = await import('breezeconnect');
 const breeze = new BreezeConnect({ "appKey": '72r5N3K05754+43ek796960QT96Hc8e1'});
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
 
-connect(appSecret, '55778253');
+connect(appSecret, '55793726');
 
 function connect(appSecret, sessionId){
     breeze.generateSession(appSecret, sessionId)
@@ -44,13 +43,7 @@ async function getHistoricalData(st, instrument, sTime)
 async function getHistory(instrument, sTime, endTime, interval) 
 {
     var resp = await getHistoricalDatav2(instrument, sTime, endTime, interval);
-    var quotes = resp.Success;
-    if (Array.isArray(quotes)) {
-        quotes.forEach((q) => {
-            q.ltt = Date.parse(q.datetime);
-        });
-    }
-    return quotes;
+    return resp.Success;
 }
 
 function getHistoricalDatav2(instrument, sTime, endTime, interval) 
@@ -65,7 +58,7 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.fromDate = ISODate(sTime);
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
-    utils.printObject(b);
+    console.log(JSON.stringify(b));
     try {
         return breeze.getHistoricalDatav2(b);
     } catch (error) {

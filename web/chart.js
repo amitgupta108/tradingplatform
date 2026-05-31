@@ -3,11 +3,24 @@ const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
 const ema_alpha = 2/21;
 const ema_beta = 1 - ema_alpha;
 
-function setFuturesChart(qA)
+function setInitialChart(key, qA)
 {
   if(qA === undefined || qA === null || qA.length === 0)
     return;
+  var qs = initialSeriesData(key, qA);
+  
+  const candleSeries = key === 'futures' ? futuresSeries : key === 'index' ? indexSeries : vixSeries;
+  candleSeries.setData(qs);
+  
+  if(key !== 'vix')
+  {
+    const emaSeries = key === 'futures' ? fEmaSeries : iEmaSeries;
+    emaSeries.setData(qs);
+  }
+}
 
+function initialSeriesData(key, qA)
+{
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') || e.datetime.includes('9:05')));
   for(var i = 0; i < qs.length; i++)
   {
@@ -15,18 +28,10 @@ function setFuturesChart(qA)
     qs[i].value = ema_alpha * qs[i].close + ema_beta * (i !== 0 ? qs[i-1].value : qs[0].close);
     qs.at(-1).customValues = qs.at(-1).value;
   }
-  mainSeries.setData(qs);
-  emaSeries.setData(qs);
+  return qs;
 }
 
-function futuresQuote(q)
-{
-  qBox.dispatchEvent(generateEvent('futures', q));
-  document.title = "Futures " + q.close.toFixed(2);
-  latency_label.innerText = Date.now() - q.ltt;
-}
-
-function futuresChart(q)
+function renderChart(mainSeries, emaSeries, q)
 {
   var curCandle = mainSeries.data().at(-1);
   if(curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
@@ -51,22 +56,14 @@ function futuresChart(q)
     curCandle.value =  ema_alpha * q.close + ema_beta * curCandle.customValues;
   }      
   mainSeries.update(curCandle);
-  emaSeries.update(curCandle);
-}
-
-function vixChart(q)
-{
-  if(mainSeries.data().length > 0)
-  {
-    var qTime = mainSeries.data().at(-1).time;
-    vixSeries.update({"time": qTime, "value": Number(q.close)});  
-  }
+  if(emaSeries !== undefined)
+    emaSeries.update(curCandle);
 }
 
 function updateIndexChart(uQuote)
 {
   var uQuoteTime = sTVtime(new Date(uQuote.datetime).setSeconds(0));
-  nifty.update({"time": uQuoteTime, "value": uQuote.close});
+  indexSeries.update({"time": uQuoteTime, "value": uQuote.close});
 }
 
 function setChartQuotes(optionChainQuotes)
@@ -109,7 +106,7 @@ function setUpInitialNiftyChart(uq)
     uq[i].time = sTVtime(uq[i].datetime);
     uq[i].value = uq[i].close;
   }
-  nifty.setData(uq);
+  indexSeries.setData(uq);
 
   chart2.timeScale().fitContent();
   chart2.timeScale().scrollToPosition(5);

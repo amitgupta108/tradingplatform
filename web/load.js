@@ -29,15 +29,19 @@ const time_label = document.getElementById('timer_time_lb');
 const spot_label = document.getElementById('timer_spot_lb');
 const latency_label = document.getElementById('timer_latency_lb');
 const expiry_label = document.getElementById('oc_expiry_lb');
-const simDate = new Date(instrument.simStartTime).toDateString();
+const simDate = new Date(instrument.simStartTime);
 
-date_label.innerText = simDate;
-expiry_label.innerText = instrument.oExpiry;
+date_label.textContent = simDate.toDateString();
+expiry_label.textContent = instrument.oExpiry;
 
-var gtotal_booked =  document.getElementById("vBookedPL");
-var gtotal_unbooked =  document.getElementById("vUnbookedPL");
-var gtotal_pnl =  document.getElementById("vTotalPL");
+let spot_title = ' | S: ';
+let fut_title = 'F: ';
+let gtotal_booked =  document.getElementById("vBookedPL");
+let gtotal_unbooked =  document.getElementById("vUnbookedPL");
+let gtotal_pnl =  document.getElementById("vTotalPL");
+
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
+
 class TradeButtons extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
@@ -55,12 +59,29 @@ customElements.define('trade-buttons', TradeButtons);
 /*--Event Listeners--------------------------------------------------------------------------------------------------------------------------*/
 const pBox = new EventTarget();
 const qBox = new EventTarget();
+
+qBox.addEventListener('index', (event) => {
+  const q = event.detail;
+  const ltp = q.close.toFixed(2);
+  spot_title = ' | S: ' + ltp;
+  document.title = fut_title + spot_title;
+  spot_label.textContent = ltp;
+  
+  var lt = new Date(q.ltt);
+  time_label.textContent = lt.toLocaleTimeString();
+  renderChart(indexSeries, iEmaSeries, q);
+});
+
 qBox.addEventListener('vix', (event) => {
-  vixChart(event.detail);
+  renderChart(vixSeries, undefined, event.detail);
 });
 
 qBox.addEventListener('futures', (event) => {
-  futuresChart(event.detail);
+  const q = event.detail;
+  fut_title = 'F: ' + q.close.toFixed(2);
+  document.title = fut_title + spot_title;
+  latency_label.textContent = Date.now() - q.ltt;
+  renderChart(futuresSeries, fEmaSeries, q);
 });
 
 qBox.addEventListener('strikex', (event) => {
@@ -77,8 +98,8 @@ qBox.addEventListener('strikex', (event) =>
 
   var rows = Array.from(order_rows_tbody.rows);
   rows.forEach((r) => {
-    if(event.detail.symbol === r.querySelector("#owsymbol").innerText) {
-      r.querySelector("#owprice").innerText = event.detail.close.toFixed(2);
+    if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
+      r.querySelector("#owprice").textContent = event.detail.close.toFixed(2);
       
       const lml_price_tb = qSel(r, 'lmtprice', 'id');
       const price_type_lb = qSel(r, 'ordertype', 'id');
@@ -109,15 +130,16 @@ exit_pos_btn.onclick = (event) => {
   const checkboxes = 
     Array.from(positions_tBody.querySelectorAll('input[type="checkbox"]:checked'));
   
-  let action;
   checkboxes.forEach((cb) => {
     const symbol = cb.parentNode.parentNode.title;
     const p = Position.findPosition(symbol, false);
-    action = Math.sign(p.psize) === 1 ? 'S' : 'B';
+    const action = Math.sign(p.psize) === 1 ? 'S' : 'B';
     
-    appendOrderRow(symbol, action, Math.abs(p.psize));
+    appendOrderRow(symbol, action, Math.abs(p.psize/instrument.lotsize));
+    cb.checked = false;
   });
   event.target.style.display = 'none';
+  pos_all_cb.checked = false;
   showOrderWindow();
 }
 

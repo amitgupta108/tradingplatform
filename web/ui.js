@@ -147,13 +147,11 @@ function flipOrderType(c, p)
 
 function hl_row(c, p)
 {
-  const symbol = p.title;
-  const oc = OptionChain.get(expandSymbol(symbol).expiry_date);
-  var idx = oc.hl_symbol.findIndex((r) => p.title === r);
-  if(idx === -1)
-    oc.hl_symbol.push(p.title);
-  else
-    oc.hl_symbol.splice(idx, 1);
+  const scrip = expandSymbol(p.title);
+  const oc = OptionChain.get(scrip.expiry_date);
+  const r = oc.row_map.get(p.title);
+  r.hl = !r.hl;
+  r.row.classList.toggle('row_background');
 }
 
 function removeOrderRow(c, p){

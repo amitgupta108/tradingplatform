@@ -40,7 +40,7 @@ function rh(socket)
 
     socket.on('prevsession', (streamingstatus) => {
       
-      if(mainSeries.data().length === 0)
+      if(futuresSeries.data().length === 0)
         loadPreData();
     });
 
@@ -59,8 +59,8 @@ function rh(socket)
       console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
     });
 
-    socket.on('futuresPreData', (fQuotes) => {
-      setFuturesChart(fQuotes);
+    socket.on('preData', (key, quotes) => {
+      setInitialChart(key, quotes);
     });
 
     socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
@@ -71,13 +71,6 @@ function rh(socket)
     socket.on('index', (q) => 
     {
       qBox.dispatchEvent(generateEvent('index', q));
-    
-      if(q.exchange === 'MCX')
-        futuresQuote(q);
-
-      var lt = new Date(q.ltt);
-      time_label.innerText = lt.toLocaleTimeString();
-      spot_label.innerText = q.close.toFixed(2);
     });
     
     socket.on('vix', (q) => {
@@ -86,7 +79,9 @@ function rh(socket)
     });
 
     socket.on('futures', (q) => {    
-      futuresQuote(q);
+      qBox.dispatchEvent(generateEvent('futures', q));
+      if(q.exchange === 'MCX')
+        qBox.dispatchEvent(generateEvent('index', q));      
     });
 
     socket.on('strikex', (q) => {
