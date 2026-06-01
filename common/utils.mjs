@@ -1,9 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const vollib = require('../../js_vollib-master/build/js_vollib').js_vollib;
-const regex = /Time/;
-
+import vollib from '../../js_vollib-master/build/js_vollib/.js_vollib.js';
 const expiryTimestampCache = new Map();
 
 function addIVNDelta(q, uq)
@@ -88,30 +83,6 @@ function filter(collection, fO)
     return fResults;
 }
 
-function useMeToCallAnything(f, a)
-{
-  var startTime = Date.now();
-  var r = f.apply(this, a);
-  var endTime = Date.now();
-
-  return {r: r, t: (endTime-startTime),};
-}
-
-function compareExecTime(f1, a1, f2, a2)
-{
-   if(f1 === undefined)
-    return;
-
-    var r1 = useMeToCallAnything(f1, a1);
-    
-    if(f2 != undefined)
-        var r2 = useMeToCallAnything(f2, a2);
-    else
-        var r2 = {r: undefined, t:0,};
-
-   return [r1.r, r2.r, r1.t - r2.t];
-}
-
 function strikes(a, n)
 {
     a = a/50;
@@ -127,6 +98,5 @@ function strikes(a, n)
 export default {
     addIVNDelta,
     filter,
-    compareExecTime,
     strikes
   };
