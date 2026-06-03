@@ -1,11 +1,11 @@
 import adapter from '../adapter/histadapter.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
-import qServer from '../quotes.mjs';
+import qServer from '../stream.mjs';
 
-const mode_live = 1;
-adapter.addQuoteListener(onQuotes);
+let initialized = false;
+const mode_live_icici = 3;
 
-function init(appid, startTime, speed)
+function clientConfigure(appid, startTime, speed)
 {
     adapter.init(appid, startTime, speed);
 }
@@ -13,6 +13,11 @@ function init(appid, startTime, speed)
 function exit(appid)
 {
     adapter.exit(appid);
+}
+
+function subscribe_vix(appid, action)
+{
+    adapter.subscribe_vix(action);
 }
 
 function subscribe(appid, instruments, action)
@@ -36,7 +41,7 @@ function onQuotes(q, mode, appid)
     if(appid !== undefined)
         qServer.emitQs(appid, q);
     else
-        qServer.emitQs(q.stockCode + mode_live, q);
+        qServer.emitQs(q.stockCode + mode_live_icici, q);
 
     if(q.key === 'strikex')
         Order_Service.orderExecutionSim(q);
@@ -45,27 +50,32 @@ function onQuotes(q, mode, appid)
 function standardizeiq(q) 
 {
     q['exchange'] = q['exchange_code'];
+    q['stockCode'] = q['stock_code'];
+
     q['ltp'] = q['close'];
     if(q.ltt === undefined)
         q.ltt = Date.parse(q.datetime);
 
+    if(q.stockCode === 'CRUDE')
+        q.stockCode = 'CRUDEOIL';
+    
     if(q.exchange != 'NSE')
         q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
 
     if(q.product_type === 'Futures') {
         q.key = 'futures';
-        q.symbol = q.stock_code + q.expiry_date + 'FUT';
+        q.symbol = q.stockCode + q.expiry_date + 'FUT';
     }
     else if(q.product_type === 'Options'){
         q.key = 'strikex';
-        q.symbol = q.stock_code + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');
+        q.symbol = q.stockCode + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');
     }
     else {
-        q.key = q.stock_code.endsWith('VIX') ? 'vix' : 'index';
-        q.symbol = q.stock_code;
+        q.key = q.stockCode.endsWith('VIX') ? 'vix' : 'index';
+        q.symbol = q.stockCode;
     }
     
-    let {exchange_code, product_type, open_interest, volume , datetime, ...trimmedquote} = q;
+    let {exchange_code, stock_code, product_type, open_interest, volume , datetime, ...trimmedquote} = q;
 
     return trimmedquote;
 }
@@ -105,11 +115,22 @@ function preD(p, uq) {
     return [pQ, cQ];
 }
 
+function init()
+{
+    if(!initialized) {
+        adapter.addQuoteListener(onQuotes);
+        adapter.connect('55828738', true);
+        initialized = true;
+    }
+}
+
 export default {
     init,
     exit,
     subscribe,
     preF,
     preQ,
-    changeSpeed
+    changeSpeed,
+    subscribe_vix,
+    clientConfigure
   };

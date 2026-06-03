@@ -196,17 +196,20 @@ async function start(expiryDates) {
     "data": {
       "baseFolder": "https://kotaksecurities.com",
       "filesPaths": [
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-05-21/transformed/nse_fo.csv"
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed/nse_fo.csv",
       ]
     }
   };
-
+  
+  //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed-v1/nse_cm-v1.csv",      
+  //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed/mcx_fo.csv"
+  
   const filters = {
-    exchangeSegment: [],
+    exchangeSegment: ['nse_fo'],
     expiryDate: [], 
     underlying: ['NIFTY'],
     exchange: [],
-    instrumentType: ['OPTIDX', 'FUTIDX']
+    instrumentType: ['OPTIDX']
   };
   //filters.expiryDate = expiryDates;
   await initStore(incomingPayload, filters);

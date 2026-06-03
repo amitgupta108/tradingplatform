@@ -14,7 +14,12 @@ const streamers = [
         {key: '5x', speed: 5, qsid: 0, state: 'stopped'},
     ];  
 
+function connect(sessionId, with_socket) {
+    sutils.connect(sessionId, with_socket, wsmessage);
+}
+
 function clientInit(appid, simStartTime, speed = '1x') {
+    subsRequests.set(appid, new Array(0));
     if(client_clocks.get(appid) === undefined) {
         client_store.set(appid, new Array(0));
         client_clocks.set(appid, {appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed});
@@ -100,7 +105,7 @@ function subscribe(requests) {
     requests.forEach((request) => {
         var exReqs = (subsRequests.get(request.appid))?.filter((s) => 
             s.symbol === request.symbol
-            && s.instrument.model === request.instrument.model);
+            && s.instrument.model === request.instrument.model) || [];
         
         if(exReqs.length === 0)
             subsRequests.get(request.appid)?.push(request);            
@@ -183,20 +188,19 @@ function getHistory(p)
     return sutils.getHistory(p, p.startTime, endTime, p.interval);
 }
 
-function addListener(eventName, callback){
+function addListener(eventName, callback)
+{
     futsocket.addListener(eventName, callback);
 }
 
 function live_sub(list, action)
 {
-    try {
-        if(action === 'subs')
-            sutils.wssub(list, wsmessage);
-        else
-            sutils.wsunsub(list);
-    } catch (error) {
-        console.log(error);
-    }
+    sutils.wssub(list, action);
+}
+
+function subscribe_vix(action)
+{
+    sutils.subscribe_vix(action);
 }
 
 function wsmessage(q)
@@ -213,4 +217,6 @@ export default {
     exit,
     getHistory,
     addListener,
+    connect,
+    subscribe_vix
 };

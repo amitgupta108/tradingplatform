@@ -1,5 +1,10 @@
 import historyserver from '../../srvr/hserver.mjs';
 
+function connect(sessionId, with_socket)
+{
+    historyserver.connect(sessionId, with_socket);
+}
+
 function init(appid, startTime, speed)
 {
     historyserver.clientInit(appid, startTime, speed);
@@ -13,6 +18,11 @@ function exit(appid)
 function addQuoteListener(callback)
 {
     historyserver.addListener('quote', callback);
+}
+
+function subscribe_vix(action)
+{
+    historyserver.subscribe_vix(action);
 }
 
 function getHistoricalQuotes(p) {
@@ -47,5 +57,7 @@ export default  {
     subscribe,  
     changeSpeed,
     addQuoteListener,
-    exit
+    exit,
+    connect,
+    subscribe_vix
 };

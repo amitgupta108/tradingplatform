@@ -28,10 +28,10 @@ instrumentMap.set('NH2', {
 });
 
 instrumentMap.set('NH1', {
-  simStartTime: new Date("2026-02-11 09:15:00").getTime(),
-  fExpiry: "24FEB26",
-  oExpiry: "17FEB26",
-  oExpiryNxt: "24FEB26",
+  simStartTime: new Date("2026-06-01 15:27:20").getTime(),
+  fExpiry: "30JUN26",
+  oExpiry: "02JUN26",
+  oExpiryNxt: "09JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: 9,
@@ -43,11 +43,11 @@ instrumentMap.set('NH1', {
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "30JUN26",
-  oExpiry: "02JUN26",
-  oExpiryNxt: "09JUN26",
+  oExpiry: "09JUN26",
+  oExpiryNxt: "16JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 12,
+  lscount: 9,
   mode: 1,
   lotsize: 65,
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
@@ -56,12 +56,12 @@ instrumentMap.set('NL1', {
 instrumentMap.set('NL2', {
   simStartTime: Date.now(),
   fExpiry: "30JUN26",
-  oExpiry: "02JUN26",
-  oExpiryNxt: "09JUN26",
+  oExpiry: "09JUN26",
+  oExpiryNxt: "16JUN26",
   stockCode: 'NIFTY',
-  exc: 'NFO',
-  lscount: 12,
-  mode: 1,
+  exc: 'NSE',
+  lscount: 9,
+  mode: 3,
   lotsize: 65,
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
@@ -113,12 +113,12 @@ instrumentMap.set('ML2',{
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
   lscount: 10,
-  mode: 1,
+  mode: 3,
   lotsize: 100,
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
 
-const lscount = 10;
+const lscount = 9;
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
@@ -131,10 +131,6 @@ const chartOptions = {
       type: 'canvas',
     },
     attributionLogo: false,
-  },
-  grid: {
-    vertLines: { color: '#e0e0e0' },
-    horzLines: { color: '#e0e0e0' },
   },
   crosshair: {
       mode: 0, // CrosshairMode.Normal

@@ -3,17 +3,22 @@ import { findByTime } from './binarysearch.mjs';
 const { BreezeConnect } = await import('breezeconnect');
 const breeze = new BreezeConnect({ "appKey": '72r5N3K05754+43ek796960QT96Hc8e1'});
 const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
+let ws_callback;
 
-connect(appSecret, '55793726');
-
-function connect(appSecret, sessionId){
+function connect(sessionId, with_socket = true, callback) {
     breeze.generateSession(appSecret, sessionId)
     .then((resp) => {
         console.log("Breeze session generated");
+
+        if (with_socket) {
+            breeze.wsConnect();
+            ws_callback = callback;
+            breeze.onTicks = ws_callback;
+            console.log("Breeze websocket initialized");
+        }
     }).catch((error) => {
         console.log("Error generating Breeze session " + error);
     });
-    breeze.wsConnect();
 }
 
 function findQuoteByTime(q, lt)
@@ -53,8 +58,8 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.stockCode = instrument.stockCode;
     b.strikePrice = instrument.strike;
     b.right = instrument.right;
-    b.productType = instrument.right != undefined ? 'options' : 'futures';
-    b.expiryDate = instrument.exchange != 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
+    b.productType = instrument.right !== undefined ? 'options' : 'futures';
+    b.expiryDate = instrument.exchange !== 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
     b.fromDate = ISODate(sTime);
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
@@ -75,31 +80,20 @@ function formatExpiry(expiry, type) {
     return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
 }
 
-function wssub(list, callback)
-{
-    breeze.onTicks = callback;
-
-    list.forEach((e) => {
-        var b = breeze_input(e.instrument);
-        breeze.subscribeFeeds(b)
-        .then((resp) => {
-            console.log('ICICI feed subs: ' + JSON.stringify(resp));
-        }).catch((error) => {
-            console.log('ICICI feed subs error: ' + error);
-        });
-    });
-}
-
-function wsunsub(list)
+function wssub(list, action)
 {
     list.forEach((e) => {
         var b = breeze_input(e.instrument);
-        
-        breeze.unsubscribeFeeds(b)
-        .then((resp) => {
-            console.log('ICICI feed unsubs: ' + resp)
+        var promise;
+        if(action === 'subs')
+            promise = breeze.subscribeFeeds(b);
+        else
+            promise = breeze.unsubscribeFeeds(b);
+
+        promise.then((resp) => {
+            console.log('ICICI feed ' + action + ': ' + JSON.stringify(resp));
         }).catch((error) => {
-            console.log('ICICI feed unsubs error: ' + error);
+            console.log('ICICI feed ' + action + ' error: ' + error);
         });
     });
 }
@@ -111,23 +105,40 @@ function wsDisconnect()
 
 function breeze_input(scrip)
 {       
-    var b = {expiryDate: formatExpiry(scrip.expiry, 'date')};
+    var b = {getExchangeQuotes: true}
     b.productType = scrip.right != undefined ? 'options' : 'futures';
     b.exchangeCode = scrip.stockCode === 'INDVIX' ? 'NSE' : scrip.exchange;
     b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
+    b.expiryDate = scrip.expiry !== undefined ? formatExpiry(scrip.expiry, 'date') : undefined;
     b.strikePrice = scrip.strike;
     b.right = scrip.right;
-    b.getExchangeQuotes = true;
     b.interval = "1second";
     
     return b;
 }
 
+function subscribe_vix(action)
+{
+    var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', getExchangeQuotes: true, interval: '1second'};
+    var promise;
+    if(action === 'subs')
+        promise = breeze.subscribeFeeds(b);
+    else
+        promise = breeze.unsubscribeFeeds(b);
+
+    promise.then((resp) => {
+        console.log('VIX feed ' + action + ': ' + JSON.stringify(resp));
+    }).catch((error) => {
+        console.log('VIX feed ' + action + ' error: ' + error);
+    });
+}
+
 export default {
+    connect,
     findQuoteByTime,
     getHistoricalData,
     getHistory,
     wssub,
-    wsunsub,
-    wsDisconnect
+    wsDisconnect,
+    subscribe_vix
 };

@@ -11,10 +11,9 @@ const __dirname = path.dirname(__filename);
 import express from 'express';
 import https from 'node:https';
 import { Server } from "socket.io";
-import ScripServer from './service/scripstore.mjs';
 import Session from './session/session.mjs';
-import kotak_socket from './broker/tradeupdater.mjs';
-import qserver from './quotes.mjs'; 
+import kotak_socket from './broker/brokersocket.mjs';
+import qserver from './stream.mjs'; 
 import apiserver from './apiserver.mjs'; 
 import { error } from 'node:console';
 
@@ -31,6 +30,7 @@ if(!global.server)
 
     const app = express();
     app.use(express.static(path.join(__dirname, '..', 'web')));
+
     app.use(express.json());
 
     const options = {
@@ -57,35 +57,34 @@ if(!global.server)
         pingTimeout: 30000
     });
 
-    ScripServer.start();
-
     io.on('connection', (s) => {
         
         const appid = s.handshake.auth.token;
         const mode = s.handshake.auth.mode;
         const stockCode = s.handshake.auth.stockCode;
 
-        console.log('user connected with socket ' + appid + ' ' + s.id);                
-        qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
+        const m = apiserver.init('market', mode);
+        const t = apiserver.init('trading', mode);
 
         const i_appid = mode === 0 ? appid : stockCode + mode;
         let sn = Session.sn(i_appid);
 
         if(sn === undefined)
-            sn = new Session(appid, mode, stockCode);
+            sn = new Session(i_appid, mode, stockCode);
         else
-        {    
-            sn.shared_with.set(appid, sn);
             if(sn.status === 'streaming')
                 s.emit('prevsession', sn.status);
-        }
+        
+        sn.shared_with.set(appid, { m_subs: sn.status});
+        qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
         s.sn = sn;
 
         s.onAny((event, msg) => {
             console.log("Received event " + event + " with data " + JSON.stringify(msg));
-            apiserver.handleMessage(s, appid, event, msg);
-            if(mode === 1)
+            if(mode === 1 && event === 'wsOps')
                 apiserver.handleAdminMessage(s, event, msg);
+            else
+                apiserver.handleMessage(s, appid, event, msg);
         });
         
         s.on("disconnect", (reason) => {

@@ -5,6 +5,7 @@ class OptionChain
   h_put_tbl;
   atm = 0;
   row_map = new Map();
+  u_price = 0;
 
   constructor(expiry, v_oc_id)
   {
@@ -63,6 +64,7 @@ class OptionChain
 
     r.row.cells[2].textContent = q.ltp.toFixed(2);
     
+    q = addIVNDelta(q, this.u_price);
     if(Math.abs(Number(r.row.cells[0].textContent) - q.iv) > 0.5)
       r.row.cells[0].textContent = q.iv.toFixed(2);
     
@@ -72,6 +74,7 @@ class OptionChain
 
   handleUnderlying(q)
   {
+    this.u_price = q.ltp;
     const atm_move = q.ltp - this.atm;
 
     if(Math.abs(atm_move) > 50) {
@@ -104,7 +107,7 @@ class OptionChain
           r.row.classList.remove('row_background');
           cg.tbl.rows[cg.idx].classList.add('row_background');
         }
-        if(r.psize !== '') {
+        if(r.psize !== undefined && r.psize !== '') {
           cg.tbl.rows[cg.idx].cells[3].childNodes[1].innerText = r.psize;
           cg.tbl.rows[cg.idx].cells[3].childNodes[1].classList.add((Number(r.psize) > 0 ? 'buy' : 'sell'));
           r.row.cells[3].childNodes[1].innerText = '';
