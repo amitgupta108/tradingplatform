@@ -1,4 +1,3 @@
-import utils from '../common/utils.mjs';
 import Session from './session/session.mjs';
 
 const socketmap = new Map();
@@ -30,8 +29,6 @@ function emitQs(appid, q)
     {
         if(q.key === 'futures')
             sn.lastuq(q);
-        else if (q.key === 'strikex')
-            utils.addIVNDelta(q, sn.lastuq());
 
         group_emit(sn, q.key, q);
     }
@@ -42,8 +39,10 @@ function group_emit(sn, type, msg)
     if(sn.mode !== 0)
     {
         sn.shared_with.forEach((v, k) => {
-            if(v.m_subs !== 'stopped' || type !== 'quote')
+            if(type === 'order' || v.m_subs !== 'stopped') {
+                msg.appid = k;
                 emit(socketmap.get(k).socket, type, msg);
+            }
         });
     }
     else

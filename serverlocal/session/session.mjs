@@ -9,35 +9,27 @@ class Session
     status = 'skeletal';
     constructor(appid, mode, stockCode)
     {
-        const i_appid = mode === 0 ? appid : stockCode + mode;
-
-        if(mode === 0 && this.shared_with.size !== 0)
-            throw error('Invalid session creation attempted');
-        
-        this.appid = i_appid;
-
-        this.shared_with.set(appid, {});
+        this.appid = appid;
         this.mode = mode;
         this.stockCode = stockCode;
 
-        us.set(i_appid, this);
+        us.set(this.appid, this);
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized'},
             {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized'},
-            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 12},
-            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 12},
-            {key: 'vix', stockCode: 'INDVIX', toStream: true, streamState: 'initialized', source:'icici'},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 11},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 11},
         ];
     }
 
     ini(p, callback) 
     {
-        for(var i = 0; i < 5; i++)
+        for(var i = 0; i < 4; i++)
         {
-            this.st[i].exchange = (i === 0 || i === 4) && p.exc === 'NFO' ? 'NSE' : p.exc;
+            this.st[i].exchange = i === 0 && p.exc === 'NFO' ? 'NSE' : p.exc;
             this.st[i].model = this.mode === 0 ? 'history' : 'live';
             this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
-            this.st[i].toStream = (i === 0 || i === 4) && p.exc === 'MCX' ? false : this.st[i].toStream;
+            this.st[i].toStream = i === 0 && p.exc === 'MCX' ? false : this.st[i].toStream;
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
@@ -60,7 +52,7 @@ class Session
         for (var i = 0; i < sks.length; i++) 
         {
             var lst = utils.filter(this.st, {
-                    stockCodes: [ost.stockCode],
+                    stockCodes: [this.stockCode],
                     expiries: [ost.expiry],
                     strikes: [sks[i].strike],
                     rights: [sks[i].right]
@@ -93,41 +85,56 @@ class Session
         ost.streamState = 'ready to run';
         ost.strikes = sks;
         
-        this.#ocqsub(ost.stockCode, ost.expiry);
+        this.#ocqsub(ost.expiry, true);
     }
 
-    #ocqsub(stockCode, expiry)
+    #ocqsub(expiry, toStream)
     {
-        var fst = utils.filter(this.st, {keys: ['strikex'], stockCodes: [stockCode], expiries: [expiry]});
-        var sublist = utils.filter(fst, {toStream: [true]});
-        this.status = 'request completed';
-        this.subsupdate(sublist);
+        const list = this.st.filter((s) => s.expiry === expiry 
+                && s.toStream === toStream
+                && s.key === 'strikex').map((s) => {
+                    s.toStream = toStream;
+                    return s;
+                });
+        this.subsupdate(list);
     }
     
     inqsub(p, callback)
     {    
-        if(this.status !== 'streaming')
-            this.status = 'stream requested';
         if(this.status === 'skeletal')
             this.ini(p, callback);
-        
-        return this.status === 'stream requested' ? utils.filter(this.st, { toStream: [true] }) : new Array();
+        if(this.status !== 'streaming')
+            this.status = 'stream requested';
+
+        return this.status !== 'streaming' ? utils.filter(this.st, {notinkeys: ['occrnt', 'ocnxt', 'strikex'], toStream: [true] }) : [];
     }
     
     unsuball(appid)
     {
-        const sub_ref = this.mode === 0 ? this.status : this.shared_with.get(appid).m_subs;
-        sub_ref = 'stopped';
-
-        return this.mode === 0 ? utils.filter(this.st, { notinkeys: ['occrnt', 'ocnxt']}) : new Array();
+        let list = []; 
+        this.st.find((s) => s.key === 'futures').uq = undefined;
+        if(this.mode === 0) {
+            this.status = 'stopped';
+            list = this.st.map((s) => {
+                s.toStream = false;
+                return s;
+            });
+        }
+        else {
+            this.shared_with.get(appid).m_subs = 'stopped';
+        }
+        return list;
     }
 
     option_chain(key, action)
     {
         var oc = this.st.find((e) => e.key === key);
         oc.toStream = oc.toStream === true ? false : true;
-        if(this.st[2].toStream === false)
+        this.#ocqsub(oc.expiry, oc.toStream);
+        if(key === 'occrnt' && oc.toStream === false && this.st[3].toStream === false) {
             this.st[3].toStream = true;
+            this.#ocqsub(this.st[3].expiry, true);
+        }
     } 
 
     lastuq(uq)

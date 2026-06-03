@@ -21,7 +21,7 @@ function setInitialChart(key, qA)
 
 function initialSeriesData(key, qA)
 {
-  var qs = qA.filter((e) => !(e.datetime.includes('9:00') || e.datetime.includes('9:05')));
+  var qs = qA.filter((e) => !(e.datetime.includes('9:00') ||e.datetime.includes('9:05') || e.datetime.includes('9:10')));
   for(var i = 0; i < qs.length; i++)
   {
     qs[i].time = sTVtime(qs[i].datetime);

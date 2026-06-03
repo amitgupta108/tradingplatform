@@ -1,31 +1,16 @@
 import OpenAlgo from 'openalgo';
-import qserver from '../quotes.mjs';
-import trade_utils from './tradeupdater.mjs';
-import adapter from '../adapter/histadapter.mjs';
-import live_kotak from './t_kotakneo.mjs';
+import qserver from '../stream.mjs';
+import trade_utils from '../service/tradenotifier.mjs';
+import live_kotak from './m_t_kotakneo.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
 
+let initialized = false;
 const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
 const client = new OpenAlgo(connkey);
 let streaming_status = false;
 
 const symbol_cache = new Map();
-
-client.connect()
-    .then(() => {
-        console.log('openalgo client connected');
-        client._wsClient.ws.addEventListener('open', () => {
-            console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-        });
-
-        client._wsClient.ws.addEventListener('close', () => {
-            console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-            streaming_status = false;
-        });
-    })
-    .catch((error) => console.error('Error connecting to openalgo ' + error)
-);
-
+const regex = /[0-9]/;
 const mode_live = 1;
 
 function onQuotes(q)
@@ -50,57 +35,56 @@ function standardizeoq(q)
     q.open = q.ltp;
     q.high = q.ltp;
     q.low = q.ltp;
-        
-    if(symbol_cache.get(q.symbol) === undefined) 
-    {
-        const regex = /[0-9]/;
-        const idx = q.symbol.search(regex);
-        const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
+    
+    const idx = q.symbol.search(regex);
+    const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
+    q.stockCode = st_code;
+    q.key = q.symbol.endsWith('FUT') ? 'futures' : q.symbol.endsWith('PE') || q.symbol.endsWith('CE') ? 'strikex' : 'index';
+    
+    if(idx === -1)
+        return q;
 
-        if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
-            const right = q.symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
-            const expiry = q.symbol.slice(idx, idx + 7);
-            const strike = q.symbol.slice(idx + 7, -2);
-        }
-        symbol_cache.set(q.symbol, {stockCode: st_code, right: right, expiry: expiry, strike: strike});
-    }
+    const cached = addtocache(q.symbol, idx);
+    q.expiry_date = cached.expiry;        
+    q.right = cached.right;
+    q.strike_price = cached.strike;
 
-    q.st_code = symbol_cache.get(q.symbol).stockCode;
-    if(q.exchange === 'NSE_INDEX') {
-        q.exchange = 'NSE';
-        q.key = 'index';
-    }
-    else if (q.symbol.endsWith('FUT')) {
-        q.key = 'futures';
-    }
-    else if (q.symbol.endsWith('PE') || q.symbol.endsWith('CE')) {
-        q.key = 'strikex';
-
-        q.right = symbol_cache.get(q.symbol).right;
-        q.expiry_date = symbol_cache.get(q.symbol).expiry;
-        q.strike_price = symbol_cache.get(q.symbol).strike;
-    }        
     return q;
 } 
+
+function addtocache(symbol, idx)
+{
+    if(symbol_cache.has(symbol))
+        return symbol_cache.get(symbol);
+    
+    const expiry = symbol.slice(idx, idx + 7);
+    const cached = {expiry: expiry};
+
+    if(!symbol.endsWith('FUT'))
+    {
+        cached.strike = symbol.slice(idx + 7, -2);
+        cached.right = symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
+    }
+    symbol_cache.set(symbol, cached);
+    return cached;
+}
 
 function subscribe(appid, sublist, action)
 {
     if(sublist.length === 0)
         return;
 
-    var redirectedpath = sublist.filter((item) => item.source === 'icici');
-    adapter.subscribe(appid, redirectedpath, action);
+    const list = sublist.map((item) => {
+        if(item.exchange === 'NSE')
+            item.exchange= 'NSE_INDEX';
 
-    var originalpath = sublist.filter((item) => {
-        if(item.key === 'index' && item.exchange === 'NSE')
-            item.exchange = 'NSE_INDEX';
-        return item.source !== 'icici'
+        return {exchange: item.exchange, symbol: item.symbol};
     });
 
     if(action === 'subs')
-        client.subscribe_ltp(originalpath, onQuotes);
+        client.subscribe_ltp(list, onQuotes);
     else 
-        client.unsubscribe_ltp(originalpath, onQuotes);
+        client.unsubscribe_ltp(list, onQuotes);
 }
 
 async function orderbook(appid, stockCode)
@@ -155,4 +139,23 @@ async function cancelorder(appid, order)
     return await live_kotak.cancelorder(appid, order);
 }
 
-export default {subscribe, exit };
+function init()
+{
+    if(!initialized)
+    {
+        client.connect()
+        .then(() => {
+            console.log('openalgo client connected');
+            client._wsClient.ws.addEventListener('open', () => {
+                console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+            });
+
+            client._wsClient.ws.addEventListener('close', () => {
+                console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+                streaming_status = false;
+            });
+            initialized = true;
+        }).catch((error) => console.error('Error connecting to openalgo ' + error));
+    }
+}
+export default {subscribe, exit, init};

@@ -1,6 +1,12 @@
-import qServer from '../quotes.mjs';
+import qServer from '../stream.mjs';
 const sim_order_map = new Map();
 var counter = 50000;
+let initialized = false;
+
+function init()
+{
+    initialized = true;
+}
 
 function neworders(appid, orders)
 {
@@ -66,5 +72,6 @@ export default {
     neworders,
     cancelOrder,
     orderbook,
-    orderExecutionSim
+    orderExecutionSim,
+    init
 }

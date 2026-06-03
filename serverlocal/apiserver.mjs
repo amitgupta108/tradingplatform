@@ -1,6 +1,8 @@
 import hist_service from './broker/m_breeze.mjs';
+import live_icici from './broker/m_breeze.mjs';
 import live_openalgo from './broker/m_t_openalgo.mjs';
-import live_kotak from './broker/t_kotakneo.mjs';
+import live_kotak from './broker/m_t_kotakneo.mjs';
+import kotak_socket from './broker/brokersocket.mjs';
 import paper_trading from './service/ordersimulator.mjs';
 import Session from './session/session.mjs';
 
@@ -8,18 +10,37 @@ var live_order_locked = true;
 
 /* mode
 0: historical backtest
-1: live openalgo data, kotak-neo-api orders
+1: live kotak-neo data, kotak-neo-api orders
 2: live openalgo data, orders simulated
+3: live icici data, kotak-neo-api orders
 */
+
+function init(type, mode)
+{
+    getService(type, mode).init();
+}
+
+function getService(type, mode)
+{
+    var service;
+    if(type === 'market')
+        service = mode === 0 ? hist_service : mode === 3 ? live_icici : live_openalgo;
+    else if(type === 'trading')
+        service = mode === 1 ? live_kotak : paper_trading;
+    else if(type === 'vix')
+        service = live_icici;
+
+    return service;
+}
 
 async function handleMessage(s, appid, event, msg)
 {
     try {
         const sn = s.sn;
-        const market_service = sn.mode === 0 ? hist_service : live_openalgo;
-        const trading_service  = sn.mode === 1 ? live_kotak : paper_trading;
-        
-        if(['order', 'modifyorder', 'cancelorder'].includes(event) && sn.mode === 1 && live_order_locked)
+        const market_service = getService('market', sn.mode);
+        const trading_service  = getService('trading', sn.mode);
+    
+        if(['order', 'modifyorder', 'cancelorder'].includes(event) && sn.mode !== 0 && live_order_locked)
         {
             console.log('Live orders are locked');
             return;
@@ -27,9 +48,12 @@ async function handleMessage(s, appid, event, msg)
         
         switch(event)
         {
+            case 'vix':
+                getService('vix', sn.mode).subscribe_vix(sn.appid, msg.action);
+                break;
             case 'start':
                 if(sn.mode === 0)
-                    market_service.init(sn.appid, msg.simStartTime, '1x');
+                    market_service.clientConfigure(sn.appid, msg.simStartTime, '1x');
 
                 const stSubs = sn.inqsub(msg, (opSubs) => {
                     market_service.subscribe(sn.appid, opSubs, 'subs');
@@ -49,8 +73,9 @@ async function handleMessage(s, appid, event, msg)
                     hist_service.changeSpeed(appid, msg);
                 break;
             case 'stop':
-                sn.unsuball(appid);
-                //market_service.subscribe(appid, sn.unsuball(appid), 'unsuball');
+                const list = sn.unsuball(appid);
+                if(sn.mode === 0 && list.length > 0)
+                    market_service.subscribe(appid, list, 'unsuball');
                 break;
             case 'prevsession':
                 s.emit('prevsession', sn.status)
@@ -76,8 +101,6 @@ async function handleMessage(s, appid, event, msg)
     }
 }
 
-import livetradenotifier from './service/livetradenotifier.mjs';
-
 async function handleAdminMessage(s, event, msg)
 {
     try {
@@ -88,9 +111,9 @@ async function handleAdminMessage(s, event, msg)
                     unlockLiveOrders(msg.data);
                 else
                     if(msg.action === 'connect')
-                        livetradenotifier.connect(msg.data);
+                        kotak_socket.connect(msg.data);
                     else if(msg.action === 'disconnect')
-                        livetradenotifier.disconnect(msg.data);
+                        kotak_socket.disconnect(msg.data);
                 break;
             default:
                 console.log("Unknown event " + event);
@@ -126,5 +149,6 @@ function unlockLiveOrders(key)
 export default {
     handleMessage,
     handleAdminMessage,
-    exit
+    exit,
+    init
 };

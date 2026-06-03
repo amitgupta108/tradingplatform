@@ -1,17 +1,15 @@
 var socket;
 
-if(instrument.mode !== 3) {
-  socket = io(`https://localhost:${window.location.port}`, {
-    auth: {
-      token: instrument.appid,
-      mode: instrument.mode,
-      stockCode: instrument.stockCode
-    },
-    timeout: 20000,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-  });
-}
+socket = io(`https://localhost:${window.location.port}`, {
+  auth: {
+    token: instrument.appid,
+    mode: instrument.mode,
+    stockCode: instrument.stockCode
+  },
+  timeout: 20000,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+});
 
 socket.io.on("reconnect", (attempt) => {
     console.log("Reconnected on attempt # " + attempt);
@@ -74,8 +72,7 @@ function rh(socket)
     });
     
     socket.on('vix', (q) => {
-      if(q !== undefined) 
-        qBox.dispatchEvent(generateEvent('vix', q));
+      qBox.dispatchEvent(generateEvent('vix', q));
     });
 
     socket.on('futures', (q) => {    

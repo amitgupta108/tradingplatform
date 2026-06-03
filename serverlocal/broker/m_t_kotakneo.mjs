@@ -1,6 +1,16 @@
-import scripstore from '../service/scripstore.mjs';
-import kotak_socket from '../service/livetradenotifier.mjs';
-import trade_utils from './tradeupdater.mjs';
+import scrip_service from '../service/scripstore.mjs';
+import kotak_socket from './brokersocket.mjs';
+import trade_utils from '../service/tradenotifier.mjs';
+import qserver from '../stream.mjs';
+
+var initialized = false;
+
+function init()
+{
+    kotak_socket.init();
+    scrip_service.start();
+    initialized = true;
+}
 
 function authHeaders()
 {
@@ -62,7 +72,7 @@ function toKotakOrder(order)
         qt: String(order.quantity),
         rt: 'DAY',
         tp: '0',
-        ts: scripstore.findScripByKey('scripReferenceKey', key).tradingSymbol,
+        ts: scrip_service.findScripByKey('scripReferenceKey', key).tradingSymbol,
         tt: order.action === 'BUY' ? 'B' : 'S'
     };
 
@@ -133,10 +143,59 @@ async function orderbook(appid, stockCode)
     return orders.sort((a, b) => a.orderid - b.orderid);
 }
 
+function subscribe(appid, sublist, action)
+{
+    if(sublist.length === 0)
+        return;
+
+    //var redirectedpath = sublist.filter((item) => item.source === 'icici');
+    //adapter.subscribe(appid, redirectedpath, action);
+    var subs_string = '';
+    for(var item of sublist) {
+        if(item.key === 'strikex'){
+            var key = 'scripreferenceKey';
+            var value = item.symbol.slice(0, -2);
+            value += item.symbol.endsWith('PE') ? '.00PE' : '.00CE';
+            var type = 'mws'
+        }
+        else {
+            var key = 'tradingSymbol';
+            var value = item.symbol;
+            var type = item.key === 'index' ? 'ifs' : 'mws';
+        }
+        var instrument = scrip_service.findScripByKey(key, value);
+        subs_string = (subs_string !== '' ? subs_string + '&' : '') + `${instrument.exchangeSegment}|${instrument.symbol}`;
+    }
+
+    if(action === 'subs')
+        kotak_socket.subscribe(type, subs_string);
+    else 
+        kotak_socket.unsubscribe(type, subs_string);       
+}
+
+function onQuotes(q)
+{ 
+    console.log('hsm quotes ' + JSON.stringify(q));
+    /*const qt = standardizeoq(q);
+    qserver.emitQs(qt.stockCode + mode_live, qt);
+
+    if(qt.key === 'strikex')
+        Order_Service.orderExecutionSim(qt);
+    */
+}
+
+function exit(appid, sublist)
+{
+    subscribe(appid, sublist, 'unsub');
+}
+
 export default {
     order,
     cancelorder,
     orderbook,
     placeOrder,
-    modifyorder
+    modifyorder,
+    exit,
+    subscribe,
+    init
 };

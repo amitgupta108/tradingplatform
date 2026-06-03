@@ -2,14 +2,14 @@
     "inputs": [],
     "configurations": [
         {
-            "name": "Live on 449",
+            "name": "Live on 80",
             "program": "${workspaceFolder}/serverlocal/app.mjs",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "args": [
-                "449"
+                "80"
             ],
             "type": "node",
             "outputCapture": "std"
