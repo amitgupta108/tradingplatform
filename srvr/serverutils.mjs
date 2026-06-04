@@ -63,7 +63,6 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.fromDate = ISODate(sTime);
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
-    console.log(JSON.stringify(b));
     try {
         return breeze.getHistoricalDatav2(b);
     } catch (error) {
@@ -106,14 +105,15 @@ function wsDisconnect()
 function breeze_input(scrip)
 {       
     var b = {getExchangeQuotes: true}
-    b.productType = scrip.right != undefined ? 'options' : 'futures';
-    b.exchangeCode = scrip.stockCode === 'INDVIX' ? 'NSE' : scrip.exchange;
+    b.exchangeCode = scrip.key === 'index' ? 'NSE' : scrip.exchange;
+    b.productType = scrip.key === 'futures' ? 'futures' : 'options';
     b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
     b.expiryDate = scrip.expiry !== undefined ? formatExpiry(scrip.expiry, 'date') : undefined;
     b.strikePrice = scrip.strike;
     b.right = scrip.right;
     b.interval = "1second";
-    
+    console.log('subs input ' + JSON.stringify(b));
+
     return b;
 }
 

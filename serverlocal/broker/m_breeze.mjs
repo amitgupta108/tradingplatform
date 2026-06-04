@@ -59,16 +59,16 @@ function standardizeiq(q)
     if(q.stockCode === 'CRUDE')
         q.stockCode = 'CRUDEOIL';
     
-    if(q.exchange != 'NSE')
+    if(q.expiry_date !== undefined)
         q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
 
-    if(q.product_type === 'Futures') {
+    if(q.exchange !== 'NSE' && q.strike_price !== undefined) {
+        q.key = 'strikex';
+        const rt = q.right_type !== undefined ? right_type : (q.right === 'Call' ? 'CE' : 'PE');
+        q.symbol = q.stockCode + q.expiry_date + q.strike_price + rt;
+    } else if(q.expiry_date !== undefined) {
         q.key = 'futures';
         q.symbol = q.stockCode + q.expiry_date + 'FUT';
-    }
-    else if(q.product_type === 'Options'){
-        q.key = 'strikex';
-        q.symbol = q.stockCode + q.expiry_date + q.strike_price + (q.right === 'Call' ? 'CE' : 'PE');
     }
     else {
         q.key = q.stockCode.endsWith('VIX') ? 'vix' : 'index';
@@ -119,7 +119,8 @@ function init()
 {
     if(!initialized) {
         adapter.addQuoteListener(onQuotes);
-        adapter.connect('55828738', true);
+        const sessionid = process.env.breeze_sid;
+        adapter.connect(sessionid, true);
         initialized = true;
     }
 }

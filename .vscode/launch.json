@@ -11,6 +11,10 @@
             "args": [
                 "80"
             ],
+            "runtimeArgs": [
+                "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
+                "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
+            ],
             "type": "node",
             "outputCapture": "std"
         },
@@ -23,9 +27,11 @@
             ],
             "program": "${workspaceFolder}/serverlocal/app.mjs",
             "args": [
-                "449",
+                "449"
+            ],
+            "runtimeArgs": [
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
-                "--env-file=${workspaceFolder}/serverlocal/config/.env.s"
+                "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
             ],
             "outputCapture": "std"
         }

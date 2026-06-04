@@ -59,7 +59,7 @@ instrumentMap.set('NL2', {
   oExpiry: "09JUN26",
   oExpiryNxt: "16JUN26",
   stockCode: 'NIFTY',
-  exc: 'NSE',
+  exc: 'NFO',
   lscount: 9,
   mode: 3,
   lotsize: 65,
