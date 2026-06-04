@@ -40,7 +40,7 @@ function validate(clickedBtn)
     }
     return n_order;
   });
-  in_prep_orders.error = isError;
+  in_prep_orders.isError = isError;
   in_prep_orders.orders = neworders;
   submitOWinBtn.disabled = isError;
 }
