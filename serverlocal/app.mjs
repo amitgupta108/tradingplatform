@@ -23,10 +23,11 @@ if(!global.server)
 
     console.log(`First argument: ${args[2]}`);
     console.log(`Second argument: ${args[3]}`);
+    console.log(`Third argument: ${args[4]}`);
 
     const port = args[2] === undefined ? 80 : Number(args[2]);
-    if(args[3] !== undefined)
-        kotak_socket.wsOps('connect', args[3]);
+    if(args[5] !== undefined)
+        kotak_socket.connect(args[5]);
 
     const app = express();
     app.use(express.static(path.join(__dirname, '..', 'web')));
@@ -34,8 +35,8 @@ if(!global.server)
     app.use(express.json());
 
     const options = {
-        key: readFileSync(path.join(__dirname, 'config', 'key.pem'), 'utf8'),
-        cert: readFileSync(path.join(__dirname, 'config', 'cert.pem'), 'utf8'),
+        key: readFileSync(path.join(__dirname, 'config', 'server.key'), 'utf8'),
+        cert: readFileSync(path.join(__dirname, 'config', 'server.crt'), 'utf8'),
     };
 
     const httpsServer = https.createServer(options, app);
