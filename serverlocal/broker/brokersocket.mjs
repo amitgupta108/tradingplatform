@@ -12,7 +12,7 @@ import { json } from 'stream/consumers';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const config_path = path.join(__dirname, '..', 'config', '.env');
+const config_path = path.join(__dirname, '..', 'config', '.env.d');
 
 const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
 const valURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
