@@ -52,7 +52,7 @@ function orderExecutionSim(q)
 
 function cancelOrder(appid, sim_order)
 {
-    var found = sim_order_map.get(order.orderid);
+    var found = sim_order_map.get(sim_order.orderid);
     if(found !== undefined && found.state === 'opened') {
         found.state = 'cancelled';
         qServer.emitOrders(found.appid, 'order', found);

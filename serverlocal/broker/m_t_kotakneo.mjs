@@ -72,7 +72,7 @@ function toKotakOrder(order)
         qt: String(order.quantity),
         rt: 'DAY',
         tp: '0',
-        ts: scrip_service.findScripByKey('scripReferenceKey', key).tradingSymbol,
+        ts: scrip_service.findScripByKey('scripReferenceKey', key)?.tradingSymbol,
         tt: order.action === 'BUY' ? 'B' : 'S'
     };
 
