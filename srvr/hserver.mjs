@@ -126,7 +126,11 @@ function unsubscribe(requests) {
     requests.forEach((request) => {
         
         const i_reqs = subsRequests.get(request.appid);
-        var exReqs = i_reqs?.filter((s) => s.symbol === request.symbol) || [];
+        var exReqs = i_reqs?.filter((s) => {
+            (s.symbol === request.symbol
+            && request.instrument.model === s.instrument.model)
+            || [];
+        });
         
         if (exReqs.length > 0) {
             exReqs.forEach((r) => {

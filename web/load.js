@@ -62,7 +62,7 @@ const qBox = new EventTarget();
 
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
-  const ltp = q.close.toFixed(2);
+  const ltp = q.ltp;
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
   spot_label.textContent = ltp;
@@ -78,7 +78,7 @@ qBox.addEventListener('vix', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp.toFixed(2);
+  fut_title = 'F: ' + q.ltp;
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
   renderChart(futuresSeries, fEmaSeries, q);
