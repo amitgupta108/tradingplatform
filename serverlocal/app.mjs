@@ -12,7 +12,7 @@ import express from 'express';
 import https from 'node:https';
 import { Server } from "socket.io";
 import Session from './session/session.mjs';
-import kotak_socket from './broker/brokersocket.mjs';
+import kotak_socket from './service/connectionmanager.mjs';
 import qserver from './stream.mjs'; 
 import apiserver from './apiserver.mjs'; 
 import { error } from 'node:console';
@@ -22,12 +22,10 @@ if(!global.server)
     const args = process.argv;
 
     console.log(`First argument: ${args[2]}`);
-    console.log(`Second argument: ${args[3]}`);
-    console.log(`Third argument: ${args[4]}`);
 
     const port = args[2] === undefined ? 80 : Number(args[2]);
-    if(args[5] !== undefined)
-        kotak_socket.connect(args[5]);
+    if(args[3] !== undefined)
+        kotak_socket.authenticate(args[3]);
 
     const app = express();
     app.use(express.static(path.join(__dirname, '..', 'web')));
@@ -66,6 +64,7 @@ if(!global.server)
 
         const m = apiserver.init('market', mode);
         const t = apiserver.init('trading', mode);
+        const a = apiserver.init('vix', mode);
 
         const i_appid = mode === 0 ? appid : stockCode + mode;
         let sn = Session.sn(i_appid);
