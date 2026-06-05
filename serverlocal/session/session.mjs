@@ -162,7 +162,7 @@ class Session
 
     static exit(appid, sn)
     {        
-        if(sn.mode !== 0 && sn.shared_with.size > 1)
+        if(sn.mode !== 0)
             sn.shared_with.delete(appid);
         else
             us.delete(sn.appid);
