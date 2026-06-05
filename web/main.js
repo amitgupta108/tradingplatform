@@ -63,3 +63,8 @@ function wsconnect(action){
   emit('wsOps', {action: action, data: tpt});
   document.getElementById("tpt").value = "";
 }
+
+function subs_vix()
+{
+  emit('vix', {action: 'subs'});
+}

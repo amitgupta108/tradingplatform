@@ -6,6 +6,7 @@ class OptionChain
   atm = 0;
   row_map = new Map();
   u_price = 0;
+  lscount = instrument.lscount;
 
   constructor(expiry, v_oc_id)
   {
@@ -57,19 +58,22 @@ class OptionChain
     var q = event.detail;
     if(q === undefined || q.expiry_date !== this.expiry)
       return;
-      
-    const r = this.row_map.get(q.symbol);
-    if(r === undefined)
-      return;
 
-    r.row.cells[2].textContent = q.ltp.toFixed(2);
-    
-    q = addIVNDelta(q, this.u_price);
-    if(Math.abs(Number(r.row.cells[0].textContent) - q.iv) > 0.5)
-      r.row.cells[0].textContent = q.iv.toFixed(2);
-    
-    if(Math.abs(Number(r.row.cells[1].textContent) - q.delta) > 0.5)
-      r.row.cells[1].textContent = q.delta.toFixed(2);
+    const r = this.row_map.get(q.symbol);
+    const offset = (Number(q.strike_price) - this.atm) / 50;
+
+    if(r !== undefined && (q.right === 'Put' && offset <= 1 && offset >= 2 - lscount || 
+      q.right === 'Call' && offset >= -1 && offset <= lscount - 2))
+    {   
+      r.row.cells[2].textContent = q.ltp.toFixed(2);
+      
+      q = addIVNDelta(q, this.u_price);
+      if(Math.abs(Number(r.row.cells[0].textContent) - q.iv) > 0.5)
+        r.row.cells[0].textContent = q.iv.toFixed(2);
+      
+      if(Math.abs(Number(r.row.cells[1].textContent) - q.delta) > 0.5)
+        r.row.cells[1].textContent = q.delta.toFixed(2);
+    }
   }
 
   handleUnderlying(q)

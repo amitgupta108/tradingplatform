@@ -1,8 +1,7 @@
-import hist_service from './broker/m_breeze.mjs';
-import live_icici from './broker/m_breeze.mjs';
+import service_breeze from './broker/m_breeze.mjs';
 import live_openalgo from './broker/m_t_openalgo.mjs';
 import live_kotak from './broker/m_t_kotakneo.mjs';
-import kotak_socket from './broker/brokersocket.mjs';
+import kotak_socket from './service/connectionmanager.mjs';
 import paper_trading from './service/ordersimulator.mjs';
 import Session from './session/session.mjs';
 
@@ -24,11 +23,11 @@ function getService(type, mode)
 {
     var service;
     if(type === 'market')
-        service = mode === 0 ? hist_service : mode === 3 ? live_icici : live_openalgo;
+        service = mode === 0 ? service_breeze : mode === 3 ? service_breeze : live_openalgo;
     else if(type === 'trading')
         service = mode === 1 ? live_kotak : paper_trading;
     else if(type === 'vix')
-        service = live_icici;
+        service = service_breeze;
 
     return service;
 }
@@ -39,6 +38,7 @@ async function handleMessage(s, appid, event, msg)
         const sn = s.sn;
         const market_service = getService('market', sn.mode);
         const trading_service  = getService('trading', sn.mode);
+        const hist_vix_service = getService('vix', sn.mode);
     
         if(['order', 'modifyorder', 'cancelorder'].includes(event) && sn.mode !== 0 && live_order_locked)
         {
@@ -49,7 +49,7 @@ async function handleMessage(s, appid, event, msg)
         switch(event)
         {
             case 'vix':
-                getService('vix', sn.mode).subscribe_vix(sn.appid, msg.action);
+                hist_vix_service.subscribe_vix(sn.appid, msg.action);
                 break;
             case 'start':
                 if(sn.mode === 0)
@@ -64,7 +64,7 @@ async function handleMessage(s, appid, event, msg)
                 console.log("Pre data request " + new Date(msg.startTime));
                 for(var i in msg.keys)
                 {
-                    var preQ = await hist_service.preQ(msg.keys[i], msg);
+                    var preQ = await hist_vix_service.preQ(msg.keys[i], msg);
                     s.emit('preData', msg.keys[i], preQ);
                 }
                 break;
@@ -111,7 +111,7 @@ async function handleAdminMessage(s, event, msg)
                     unlockLiveOrders(msg.data);
                 else
                     if(msg.action === 'connect')
-                        kotak_socket.connect(msg.data);
+                        kotak_socket.authenticate(msg.data);
                     else if(msg.action === 'disconnect')
                         kotak_socket.disconnect(msg.data);
                 break;
