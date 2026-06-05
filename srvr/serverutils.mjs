@@ -111,7 +111,6 @@ function breeze_input(scrip)
     b.expiryDate = scrip.expiry !== undefined ? formatExpiry(scrip.expiry, 'date') : undefined;
     b.strikePrice = scrip.strike;
     b.right = scrip.right;
-    b.interval = "1second";
     console.log('subs input ' + JSON.stringify(b));
 
     return b;
