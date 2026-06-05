@@ -1,6 +1,5 @@
 import qserver from '../stream.mjs';
-import kotak_neo from './m_t_kotakneo.mjs';
-import trade_updater from '../service/tradenotifier.mjs';
+import ordermanager from './ordermanager.mjs';
 import fs from 'fs';
 import path from 'path';
 
@@ -14,46 +13,37 @@ const __dirname = dirname(__filename);
 
 const config_path = path.join(__dirname, '..', 'config', '.env.d');
 
-const loginURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiLogin';
-const valURL = 'https://mis.kotaksecurities.com/login/1.0/tradeApiValidate';
-const hsmURL = 'mlhsm.kotaksecurities.com';
 let initialized = false;
 let authdata;
 var wsping;
 var ws_hsi;
 var ws_hsm;
 
-async function connect(tpt)
+async function hsmconnect()
 {
-    const cred = getAuthData();
-    if(cred === undefined && tpt !== undefined)
-    {
-        const l_authdata = await kotak_wsconnect(tpt);
-        hsiconnect(l_authdata.hsi_token, l_authdata.hsi_sid, l_authdata.baseUrl);
-    }
-    else
-    {
-        console.log('no existing credentials found, not enough information to connect');
-    }
-}
+    if(ws_hsm?.readyState === 1)
+        return;
 
-async function hsmconnect(hsm_token, hsm_sid)
-{
-    ws_hsm = new WebSocket(`wss://${hsmURL}`);
+    ws_hsm = new WebSocket(`wss://${process.env.kotak_hsmURL}`);
 
     ws_hsm.onopen = (event) => {
-        //const payload = `{Authorization:${hsm_token},Sid:${hsm_sid},type:cn}`;
-        const payload = JSON.stringify({Authorization: hsm_token, Sid: hsm_sid, type: 'cn'});
-        ws_hsm.send(payload);
-        wshb('hsm', 'start');
-        console.log('On open hsm');
+        const authdata = getSavedCredentials();
+        
+        if(authdata !== undefined)
+        {
+            //const payload = `{Authorization:${hsm_token},Sid:${hsm_sid},type:cn}`;
+            const payload = JSON.stringify({Authorization: authdata.hsm_token, Sid: authdata.hsm_sid, type: 'cn'});
+            ws_hsm.send(payload);
+            wshb('hsm', 'start');
+            console.log('On open hsm');
+        }   
     };
 
     ws_hsm.onmessage = (event) => {
         try {
             const message = JSON.parse(event);
             console.log('HSM Message received ' + JSON.stringify(message));
-            kotak_neo.onQuotes(message);
+            //kotak_neo.onQuotes(message);
         } catch(error) {
             console.log('error hsm: ' + error);
         }          
@@ -68,14 +58,23 @@ async function hsmconnect(hsm_token, hsm_sid)
     };
 }
 
-async function hsiconnect(hsi_token, hsi_sid, baseUrl)
+async function hsiconnect()
 {
-    ws_hsi = new WebSocket(`wss://${baseUrl.substring(8)}/realtime`);
-
+    if(ws_hsi?.readyState === 1)
+        return;
+    const authdata = getSavedCredentials();
+    if(authdata === undefined)
+        return;
+    
+    ws_hsi = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
     ws_hsi.onopen = (event) => {
-        const payload = `{type:cn,Authorization:${hsi_token},Sid:${hsi_sid},src:WEB}`;
-        ws_hsi.send(payload);
-        console.log('On open hsi ');
+        
+        if(authdata !== undefined)
+        {
+            const payload = `{type:cn,Authorization:${authdata.hsi_token},Sid:${authdata.hsi_sid},src:WEB}`;
+            ws_hsi.send(payload);
+            console.log('On open hsi ');
+        }
     };
 
     ws_hsi.onmessage = (event) => {
@@ -83,7 +82,7 @@ async function hsiconnect(hsi_token, hsi_sid, baseUrl)
             const message = JSON.parse(event.data);
 
             if(message.type === 'order')
-                trade_updater.notifyme(message);
+                ordermanager.notifyme(message);
             else if(message.type === 'cn' && message.msg === 'connected')
                 wshb('hsi', 'start');
         } catch(error) {
@@ -116,7 +115,7 @@ async function apiLogin(num)
             totp: num
         }),
     };
-    const response = await fetch(loginURL, headers);
+    const response = await fetch(process.env.kotak_loginURL, headers);
     return await response.json();
 }
 
@@ -132,10 +131,10 @@ async function apiValidate(sid, token) {
             'Auth': token
         },
         body: JSON.stringify({
-            mpin:'221818' 
+            mpin:process.env.kotak_mpin
         }),
     };
-    const response = await fetch(valURL, headers);
+    const response = await fetch(process.env.kotak_valURL, headers);
     return response.json();
 }
 
@@ -159,8 +158,8 @@ function wshb(type, action)
         {            
             if(ws_hsi?.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
-                const authdata = getAuthData();
-                await hsiconnect(authdata.hsi_token, authdata.hsi_sid, authdata.baseUrl);
+                const authdata = getSavedCredentials();
+                await hsiconnect();
                 rn++;
             }
             qserver.broadcast('hb', {order_socket: ws_hsi.readyState});
@@ -173,7 +172,7 @@ function wshb(type, action)
     }
 }
 
-async function kotak_wsconnect(tpt)
+async function authenticate(tpt)
 {
     if( tpt === undefined || tpt === '')
         return;
@@ -182,19 +181,24 @@ async function kotak_wsconnect(tpt)
     if (lr.data != undefined && lr.data.status === 'success') 
     {
         var vr = await apiValidate(lr.data.sid, lr.data.token);
-        const l_authdata = {
-            hsm_sid: lr.data.sid,
-            hsm_token: lr.data.token,
-            baseUrl: vr.data.baseUrl,
-            hsi_sid: vr.data.sid,
-            hsi_token: vr.data.token
+        if(vr.data.status === 'success')
+        {
+            const l_authdata = {
+                hsm_sid: lr.data.sid,
+                hsm_token: lr.data.token,
+                baseUrl: vr.data.baseUrl,
+                hsi_sid: vr.data.sid,
+                hsi_token: vr.data.token
+            }
+            await saveAuthData(l_authdata);
+            return l_authdata;
         }
-        await saveAuthData(l_authdata);
-        return l_authdata;
+        console.log('kotak authentication failed');
     }
+    return undefined;
 }
 
-function getAuthData()
+function getSavedCredentials()
 {
     if(authdata !== undefined)
         return authdata;
@@ -202,14 +206,17 @@ function getAuthData()
     if(process.env.baseUrl !== undefined)
     {
         const l_authdata = {
+            date: process.env.date,
             hsm_sid: process.env.hsm_sid,
             hsm_token: process.env.hsm_token,
             baseUrl: process.env.baseUrl,
             hsi_sid: process.env.hsi_sid,
             hsi_token: process.env.hsi_token
         }
-        return l_authdata;
+        if(l_authdata.date === new Date().toDateString())
+            return l_authdata;
     }
+    return undefined;
 }
 
 async function saveAuthData(data)
@@ -217,7 +224,7 @@ async function saveAuthData(data)
     try 
     {
         authdata = data;
-        var cred_string = `hsm_sid=${data.hsm_sid}\nhsm_token=${data.hsm_token}\n`
+        var cred_string = `date=${(new Date().toDateString())}\nhsm_sid=${data.hsm_sid}\nhsm_token=${data.hsm_token}\n`
         cred_string += `baseUrl=${data.baseUrl}\nhsi_sid=${data.hsi_sid}\nhsi_token=${data.hsi_token}`;
         await fs.promises.writeFile(config_path, cred_string, 'utf8');
         console.log('Auth data saved successfully.');
@@ -227,20 +234,15 @@ async function saveAuthData(data)
     }
 }
 
-function subscribe(type, subs_string){
-    const request = {type: type, scrips: subs_string, channelnum: '1'};
-    console.log('Subscribing with request: ' + JSON.stringify(request));
-    ws_hsm.send(JSON.stringify(request));
-}
-
 async function init()
 {
     if(!initialized) {
-        if (getAuthData() !== undefined){
-            await connect();
+        if (getSavedCredentials() !== undefined){
+
             initialized = true;
         }
     }
+    return initialized;
 }
 
-export default { connect, disconnect, getAuthData, subscribe, init };
+export default { authenticate, disconnect, hsiconnect, init, getSavedCredentials };

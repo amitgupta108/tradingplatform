@@ -1,4 +1,5 @@
 
+const lscount = 9;
 const instrumentMap = new Map();
 
 instrumentMap.set('UI', {
@@ -8,7 +9,7 @@ instrumentMap.set('UI', {
   oExpiryNxt: "24FEB26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 10,
+  lscount: lscount,
   mode: 2,
   lotsize: 65,
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
@@ -21,7 +22,7 @@ instrumentMap.set('NH2', {
   oExpiryNxt: "24MAR26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 10,
+  lscount: lscount,
   mode: 0,
   lotsize: 65,
   appid: 'b6033d82-1d88-470a-bf28-58b217f098e7'
@@ -34,7 +35,7 @@ instrumentMap.set('NH1', {
   oExpiryNxt: "09JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 9,
+  lscount: lscount,
   mode: 0,
   lotsize: 65,
   appid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
@@ -47,7 +48,7 @@ instrumentMap.set('NL1', {
   oExpiryNxt: "16JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 9,
+  lscount: lscount,
   mode: 1,
   lotsize: 65,
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
@@ -60,7 +61,7 @@ instrumentMap.set('NL2', {
   oExpiryNxt: "16JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 9,
+  lscount: lscount,
   mode: 3,
   lotsize: 65,
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
@@ -73,7 +74,7 @@ instrumentMap.set('NP1', {
   oExpiryNxt: "09JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
-  lscount: 12,
+  lscount: lscount,
   mode: 2,
   lotsize: 65,
   appid: crypto.randomUUID
@@ -86,7 +87,7 @@ instrumentMap.set('MP1',{
   oExpiryNxt: "16JUN26",
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
-  lscount: 10,
+  lscount: lscount,
   mode: 2,
   lotsize: 100,
   appid: 'sM2wzV0S-x3Ca-SVQI-AAAH-940b886ee155'
@@ -99,7 +100,7 @@ instrumentMap.set('ML1',{
   oExpiryNxt: "16JUL26",
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
-  lscount: 10,
+  lscount: lscount,
   mode: 1,
   lotsize: 100,
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
@@ -112,13 +113,11 @@ instrumentMap.set('ML2',{
   oExpiryNxt: "16JUL26",
   stockCode: 'CRUDEOIL',
   exc: 'MCX',
-  lscount: 10,
+  lscount: lscount,
   mode: 3,
   lotsize: 100,
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
-
-const lscount = 9;
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);

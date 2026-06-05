@@ -101,12 +101,14 @@ class Session
     
     inqsub(p, callback)
     {    
-        if(this.status === 'skeletal')
-            this.ini(p, callback);
-        if(this.status !== 'streaming')
+        if(this.status !== 'streaming') {
+            if(this.status === 'skeletal')
+                this.ini(p, callback);
+        
             this.status = 'stream requested';
-
-        return this.status !== 'streaming' ? utils.filter(this.st, {notinkeys: ['occrnt', 'ocnxt', 'strikex'], toStream: [true] }) : [];
+            return utils.filter(this.st, {notinkeys: ['occrnt', 'ocnxt', 'strikex'], toStream: [true] });
+        }
+        return [];
     }
     
     unsuball(appid)
