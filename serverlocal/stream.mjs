@@ -2,6 +2,11 @@ import Session from './session/session.mjs';
 
 const socketmap = new Map();
 
+function streaming_status(running, service, mode)
+{
+    console.log('streaming_status running ' + running + ' ' + service + ' ' + mode);
+}
+
 function emitOrders(appid, type, order)
 {
     if(appid !== undefined){
