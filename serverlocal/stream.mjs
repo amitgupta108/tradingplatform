@@ -5,6 +5,8 @@ const socketmap = new Map();
 function streaming_status(running, service, mode)
 {
     console.log('streaming_status running ' + running + ' ' + service + ' ' + mode);
+    const app_obj = Array.from(socketmap.values()).find((e) => e.mode === mode);
+    app_obj.socket.sn.status = 'stopped';
 }
 
 function emitOrders(appid, type, order)
@@ -80,5 +82,6 @@ export default {
     socketmap,
     emitQs,
     emitOrders,
-    broadcast
+    broadcast,
+    streaming_status
 }

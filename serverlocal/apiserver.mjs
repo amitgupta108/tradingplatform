@@ -23,7 +23,7 @@ function getService(type, mode)
 {
     var service;
     if(type === 'market')
-        service = mode === 0 ? service_breeze : mode === 3 ? live_icici : live_openalgo;
+        service = mode === 0 ? service_breeze : mode === 3 ? service_breeze : live_openalgo;
     else if(type === 'trading')
         service = mode === 1 ? live_kotak : paper_trading;
     else if(type === 'vix')

@@ -58,19 +58,20 @@ async function hsmconnect()
     };
 }
 
-async function hsiconnect(hsi_token, hsi_sid, baseUrl)
+async function hsiconnect()
 {
     if(ws_hsi?.readyState === 1)
         return;
+    const authdata = getSavedCredentials();
+    if(authdata === undefined)
+        return;
     
-    ws_hsi = new WebSocket(`wss://${baseUrl.substring(8)}/realtime`);
-
+    ws_hsi = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
     ws_hsi.onopen = (event) => {
-        const authdata = getSavedCredentials();
         
         if(authdata !== undefined)
         {
-            const payload = `{type:cn,Authorization:${hsi_token},Sid:${hsi_sid},src:WEB}`;
+            const payload = `{type:cn,Authorization:${authdata.hsi_token},Sid:${authdata.hsi_sid},src:WEB}`;
             ws_hsi.send(payload);
             console.log('On open hsi ');
         }
@@ -130,7 +131,7 @@ async function apiValidate(sid, token) {
             'Auth': token
         },
         body: JSON.stringify({
-            mpin:'221818' 
+            mpin:process.env.kotak_mpin
         }),
     };
     const response = await fetch(process.env.kotak_valURL, headers);
@@ -158,7 +159,7 @@ function wshb(type, action)
             if(ws_hsi?.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
                 const authdata = getSavedCredentials();
-                await hsiconnect(authdata.hsi_token, authdata.hsi_sid, authdata.baseUrl);
+                await hsiconnect();
                 rn++;
             }
             qserver.broadcast('hb', {order_socket: ws_hsi.readyState});
@@ -244,4 +245,4 @@ async function init()
     return initialized;
 }
 
-export default { authenticate, disconnect, hsiconnect, init };
+export default { authenticate, disconnect, hsiconnect, init, getSavedCredentials };

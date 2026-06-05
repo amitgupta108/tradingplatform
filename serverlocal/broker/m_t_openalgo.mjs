@@ -77,10 +77,10 @@ function subscribe(appid, sublist, action)
         if(item.exchange === 'NSE')
             item.exchange= 'NSE_INDEX';
             if(action === 'subs')
-                subs_cache.set(item.symbol, item.exchange);
+                subs_cache.set(item.symbol, {exchange: item.exchange, symbol: item.symbol});
             else
                 subs_cache.delete(item.symbol);
-            
+
         return {exchange: item.exchange, symbol: item.symbol};
     });
 
@@ -151,6 +151,8 @@ function init()
             console.log('openalgo client connected');
             client._wsClient.ws.addEventListener('open', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+                var list = Array.from(subs_cache.values());
+                client.subscribe_ltp(list, onQuotes);
             });
 
             client._wsClient.ws.addEventListener('close', () => {
