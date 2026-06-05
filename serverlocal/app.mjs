@@ -44,7 +44,7 @@ if(!global.server)
 
     const io = new Server(httpsServer, {
         cors: {
-            origin: `https://127.0.0.1:${port}`,
+            origin: `https://localhost:${port}`,
             methods: ["GET", "POST"],
         },
         connectionStateRecovery: {
@@ -90,9 +90,10 @@ if(!global.server)
         s.on("disconnect", (reason) => {
             if(reason === 'client namespace disconnect')
             {
-                Session.exit(appid, sn);
+                apiserver.exit(appid, mode);
                 qserver.socketmap.delete(appid);
-                apiserver.exit(appid);
+                Session.exit(appid, sn);
+
                 console.log('user exited:' + appid);
             }
             else if(['server namespace disconnect',

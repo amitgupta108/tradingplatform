@@ -123,17 +123,10 @@ async function handleAdminMessage(s, event, msg)
     }
 }
 
-async function exit(appid)
+async function exit(appid, mode)
 {
-    const sn = Session.sn(appid);
-    if(sn === undefined)
-        return;
-    
-    if(sn.mode === 0)
-        hist_service.exit(appid);
-    else
-        if(sn.shared_with.size === 2)
-            live_openalgo.exit(appid);
+    if(mode === 0)
+        service_breeze.exit(appid);
 }
 
 function unlockLiveOrders(key)
