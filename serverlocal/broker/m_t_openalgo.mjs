@@ -1,22 +1,21 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../stream.mjs';
-import trade_utils from '../service/tradenotifier.mjs';
+import trade_utils from '../service/ordermanager.mjs';
 import live_kotak from './m_t_kotakneo.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
 
 let initialized = false;
-const connkey = '14e179c44e80177f203c5301ab933cf46e3fedc8f7124e035a363f1776ec7251';
-const client = new OpenAlgo(connkey);
-let streaming_status = false;
+const client = new OpenAlgo(process.env.openalgo_key);
 
 const symbol_cache = new Map();
+const subs_cache = new Map();
 const regex = /[0-9]/;
-const mode_live = 1;
+const openalgo_mode_live = 1;
 
 function onQuotes(q)
 { 
     const qt = standardizeoq(q);
-    qserver.emitQs(qt.stockCode + mode_live, qt);
+    qserver.emitQs(qt.stockCode + openalgo_mode_live, qt);
 
     if(qt.key === 'strikex')
         Order_Service.orderExecutionSim(qt);
@@ -77,6 +76,10 @@ function subscribe(appid, sublist, action)
     const list = sublist.map((item) => {
         if(item.exchange === 'NSE')
             item.exchange= 'NSE_INDEX';
+            if(action === 'subs')
+                subs_cache.set(item.symbol, {exchange: item.exchange, symbol: item.symbol});
+            else
+                subs_cache.delete(item.symbol);
 
         return {exchange: item.exchange, symbol: item.symbol};
     });
@@ -148,11 +151,13 @@ function init()
             console.log('openalgo client connected');
             client._wsClient.ws.addEventListener('open', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+                var list = Array.from(subs_cache.values());
+                client.subscribe_ltp(list, onQuotes);
             });
 
             client._wsClient.ws.addEventListener('close', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-                streaming_status = false;
+                qserver.streaming_status(false, 'openalgo', openalgo_mode_live);
             });
             initialized = true;
         }).catch((error) => console.error('Error connecting to openalgo ' + error));

@@ -1,24 +1,28 @@
 import scrip_service from '../service/scripstore.mjs';
-import kotak_socket from './brokersocket.mjs';
-import trade_utils from '../service/tradenotifier.mjs';
+import kotak_socket from '../service/connectionmanager.mjs';
+import ordermanager from '../service/ordermanager.mjs';
 import qserver from '../stream.mjs';
 
 var initialized = false;
 
 function init()
 {
-    kotak_socket.init();
-    scrip_service.start();
-    initialized = true;
+    if(!initialized)
+    {
+        kotak_socket.hsiconnect();
+        scrip_service.start();
+        initialized = true;
+    }
+    return initialized;
 }
 
 function authHeaders()
 {
-    const auth_data = kotak_socket.getAuthData();
+    const auth_data = kotak_socket.getSavedCredentials();
     return {headers: {
         'accept': 'application/json',
-        'sid': auth_data.sid,
-        'Auth': auth_data.token,
+        'sid': auth_data.hsi_sid,
+        'Auth': auth_data.hsi_token,
         'neo-fin-key': 'neotradeapi',
         'Content-Type': 'application/x-www-form-urlencoded'
     }, baseUrl: auth_data.baseUrl};
@@ -95,7 +99,7 @@ async function order(appid, orders)
 async function placeOrder(appid, order)
 {
     const clone = toKotakOrder(order);
-    trade_utils.neworders(appid, [order]);
+    ordermanager.neworders(appid, [order]);
 
     let response = await post('quick/order/rule/ms/place', clone);
     console.log('order placed ' + JSON.stringify(clone));
@@ -135,7 +139,7 @@ async function orderbook(appid, stockCode)
 {
     const response =  await get('quick/user/orders');
     const orders = response.data.map((order) => {
-        return trade_utils.formatLiveOrder(order, true);
+        return ordermanager.formatLiveOrder(order, true);
     }).filter((order) => {
         return order.stockCode === stockCode;
     });
@@ -148,8 +152,6 @@ function subscribe(appid, sublist, action)
     if(sublist.length === 0)
         return;
 
-    //var redirectedpath = sublist.filter((item) => item.source === 'icici');
-    //adapter.subscribe(appid, redirectedpath, action);
     var subs_string = '';
     for(var item of sublist) {
         if(item.key === 'strikex'){
