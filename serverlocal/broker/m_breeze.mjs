@@ -60,7 +60,7 @@ function standardizeiq(q)
         q.stockCode = 'CRUDEOIL';
     
     if(q.expiry_date !== undefined)
-        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+        q.expiry_date = (q.expiry_date.replaceAll('-20', '').replaceAll('-', '')).toUpperCase();
 
     if(q.exchange !== 'NSE' && q.strike_price !== undefined) {
         q.key = 'strikex';
