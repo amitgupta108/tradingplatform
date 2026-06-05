@@ -1,4 +1,5 @@
 
+const lscount = 9;
 const instrumentMap = new Map();
 
 instrumentMap.set('UI', {
@@ -117,8 +118,6 @@ instrumentMap.set('ML2',{
   lotsize: 100,
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
-
-const lscount = 9;
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);

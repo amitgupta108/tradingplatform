@@ -64,7 +64,7 @@ function standardizeiq(q)
 
     if(q.exchange !== 'NSE' && q.strike_price !== undefined) {
         q.key = 'strikex';
-        const rt = q.right_type !== undefined ? right_type : (q.right === 'Call' ? 'CE' : 'PE');
+        const rt = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
         q.symbol = q.stockCode + q.expiry_date + q.strike_price + rt;
     } else if(q.expiry_date !== undefined) {
         q.key = 'futures';

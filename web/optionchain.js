@@ -59,9 +59,11 @@ class OptionChain
     if(q === undefined || q.expiry_date !== this.expiry)
       return;
 
-    const offset = (q.strike - this.atm) / 50;
-    if(this.row_map.get(q.symbol) !== undefined && (q.right === 'PE' && offset <= 1 && offset >= 2 - lscount || 
-      q.right === 'CE' && offset >= -1 && offset <= lscount - 2))
+    const r = this.row_map.get(q.symbol);
+    const offset = (Number(q.strike_price) - this.atm) / 50;
+
+    if(r !== undefined && (q.right === 'Put' && offset <= 1 && offset >= 2 - lscount || 
+      q.right === 'Call' && offset >= -1 && offset <= lscount - 2))
     {   
       r.row.cells[2].textContent = q.ltp.toFixed(2);
       
