@@ -26,7 +26,7 @@ class OptionChain
         const r = this.row_map.get(symbol);
         if(r !== undefined) {
           r.psize = unbookedQ;
-          r.row.cells[3].childNodes[1].innerText = unbookedQ;
+          r.row.cells[3].childNodes[1].textContent = unbookedQ;
           r.row.cells[3].childNodes[1].classList.remove('buy', 'sell');
           
           if(!(unbookedQ === '' || unbookedQ === 0))
@@ -68,8 +68,8 @@ class OptionChain
       r.row.cells[2].textContent = q.ltp.toFixed(2);
       
       q = addIVNDelta(q, this.u_price);
-      if(Math.abs(Number(r.row.cells[0].textContent) - q.iv) > 0.5)
-        r.row.cells[0].textContent = q.iv.toFixed(2);
+      /*if(Math.abs(Number(r.row.cells[0].textContent) - q.iv) > 0.5)
+        r.row.cells[0].textContent = q.iv.toFixed(2);*/
       
       if(Math.abs(Number(r.row.cells[1].textContent) - q.delta) > 0.5)
         r.row.cells[1].textContent = q.delta.toFixed(2);
@@ -101,7 +101,7 @@ class OptionChain
       const symbol = instrument.stockCode + this.expiry + strike + cg.right;
       
       cg.tbl.rows[cg.idx].title = symbol;
-      cg.tbl.rows[cg.idx].cells[3].childNodes[3].innerText = strike;
+      cg.tbl.rows[cg.idx].cells[3].childNodes[3].textContent = strike;
 
       const r = this.row_map.get(symbol);
       if(size === 0 || r === undefined)
@@ -112,9 +112,9 @@ class OptionChain
           cg.tbl.rows[cg.idx].classList.add('row_background');
         }
         if(r.psize !== undefined && r.psize !== '') {
-          cg.tbl.rows[cg.idx].cells[3].childNodes[1].innerText = r.psize;
+          cg.tbl.rows[cg.idx].cells[3].childNodes[1].textContent = r.psize;
           cg.tbl.rows[cg.idx].cells[3].childNodes[1].classList.add((Number(r.psize) > 0 ? 'buy' : 'sell'));
-          r.row.cells[3].childNodes[1].innerText = '';
+          r.row.cells[3].childNodes[1].textContent = '';
           r.row.cells[3].childNodes[1].classList.remove('buy', 'sell');
         }
         r.row = cg.tbl.rows[cg.idx];

@@ -10,7 +10,7 @@ function createOrder(btn, parent)
   else if(rows.length > 0)
   {
     var idx = Array.from(rows).findIndex((r) => {
-      return r.querySelector('#owsymbol').innerText === symbol;
+      return r.querySelector('#owsymbol').textContent === symbol;
     });
     const r_row = !basket.checked ? 0 : idx;
     if(r_row !== -1)
@@ -26,12 +26,12 @@ function appendOrderRow(symbol, action, quantity = 1)
   const scripName = expandSymbol(symbol).name;
 
   var tr = tRow(t_order_window_row);
-  tr.querySelector('#owsymbol').innerText  = symbol;
-  tr.querySelector('#scripName').innerText  = scripName;
+  tr.querySelector('#owsymbol').textContent  = symbol;
+  tr.querySelector('#scripName').textContent  = scripName;
   tr.querySelector('#lotselect').value = quantity;
 
   const action_btn = tr.querySelector('#ow_action_btn');
-  action_btn.innerText = action;
+  action_btn.textContent = action;
 
   if(!basket.checked)
     tr.classList.remove('hover-row');
@@ -94,7 +94,7 @@ function flipAction(orderRowBtn, orderRow)
 
 function switchTabs(evt) 
 {  
-  expiry_label.innerText = expiry_label.innerText === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
+  expiry_label.textContent = expiry_label.textContent === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
   document.getElementById('c_oc_div').classList.toggle('active');
   document.getElementById('n_oc_div').classList.toggle('active');
 }
@@ -138,10 +138,10 @@ function handleRowEvent(e)
 
 function flipOrderType(c, p)
 {
-  c.innerText = c.innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
+  c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
   const limitp = qSel(p, 'lmtprice', 'id');
   limitp.disabled = c.innerText === 'MARKET' ? true: false;
-  if(c.innerText === 'MARKET') 
+  if(c.textContent === 'MARKET') 
     limitp.value = "";
 }
 
