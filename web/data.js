@@ -29,7 +29,7 @@ instrumentMap.set('NH2', {
 });
 
 instrumentMap.set('NH1', {
-  simStartTime: new Date("2026-06-01 15:27:20").getTime(),
+  simStartTime: new Date("2026-06-01 09:15:00").getTime(),
   fExpiry: "30JUN26",
   oExpiry: "02JUN26",
   oExpiryNxt: "09JUN26",

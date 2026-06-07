@@ -88,12 +88,12 @@ function displayOrderList(btn, parent)
     var qty = o.state.startsWith('complete') ? o.filled_q : 0;
     tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
 
-    newtr.childNodes[1].innerText = o.orderid;
-    newtr.childNodes[3].innerText = o.action.slice(0, 1);
-    newtr.childNodes[5].innerText = o.filled_q + ' / ' + o.quantity;
-    newtr.childNodes[7].innerText = o.pricetype.slice(0, 1);
-    newtr.childNodes[9].innerText = tqty;
-    newtr.childNodes[11].innerText = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
+    newtr.childNodes[1].textContent = o.orderid;
+    newtr.childNodes[3].textContent = o.action.slice(0, 1);
+    newtr.childNodes[5].textContent = o.filled_q + ' / ' + o.quantity;
+    newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
+    newtr.childNodes[9].textContent = tqty;
+    newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt).toFixed(2);
     newtr.childNodes[13].innerText = o.state;
     newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
     if(o.state === 'opened') 
