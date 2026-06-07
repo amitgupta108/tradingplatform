@@ -64,7 +64,8 @@ function dothings(stmrkey)
                 reqs.forEach((req) => {
                     count++;
                     var qt = q(req.appid, req.instrument, c.currentTime);
-                    futsocket.emit('quote', qt, 'history', req.appid);
+                    if(qt !== undefined)
+                        futsocket.emit('quote', qt, 'history', req.appid);
                 });
             }
         }
