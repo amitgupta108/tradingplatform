@@ -52,7 +52,7 @@ async function handleMessage(s, appid, event, msg)
                 hist_vix_service.subscribe_vix(sn.appid, msg.action);
                 break;
             case 'start':
-                if(sn.mode === 0)
+                if(sn.mode === 0 && sn.status !== 'streaming')
                     market_service.clientConfigure(sn.appid, msg.simStartTime, '1x');
 
                 const stSubs = sn.inqsub(msg, (opSubs) => {
@@ -70,7 +70,7 @@ async function handleMessage(s, appid, event, msg)
                 break;
             case 'speed':
                 if(sn.mode === 0)
-                    hist_service.changeSpeed(appid, msg);
+                    hist_vix_service.changeSpeed(appid, msg);
                 break;
             case 'stop':
                 const list = sn.unsuball(appid);

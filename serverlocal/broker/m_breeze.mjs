@@ -74,7 +74,7 @@ function standardizeiq(qt)
         q.symbol = q.stockCode;
     }
     const tEnd = process.hrtime.bigint();
-    q.tDiff = tEnd - tStart;
+    q.tDiff = Number(tEnd - tStart);
     return q;
 }
 

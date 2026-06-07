@@ -222,7 +222,7 @@ function convert(array, map)
                 }
             }
         }
-        const tStart = process.hrtime.bigint();
+        const tEnd = process.hrtime.bigint();
         q.tDiff = tEnd - tStart;
     }  
     return array;
