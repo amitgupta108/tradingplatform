@@ -39,8 +39,8 @@ function findByTime(sortedArray, seekElement) {
     }
   }
 
-  // Return -1 if we have not found anything.
-  return -1;
+  // Return -2 if we have not found anything.
+  return -2;
 }
 
 class Comparator {
