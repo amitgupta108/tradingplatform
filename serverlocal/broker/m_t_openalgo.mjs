@@ -1,8 +1,6 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../stream.mjs';
-import trade_utils from '../service/ordermanager.mjs';
 import live_kotak from './m_t_kotakneo.mjs';
-import Order_Service from '../service/ordersimulator.mjs';
 
 let initialized = false;
 const client = new OpenAlgo(process.env.openalgo_key);
@@ -16,14 +14,12 @@ function onQuotes(q)
 { 
     const qt = standardizeoq(q);
     qserver.emitQs(qt.stockCode + openalgo_mode_live, qt);
-
-    if(qt.key === 'strikex')
-        Order_Service.orderExecutionSim(qt);
 }
 
 function exit(appid, sublist)
 {
-    subscribe(appid, sublist, 'unsub');
+    //subscribe(appid, sublist, 'unsub');
+    client._wsClient.ws._sendMessage({action: unsubscribe_all});
 }
 
 function standardizeoq(q) 
@@ -32,8 +28,8 @@ function standardizeoq(q)
     q.ltt = Number(q.ltt);
     q.close = (q.ltp);
     q.open = q.ltp;
-    q.high = q.ltp;
-    q.low = q.ltp;
+    //q.high = q.ltp;
+    //q.low = q.ltp;
     
     const idx = q.symbol.search(regex);
     const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);

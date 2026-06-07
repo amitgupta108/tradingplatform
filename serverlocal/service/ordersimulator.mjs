@@ -5,6 +5,9 @@ let initialized = false;
 
 function init()
 {
+    qServer.addEventLsitener('strikex', ((q) => {
+        orderExecutionSim(q);
+    }) );
     initialized = true;
 }
 
@@ -23,6 +26,9 @@ function neworders(appid, orders)
 
 function orderExecutionSim(q)
 {
+    if(!initialized)
+        return;
+
     const openorders = Array.from(sim_order_map.values()).filter((order) => {
         return (order.state === 'opened'
             && order.symbol === q.symbol);

@@ -42,16 +42,15 @@ function onQuotes(q, mode, appid)
         qServer.emitQs(appid, q);
     else
         qServer.emitQs(q.stockCode + mode_live_icici, q);
-
-    if(q.key === 'strikex')
-        Order_Service.orderExecutionSim(q);
 }
 
-function standardizeiq(q) 
+function standardizeiq(qt) 
 {
-    q['exchange'] = q['exchange_code'];
-    q['stockCode'] = q['stock_code'];
+    const tStart = process.hrtime.bigint();
 
+    const {exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume , datetime, high, low, ...rest} = qt;
+    const q = {exchange, stockCode, ...rest};
+    
     q['ltp'] = q['close'];
     if(q.ltt === undefined)
         q.ltt = Date.parse(q.datetime);
@@ -74,10 +73,9 @@ function standardizeiq(q)
         q.key = q.stockCode.endsWith('VIX') ? 'vix' : 'index';
         q.symbol = q.stockCode;
     }
-    
-    let {exchange_code, stock_code, product_type, open_interest, volume , datetime, ...trimmedquote} = q;
-
-    return trimmedquote;
+    const tEnd = process.hrtime.bigint();
+    q.tDiff = tEnd - tStart;
+    return q;
 }
 
 function preQ(key, p) {

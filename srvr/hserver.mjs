@@ -1,4 +1,5 @@
 import sutils from './serverutils.mjs';
+import { findByTime } from './binarysearch.mjs';
 
 import EventEmitter  from 'node:events';
 const futsocket = new EventEmitter();
@@ -31,19 +32,13 @@ function startStreamer(stmrkey){
     
     if(stmr.state === 'stopped') 
     {
-        try {
-            stmr.qsid = setInterval(() => {
-            
-                var resp = dothings(stmrkey);
-                runclient_clocks(stmrkey);
-                if(resp.count === 0) 
-                    stopStreamer(resp.key);
-            }, 980 / stmr.speed);
-        } catch (err) {
-            clearInterval(stmr.qsid);
-            stmr.state = 'stopped';   
-            console.error(err);
-        }
+        stmr.qsid = setInterval(() => {
+        
+            var resp = dothings(stmrkey);
+            runclient_clocks(stmrkey);
+            if(resp.count === 0) 
+                stopStreamer(resp.key);
+        }, 980 / stmr.speed);
         stmr.state = 'started';   
     }
 }
@@ -69,14 +64,13 @@ function dothings(stmrkey)
                 reqs.forEach((req) => {
                     count++;
                     var qt = q(req.appid, req.instrument, c.currentTime);
-                    if(qt !== undefined) {
-                        futsocket.emit('quote', qt, 'history', req.appid);
-                    }
+                    futsocket.emit('quote', qt, 'history', req.appid);
                 });
             }
         }
-    } catch (exception){
-        console.log(exception);
+    } catch (error){
+        console.log('Error for appid, unsubscribe all: ' + error.appid + ' ' + error);
+        subsRequests.delete(error.appid);
     }
     return {key: stmrkey, count: count};
 }
@@ -142,7 +136,7 @@ function unsubscribe(requests) {
 
 function unsubscribeall(appid)
 {
-    var others = subsRequests.delete(appid); 
+    subsRequests.delete(appid); 
 }   
 
 function exit(appid)
@@ -163,8 +157,8 @@ function q(appid, instrument, time)
     }
 
     var idx = -1;
-    if (st.quotes != undefined)
-        idx = sutils.findQuoteByTime(st.quotes, time);
+    if (st.quotes !== undefined)
+        idx = findByTime(st.quotes, time);
 
     if ((st.quotes === undefined || idx === -2 || st.quotes.length - idx < 25) && st.state != 'load requested')
     {
@@ -180,7 +174,8 @@ function qw(st, instrument, time) {
     return qs.then((resp) => {
         return resp;   
     }).catch((reason) => {
-        console.log('Error from historical data load ' + reason);
+        console.log('Rejection for appid, unsubscribe all: ' + st.appid + ' ' + reason);
+        subsRequests.delete(st.appid);
     });
 }
 
