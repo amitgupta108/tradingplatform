@@ -15,12 +15,12 @@
     <body>
     <div class="top">
         <!------------------------------------------------------------------------------------------------------------------------------>    
-        <div id="leftContainer" class="container">
+        <div id="leftContainer" class="leftcontainer">
             <div id="futures_chart" style="width: 100%; height: 480px; position: relative;"></div>
             <div id="index_chart" style="width: 100%; height: 330px; position: relative;"></div>
         </div>
         <!------------------------------------------------------------------------------------------------------------------------------>    
-        <div id="rightContainer" class="container">
+        <div id="rightContainer" class="rightcontainer">
             <div id="timer">
                 <label id="timer_date_lb"></label>
                 <label id="timer_time_lb"></label>
@@ -33,14 +33,12 @@
             <div style="overflow: hidden;">
                 <table>
                     <tr style="border-radius: 5px;">
-                        <th width="12%">IV</th>
-                        <th width="12%">Delta</th>
-                        <th width="13%">LTP</th>
-                        <th width="13%">CE</th>
-                        <th width="13%">PE</th>
-                        <th width="13%">LTP</th>
-                        <th width="12%">Delta</th>
-                        <th width="12%">IV</th>
+                        <th width="15%">Delta</th>
+                        <th width="15%">LTP</th>
+                        <th width="20%">CE</th>
+                        <th width="20%">PE</th>
+                        <th width="15%">LTP</th>
+                        <th width="15%">Delta</th>
                     </tr>
                 </table>
             </div>
@@ -185,7 +183,6 @@
     </template>
     <template id="option-chain-row">
         <tr>
-            <td></td> 
             <td></td> 
             <td></td> 
             <td class="hover-cell">

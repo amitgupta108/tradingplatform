@@ -1,3 +1,10 @@
+window.addEventListener('unhandledrejection', function (event) {
+  console.log(event.reason); 
+  console.log(event.promise); 
+  if (event.reason && event.reason.stack) {
+    console.log(event.reason.stack);
+  }
+});
 
 const lscount = 9;
 const instrumentMap = new Map();
