@@ -112,6 +112,8 @@ function breeze_input(scrip)
 function subscribe_vix(action)
 {
     var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', getExchangeQuotes: true};
+    breeze.onTicks = ws_callback;
+
     var promise;
     if(action === 'subs')
         promise = breeze.subscribeFeeds(b);
