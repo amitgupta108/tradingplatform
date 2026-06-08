@@ -58,7 +58,7 @@ function addtocache(symbol, idx)
     if(!symbol.endsWith('FUT'))
     {
         cached.strike = symbol.slice(idx + 7, -2);
-        cached.right = symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
+        cached.right = symbol.slice(-2);
     }
     symbol_cache.set(symbol, cached);
     return cached;

@@ -42,6 +42,20 @@ class Session
 
     #oq(uq, ost)
     {
+        /*
+        if(ost.atm === undefined || ost.atm === 0) {
+            ost.atm = Math.round(uq.ltp/50) * 50;
+            var sks = utils.strikes(ost.atm, ost.n);
+        }
+        else
+        {
+            ost.atm = ost.atm + Math.round((uq.ltp - ost.atm) / 50) * 50;
+            const offset = Math.round((uq.ltp - ost.atm) / 50) ;
+            var strike = offset > 0 ? ost.skrikes.at(-1).strike + 50 : ost.skrikes.at(0).strike - 50;
+            var sks = [{strike: strike, right: 'CE'}, {strike: strike, right: 'PE'}];
+            
+        }
+        */
         if(ost.atm === undefined || ost.atm === 0)
             ost.atm = Math.round(uq.ltp/50) * 50;
         else
@@ -69,9 +83,8 @@ class Session
                     strike: sks[i].strike,
                     right: sks[i].right,
                     model: this.mode === 0 ? 'history' : 'live',
-                    symbol: (ost.stockCode + ost.expiry +
-                        sks[i].strike +
-                        (sks[i].right === 'Call' ? 'CE' : 'PE').toUpperCase())
+                    symbol: ost.stockCode + ost.expiry +
+                        sks[i].strike + sks[i].right
                 });
             }
             else if(lst.length > 0)

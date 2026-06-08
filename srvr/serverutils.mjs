@@ -50,7 +50,7 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.interval = interval != undefined ? interval : '1second';
     b.stockCode = instrument.stockCode;
     b.strikePrice = instrument.strike;
-    b.right = instrument.right;
+    b.right = instrument.right === 'CE' ? 'Call' : 'Put';
     b.productType = instrument.right !== undefined ? 'options' : 'futures';
     b.expiryDate = instrument.exchange !== 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
     b.fromDate = ISODate(sTime);
@@ -103,7 +103,7 @@ function breeze_input(scrip)
     b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
     b.expiryDate = scrip.expiry !== undefined ? formatExpiry(scrip.expiry, 'date') : undefined;
     b.strikePrice = scrip.strike;
-    b.right = scrip.right;
+    b.right = scrip.right === 'CE' ? 'Call' : 'Put';
     console.log('subs input ' + JSON.stringify(b));
 
     return b;
