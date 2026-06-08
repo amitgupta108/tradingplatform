@@ -15,18 +15,16 @@ function addIVNDelta(q, uq)
         }
         
         const yearsToExpiry = (expiryTime - q.ltt)/31536000000; // 31536000000 = 1000*60*60*24*365
-        const flag = q.right === 'Call' ? 'c' : 'p';
+        const flag = q.right === 'CE' ? 'c' : 'p';
 
         try{
             var iv = vollib.black.implied_volatility.implied_volatility(q.ltp, uq.ltp, q.strike_price, 0.0, yearsToExpiry, flag);
             var delta = vollib.black.greeks.analytical.delta(flag, uq.ltp, q.strike_price, yearsToExpiry, 0.0, iv);   
         
-            q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;
         } catch(error) {
             console.log('Error occurred while calculating IV and Delta: ' + JSON.stringify(error));
-            q.iv = 0;
-            q.delta = q.right === 'Call' ? 1 : -1;
+            q.delta = q.right === 'CE' ? 1 : -1;
         }
     }
     const tEnd = process.hrtime.bigint();
@@ -89,14 +87,20 @@ function strikes(a, n)
     var strikes = new Array(n * 2); 
 
     for(var j = 0; j < n ; j++) {
-        strikes[j] = {strike: (a + j - n + 2) * 50, right: 'Put'};
-        strikes[j + n] = {strike: (a + j-1) * 50, right: 'Call'};
+        strikes[j] = {strike: (a + j - n + 2) * 50, right: 'PE'};
+        strikes[j + n] = {strike: (a + j-1) * 50, right: 'CE'};
     }
     return strikes;
 }
 
+const safeAwait = (promise) => 
+  promise
+    .then(data => [null, data])
+    .catch(err => [err, null]);
+
 export default {
     addIVNDelta,
     filter,
-    strikes
+    strikes,
+    safeAwait
   };

@@ -103,11 +103,11 @@ function preD(p, uq) {
     p.expiry = p.oExpiry;
 
     p.strike = Math.round(uq.close / 50 - 3) * 50;
-    p.right = "Put";
+    p.right = "PE";
     var pQ = adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 
     p.strike = Math.round(uq.close / 50 + 3) * 50;
-    p.right = "Call";
+    p.right = "CE";
     var cQ = adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 
     return [pQ, cQ];
