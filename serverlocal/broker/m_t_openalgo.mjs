@@ -91,10 +91,10 @@ async function orderbook(appid, stockCode)
     return await live_kotak.orderbook(appid, stockCode);
 }
 
-async function order(appid, orders)
+async function neworders(appid, orders)
 {
 
-    var res = await live_kotak.order(appid, orders);
+    var res = await live_kotak.neworders(appid, orders);
     console.log('order response ' + JSON.stringify(res));
     return res;
 
@@ -145,15 +145,18 @@ function init()
         client.connect()
         .then(() => {
             console.log('openalgo client connected');
-            client._wsClient.ws.addEventListener('open', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
                 var list = Array.from(subs_cache.values());
-                client.subscribe_ltp(list, onQuotes);
-            });
+                if(list.length > 0)
+                    client.subscribe_ltp(list, onQuotes);
 
+            client._wsClient.ws.addEventListener('error', (reason) => {
+                console.log('openalgo websocket error: ' + reason);
+            
+            });
             client._wsClient.ws.addEventListener('close', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-                qserver.streaming_status(false, 'openalgo', openalgo_mode_live);
+                //qserver.streaming_status(false, 'openalgo', openalgo_mode_live);
             });
             initialized = true;
         }).catch((error) => console.error('Error connecting to openalgo ' + error));

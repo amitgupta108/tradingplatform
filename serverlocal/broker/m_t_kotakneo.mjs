@@ -90,7 +90,7 @@ function toKotakModifyOrder(order)
     return kotakOrder;
 }
 
-async function order(appid, orders)
+async function neworders(appid, orders)
 {
     const promises = orders.map((order) => placeOrder(appid, order));
     return await Promise.all(promises);
@@ -192,7 +192,7 @@ function exit(appid, sublist)
 }
 
 export default {
-    order,
+    neworders,
     cancelorder,
     orderbook,
     placeOrder,
