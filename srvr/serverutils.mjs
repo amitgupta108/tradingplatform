@@ -54,7 +54,7 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.productType = instrument.right !== undefined ? 'options' : 'futures';
     b.expiryDate = instrument.exchange !== 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
     b.fromDate = ISODate(sTime);
-    b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((1 * 60) * 1000));  
+    b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((8 * 60) * 1000));  
 
     try {
         return breeze.getHistoricalDatav2(b);
@@ -111,7 +111,7 @@ function breeze_input(scrip)
 
 function subscribe_vix(action)
 {
-    var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', getExchangeQuotes: true, interval: '1second'};
+    var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', getExchangeQuotes: true};
     var promise;
     if(action === 'subs')
         promise = breeze.subscribeFeeds(b);

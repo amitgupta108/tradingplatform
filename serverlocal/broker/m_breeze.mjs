@@ -47,6 +47,9 @@ function onQuotes(q, mode, appid)
 function standardizeiq(qt) 
 {
     const tStart = process.hrtime.bigint();
+    if(Object.hasOwn(qt, 'ltt')) {
+        return {key: 'vix', stockCode: 'INDIVX', exchange: 'NSE', ltp: qt.last, ltt: Date.parse(qt.ltt)};
+    }
 
     const {exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume , datetime, high, low, ...rest} = qt;
     const q = {exchange, stockCode, ...rest};
@@ -63,8 +66,8 @@ function standardizeiq(qt)
 
     if(q.exchange !== 'NSE' && q.strike_price !== undefined) {
         q.key = 'strikex';
-        const rt = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
-        q.symbol = q.stockCode + q.expiry_date + q.strike_price + rt;
+        q.right = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
+        q.symbol = q.stockCode + q.expiry_date + q.strike_price + q.right;
     } else if(q.expiry_date !== undefined) {
         q.key = 'futures';
         q.symbol = q.stockCode + q.expiry_date + 'FUT';
