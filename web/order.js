@@ -21,7 +21,7 @@ function validate(clickedBtn)
   var isError = false;
   const rows = Array.from(order_rows_tbody.rows);
   const neworders = rows.map((r) => {
-    const symbol = qSel(r, 'owsymbol', 'id').innerText;
+    const symbol = qSel(r, 'owsymbol', 'id').textContent;
     const action = r.querySelector('#ow_action_btn').innerText;
     const lot = r.querySelector('#lotselect').value; 
     const pricetype = r.querySelector('#ordertype').innerText;
@@ -76,7 +76,7 @@ function displayOrderList(btn, parent)
   const symbol = parent.title;
   const p = Position.findPosition(symbol, false);
   order_list_thead.querySelector('tr').title = symbol;
-  order_list_thead.querySelector('td').innerText = expandSymbol(symbol).name;
+  order_list_thead.querySelector('td').textContent = expandSymbol(symbol).name;
 
   order_list_tbody.innerHTML = "";
   
@@ -94,7 +94,7 @@ function displayOrderList(btn, parent)
     newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
     newtr.childNodes[9].textContent = tqty;
     newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt).toFixed(2);
-    newtr.childNodes[13].innerText = o.state;
+    newtr.childNodes[13].textContent = o.state;
     newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
     if(o.state === 'opened') 
       newtr.childNodes[15].childNodes[1].classList.add('clickable');

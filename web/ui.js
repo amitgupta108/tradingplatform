@@ -140,7 +140,7 @@ function flipOrderType(c, p)
 {
   c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
   const limitp = qSel(p, 'lmtprice', 'id');
-  limitp.disabled = c.innerText === 'MARKET' ? true: false;
+  limitp.disabled = c.textContent === 'MARKET' ? true: false;
   if(c.textContent === 'MARKET') 
     limitp.value = "";
 }

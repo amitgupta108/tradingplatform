@@ -1,11 +1,3 @@
-window.addEventListener('unhandledrejection', function (event) {
-  console.log(event.reason); 
-  console.log(event.promise); 
-  if (event.reason && event.reason.stack) {
-    console.log(event.reason.stack);
-  }
-});
-
 const positions = new Map();
 let in_prep_orders = {};
 const optionChains = new Array(0);
