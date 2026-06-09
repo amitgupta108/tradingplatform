@@ -1,3 +1,10 @@
+window.addEventListener('unhandledrejection', function (event) {
+  console.log(event.reason); 
+  console.log(event.promise); 
+  if (event.reason && event.reason.stack) {
+    console.log(event.reason.stack);
+  }
+});
 
 const lscount = 9;
 const instrumentMap = new Map();
@@ -29,7 +36,7 @@ instrumentMap.set('NH2', {
 });
 
 instrumentMap.set('NH1', {
-  simStartTime: new Date("2026-06-01 15:27:20").getTime(),
+  simStartTime: new Date("2026-06-01 09:15:00").getTime(),
   fExpiry: "30JUN26",
   oExpiry: "02JUN26",
   oExpiryNxt: "09JUN26",
@@ -44,8 +51,8 @@ instrumentMap.set('NH1', {
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "30JUN26",
-  oExpiry: "09JUN26",
-  oExpiryNxt: "16JUN26",
+  oExpiry: "16JUN26",
+  oExpiryNxt: "23JUN26",
   stockCode: 'NIFTY',
   exc: 'NFO',
   lscount: lscount,

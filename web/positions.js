@@ -108,10 +108,10 @@ class Position
     this.value('totalPL', totalPL.toFixed(2));
 
     if(type !== 'quote')
-      gtotal_booked.innerText = (Number(gtotal_booked.innerText) + bookedPLChange).toFixed(2);
+      gtotal_booked.textContent = (Number(gtotal_booked.textContent) + bookedPLChange).toFixed(2);
     
-    gtotal_unbooked.innerText = (Number(gtotal_unbooked.innerText) + unbookedPLChange).toFixed(2);
-    gtotal_pnl.innerText = (Number(gtotal_pnl.innerText) + unbookedPLChange + bookedPLChange).toFixed(2);
+    gtotal_unbooked.textContent = (Number(gtotal_unbooked.textContent) + unbookedPLChange).toFixed(2);
+    gtotal_pnl.textContent = (Number(gtotal_pnl.textContent) + unbookedPLChange + bookedPLChange).toFixed(2);
   }
 
   static findPosition(symbol, newp)

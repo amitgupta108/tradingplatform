@@ -15,8 +15,8 @@ class Session
 
         us.set(this.appid, this);
         this.st = [
-            {key: 'index', stockCode: stockCode, toStream: true, streamState: 'initialized'},
-            {key: 'futures', stockCode: stockCode, toStream: true, streamState: 'initialized'},
+            {key: 'index', stockCode: stockCode, toStream: true},
+            {key: 'futures', stockCode: stockCode, toStream: true},
             {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 11},
             {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 11},
         ];
@@ -29,7 +29,7 @@ class Session
             this.st[i].exchange = i === 0 && p.exc === 'NFO' ? 'NSE' : p.exc;
             this.st[i].model = this.mode === 0 ? 'history' : 'live';
             this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
-            this.st[i].toStream = i === 0 && p.exc === 'MCX' ? false : this.st[i].toStream;
+            this.st[i].toStream = i === 3 || (i === 0 && p.exc === 'MCX') ? false : true
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
@@ -42,6 +42,20 @@ class Session
 
     #oq(uq, ost)
     {
+        /*
+        if(ost.atm === undefined || ost.atm === 0) {
+            ost.atm = Math.round(uq.ltp/50) * 50;
+            var sks = utils.strikes(ost.atm, ost.n);
+        }
+        else
+        {
+            ost.atm = ost.atm + Math.round((uq.ltp - ost.atm) / 50) * 50;
+            const offset = Math.round((uq.ltp - ost.atm) / 50) ;
+            var strike = offset > 0 ? ost.skrikes.at(-1).strike + 50 : ost.skrikes.at(0).strike - 50;
+            var sks = [{strike: strike, right: 'CE'}, {strike: strike, right: 'PE'}];
+            
+        }
+        */
         if(ost.atm === undefined || ost.atm === 0)
             ost.atm = Math.round(uq.ltp/50) * 50;
         else
@@ -69,9 +83,8 @@ class Session
                     strike: sks[i].strike,
                     right: sks[i].right,
                     model: this.mode === 0 ? 'history' : 'live',
-                    symbol: (ost.stockCode + ost.expiry +
-                        sks[i].strike +
-                        (sks[i].right === 'Call' ? 'CE' : 'PE').toUpperCase())
+                    symbol: ost.stockCode + ost.expiry +
+                        sks[i].strike + sks[i].right
                 });
             }
             else if(lst.length > 0)
@@ -101,25 +114,30 @@ class Session
     
     inqsub(p, callback)
     {    
-        if(this.status !== 'streaming') {
-            if(this.status === 'skeletal')
-                this.ini(p, callback);
+        if(['streaming', 'ready to run', 'stream requested'].includes(this.status))
+            return [];
         
-            this.status = 'stream requested';
-            return utils.filter(this.st, {notinkeys: ['occrnt', 'ocnxt', 'strikex'], toStream: [true] });
-        }
-        return [];
+        if(this.status === 'skeletal' || this.status === 'stopped')
+            this.ini(p, callback);
+    
+        const list = this.st.filter((item) => ['index', 'futures'].includes(item.key) 
+                && item.toStream === true);
+        this.status = list.length > 0 ? 'stream requested' : 'stream not configured';
+        return list;
     }
     
     unsuball(appid)
     {
         let list = []; 
-        this.st.find((s) => s.key === 'futures').uq = undefined;
         if(this.mode === 0) {
             this.status = 'stopped';
-            list = this.st.map((s) => {
-                s.toStream = false;
-                return s;
+            this.st.forEach((element) => {
+                element.toStream = false;
+                if(element.key === 'futures')
+                    element.uq = undefined;
+                if(!(element.key === 'occrnt' || element.key === 'ocnxt'))
+                    list.push(element);
+                
             });
         }
         else {
@@ -162,7 +180,7 @@ class Session
 
     static exit(appid, sn)
     {        
-        if(sn.mode !== 0 && sn.shared_with.size > 1)
+        if(sn.mode !== 0)
             sn.shared_with.delete(appid);
         else
             us.delete(sn.appid);

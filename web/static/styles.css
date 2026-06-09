@@ -16,14 +16,23 @@ body {
     min-width: 1350px;
 }
 
-.container {
+.leftcontainer {
     display:block;
     border: 1px solid #4CAF50;
-    height: 99.4%;
-    width: 49.2%;
+    height: 99.2%;
+    width: 59%;
     border-radius: 5px;
-    min-width: 400px;
+    min-width: 500px;
 }  
+
+.rightcontainer {
+    display: block;
+    border: 1px solid #4CAF50;
+    height: 99.2%;
+    width: 40%;
+    border-radius: 5px;
+    min-width: 300px;
+}
 
 #timer {
     height: 3.0%;

@@ -13,7 +13,7 @@ function addIVNDelta(q, uq)
         }
         
         const yearsToExpiry = (expiryTime - q.ltt)/31536000000; // 31536000000 = 1000*60*60*24*365
-        const flag = q.right === 'Call' ? 'c' : 'p';
+        const flag = q.right === 'CE' ? 'c' : 'p';
 
         try{
             var iv = js_vollib.black.implied_volatility.implied_volatility(q.ltp, uq, Number(q.strike_price), 0.0, yearsToExpiry, flag);
