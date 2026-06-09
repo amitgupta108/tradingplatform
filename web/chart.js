@@ -36,24 +36,24 @@ function renderChart(mainSeries, emaSeries, q)
   var curCandle = mainSeries.data().at(-1);
   if(curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
   {  
-    const ema = ema_alpha * q.close + ema_beta * (curCandle !== undefined ? curCandle.customValues : q.close);
-
+    const ema = ema_alpha * q.ltp + ema_beta * (curCandle !== undefined ? curCandle.customValues : q.ltp);
+  
     curCandle = {
       time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300), 
-      open: q.open, 
-      high: q.high, 
-      low: q.low, 
-      close: q.close,
+      open: (curCandle) ? curCandle.close : q.open ?? q.ltp, 
+      high: q.ltp, 
+      low: q.ltp, 
+      close: q.ltp,
       value: ema,
       customValues: ema,
     };
   }
   else
   { 
-    curCandle.high = Math.max(q.high, curCandle.high);
-    curCandle.low = Math.min(q.low, curCandle.low);
-    curCandle.close = q.close;
-    curCandle.value =  ema_alpha * q.close + ema_beta * curCandle.customValues;
+    curCandle.high = Math.max(q.ltp, curCandle.high);
+    curCandle.low = Math.min(q.ltp, curCandle.low);
+    curCandle.close = q.ltp;
+    curCandle.value =  ema_alpha * q.ltp + ema_beta * curCandle.customValues;
   }      
   mainSeries.update(curCandle);
   if(emaSeries !== undefined)

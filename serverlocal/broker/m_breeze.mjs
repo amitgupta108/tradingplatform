@@ -42,16 +42,18 @@ function onQuotes(q, mode, appid)
         qServer.emitQs(appid, q);
     else
         qServer.emitQs(q.stockCode + mode_live_icici, q);
-
-    if(q.key === 'strikex')
-        Order_Service.orderExecutionSim(q);
 }
 
-function standardizeiq(q) 
+function standardizeiq(qt) 
 {
-    q['exchange'] = q['exchange_code'];
-    q['stockCode'] = q['stock_code'];
+    const tStart = process.hrtime.bigint();
+    if(Object.hasOwn(qt, 'ltt')) {
+        return {key: 'vix', stockCode: 'INDIVX', exchange: 'NSE', ltp: qt.last, ltt: Date.parse(qt.ltt)};
+    }
 
+    const {exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume , datetime, high, low, ...rest} = qt;
+    const q = {exchange, stockCode, ...rest};
+    
     q['ltp'] = q['close'];
     if(q.ltt === undefined)
         q.ltt = Date.parse(q.datetime);
@@ -60,12 +62,12 @@ function standardizeiq(q)
         q.stockCode = 'CRUDEOIL';
     
     if(q.expiry_date !== undefined)
-        q.expiry_date = q.expiry_date.replaceAll('-20', '').replaceAll('-', '');
+        q.expiry_date = (q.expiry_date.replaceAll('-20', '').replaceAll('-', '')).toUpperCase();
 
     if(q.exchange !== 'NSE' && q.strike_price !== undefined) {
         q.key = 'strikex';
-        const rt = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
-        q.symbol = q.stockCode + q.expiry_date + q.strike_price + rt;
+        q.right = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
+        q.symbol = q.stockCode + q.expiry_date + q.strike_price + q.right;
     } else if(q.expiry_date !== undefined) {
         q.key = 'futures';
         q.symbol = q.stockCode + q.expiry_date + 'FUT';
@@ -74,10 +76,9 @@ function standardizeiq(q)
         q.key = q.stockCode.endsWith('VIX') ? 'vix' : 'index';
         q.symbol = q.stockCode;
     }
-    
-    let {exchange_code, stock_code, product_type, open_interest, volume , datetime, ...trimmedquote} = q;
-
-    return trimmedquote;
+    const tEnd = process.hrtime.bigint();
+    q.tDiff = Number(tEnd - tStart);
+    return q;
 }
 
 function preQ(key, p) {
@@ -105,11 +106,11 @@ function preD(p, uq) {
     p.expiry = p.oExpiry;
 
     p.strike = Math.round(uq.close / 50 - 3) * 50;
-    p.right = "Put";
+    p.right = "PE";
     var pQ = adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 
     p.strike = Math.round(uq.close / 50 + 3) * 50;
-    p.right = "Call";
+    p.right = "CE";
     var cQ = adapter.getHistoricalQuotes(p, p.startTime, p.endTime, '5minute');
 
     return [pQ, cQ];
