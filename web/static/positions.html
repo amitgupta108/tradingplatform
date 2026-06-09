@@ -84,9 +84,6 @@
                         <tbody id="order-list-thead">
                             <tr>
                                 <td colspan="7" class="orderlist-td"></td>
-                                <td class="orderlist-td" >
-                                    <span id="closeOListBtn" class="close-btn">X</span>
-                                </td>
                             </tr>
                         </tbody>
                         <tbody id="order-list-tbody">
@@ -97,7 +94,9 @@
                 <table id="positions_table">
                     <thead style="overflow: hidden;border-radius: 5px;">
                         <tr style="overflow: hidden;border-radius: 5px;">
-                            <th width="4%"><input type='checkbox' id="exit_all_cb"></input></th>
+                            <th width="4%">
+                                <input type='checkbox' id="exit_all_cb"></input>
+                            </th>
                             <th width="20%">Instrument</th>
                             <th colspan="3" width="20%">Booked</th>                        
                             <th width="10%">Avg Price</th>
@@ -110,6 +109,9 @@
                         
                     </tbody>
                 </table>
+                <button id="exitPositionBtn" style="display: none;padding: 3px;width: 60px;">
+                    Exit
+                </button>
                 </div>   
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>    
@@ -126,6 +128,7 @@
                         <option value="2x">2x</option>
                         <option value="3x">3x</option>
                         <option value="5x">5x</option>
+                        <option value="10x">10x</option>
                     </select>
                 </div>
 
@@ -156,9 +159,6 @@
                 </tbody>
             </table>
         </div>
-        <button id="exitPositionBtn" style="position:absolute; top:500px; left:800px; display:none;padding: 3px;width: 50px;">
-            Exit
-        </button>
     </div>  
 
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
@@ -193,7 +193,7 @@
         </tr>
     </template>
     <template id="order-window-row">
-        <tr class="hover-row">
+        <tr id="order-window-tr" class="hover-row">
             <td style='width:6%;justify-items: center;'>
                 <button  id='ow_action_btn' class="smallbutton buy"></button>
                 <div class="hover-row-content">
@@ -219,14 +219,14 @@
                 <label class="clickable" id="ordertype">MARKET</label>
             </td>
             <td style='width:17%'>
-                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;" disabled>
+                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;border: 0px" disabled>
             </td>
         </tr>
     </template>
     <template id="position-table-row">
         <tr>
             <td>
-                <input type='checkbox' id="pos_exit_cb" onchange="position_cb_action(this)" disabled></input>
+                <input type='checkbox' id="pos_exit_cb"  disabled></input>
             </td>
             <td><label id="Instrument"></label></td>
             <td>

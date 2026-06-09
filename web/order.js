@@ -74,32 +74,40 @@ function loadOrders(orders)
 function displayOrderList(btn, parent)
 {
   const symbol = parent.title;
-  const p = Position.findPosition(symbol, false);
-  order_list_thead.querySelector('tr').title = symbol;
-  order_list_thead.querySelector('td').textContent = expandSymbol(symbol).name;
+  const list_head = order_list_thead.querySelector('td');
 
-  order_list_tbody.innerHTML = "";
-  
-  var tqty = 0;
-  p.orders.forEach((o, idx) => {
-    var newtr = tRow(t_order_list_row);
+  if(orderlistDiv.style.display !== 'none' && symbol === list_head.title)
+  {
+    orderlistDiv.style.display = 'none';
+  }
+  else
+  {
+    const p = Position.findPosition(symbol, false);
+    list_head.textContent = expandSymbol(symbol).name;
+    list_head.title = symbol;
+    order_list_tbody.innerHTML = "";
 
-    newtr.title = o.orderid;
-    var qty = o.state.startsWith('complete') ? o.filled_q : 0;
-    tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
+    var tqty = 0;
+    p.orders.forEach((o, idx) => {
+      var newtr = tRow(t_order_list_row);
 
-    newtr.childNodes[1].textContent = o.orderid;
-    newtr.childNodes[3].textContent = o.action.slice(0, 1);
-    newtr.childNodes[5].textContent = o.filled_q + ' / ' + o.quantity;
-    newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
-    newtr.childNodes[9].textContent = tqty;
-    newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
-    newtr.childNodes[13].textContent = o.state;
-    newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
-    if(o.state === 'opened') 
-      newtr.childNodes[15].childNodes[1].classList.add('clickable');
-          
-    order_list_tbody.append(newtr);
-  });
-  orderlistDiv.style.display = 'flex';
+      newtr.title = o.orderid;
+      var qty = o.state.startsWith('complete') ? o.filled_q : 0;
+      tqty = tqty + Number(qty * (o.action === 'BUY' ? 1 : -1));
+
+      newtr.childNodes[1].textContent = o.orderid;
+      newtr.childNodes[3].textContent = o.action.slice(0, 1);
+      newtr.childNodes[5].textContent = o.filled_q + ' / ' + o.quantity;
+      newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
+      newtr.childNodes[9].textContent = tqty;
+      newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
+      newtr.childNodes[13].textContent = o.state;
+      newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
+      if(o.state === 'opened') 
+        newtr.childNodes[15].childNodes[1].classList.add('clickable');
+            
+      order_list_tbody.append(newtr);
+    });
+    orderlistDiv.style.display = 'flex';
+  }
 }

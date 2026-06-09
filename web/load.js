@@ -108,22 +108,13 @@ qBox.addEventListener('strikex', (event) =>
   });
 });
 
-pos_all_cb.onchange = (event) => {
+pos_all_cb.addEventListener('change', (event) => {
+
   var checkboxes = positions_tBody.querySelectorAll(`input[type="checkbox"]:not(:disabled)`);
   checkboxes.forEach(cb => cb.checked = pos_all_cb.checked);
 
   exit_pos_btn.style.display = pos_all_cb.checked ? 'block' : 'none';
-}
-
-function position_cb_action(){
-  const checkboxes = document.querySelectorAll('#pos_exit_cb');
-  const checkedIdx = Array.from(checkboxes)
-  .map((cb, i) => cb.checked ? i : null)
-  .filter(val => val !== null);
-
-  exit_pos_btn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
-  pos_all_cb.checked = checkedIdx.length === checkboxes.length;
-}
+});
 
 exit_pos_btn.onclick = (event) => {
   const checkboxes = 
@@ -140,10 +131,6 @@ exit_pos_btn.onclick = (event) => {
   event.target.style.display = 'none';
   pos_all_cb.checked = false;
   showOrderWindow();
-}
-
-closeOListBtn.onclick = () => {
-  orderlistDiv.style.display = 'none';
 }
 
 closeOWinBtn.onclick = () => {
