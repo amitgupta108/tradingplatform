@@ -73,7 +73,7 @@
                     <label class="switch">
                         <input type="checkbox" id="toggleBasket">
                         <span class="slider round"></span>
-                      </label>
+                    </label>
                 </div>
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>                
@@ -83,7 +83,7 @@
                     <table>
                         <tbody id="order-list-thead">
                             <tr>
-                                <td colspan="7" class="orderlist-td"></td>
+                                <td colspan="8" class="orderlist-td"></td>
                             </tr>
                         </tbody>
                         <tbody id="order-list-tbody">
@@ -118,8 +118,9 @@
             
             <div id="bottomPanel">    
                 <div>
+                    <button id="btnStartSim" onclick="connect()">Connect</button>
                     <button id="btnStartSim" onclick="start()">Start</button>
-                    <button id="btnStopSim" onclick="stopSimulation()">Stop</button>
+                    <button id="btnStopSim" onclick="stop()">Stop</button>
                     <button id="btnExit" onclick="exit()">Exit</button>
                     <button id="btnListOrders" onclick="listOrders()">Orders</button>
                     <button id="btnVixSubs" onclick="subs_vix()">Vix</button>
@@ -208,7 +209,7 @@
                     <label id="owprice"></label>
             </td>
             <td style='width:14%'>
-                <select id="lotselect">
+                <select id="ow_lot_size">
                     <option value="1" selected>1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>

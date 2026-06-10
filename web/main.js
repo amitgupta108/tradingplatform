@@ -33,7 +33,7 @@ function start()
   emit('start', instrument); 
 }
 
-function stopSimulation() 
+function stop() 
 {
   emit('stop', 'user action');
 }
