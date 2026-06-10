@@ -23,7 +23,7 @@ function validate(clickedBtn)
   const neworders = rows.map((r) => {
     const symbol = qSel(r, 'owsymbol', 'id').textContent;
     const action = r.querySelector('#ow_action_btn').innerText;
-    const lot = r.querySelector('#lotselect').value; 
+    const lot = r.querySelector('select').value; 
     const pricetype = r.querySelector('#ordertype').innerText;
 
     let n_order = new Order(symbol, action, lot * instrument.lotsize);

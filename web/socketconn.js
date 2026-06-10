@@ -1,45 +1,43 @@
 var socket;
 
-socket = io(`https://localhost:${window.location.port}`, {
-  auth: {
-    token: instrument.appid,
-    mode: instrument.mode,
-    stockCode: instrument.stockCode
-  },
-  timeout: 20000,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-});
+function connect()
+{
+  socket = io(`https://localhost:${window.location.port}`, {
+    auth: {
+      token: instrument.appid,
+      mode: instrument.mode,
+      stockCode: instrument.stockCode
+    },
+    timeout: 20000,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+  });
 
-socket.io.on("reconnect", (attempt) => {
-    console.log("Reconnected on attempt # " + attempt);
-});
+  socket.io.on("reconnect", (attempt) => {
+      console.log("Reconnected on attempt # " + attempt);
+  });
 
-socket.io.on("reconnect_attempt", (attempt) => {
-    console.log("Reconnection being tried attempt # " + attempt);
-});
+  socket.io.on("reconnect_attempt", (attempt) => {
+      console.log("Reconnection being tried attempt # " + attempt);
+  });
 
-socket.io.on("reconnect_error", (error) => {
-    console.log("Reconnection error " + error.message);
-});
+  socket.io.on("reconnect_error", (error) => {
+      console.log("Reconnection error " + error.message);
+  });
 
-socket.io.on("reconnect_failed", () => {
-    console.log("Reconnection not possible");
-});
+  socket.io.on("reconnect_failed", () => {
+      console.log("Reconnection not possible");
+  });
 
 rh(socket);
+}
+
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 function rh(socket)
 {  
   try{
     socket.on("connect", () => {
       console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered); 
-    });
-
-    socket.on('prevsession', (streamingstatus) => {
-      
-      if(futuresSeries.data().length === 0)
-        loadPreData();
     });
 
     socket.on("connect_error", (error) => {
@@ -55,6 +53,24 @@ function rh(socket)
 
     socket.on("disconnect", (reason, details) => {
       console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
+    });
+
+    socket.on("profile", (profile) => {
+      if(Object.hasOwn(profile, 'data')) {
+        if(profile.data === 'live')
+          document.getElementById('optionSpeed').disabled = true;
+      }
+      if(Object.hasOwn(profile, 'trade')) {
+      }
+      if(Object.hasOwn(profile, 'admin')) {
+
+      }
+    });
+    
+    socket.on('prevsession', (streamingstatus) => {
+      
+      if(futuresSeries.data().length === 0)
+        loadPreData();
     });
 
     socket.on('preData', (key, quotes) => {
