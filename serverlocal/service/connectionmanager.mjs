@@ -190,6 +190,7 @@ async function authenticate(tpt)
                 hsi_sid: vr.data.sid,
                 hsi_token: vr.data.token
             }
+            hsiconnect();
             await saveAuthData(l_authdata);
             return l_authdata;
         }
@@ -237,8 +238,9 @@ async function saveAuthData(data)
 async function init()
 {
     if(!initialized) {
-        if (getSavedCredentials() !== undefined){
-
+        const authdata = getSavedCredentials();
+        if (authdata !== undefined){
+            hsiconnect();
             initialized = true;
         }
     }
