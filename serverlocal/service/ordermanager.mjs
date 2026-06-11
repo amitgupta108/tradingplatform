@@ -18,7 +18,6 @@ function neworders(appid, orders)
 
 function notifyme(message)
 {    
-    console.log("message: " + JSON.stringify(message));
     if(message.type === 'order') {
         liveOrderMatching(message, 1);
     }
@@ -37,8 +36,7 @@ function liveOrderMatching(message, mode)
     const live_order = formatLiveOrder(message.data);
     var found = Array.from(live_order_map.values()).find((order) => {
         return (order.orderid === live_order.orderid)
-                || (order.stockCode === live_order.stockCode
-                && order.action === live_order.action
+                || (order.action === live_order.action
                 && order.pricetype === live_order.pricetype
                 && order.quantity === live_order.quantity
                 && order.quantity >= live_order.filled_q
@@ -53,7 +51,6 @@ function liveOrderMatching(message, mode)
     else
         live_order.appid = live_order.stockCode + mode;
     
-    console.log('live order matching status: ' + live_order.appid);
     live_order_map.set(live_order.orderid, live_order);
 
     qs.emitOrders(live_order.appid, 'order', live_order);

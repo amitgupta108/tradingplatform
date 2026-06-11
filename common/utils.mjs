@@ -81,16 +81,35 @@ function filter(collection, fO)
     return fResults;
 }
 
-function strikes(a, n)
+function strikes(a, n, g)
 {
-    a = a/50;
+    a = a/g;
     var strikes = new Array(n * 2); 
 
     for(var j = 0; j < n ; j++) {
-        strikes[j] = {strike: (a + j - n + 2) * 50, right: 'PE'};
-        strikes[j + n] = {strike: (a + j-1) * 50, right: 'CE'};
+        strikes[j] = {strike: (a + j - n + 2) * g, right: 'PE'};
+        strikes[j + n] = {strike: (a + j-1) * g, right: 'CE'};
     }
     return strikes;
+}
+
+function _strikes(price, startIdx = 2, endIdx = 7, gap)
+{
+    const atmIdx = Math.round(price/gap);
+    const idxs = endIdx - startIdx;
+    var strikes = new Array(idxs * 2); 
+
+    for(var j = startIdx; j < endIdx ; j++) {
+        strikes[j] = {strike: (atmIdx - j) * gap, right: 'PE'};
+        strikes[j + idxs] = {strike: (atmIdx + j) * gap, right: 'CE'};
+    }
+    return strikes;
+}
+
+const strike_size = {
+    NIFTY: 50,
+    BANKNIFTY: 100,
+    CRUDEOIL: 50,
 }
 
 const safeAwait = (promise) => 
@@ -102,5 +121,5 @@ export default {
     addIVNDelta,
     filter,
     strikes,
-    safeAwait
+    strike_size
   };

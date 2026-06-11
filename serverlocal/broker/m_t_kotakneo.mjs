@@ -115,7 +115,7 @@ async function placeOrder(appid, order)
         order.stCode = status.stCode;
         order.error = status.emsg;
     };
-    console.log('order confirmation ' + JSON.stringify(status) + ' for order ' + JSON.stringify(order));
+    //console.log('order confirmation ' + JSON.stringify(status) + ' for order ' + JSON.stringify(order));
     return status;
 }
 

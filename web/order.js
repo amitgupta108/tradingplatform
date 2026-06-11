@@ -62,7 +62,6 @@ function submitOrder(clickedBtn)
 function loadOrders(orders)
 {
   orders.forEach((order) => {
-    console.log('Recovered Orders ' + JSON.stringify(order));
     if(expandSymbol(order.symbol).stockCode === instrument.stockCode)
     {
       var p = Position.findPosition(order.symbol, true);

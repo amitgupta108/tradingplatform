@@ -48,6 +48,19 @@ instrumentMap.set('NH1', {
   appid: '5be36ca0-44e8-44d9-b739-4864c6dfc553'
 });
 
+instrumentMap.set('BL1', {
+  simStartTime: new Date("2026-06-09 09:15:00").getTime(),
+  fExpiry: "30JUN26",
+  oExpiry: "30JUN26",
+  oExpiryNxt: "28JUL26",
+  stockCode: 'BANKNIFTY',
+  exc: 'NFO',
+  lscount: lscount,
+  mode: 2,
+  lotsize: 30,
+  appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
+});
+
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "30JUN26",
@@ -181,4 +194,3 @@ const indexSeries = chart2.addSeries(LightweightCharts.CandlestickSeries, {});
 const iEmaSeries = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);
-

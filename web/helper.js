@@ -73,6 +73,11 @@ function generateEvent(type, nv)
     cancelable: true // Allow event.preventDefault()
   });
 }
+const strike_size = {
+    NIFTY: 50,
+    BANKNIFTY: 100,
+    CRUDEOIL: 50,
+}
 
 function qSel(element, name, type){
   type = type === 'id' ? '#' : type === 'css' ? '.' : '';

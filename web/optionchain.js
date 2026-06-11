@@ -12,7 +12,8 @@ class OptionChain
   {
     this.expiry = expiry;
     this.#buildHTMLOC(v_oc_id);
-    
+    this.interval = strike_size[instrument.stockCode];
+
     optionChains.push(this);
     qBox.addEventListener('strikex', this);
     
@@ -60,7 +61,7 @@ class OptionChain
       return;
 
     const r = this.row_map.get(q.symbol);
-    const offset = (Number(q.strike_price) - this.atm) / 50;
+    const offset = (Number(q.strike_price) - this.atm) / this.interval;
 
     if(r !== undefined && (q.right === 'PE' && offset <= 1 && offset >= 2 - lscount || 
       q.right === 'CE' && offset >= -1 && offset <= lscount - 2))
@@ -79,9 +80,9 @@ class OptionChain
     this.u_price = q.ltp;
     const atm_move = q.ltp - this.atm;
 
-    if(Math.abs(atm_move) > 50) {
-      const atm_shift = Math.round(atm_move/50);
-      this.atm = this.atm + atm_shift * 50;
+    if(Math.abs(atm_move) > this.interval) {
+      const atm_shift = Math.round(atm_move / this.interval);
+      this.atm = this.atm + atm_shift * this.interval;
       this.atm_reset();
     }
   }
@@ -95,7 +96,7 @@ class OptionChain
         {right: 'CE', sign: 1, idx: i, offset: i - 1, tbl: this.h_call_tbl} : 
         {right: 'PE', sign: -1, idx: i - lscount, offset: 2 * lscount - i - 2, tbl: this.h_put_tbl};
 
-      const strike = this.atm + (cg.offset * cg.sign) * 50;
+      const strike = this.atm + (cg.offset * cg.sign) * this.interval;
       const symbol = instrument.stockCode + this.expiry + strike + cg.right;
       
       cg.tbl.rows[cg.idx].title = symbol;

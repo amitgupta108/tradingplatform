@@ -5,10 +5,12 @@ let initialized = false;
 
 function init()
 {
-    qServer.addEventLsitener('strikex', ((q) => {
-        orderExecutionSim(q);
-    }) );
-    initialized = true;
+    if(!initialized) {
+        qServer.addEventLsitener('strikex', ((q) => {
+            orderExecutionSim(q);
+        }) );
+        initialized = true;
+    }
 }
 
 function neworders(appid, orders)
