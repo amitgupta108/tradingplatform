@@ -88,10 +88,11 @@ class Position
     this.value('bookedPL', this.booked.pl.toFixed(2));
     this.value('averageP', this.booked.avgP.toFixed(2));
     this.value('unbookedQ', this.psize);
-    pBox.dispatchEvent(generateEvent('position', {symbol: this.symbol, unbookedQ: this.psize}));
-    
+    this.value('unbookedPL', (price - this.booked.avgP) * this.psize);
+
     this.updateUnbookedPL(price, 'position', bookedPLChange);
-    
+
+    pBox.dispatchEvent(generateEvent('position', {symbol: this.symbol, unbookedQ: this.psize}));    
     this.#pRow.querySelector('#pos_exit_cb').disabled = this.psize === 0 ? true : false;
     this.#pRow.style.display = 'table-row';
   }

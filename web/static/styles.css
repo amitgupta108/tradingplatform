@@ -58,7 +58,6 @@ body {
 .tabs {
     display: flex;
     cursor: pointer;
-    background-color: #4CAF50;
     border-radius: 5px;
     overflow: hidden;
     height: 3.5%;
@@ -70,12 +69,18 @@ body {
     padding: 3px;
     text-align: center;
     color: white;
+    background-color: #4CAF50;
     transition: background-color 0.3s;
     justify-content:center;
+    border: 1px solid white;
     display: flex;
     gap: 10px;
     border-radius: 5px;
     vertical-align: middle;
+}
+
+.active-tab {
+    background-color: #348038;
 }
 
 .tab:hover {
