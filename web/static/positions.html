@@ -15,12 +15,12 @@
     <body>
     <div class="top">
         <!------------------------------------------------------------------------------------------------------------------------------>    
-        <div id="leftContainer" class="container">
+        <div id="leftContainer" class="leftcontainer">
             <div id="futures_chart" style="width: 100%; height: 480px; position: relative;"></div>
             <div id="index_chart" style="width: 100%; height: 330px; position: relative;"></div>
         </div>
         <!------------------------------------------------------------------------------------------------------------------------------>    
-        <div id="rightContainer" class="container">
+        <div id="rightContainer" class="rightcontainer">
             <div id="timer">
                 <label id="timer_date_lb"></label>
                 <label id="timer_time_lb"></label>
@@ -33,14 +33,12 @@
             <div style="overflow: hidden;">
                 <table>
                     <tr style="border-radius: 5px;">
-                        <th width="12%">IV</th>
-                        <th width="12%">Delta</th>
-                        <th width="13%">LTP</th>
-                        <th width="13%">CE</th>
-                        <th width="13%">PE</th>
-                        <th width="13%">LTP</th>
-                        <th width="12%">Delta</th>
-                        <th width="12%">IV</th>
+                        <th width="15%">Delta</th>
+                        <th width="15%">LTP</th>
+                        <th width="20%">CE</th>
+                        <th width="20%">PE</th>
+                        <th width="15%">LTP</th>
+                        <th width="15%">Delta</th>
                     </tr>
                 </table>
             </div>
@@ -75,7 +73,7 @@
                     <label class="switch">
                         <input type="checkbox" id="toggleBasket">
                         <span class="slider round"></span>
-                      </label>
+                    </label>
                 </div>
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>                
@@ -85,10 +83,7 @@
                     <table>
                         <tbody id="order-list-thead">
                             <tr>
-                                <td colspan="7" class="orderlist-td"></td>
-                                <td class="orderlist-td" >
-                                    <span id="closeOListBtn" class="close-btn">X</span>
-                                </td>
+                                <td colspan="8" class="orderlist-td"></td>
                             </tr>
                         </tbody>
                         <tbody id="order-list-tbody">
@@ -99,7 +94,9 @@
                 <table id="positions_table">
                     <thead style="overflow: hidden;border-radius: 5px;">
                         <tr style="overflow: hidden;border-radius: 5px;">
-                            <th width="4%"><input type='checkbox' id="exit_all_cb"></input></th>
+                            <th width="4%">
+                                <input type='checkbox' id="exit_all_cb"></input>
+                            </th>
                             <th width="20%">Instrument</th>
                             <th colspan="3" width="20%">Booked</th>                        
                             <th width="10%">Avg Price</th>
@@ -112,32 +109,37 @@
                         
                     </tbody>
                 </table>
+                <button id="exitPositionBtn" style="display: none;padding: 3px;width: 60px;">
+                    Exit
+                </button>
                 </div>   
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>    
             
             <div id="bottomPanel">    
                 <div>
-                    <button type="button" id="btnStartSim" onclick="start()">Start</button>
-                    <button type="button" id="btnStopSim" onclick="stopSimulation()">Stop</button>
-                    <button type="button" id="btnExit" onclick="exit()">Exit</button>
-                    <button type="button" id="btnListOrders" onclick="listOrders()">Orders</button>
-                    <button type="button" id="btnVixSubs" onclick="subs_vix()">Vix</button>
+                    <button id="btnStartSim" onclick="connect()">Connect</button>
+                    <button id="btnStartSim" onclick="start()">Start</button>
+                    <button id="btnStopSim" onclick="stop()">Stop</button>
+                    <button id="btnExit" onclick="exit()">Exit</button>
+                    <button id="btnListOrders" onclick="listOrders()">Orders</button>
+                    <button id="btnVixSubs" onclick="subs_vix()">Vix</button>
                     <select id="optionSpeed" onchange="changeSpeed()">
                         <option value="1x">1x</option>
                         <option value="2x">2x</option>
                         <option value="3x">3x</option>
                         <option value="5x">5x</option>
+                        <option value="10x">10x</option>
                     </select>
                 </div>
 
                 <div id="bottomPLPanel">
-                    <label  id="bookedPL">Booked: </label>
-                    <label  id="vBookedPL">0.00</label>
-                    <label  id="unbookedPL">Unbooked: </label>
-                    <label  id="vUnbookedPL">0.00</label>
-                    <label  id="totalPL">Total: </label>
-                    <label  id="vTotalPL">0.00</label>
+                    <label id="bookedPL">Booked: </label>
+                    <label id="vBookedPL">0.00</label>
+                    <label id="unbookedPL">Unbooked: </label>
+                    <label id="vUnbookedPL">0.00</label>
+                    <label id="totalPL">Total: </label>
+                    <label id="vTotalPL">0.00</label>
                 </div>
             </div>
         </div>
@@ -158,9 +160,6 @@
                 </tbody>
             </table>
         </div>
-        <button id="exitPositionBtn" style="position:absolute; top:500px; left:800px; display:none;padding: 3px;width: 50px;">
-            Exit
-        </button>
     </div>  
 
 <!--templates---------------------------------------------------------------------------------------------------------------------------->    
@@ -187,7 +186,6 @@
         <tr>
             <td></td> 
             <td></td> 
-            <td></td> 
             <td class="hover-cell">
                 <label class="icon"></label>
                 <label></label>
@@ -196,7 +194,7 @@
         </tr>
     </template>
     <template id="order-window-row">
-        <tr class="hover-row">
+        <tr id="order-window-tr" class="hover-row">
             <td style='width:6%;justify-items: center;'>
                 <button  id='ow_action_btn' class="smallbutton buy"></button>
                 <div class="hover-row-content">
@@ -211,7 +209,7 @@
                     <label id="owprice"></label>
             </td>
             <td style='width:14%'>
-                <select id="lotselect">
+                <select id="ow_lot_size">
                     <option value="1" selected>1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -222,14 +220,14 @@
                 <label class="clickable" id="ordertype">MARKET</label>
             </td>
             <td style='width:17%'>
-                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;" disabled>
+                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;border: 0px" disabled>
             </td>
         </tr>
     </template>
     <template id="position-table-row">
         <tr>
             <td>
-                <input type='checkbox' id="pos_exit_cb" onchange="position_cb_action(this)" disabled></input>
+                <input type='checkbox' id="pos_exit_cb"  disabled></input>
             </td>
             <td><label id="Instrument"></label></td>
             <td>

@@ -1,6 +1,14 @@
 import Session from './session/session.mjs';
 
+import EventEmitter  from 'node:events';
+const subsService = new EventEmitter();
 const socketmap = new Map();
+
+
+function addEventLsitener(eventName, callback)
+{
+    subsService.addListener(eventName, callback);
+}
 
 function streaming_status(running, service, mode)
 {
@@ -31,6 +39,9 @@ function emitOrders(appid, type, order)
 
 function emitQs(appid, q)
 {
+    if(q?.key === 'strikex')
+        subsService.emit(q.key, q);
+
     const sn = Session.sn(appid);
     if(sn !== undefined)
     {
@@ -83,5 +94,6 @@ export default {
     emitQs,
     emitOrders,
     broadcast,
-    streaming_status
+    streaming_status,
+    addEventLsitener
 }
