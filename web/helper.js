@@ -13,7 +13,7 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
   var attributePE = {
     expiry: oExpiry,
     strikep: peStrike,
-    right: 'Put',
+    right: 'PE',
     source: 'chart',
   };
   var chartConfigItem = {
@@ -28,7 +28,7 @@ function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
   var attributeCE = {
     expiry: oExpiry,
     strikep: ceStrike,
-    right: 'Call',
+    right: 'CE',
     source: 'chart',
   };
   chartConfigItem = {
@@ -57,7 +57,7 @@ function expandSymbol(symbol)
     const s = {};
     s.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
 
-    s.right = symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
+    s.right = symbol.slice(-2);
     s.expiry_date = symbol.slice(idx, idx + 7);
     s.strike_price = symbol.slice(idx + 7, -2);
     s.name = s.expiry_date + ' ' + s.strike_price + ' ' + s.right;

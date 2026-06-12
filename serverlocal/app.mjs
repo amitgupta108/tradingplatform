@@ -42,9 +42,20 @@ if(!global.server)
         console.log(`Server running at https://127.0.0.1:${port}/`);
     });
 
+    process.on('uncaughtException', (err) => {
+        console.error('FATAL: Uncaught Exception ', err);
+        setTimeout(() => process.exit(1), 5000); 
+    });
+
+    process.on('unhandledRejection', (event) => {
+        console.log('Undhandled promise, reason ', event.reason);
+        console.log('Undhandled promise, object ', event.promise);
+        console.log('Undhandled promise, stack ', event.reason.stack);
+    });
+
     const io = new Server(httpsServer, {
         cors: {
-            origin: `https://127.0.0.1:${port}`,
+            origin: `https://localhost:${port}`,
             methods: ["GET", "POST"],
         },
         connectionStateRecovery: {
@@ -90,9 +101,10 @@ if(!global.server)
         s.on("disconnect", (reason) => {
             if(reason === 'client namespace disconnect')
             {
-                Session.exit(appid, sn);
+                apiserver.exit(appid, mode);
                 qserver.socketmap.delete(appid);
-                apiserver.exit(appid);
+                Session.exit(appid, sn);
+
                 console.log('user exited:' + appid);
             }
             else if(['server namespace disconnect',

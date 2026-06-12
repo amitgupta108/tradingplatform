@@ -10,7 +10,7 @@ function createOrder(btn, parent)
   else if(rows.length > 0)
   {
     var idx = Array.from(rows).findIndex((r) => {
-      return r.querySelector('#owsymbol').innerText === symbol;
+      return r.querySelector('#owsymbol').textContent === symbol;
     });
     const r_row = !basket.checked ? 0 : idx;
     if(r_row !== -1)
@@ -26,12 +26,12 @@ function appendOrderRow(symbol, action, quantity = 1)
   const scripName = expandSymbol(symbol).name;
 
   var tr = tRow(t_order_window_row);
-  tr.querySelector('#owsymbol').innerText  = symbol;
-  tr.querySelector('#scripName').innerText  = scripName;
+  tr.querySelector('#owsymbol').textContent  = symbol;
+  tr.querySelector('#scripName').textContent  = scripName;
   tr.querySelector('#lotselect').value = quantity;
 
   const action_btn = tr.querySelector('#ow_action_btn');
-  action_btn.innerText = action;
+  action_btn.textContent = action;
 
   if(!basket.checked)
     tr.classList.remove('hover-row');
@@ -82,6 +82,7 @@ function hideOWin()
 
 function flipAction(orderRowBtn, orderRow)
 {
+  submitOWinBtn.disabled = true;
   var action = orderRowBtn.innerText;
   orderRowBtn.innerText = action === 'B' ? 'S' : 'B';
   if(action === 'B')
@@ -94,7 +95,7 @@ function flipAction(orderRowBtn, orderRow)
 
 function switchTabs(evt) 
 {  
-  expiry_label.innerText = expiry_label.innerText === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
+  expiry_label.textContent = expiry_label.textContent === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
   document.getElementById('c_oc_div').classList.toggle('active');
   document.getElementById('n_oc_div').classList.toggle('active');
 }
@@ -104,14 +105,40 @@ function tRow(template, withListener = true){
   if(withListener){
     new_row.addEventListener('click', (e) => {
       e.stopPropagation();
+
       if(e.target !== new_row)
-        handleRowEvent(e);
+        handleClickEvent(e);
     }, true);
+
+    new_row.addEventListener('change', (e) => {
+      e.stopPropagation();
+
+      if(e.target !== new_row)
+        handleChangeEvent(e);
+    }, true);
+
+    new_row.addEventListener('input', (e) => {
+      e.stopPropagation();
+      
+      if(e.target.id = 'lmtprice' && e.target !== new_row)
+      submitOWinBtn.disabled = true;
+    }, true);
+    return new_row;
   }
-  return new_row;
 }
 
-function handleRowEvent(e)
+function handleChangeEvent(e)
+{
+  const clicked = e.target;
+  const parent = e.currentTarget;
+
+  if(parent.id === 'order-window-tr')
+    submitOWinBtn.disabled = true;
+  else if(clicked.id === 'pos_exit_cb')
+    position_cb_action();
+}
+
+function handleClickEvent(e)
 {
   const cl_el = e.target;
   const pn_el = e.currentTarget;
@@ -134,14 +161,17 @@ function handleRowEvent(e)
     confirmCancel(cl_el, pn_el);
   else if(cl_el.id === 'drop_cancel_btn')
     dropCancelOrder(cl_el, pn_el);
+  else if(cl_el.id === 'pos_exit_cb')
+    return;
 }
 
 function flipOrderType(c, p)
 {
-  c.innerText = c.innerText === 'MARKET' ? 'LIMIT' : 'MARKET';
+  submitOWinBtn.disabled = true;
+  c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
   const limitp = qSel(p, 'lmtprice', 'id');
-  limitp.disabled = c.innerText === 'MARKET' ? true: false;
-  if(c.innerText === 'MARKET') 
+  limitp.disabled = c.textContent === 'MARKET' ? true: false;
+  if(c.textContent === 'MARKET') 
     limitp.value = "";
 }
 
@@ -173,4 +203,14 @@ function confirmCancel(c, p) {
 function dropCancelOrder(c, p)
 {
   c.parentElement.style.display = 'none';
+}
+
+function position_cb_action(){
+  const checkboxes = document.querySelectorAll('#pos_exit_cb');
+  const checkedIdx = Array.from(checkboxes)
+  .map((cb, i) => cb.checked ? i : null)
+  .filter(val => val !== null);
+
+  exit_pos_btn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
+  pos_all_cb.checked = checkedIdx.length === checkboxes.length;
 }

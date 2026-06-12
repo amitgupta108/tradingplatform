@@ -1,8 +1,6 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../stream.mjs';
-import trade_utils from '../service/ordermanager.mjs';
 import live_kotak from './m_t_kotakneo.mjs';
-import Order_Service from '../service/ordersimulator.mjs';
 
 let initialized = false;
 const client = new OpenAlgo(process.env.openalgo_key);
@@ -16,14 +14,12 @@ function onQuotes(q)
 { 
     const qt = standardizeoq(q);
     qserver.emitQs(qt.stockCode + openalgo_mode_live, qt);
-
-    if(qt.key === 'strikex')
-        Order_Service.orderExecutionSim(qt);
 }
 
 function exit(appid, sublist)
 {
-    subscribe(appid, sublist, 'unsub');
+    //subscribe(appid, sublist, 'unsub');
+    client._wsClient.ws._sendMessage({action: unsubscribe_all});
 }
 
 function standardizeoq(q) 
@@ -32,8 +28,8 @@ function standardizeoq(q)
     q.ltt = Number(q.ltt);
     q.close = (q.ltp);
     q.open = q.ltp;
-    q.high = q.ltp;
-    q.low = q.ltp;
+    //q.high = q.ltp;
+    //q.low = q.ltp;
     
     const idx = q.symbol.search(regex);
     const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
@@ -62,7 +58,7 @@ function addtocache(symbol, idx)
     if(!symbol.endsWith('FUT'))
     {
         cached.strike = symbol.slice(idx + 7, -2);
-        cached.right = symbol.slice(-2) === 'CE' ? 'Call' : 'Put';
+        cached.right = symbol.slice(-2);
     }
     symbol_cache.set(symbol, cached);
     return cached;
@@ -95,10 +91,10 @@ async function orderbook(appid, stockCode)
     return await live_kotak.orderbook(appid, stockCode);
 }
 
-async function order(appid, orders)
+async function neworders(appid, orders)
 {
 
-    var res = await live_kotak.order(appid, orders);
+    var res = await live_kotak.neworders(appid, orders);
     console.log('order response ' + JSON.stringify(res));
     return res;
 
@@ -149,15 +145,18 @@ function init()
         client.connect()
         .then(() => {
             console.log('openalgo client connected');
-            client._wsClient.ws.addEventListener('open', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
                 var list = Array.from(subs_cache.values());
-                client.subscribe_ltp(list, onQuotes);
-            });
+                if(list.length > 0)
+                    client.subscribe_ltp(list, onQuotes);
 
+            client._wsClient.ws.addEventListener('error', (reason) => {
+                console.log('openalgo websocket error: ' + reason);
+            
+            });
             client._wsClient.ws.addEventListener('close', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-                qserver.streaming_status(false, 'openalgo', openalgo_mode_live);
+                //qserver.streaming_status(false, 'openalgo', openalgo_mode_live);
             });
             initialized = true;
         }).catch((error) => console.error('Error connecting to openalgo ' + error));

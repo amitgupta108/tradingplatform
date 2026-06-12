@@ -31,19 +31,13 @@ function startStreamer(stmrkey){
     
     if(stmr.state === 'stopped') 
     {
-        try {
-            stmr.qsid = setInterval(() => {
-            
-                var resp = dothings(stmrkey);
-                runclient_clocks(stmrkey);
-                if(resp.count === 0) 
-                    stopStreamer(resp.key);
-            }, 980 / stmr.speed);
-        } catch (err) {
-            clearInterval(stmr.qsid);
-            stmr.state = 'stopped';   
-            console.error(err);
-        }
+        stmr.qsid = setInterval(() => {
+        
+            var resp = dothings(stmrkey);
+            runclient_clocks(stmrkey);
+            if(resp.count === 0) 
+                stopStreamer(resp.key);
+        }, 980 / stmr.speed);
         stmr.state = 'started';   
     }
 }
@@ -68,15 +62,16 @@ function dothings(stmrkey)
                 var reqs = subsRequests.get(c.appid)?.filter((s) => s.instrument.model === 'history') || [];
                 reqs.forEach((req) => {
                     count++;
-                    var qt = q(req.appid, req.instrument, c.currentTime);
-                    if(qt !== undefined) {
-                        futsocket.emit('quote', qt, 'history', req.appid);
-                    }
+                    q(req.appid, req.instrument, c.currentTime);
+                    //var qt = q(req.appid, req.instrument, c.currentTime);
+                    //if(qt !== undefined)
+                    //    futsocket.emit('quote', qt, 'history', req.appid);
                 });
             }
         }
-    } catch (exception){
-        console.log(exception);
+    } catch (error){
+        console.log('Error for appid, unsubscribe all: ' + error.appid + ' ' + error);
+        subsRequests.delete(error.appid);
     }
     return {key: stmrkey, count: count};
 }
@@ -142,7 +137,7 @@ function unsubscribe(requests) {
 
 function unsubscribeall(appid)
 {
-    var others = subsRequests.delete(appid); 
+    subsRequests.delete(appid); 
 }   
 
 function exit(appid)
@@ -157,21 +152,32 @@ function q(appid, instrument, time)
 {
     var qArray = client_store.get(appid);
     var st = qArray.find((q) => q.symbol === instrument.symbol);
-    if(st === undefined) {
-        st = {appid: appid, symbol: instrument.symbol, quotes: undefined, state: 'initialized', lastUpdated: time};
+
+    var idx = -1;
+    if (st?.quotes !== undefined && st.trimIndex >= 0)
+    {
+        if(st.quotes[st.trimIndex].ltt === time)
+            idx = st.trimIndex++;
+    }
+    else if(st?.quotes !== undefined && st.trimIndex < 0)
+    {
+        idx = st.quotes.findIndex((q) => q.ltt === time);
+        if(idx >= 0)
+            st.trimIndex = idx + 1;
+    }
+    else if(st === undefined) {
+        st = {appid: appid, symbol: instrument.symbol, quotes: undefined, trimIndex: -3, state: 'initialized', lastUpdated: time};
         qArray.push(st);
     }
 
-    var idx = -1;
-    if (st.quotes != undefined)
-        idx = sutils.findQuoteByTime(st.quotes, time);
+    if(idx >= 0)
+        futsocket.emit('quote', st.quotes[idx], 'history', appid);
 
     if ((st.quotes === undefined || idx === -2 || st.quotes.length - idx < 25) && st.state != 'load requested')
     {
         st.state = 'load requested';
         qw(st, instrument, time);
     }
-    return idx > -1 ? st.quotes[idx] : undefined;
 }
 
 function qw(st, instrument, time) {
@@ -180,7 +186,8 @@ function qw(st, instrument, time) {
     return qs.then((resp) => {
         return resp;   
     }).catch((reason) => {
-        console.log('Error from historical data load ' + reason);
+        console.log('Rejection for appid, unsubscribe all: ' + st.appid + ' ' + reason);
+        subsRequests.delete(st.appid);
     });
 }
 

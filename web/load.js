@@ -18,8 +18,8 @@ const t_option_chain_header = document.getElementById('oc-head-row');
 const t_option_chain_row = document.getElementById('option-chain-row');
 
 const basket = document.getElementById('toggleBasket');
-const pos_all_cb = document.getElementById('exit_all_cb');
 const exit_pos_btn = document.getElementById('exitPositionBtn');
+const pos_all_cb = document.getElementById('exit_all_cb');
 const closeOWinBtn = document.getElementById('ow_close_btn');
 const submitOWinBtn = document.getElementById('ow_submit_btn');
 
@@ -46,7 +46,6 @@ class TradeButtons extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
       <div class="hover-content">
-          <label id='symbol_any_row' hidden></label>
           <button  id="div_trans_btn" class="smallbutton buy">B</button>
           <button  id="row_attn_btn" class="smallbutton order">!</button>
           <button  id="div_trans_btn" class="smallbutton sell">S</button> 
@@ -63,9 +62,9 @@ const qBox = new EventTarget();
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
   const ltp = q.ltp;
-  spot_title = ' | S: ' + ltp;
+  spot_title = ' | S: ' + ltp.toFixed(2);
   document.title = fut_title + spot_title;
-  spot_label.textContent = ltp;
+  spot_label.textContent = ltp.toFixed(2);
   
   var lt = new Date(q.ltt);
   time_label.textContent = lt.toLocaleTimeString();
@@ -78,7 +77,7 @@ qBox.addEventListener('vix', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp;
+  fut_title = 'F: ' + q.ltp.toFixed(2);
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
   renderChart(futuresSeries, fEmaSeries, q);
@@ -87,7 +86,7 @@ qBox.addEventListener('futures', (event) => {
 qBox.addEventListener('strikex', (event) => {
     var pos = positions.get(event.detail.symbol);
     if(pos !== undefined)
-      pos.updateUnbookedPL(event.detail.close, 'quote');
+      pos.updateUnbookedPL(event.detail.ltp, 'quote');
 });
 
 qBox.addEventListener('strikex', (event) =>
@@ -99,32 +98,23 @@ qBox.addEventListener('strikex', (event) =>
   var rows = Array.from(order_rows_tbody.rows);
   rows.forEach((r) => {
     if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
-      r.querySelector("#owprice").textContent = event.detail.close.toFixed(2);
+      r.querySelector("#owprice").textContent = event.detail.ltp.toFixed(2);
       
       const lml_price_tb = qSel(r, 'lmtprice', 'id');
       const price_type_lb = qSel(r, 'ordertype', 'id');
       if(lml_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
-        lml_price_tb.value = event.detail.close.toFixed(2);
+        lml_price_tb.value = event.detail.ltp.toFixed(2);
     }
   });
 });
 
-pos_all_cb.onchange = (event) => {
+pos_all_cb.addEventListener('change', (event) => {
+
   var checkboxes = positions_tBody.querySelectorAll(`input[type="checkbox"]:not(:disabled)`);
   checkboxes.forEach(cb => cb.checked = pos_all_cb.checked);
 
   exit_pos_btn.style.display = pos_all_cb.checked ? 'block' : 'none';
-}
-
-function position_cb_action(){
-  const checkboxes = document.querySelectorAll('#pos_exit_cb');
-  const checkedIdx = Array.from(checkboxes)
-  .map((cb, i) => cb.checked ? i : null)
-  .filter(val => val !== null);
-
-  exit_pos_btn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
-  pos_all_cb.checked = checkedIdx.length === checkboxes.length;
-}
+});
 
 exit_pos_btn.onclick = (event) => {
   const checkboxes = 
@@ -141,10 +131,6 @@ exit_pos_btn.onclick = (event) => {
   event.target.style.display = 'none';
   pos_all_cb.checked = false;
   showOrderWindow();
-}
-
-closeOListBtn.onclick = () => {
-  orderlistDiv.style.display = 'none';
 }
 
 closeOWinBtn.onclick = () => {
