@@ -100,10 +100,10 @@ qBox.addEventListener('strikex', (event) =>
     if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
       r.querySelector("#owprice").textContent = event.detail.ltp.toFixed(2);
       
-      const lml_price_tb = qSel(r, 'lmtprice', 'id');
+      const lmt_price_tb = qSel(r, 'lmtprice', 'id');
       const price_type_lb = qSel(r, 'ordertype', 'id');
-      if(lml_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
-        lml_price_tb.value = event.detail.ltp.toFixed(2);
+      if(lmt_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
+        lmt_price_tb.value = event.detail.ltp.toFixed(2);
     }
   });
 });

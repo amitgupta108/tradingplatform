@@ -28,7 +28,7 @@ function appendOrderRow(symbol, action, quantity = 1)
   var tr = tRow(t_order_window_row);
   tr.querySelector('#owsymbol').textContent  = symbol;
   tr.querySelector('#scripName').textContent  = scripName;
-  tr.querySelector('#lotselect').value = quantity;
+  tr.querySelector('select').value = quantity;
 
   const action_btn = tr.querySelector('#ow_action_btn');
   action_btn.textContent = action;
@@ -120,7 +120,7 @@ function tRow(template, withListener = true){
     new_row.addEventListener('input', (e) => {
       e.stopPropagation();
       
-      if(e.target.id = 'lmtprice' && e.target !== new_row)
+      if(e.target.id === 'lmtprice' && e.target !== new_row)
       submitOWinBtn.disabled = true;
     }, true);
     return new_row;
