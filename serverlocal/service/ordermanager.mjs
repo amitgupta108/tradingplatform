@@ -28,11 +28,7 @@ function liveOrderMatching(message, mode)
     if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         return;
     console.log('live order update received ' + JSON.stringify(message.data));
-    /*
-        1. externally placed order - no orderid
-        2. app triggered order with orderid available
-        3. app triggered order with orderid not yet available
-    */
+
     const live_order = formatLiveOrder(message.data);
     var found = Array.from(live_order_map.values()).find((order) => {
         return (order.orderid === live_order.orderid)

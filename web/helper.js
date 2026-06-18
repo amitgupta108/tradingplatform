@@ -83,3 +83,25 @@ function qSel(element, name, type){
   type = type === 'id' ? '#' : type === 'css' ? '.' : '';
   return element.querySelector(type + name);
 }
+
+function toKotakOrder(order)
+{    
+    const symbol = order.symbol.slice(0, -2);
+    const key = order.symbol.endsWith('PE') ? symbol.concat('.00PE') : symbol.concat('.00CE');
+    const kotakOrder = {
+        am: 'NO',
+        dq: '0',
+        es: order.exchange === 'NFO' ? 'nse_fo' : 'mcx_fo',
+        mp: '6',
+        pc: order.product,
+        pf: 'N',
+        pr: String(order.price),
+        pt: order.pricetype === 'MARKET' ? 'MKT' : 'L',
+        qt: String(order.quantity),
+        rt: 'DAY',
+        tp: '0',
+        ts: key,
+        tt: order.action === 'BUY' ? 'B' : 'S'
+    };
+    return kotakOrder;
+}
