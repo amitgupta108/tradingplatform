@@ -12,17 +12,20 @@ const streamers = [
         {key: '2x', speed: 2, qsid: 0, state: 'stopped'},
         {key: '3x', speed: 3, qsid: 0, state: 'stopped'},  
         {key: '5x', speed: 5, qsid: 0, state: 'stopped'},
+        {key: '10x', speed: 10, qsid: 0, state: 'stopped'},
+
     ];  
 
-function connect(sessionId, with_socket) {
-    sutils.connect(sessionId, with_socket, wsmessage);
+function connect() {
+    return sutils.connect(wsmessage);
+
 }
 
 function clientInit(appid, simStartTime, speed = '1x') {
     subsRequests.set(appid, new Array(0));
     if(client_clocks.get(appid) === undefined) {
         client_store.set(appid, new Array(0));
-        client_clocks.set(appid, {appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed});
+        client_clocks.set(appid, {appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed, lastaction: 'none'});
     }
 }
 
@@ -33,10 +36,10 @@ function startStreamer(stmrkey){
     {
         stmr.qsid = setInterval(() => {
         
-            var resp = dothings(stmrkey);
+            dothings(stmrkey);
             runclient_clocks(stmrkey);
-            if(resp.count === 0) 
-                stopStreamer(resp.key);
+            if(Array.from(client_clocks.values()).filter(c => c.key === stmrkey).length === 0) 
+                stopStreamer(stmrkey);
         }, 980 / stmr.speed);
         stmr.state = 'started';   
     }
@@ -45,7 +48,7 @@ function startStreamer(stmrkey){
 function stopStreamer(stmrkey){
     var stmr = streamers.find((x) => x.key === stmrkey);
     
-    if(stmr.state != 'stopped') {
+    if(stmr?.state != 'stopped') {
         clearInterval(stmr.qsid);
         stmr.state = 'stopped';
         stmr.qsid = 0;
@@ -56,31 +59,29 @@ function dothings(stmrkey)
 {
     try
     {
-        var count = 0;
         for (const c of client_clocks.values()) {
-            if (c.key === stmrkey) {
+            if (c.key === stmrkey && c.lastaction !== 'pause') {
                 var reqs = subsRequests.get(c.appid)?.filter((s) => s.instrument.model === 'history') || [];
                 reqs.forEach((req) => {
-                    count++;
                     q(req.appid, req.instrument, c.currentTime);
-                    //var qt = q(req.appid, req.instrument, c.currentTime);
-                    //if(qt !== undefined)
-                    //    futsocket.emit('quote', qt, 'history', req.appid);
                 });
             }
         }
     } catch (error){
-        console.log('Error for appid, unsubscribe all: ' + error.appid + ' ' + error);
+        console.log('Error for appid, unsubscribe all: ' + error.appid + ' ' + error.stack);
         subsRequests.delete(error.appid);
     }
-    return {key: stmrkey, count: count};
 }
 
 function runclient_clocks(stmrkey) 
 {
     for (const c of client_clocks.values()) {
         if (c.key === stmrkey) {
-            c.currentTime = c.currentTime + 1000;
+            if(c.state === 'start initiated')
+                c.state = 'started';
+
+            if(!(c.state === 'paused' || c.state === 'stopped'))
+                c.currentTime = c.currentTime + 1000;
         }
     }
 }
@@ -95,57 +96,72 @@ function changeSpeed(appid, stmrkey){
         startStreamer(stmrkey);
 }
 
-function subscribe(requests) {
-    
-    requests.forEach((request) => {
-        var exReqs = (subsRequests.get(request.appid))?.filter((s) => 
-            s.symbol === request.symbol
-            && s.instrument.model === request.instrument.model) || [];
-        
-        if(exReqs.length === 0)
-            subsRequests.get(request.appid)?.push(request);            
-    });
+function start_sim(appid, requests) {
 
-    const live_ones = requests.filter((r) => r.instrument.model === 'live');
-    live_sub(live_ones, 'subs');
+    if(requests?.length > 0)
+    {
+        subscribe(appid, requests);
+        const c = client_clocks.get(appid);
+        c.lastaction = 'start';
+        startStreamer(c.key);
+        c.state = 'start initiated';
 
-    if(requests.length > 0 && requests.length > live_ones.length) {
-        var stmrkey = client_clocks.get(requests[0].appid).key;
-        var streamer = streamers.find((s) => s.key === stmrkey);
-        if(streamer.state !== 'started')
-            startStreamer(stmrkey);
+        return { status: 'success' };
     }
 }
 
-function unsubscribe(requests) {
+function subscribe(appid, requests) {
+    
+    const exReqs = subsRequests.get(appid);
+    const qArray = client_store.get(appid);
+    const c = client_clocks.get(appid);
+
     requests.forEach((request) => {
+        const idx = exReqs.findIndex((s) => s.symbol === request.symbol
+            && s.instrument.model === request.instrument.model);
         
-        const i_reqs = subsRequests.get(request.appid);
-        var exReqs = i_reqs?.filter((s) => {
-            (s.symbol === request.symbol
-            && request.instrument.model === s.instrument.model)
-            || [];
-        });
-        
-        if (exReqs.length > 0) {
-            exReqs.forEach((r) => {
-                i_reqs.splice(i_reqs.indexOf(r), 1);
-            });
+        if(idx === -1)
+            exReqs.push(request);
+            
+        let st = qArray.find((q) => q.symbol === request.symbol);
+        if(st === undefined) {
+            st = {appid: appid, symbol: request.instrument.symbol, quotes: undefined, indexA: undefined,
+                 trimIndex: -1, state: 'initialized', lastUpdated: c.currentTime}
+            qArray.push(st);
+            
+            st.state = 'load requested';  
+            qw(st, request.instrument, c.currentTime);
         }
     });
-}   
+}
 
-function unsubscribeall(appid)
-{
-    subsRequests.delete(appid); 
-}   
+function pause(appid, action) {
+    const c = client_clocks.get(appid);
+    c.lastaction = action;
+    c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
+    return c.state;
+}
 
-function exit(appid)
+function unsubscribe(appid, requests) {
+    const i_reqs = subsRequests.get(appid);
+    requests.forEach((request) => {
+        
+        var idx = i_reqs.findIndex((s) => s.symbol === request.symbol
+            && request.instrument.model === s.instrument.model);
+    
+        if(idx !== -1)
+            i_reqs.splice(idx, 1);
+    });
+}
+
+function clear(appid)
 {
-    console.log('Drop user ' + appid);
     client_clocks.delete(appid);
     client_store.delete(appid);
-    unsubscribeall(appid);
+    subsRequests.delete(appid);
+    
+    console.log('Drop user ' + appid);
+    return {status: 'success'};
 }
 
 function q(appid, instrument, time)
@@ -154,26 +170,26 @@ function q(appid, instrument, time)
     var st = qArray.find((q) => q.symbol === instrument.symbol);
 
     var idx = -1;
-    if (st?.quotes !== undefined && st.trimIndex >= 0)
+    if (st?.quotes !== undefined && st.trimIndex > 0)
     {
         if(st.quotes[st.trimIndex].ltt === time)
             idx = st.trimIndex++;
     }
-    else if(st?.quotes !== undefined && st.trimIndex < 0)
+    else if(st?.quotes !== undefined && idx < 0)
     {
-        idx = st.quotes.findIndex((q) => q.ltt === time);
+        idx = st.indexA.indexOf(time);
         if(idx >= 0)
             st.trimIndex = idx + 1;
     }
     else if(st === undefined) {
-        st = {appid: appid, symbol: instrument.symbol, quotes: undefined, trimIndex: -3, state: 'initialized', lastUpdated: time};
+        st = {appid: appid, symbol: instrument.symbol, quotes: undefined, indexA: undefined, trimIndex: -1, state: 'initialized', lastUpdated: time};
         qArray.push(st);
     }
 
     if(idx >= 0)
         futsocket.emit('quote', st.quotes[idx], 'history', appid);
 
-    if ((st.quotes === undefined || idx === -2 || st.quotes.length - idx < 25) && st.state != 'load requested')
+    if ((st.quotes === undefined || st.quotes.length - idx < 40) && st.state != 'load requested')
     {
         st.state = 'load requested';
         qw(st, instrument, time);
@@ -186,8 +202,8 @@ function qw(st, instrument, time) {
     return qs.then((resp) => {
         return resp;   
     }).catch((reason) => {
-        console.log('Rejection for appid, unsubscribe all: ' + st.appid + ' ' + reason);
-        subsRequests.delete(st.appid);
+        st.state = 'load failed';
+        console.log('Rejection for appid: ' + st.appid + ' ' + reason);
     });
 }
 
@@ -202,16 +218,39 @@ function getHistory(p)
 function addListener(eventName, callback)
 {
     futsocket.addListener(eventName, callback);
+    return { status: 'success' };
+
 }
 
 function live_sub(list, action)
 {
-    sutils.wssub(list, action);
+    sutils.wssub(list, action)
+    .then((responses) => { 
+        console.log('sub successful, count: ' + responses.length);
+    })
+    .catch((error) => {
+        console.log('one or more subs failed');
+    });
 }
 
-function subscribe_vix(action)
+function subscribe_vix(appid, mode, action)
 {
-    sutils.subscribe_vix(action);
+    var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
+
+    if(mode.startsWith('HISTORY')) {
+        const vix_request = subsRequests.get(appid)?.find((r) => 
+            r.symbol === appid 
+            && r.model === 'history');
+
+            if(vix_request === undefined && action === 'subs')
+                subsRequests.get(appid)?.push({ appid: appid,
+                    symbol: b.stockCode,
+                    instrument: b});
+    }
+    else     
+        sutils.subscribe(b, action)
+        .then((resp) => console.log(resp))
+        .catch((error) => console.log(resp));
 }
 
 function wsmessage(q)
@@ -223,11 +262,13 @@ export default {
     clientInit,
     subscribe,
     unsubscribe,
-    unsubscribeall,
     changeSpeed,
-    exit,
+    clear,
     getHistory,
     addListener,
     connect,
-    subscribe_vix
+    subscribe_vix,
+    start_sim,
+    live_sub,
+    pause
 };

@@ -1,7 +1,10 @@
 const positions = new Map();
+const pNL_all = {booked: 0.00, unbooked: 0.00}
+const decimal2 = ['bookedPL', 'averageP', 'LTP', 'unbookedPL', 'totalPL'];
 let in_prep_orders = {};
 const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
+let data_reload = false;
   
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
@@ -22,17 +25,22 @@ const exit_pos_btn = document.getElementById('exitPositionBtn');
 const pos_all_cb = document.getElementById('exit_all_cb');
 const closeOWinBtn = document.getElementById('ow_close_btn');
 const submitOWinBtn = document.getElementById('ow_submit_btn');
+const bottom_btns = document.getElementById('bottomPanel').querySelectorAll('button');
 
 const socn = document.getElementById('socn');
+const ws_start_btn = document.getElementById('ws_start');
+const ws_stop_btn = document.getElementById('ws_stop');
 const date_label = document.getElementById('timer_date_lb');
 const time_label = document.getElementById('timer_time_lb');
 const spot_label = document.getElementById('timer_spot_lb');
 const latency_label = document.getElementById('timer_latency_lb');
-const expiry_label = document.getElementById('oc_expiry_lb');
+const expiry_label_1 = document.getElementById('expiry_label_1');
+const expiry_label_2 = document.getElementById('expiry_label_2');
 const simDate = new Date(instrument.simStartTime);
 
 date_label.textContent = simDate.toDateString();
-expiry_label.textContent = instrument.oExpiry;
+expiry_label_1.textContent = instrument.oExpiry;
+expiry_label_2.textContent = instrument.oExpiryNxt;
 
 let spot_title = ' | S: ';
 let fut_title = 'F: ';
@@ -58,38 +66,48 @@ customElements.define('trade-buttons', TradeButtons);
 /*--Event Listeners--------------------------------------------------------------------------------------------------------------------------*/
 const pBox = new EventTarget();
 const qBox = new EventTarget();
+const pNL = new EventTarget();
 
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
   const ltp = q.ltp;
-  spot_title = ' | S: ' + ltp.toFixed(2);
+  spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
-  spot_label.textContent = ltp.toFixed(2);
+  spot_label.textContent = ltp;
   
   var lt = new Date(q.ltt);
   time_label.textContent = lt.toLocaleTimeString();
-  renderChart(indexSeries, iEmaSeries, q);
+  renderChart('index', 'iEma', q);
 });
 
 qBox.addEventListener('vix', (event) => {
-  renderChart(vixSeries, undefined, event.detail);
+  renderChart('vix', undefined, event.detail);
 });
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp.toFixed(2);
+  fut_title = 'F: ' + q.ltp;
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
-  renderChart(futuresSeries, fEmaSeries, q);
+  renderChart('futures', 'fEma', q);
 });
 
 qBox.addEventListener('strikex', (event) => {
-    var pos = positions.get(event.detail.symbol);
-    if(pos !== undefined)
-      pos.updateUnbookedPL(event.detail.ltp, 'quote');
+  if(positions.size > 0 && positions.get(event.detail.symbol) !== undefined)
+  {
+    const pos = positions.get(event.detail.symbol);
+
+    const unbookedPL = (event.detail.ltp - pos.booked.avgP) * pos.psize;
+    const pnlchange = {change_unb: unbookedPL - pos.value('unbookedPL'), change_b: 0};
+    pNL.dispatchEvent(generateEvent('change', pnlchange));
+
+    pos.value('LTP', event.detail.ltp);
+    pos.value('unbookedPL', unbookedPL);
+    pos.value('totalPL', pos.booked.pl + unbookedPL);
+  }
 });
 
-qBox.addEventListener('strikex', (event) =>
+qBox.addEventListener('strikex', (event) => 
 {
   const n_rows = order_rows_tbody.rows.length;
   if(n_rows === 0)
@@ -100,13 +118,22 @@ qBox.addEventListener('strikex', (event) =>
     if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
       r.querySelector("#owprice").textContent = event.detail.ltp.toFixed(2);
       
-      const lml_price_tb = qSel(r, 'lmtprice', 'id');
+      const lmt_price_tb = qSel(r, 'lmtprice', 'id');
       const price_type_lb = qSel(r, 'ordertype', 'id');
-      if(lml_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
-        lml_price_tb.value = event.detail.ltp.toFixed(2);
+      if(lmt_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
+        lmt_price_tb.value = event.detail.ltp.toFixed(2);
     }
   });
 });
+
+pNL.addEventListener('change', (event) => {
+  pNL_all.booked += event.detail.change_b;
+  pNL_all.unbooked += event.detail.change_unb;
+
+  gtotal_booked.textContent = pNL_all.booked.toFixed(2);
+  gtotal_unbooked.textContent = pNL_all.unbooked.toFixed(2);
+  gtotal_pnl.textContent = (pNL_all.booked + pNL_all.unbooked).toFixed(2);
+})
 
 pos_all_cb.addEventListener('change', (event) => {
 

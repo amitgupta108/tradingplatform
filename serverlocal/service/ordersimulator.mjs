@@ -1,27 +1,39 @@
 import qServer from '../stream.mjs';
+import services from './services.mjs';
+
 const sim_order_map = new Map();
 var counter = 50000;
 let initialized = false;
 
 function init()
 {
-    qServer.addEventLsitener('strikex', ((q) => {
-        orderExecutionSim(q);
-    }) );
-    initialized = true;
+    if(!initialized) {
+        initialized = true;
+        qServer.addEventLsitener('strikex', ((q) => {
+            orderExecutionSim(q);
+        }) );
+    }
 }
 
-function neworders(appid, orders)
+function neworders(appid, mode, orders)
 {
+    services.getProfile(app)
     orders.forEach((order) => {
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++counter;
         order.state = 'opened';
+        order.sim_mode = mode;
         sim_order_map.set(order.orderid, order);
 
         qServer.emitOrders(order.appid, 'order', order);
     });
+    return {status: 'success'};
+}
+
+function modeMatched(order_mode, quote_mode)
+{
+    return order_mode === 'HISTORY' && quote_mode === 'history';
 }
 
 function orderExecutionSim(q)
@@ -31,7 +43,8 @@ function orderExecutionSim(q)
 
     const openorders = Array.from(sim_order_map.values()).filter((order) => {
         return (order.state === 'opened'
-            && order.symbol === q.symbol);
+            && order.symbol === q.symbol
+            && modeMatched(order.sim_mode, q.mode));
     });
     
     if(openorders.length === 0)

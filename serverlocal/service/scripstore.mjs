@@ -2,6 +2,7 @@ import axios from 'axios';
 import csv from 'csv-parser';
 import fs from 'fs/promises';
 import path from 'path';
+import {opt_expiries} from '../../common/constants.mjs';
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -138,11 +139,13 @@ function processSingleFile(url, userFilterCriteria) {
 // 4. PUBLIC ACCESS API
 // ============================================================================
 
-async function initStore(payload, userFilterCriteria) {
+async function initStore(payload, userFilterCriteria, reload = false) {
   const cachePath = getCacheFilePath();
 
   // Trigger background garbage collection immediately on bootup
   await clearStaleCacheFiles();
+  if(_isLoaded && !reload )
+    return 0;
 
   try {
     console.log('Checking for local persistent file cache...');
@@ -181,7 +184,7 @@ function queryStore(filterFn) { return _inMemoryStore.filter(filterFn); }
 function getStoreStatus() { return { loaded: _isLoaded, totalRecords: _inMemoryStore.length }; }
 
 export default {
-  start,
+  load,
   getAllScrips,
   findScripByKey,
   queryStore,
@@ -191,26 +194,36 @@ export default {
 // ============================================================================
 // 5. BOOTSTRAP Scrip Service
 // ============================================================================
-async function start(expiryDates) {
+async function load(expiryDates, reload = false) {
   const incomingPayload = {
     "data": {
       "baseFolder": "https://kotaksecurities.com",
       "filesPaths": [
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed/nse_fo.csv",
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-25/transformed/mcx_fo.csv",
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-25/transformed/nse_fo.csv"
       ]
     }
   };
   
-  //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed-v1/nse_cm-v1.csv",      
+  //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-24/transformed/nse_fo.csv"
   //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed/mcx_fo.csv"
   
   const filters = {
     exchangeSegment: ['nse_fo'],
-    expiryDate: [], 
+    expiryDate: [], //1784246399
     underlying: ['NIFTY'],
     exchange: [],
     instrumentType: ['OPTIDX']
   };
+
+  /*const filters = {
+    exchangeSegment: ['nse_fo'],
+    expiryDate: [opt_expiries['NIFTY']['first'], opt_expiries['CRUDEOIL']['first']], 
+    underlying: ['NIFTY', 'CRUDEOIL'],
+    exchange: [],
+    instrumentType: ['OPTIDX', 'OPTFUT']
+  };
   //filters.expiryDate = expiryDates;
-  await initStore(incomingPayload, filters);
+  */
+  await initStore(incomingPayload, filters, reload);
 }
