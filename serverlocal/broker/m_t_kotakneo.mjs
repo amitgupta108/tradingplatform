@@ -3,17 +3,27 @@ import kotak_socket from '../service/connectionmanager.mjs';
 import ordermanager from '../service/ordermanager.mjs';
 import qserver from '../stream.mjs';
 
+var paths;
 var initialized = false;
 
 function init()
 {
     if(!initialized)
     {
-        kotak_socket.hsiconnect();
-        scrip_service.start();
         initialized = true;
     }
     return initialized;
+}
+
+function notifyme(connected)
+{
+    if(connected) {
+        paths = {
+            order: apiUrl('quick/order/rule/ms/place'),
+            orderbook: apiUrl('quick/user/orders'),
+            cancel: apiUrl('quick/order/cancel')
+        };
+    }
 }
 
 function authHeaders()
@@ -21,7 +31,7 @@ function authHeaders()
     const auth_data = kotak_socket.getSavedCredentials();
     return {headers: {
         'accept': 'application/json',
-        'sid': auth_data.hsi_sid,
+        'Sid': auth_data.hsi_sid,
         'Auth': auth_data.hsi_token,
         'neo-fin-key': 'neotradeapi',
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -36,7 +46,8 @@ function apiUrl(path)
 
 async function request(path, options)
 {
-    const url = apiUrl(path);
+    const url = paths[path];
+    console.log('order submitted');
     return await fetch(url, options);
 }
 
@@ -60,11 +71,10 @@ async function get(path)
     return await response.json();
 }
 
-function toKotakOrder(order)
+function toKotakOrder(order, isKotakOrder)
 {    
-    const symbol = order.symbol.slice(0, -2);
-    const key = order.symbol.endsWith('PE') ? symbol.concat('.00PE') : symbol.concat('.00CE');
-    const kotakOrder = {
+    const ts = order.exchange === 'NFO' ? order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2): order.symbol; 
+    return {
         am: 'NO',
         dq: '0',
         es: order.exchange === 'NFO' ? 'nse_fo' : 'mcx_fo',
@@ -76,11 +86,9 @@ function toKotakOrder(order)
         qt: String(order.quantity),
         rt: 'DAY',
         tp: '0',
-        ts: scrip_service.findScripByKey('scripReferenceKey', key)?.tradingSymbol,
+        ts: ts,
         tt: order.action === 'BUY' ? 'B' : 'S'
     };
-
-    return kotakOrder;
 }
 
 function toKotakModifyOrder(order)
@@ -90,19 +98,21 @@ function toKotakModifyOrder(order)
     return kotakOrder;
 }
 
-async function neworders(appid, orders)
+function neworders(appid, view_mode, orders)
 {
     const promises = orders.map((order) => placeOrder(appid, order));
-    return await Promise.all(promises);
+    return Promise.all(promises);
 }
 
 async function placeOrder(appid, order)
 {
     const clone = toKotakOrder(order);
+    if(clone.ts === undefined)
+        return 'trading symbol not found ' + order.symbol;
+    
     ordermanager.neworders(appid, [order]);
-
-    let response = await post('quick/order/rule/ms/place', clone);
-    console.log('order placed ' + JSON.stringify(clone));
+    let response = await post('order', clone);
+    console.log('order submission return ' + JSON.stringify(clone));
     if(!response.ok) {
         throw new Error(`Response status: ${response.status}`);
     }
@@ -127,7 +137,7 @@ async function modifyorder(appid, order)
 
 async function cancelorder(appid, order)
 {
-    const response = await post('quick/order/cancel', {on: order.orderid});
+    const response = await post('cancel', {on: order.orderid});
     if(!response.ok) {
         throw new Error(`Response status: ${response.status}`);
     }
@@ -137,14 +147,14 @@ async function cancelorder(appid, order)
 
 async function orderbook(appid, stockCode)
 {
-    const response =  await get('quick/user/orders');
-    const orders = response.data.map((order) => {
+    const response =  await get('orderbook');
+    const orders = response?.data.map((order) => {
         return ordermanager.formatLiveOrder(order, true);
     }).filter((order) => {
         return order.stockCode === stockCode;
     });
 
-    return orders.sort((a, b) => a.orderid - b.orderid);
+    return orders?.sort((a, b) => a.orderid - b.orderid);
 }
 
 function subscribe(appid, sublist, action)
@@ -199,5 +209,6 @@ export default {
     modifyorder,
     exit,
     subscribe,
-    init
+    init,
+    notifyme
 };

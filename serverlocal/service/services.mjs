@@ -5,48 +5,59 @@ import kotak_socket from './connectionmanager.mjs';
 import paper_trading from './ordersimulator.mjs';
 
 const modes = {
-  HISTORY: {view: 'history', trade: 'simulated'},
-  LIVELIVE: {view: 'live', trade: 'live'},
-  LIVESIM: {view: 'live', trade: 'simulated'},
-  LIVELIVEOA: {view: 'live', trade: 'live_2'},
-  LIVELIVEADMIN: {view: 'live', trade: 'live', admin: 'live_trading'},
-  LIVEADMIN: {view: 'live', admin: 'live_streaming'},
-  ONLYADMIN: {admin: 'all'}
+  HISTORY: {view: 'HISTORY', trade: 'SIMULATED', admin: 'SIM_ADMIN'},
+  LIVELIVE: {view: 'LIVE', trade: 'LIVE'},
+  LIVESIM: {view: 'LIVE', trade: 'SIMULATED'},
+  LIVELIVEOA: {view: 'LIVE', trade: 'LIVE_2'},
+  LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2'},
+  S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING'},
+  L1L2ADMINT: {view: 'LIVE', trade: 'LIVE_2', admin: 'LIVE_TRADING'},
+  L1L0ADMINS: {view: 'LIVE', admin: 'LIVE_STREAMING'},
+  L2L2ADMINS: { view: 'LIVE_2', trade: 'LIVE_2', admin: 'LIVE_STREAMING' },
+  ADMINALL: {admin: ['LIVE_STREAMING', 'LIVE_TRADING']}
 };
 
 const providers = {
-  view: {history: service_breeze, live: live_openalgo},
-  trade: {live: live_kotak, live_2: live_openalgo, simulated: paper_trading},
-  admin: {live_trading: kotak_socket, live_streaming: live_openalgo }
+  view: { HISTORY: service_breeze, LIVE: live_openalgo, LIVE_2: service_breeze },
+  trade: {LIVE: live_kotak, LIVE_2: live_openalgo, SIMULATED: paper_trading},
+  admin: {LIVE_TRADING: kotak_socket, LIVE_STREAMING: live_openalgo, SIM_ADMIN: service_breeze }
 };
 
 const access = {
-  view: ['vix', 'start', 'predata', 'speed', 'stop', 'option_chain'],
+  view: ['vix', 'start', 'preData', 'speed', 'exit', 'stream', 'option_chain'],
   trade: ['order', 'cancelorder', 'orderbook'],
-  admin: ['unlock_live', 'wsOps']
+  admin: ['live_trading', 'wsOps', 'unsubscribe', 'remove', 'reload']
 };
 
 function initialize(mode)
 {
-  const services = modes[mode];
-  if (services['view'] !==  undefined)
-    providers['view'][services['view']].init();
-  if(services['trade'] !== undefined)
-    providers['trade'][services['trade']].init();
-  if(services['admin'] !== undefined && services['admin'] !== 'all')
-    providers['admin'][services['admin']].init();
-  if(services['admin'] !== undefined && services['admin'] === 'all')
-  {
-    providers['admin'].live_streaming.init();
-    providers['admin'].live_trading.init();
-  }
+  const profile = modes[mode];
+  if(profile === undefined)
+    return {status: 'error', reason: 'profile not available'};
+  
+  const list = new Array();
+  if (profile['view'] !==  undefined)
+    list.push(providers['view'][profile['view']]);
+  if (profile['trade'] !== undefined)
+    list.push(providers['trade'][profile['trade']])
+  if (profile['admin'] !== undefined)
+    list.push(providers['admin'][profile['admin']])
+  if (profile['admin'] !== undefined && Array.isArray(profile['admin']))
+    profile['admin'].forEach((item) => {
+      list.push(providers['admin'][profile[item]]);
+    });
+
+  [...new Set(list)].forEach((e) => e.init());
+  return {status: 'success'};
 }  
 
+const vix_enabled = true;
 function getService(type, mode)
 {
-  if(type === 'vix')
+  if (vix_enabled && type === 'vix'){
+    service_breeze.init();
     return service_breeze;
-
+  }
   const services = modes[mode];
   return providers[type][services[type]];
 }
@@ -58,14 +69,16 @@ function getProfile(mode)
 
 function checkAccess(eventName, mode)
 {
-  const usertype = getProfile(String(mode));
+  const usertype = getProfile(mode);
   if(Object.hasOwn(usertype, 'view') && access['view'].includes(eventName))
     return true;
-  else if(Object.hasOwn(usertype, 'trade') && access['trade'].includes(eventName))
-    return true
-  else if(Object.hasOwn(usertype, 'admin') && access['admin'].includes(eventName))
+  
+  if(Object.hasOwn(usertype, 'trade') && access['trade'].includes(eventName))
     return true;
-  else 
+  
+  if(Object.hasOwn(usertype, 'admin') && access['admin'].includes(eventName))
+    return true;
+  
     return false;
 }
 

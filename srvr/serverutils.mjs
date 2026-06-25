@@ -1,22 +1,7 @@
-const { BreezeConnect } = await import('breezeconnect');
-const breeze = new BreezeConnect({ "appKey": '72r5N3K05754+43ek796960QT96Hc8e1'});
-const appSecret = "70F8#U89u0v7079r510^9H87L%o592z9";
-let ws_callback;
+import connector from './connector.mjs';
 
-function connect(sessionId, with_socket = true, callback) {
-    breeze.generateSession(appSecret, sessionId)
-    .then((resp) => {
-        console.log("Breeze session generated");
-
-        if (with_socket) {
-            breeze.wsConnect();
-            ws_callback = callback;
-            breeze.onTicks = ws_callback;
-            console.log("Breeze websocket initialized");
-        }
-    }).catch((error) => {
-        console.log("Error generating Breeze session " + error);
-    });
+function connect(callback) {
+    connector.connect(callback);
 }
 
 async function getHistoricalData(st, instrument, sTime) 
@@ -28,13 +13,18 @@ async function getHistoricalData(st, instrument, sTime)
 
     var quotes = resp.Success;
     if (Array.isArray(quotes)) {
+        const indexA = new Array();
         quotes.forEach((q) => {
-            q.ltt = Date.parse(q.datetime);
+            const ltt =Date.parse(q.datetime);
+            q.ltt = ltt;
+            indexA.push(ltt);
         });
+        st.quotes = quotes;
+        st.indexA = indexA;
+        st.trimIndex = 0;
+        st.state = 'ready to stream';
+        st.lastUpdated = sTime;
     }
-    st.quotes = quotes;
-    st.state = 'ready to stream';
-    st.lastUpdated = sTime;
     return st;
 }
 
@@ -54,15 +44,13 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.productType = instrument.right !== undefined ? 'options' : 'futures';
     b.expiryDate = instrument.exchange !== 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
     b.fromDate = ISODate(sTime);
-    b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((8 * 60) * 1000));  
+    b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
-    try {
+    const breeze = connector.getLiveConnection();
+    if(breeze)
         return breeze.getHistoricalDatav2(b);
-    } catch (error) {
-        console.error("Error from breeze call " + error + '\n' + error.stack);
-        throw error;
-    }
 }
+
 function ISODate(datetime) {
     return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
 }
@@ -74,30 +62,17 @@ function formatExpiry(expiry, type) {
 
 function wssub(list, action)
 {
+    const promises = [];
     list.forEach((e) => {
         var b = breeze_input(e.instrument);
-        var promise;
-        if(action === 'subs')
-            promise = breeze.subscribeFeeds(b);
-        else
-            promise = breeze.unsubscribeFeeds(b);
-
-        promise.then((resp) => {
-            console.log('ICICI feed ' + action + ': ' + JSON.stringify(resp));
-        }).catch((error) => {
-            console.log('ICICI feed ' + action + ' error: ' + error);
-        });
+        promises.push(subscribe(b, action));
     });
-}
-
-function wsDisconnect()
-{
-    breeze.wsDisconnect();
+    return Promise.all(promises);
 }
 
 function breeze_input(scrip)
 {       
-    var b = {getExchangeQuotes: true}
+    var b = {interval: '1second'}
     b.exchangeCode = scrip.key === 'index' ? 'NSE' : scrip.exchange;
     b.productType = scrip.key === 'futures' ? 'futures' : 'options';
     b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
@@ -109,22 +84,17 @@ function breeze_input(scrip)
     return b;
 }
 
-function subscribe_vix(action)
+function subscribe(request, action)
 {
-    var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', getExchangeQuotes: true};
-    breeze.onTicks = ws_callback;
-
-    var promise;
+    const breeze = connector.getLiveConnection();
+    if (!breeze)
+        return 'breeze connection not available';
+    
+    const symbol = request.symbol ?? request.strikePrice;
     if(action === 'subs')
-        promise = breeze.subscribeFeeds(b);
+        return breeze.subscribeFeeds(request);
     else
-        promise = breeze.unsubscribeFeeds(b);
-
-    promise.then((resp) => {
-        console.log('VIX feed ' + action + ': ' + JSON.stringify(resp));
-    }).catch((error) => {
-        console.log('VIX feed ' + action + ' error: ' + error);
-    });
+        return breeze.unsubscribeFeeds(request);
 }
 
 const rename_map = {
@@ -230,12 +200,10 @@ function convert(array, map)
     return array;
 }
 
-
 export default {
     connect,
     getHistoricalData,
     getHistory,
     wssub,
-    wsDisconnect,
-    subscribe_vix
+    subscribe,
 };

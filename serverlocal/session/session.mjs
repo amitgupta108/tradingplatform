@@ -1,4 +1,6 @@
 import utils from '../../common/utils.mjs';
+import {strike_size} from '../../common/constants.mjs';
+
 
 const us = new Map();
 
@@ -17,8 +19,8 @@ class Session
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true},
             {key: 'futures', stockCode: stockCode, toStream: true},
-            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 11},
-            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 11},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 10},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 10},
         ];
     }
 
@@ -26,10 +28,10 @@ class Session
     {
         for(var i = 0; i < 4; i++)
         {
-            this.st[i].exchange = i === 0 && p.exc === 'NFO' ? 'NSE' : p.exc;
-            this.st[i].model = this.mode === 0 ? 'history' : 'live';
+            this.st[i].exchange = i === 0 && p.exchange === 'NFO' ? 'NSE' : p.exchange;
+            this.st[i].model = this.mode.startsWith('LIVE') ? 'live' : 'history';
             this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
-            this.st[i].toStream = i === 3 || (i === 0 && p.exc === 'MCX') ? false : true
+            this.st[i].toStream = i === 3 || (i === 0 && p.exchange === 'MCX') ? false : true
             if(i != 0)
             {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
@@ -56,12 +58,13 @@ class Session
             
         }
         */
+       const gap = strike_size[this.stockCode]; 
         if(ost.atm === undefined || ost.atm === 0)
-            ost.atm = Math.round(uq.ltp/50) * 50;
+            ost.atm = Math.round(uq.ltp/gap) * gap;
         else
-            ost.atm = ost.atm + Math.round((uq.ltp - ost.atm) / 50) * 50;
+            ost.atm = ost.atm + Math.round((uq.ltp - ost.atm) / gap) * gap;
         
-        var sks = utils.strikes(ost.atm, ost.n);
+        var sks = utils.strikes(ost.atm, ost.n, gap);
 
         for (var i = 0; i < sks.length; i++) 
         {
@@ -82,7 +85,7 @@ class Session
                     expiry: ost.expiry,
                     strike: sks[i].strike,
                     right: sks[i].right,
-                    model: this.mode === 0 ? 'history' : 'live',
+                    model: this.mode.startsWith('HISTORY') ? 'history' : 'live',
                     symbol: ost.stockCode + ost.expiry +
                         sks[i].strike + sks[i].right
                 });
@@ -112,38 +115,43 @@ class Session
         this.subsupdate(list);
     }
     
-    inqsub(p, callback)
+    inqsub(withOptionChain)
     {    
-        if(['streaming', 'ready to run', 'stream requested'].includes(this.status))
+        if(['streaming', 'ready to run'].includes(this.status))
             return [];
-        
-        if(this.status === 'skeletal' || this.status === 'stopped')
-            this.ini(p, callback);
-    
-        const list = this.st.filter((item) => ['index', 'futures'].includes(item.key) 
+        const keys = withOptionChain ? ['index', 'futures', 'occrnt', 'ocnxt'] : ['index', 'futures'];
+        const list = this.st.filter((item) => keys.includes(item.key) 
                 && item.toStream === true);
         this.status = list.length > 0 ? 'stream requested' : 'stream not configured';
         return list;
     }
     
-    unsuball(appid)
+    unqsub(list, action) 
     {
-        let list = []; 
-        if(this.mode === 0) {
-            this.status = 'stopped';
-            this.st.forEach((element) => {
-                element.toStream = false;
-                if(element.key === 'futures')
-                    element.uq = undefined;
-                if(!(element.key === 'occrnt' || element.key === 'ocnxt'))
-                    list.push(element);
-                
+        if (action === 'unsubsall') 
+        {
+            this.status = 'skeletal';
+            this.st = [];
+        }
+        else
+        {
+            list.forEach((item) => {
+                var match = this.st.find((e) => item.symbol === e.symbol);
+                if(match !== undefined)
+                    match.toStream = false;
             });
         }
-        else {
-            this.shared_with.get(appid).m_subs = 'stopped';
-        }
-        return list;
+    }
+
+    stream(appid, action)
+    {
+        const state = action === 'pause' ? 'paused' : 'resumed';
+        if(this.mode.startsWith('HISTORY'))
+            this.status = state;
+        else
+            this.shared_with.get(appid).m_subs = state;
+        
+        return state;
     }
 
     option_chain(key, action)
@@ -166,24 +174,24 @@ class Session
         var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnxt'], toStream: [true] });
         for (var j = 0; j < ost.length; j++)
         {
-            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > 50)
+            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > strike_size[this.stockCode])
                 this.#oq(uq, ost[j]);
         }
         this.status = 'streaming';
         st.uq = uq;
     }
 
+    exit(appid, sn) {
+        sn.shared_with.delete(appid);
+    }
+
+    remove(sn) {
+        us.delete(sn.appid);
+    }
+
     static sn(appid)
     {
         return us.get(appid);
-    }
-
-    static exit(appid, sn)
-    {        
-        if(sn.mode !== 0)
-            sn.shared_with.delete(appid);
-        else
-            us.delete(sn.appid);
     }
 }
 
