@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Live on 80",
-            "program": "${workspaceFolder}/serverlocal/app.mjs",
+            "program": "${workspaceFolder}/start.mjs",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
@@ -25,11 +25,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/serverlocal/app.mjs",
+            "program": "${workspaceFolder}/start.mjs",
             "args": [
                 "449"
             ],
             "runtimeArgs": [
+                "--import=hot-hook/register",
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
             ],

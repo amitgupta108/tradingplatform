@@ -1,6 +1,7 @@
 import qs from '../stream.mjs';
 const live_order_map = new Map();
 var counter = 10000;
+const trade_mode = ['T1', 'T2'];
 
 function neworders(appid, orders)
 {
@@ -18,9 +19,9 @@ function neworders(appid, orders)
 
 function notifyme(message)
 {    
-    console.log("message: " + JSON.stringify(message));
     if(message.type === 'order') {
-        liveOrderMatching(message, 1);
+        console.log('order notifcation ' + message.data.ordSt);
+        liveOrderMatching(message, trade_mode[0]);
     }
 }
 
@@ -28,17 +29,12 @@ function liveOrderMatching(message, mode)
 {
     if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         return;
-    console.log('live order update received ' + JSON.stringify(message.data));
-    /*
-        1. externally placed order - no orderid
-        2. app triggered order with orderid available
-        3. app triggered order with orderid not yet available
-    */
+    //console.log('live order update received ' + JSON.stringify(message.data));
+
     const live_order = formatLiveOrder(message.data);
     var found = Array.from(live_order_map.values()).find((order) => {
         return (order.orderid === live_order.orderid)
-                || (order.stockCode === live_order.stockCode
-                && order.action === live_order.action
+                || (order.action === live_order.action
                 && order.pricetype === live_order.pricetype
                 && order.quantity === live_order.quantity
                 && order.quantity >= live_order.filled_q
@@ -50,10 +46,11 @@ function liveOrderMatching(message, mode)
         live_order.appid = found.appid;
         live_order_map.delete(found.localid);
     }
-    else
+    else {
         live_order.appid = live_order.stockCode + mode;
+        live_order.receiver = {stockCode: live_order.stockCode, trade_mode: mode};
+    }
     
-    console.log('live order matching status: ' + live_order.appid);
     live_order_map.set(live_order.orderid, live_order);
 
     qs.emitOrders(live_order.appid, 'order', live_order);

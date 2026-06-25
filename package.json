@@ -1,0 +1,25 @@
+{
+  "name": "f_tradingplatform",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "start.mjs",
+  "scripts": {
+    "dev": "node --import=hot-hook/register --env-file=./serverlocal/config/.env.d --env-file=./serverlocal/config/.env.s ./start.mjs 449"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "hot-hook": "^1.0.0"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  },
+  "hotHook": {
+    "boundaries": [
+      "./serverlocal/app.mjs",
+      "./serverlocal/broker/m_t_openalgo.mjs",
+      "./srvr/connector.mjs"
+    ]
+  }
+}

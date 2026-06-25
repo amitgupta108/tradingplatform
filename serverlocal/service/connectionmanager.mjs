@@ -1,5 +1,6 @@
 import qserver from '../stream.mjs';
 import ordermanager from './ordermanager.mjs';
+import kotak_socket from '../broker/m_t_kotakneo.mjs';
 import fs from 'fs';
 import path from 'path';
 
@@ -18,6 +19,30 @@ let authdata;
 var wsping;
 var ws_hsi;
 var ws_hsm;
+
+async function authenticate(tpt) {
+    if (tpt === undefined || tpt === '')
+        return;
+
+    var lr = await apiLogin(tpt);
+    if (lr.data != undefined && lr.data.status === 'success') {
+        var vr = await apiValidate(lr.data.sid, lr.data.token);
+        if (vr.data.status === 'success') {
+            const l_authdata = {
+                hsm_sid: lr.data.sid,
+                hsm_token: lr.data.token,
+                baseUrl: vr.data.baseUrl,
+                hsi_sid: vr.data.sid,
+                hsi_token: vr.data.token
+            }
+            await saveAuthData(l_authdata);
+            hsiconnect();
+            return { status: 'success' };
+        }
+        console.log('kotak authentication failed');
+    }
+    return { status: 'error' };
+}
 
 async function hsmconnect()
 {
@@ -73,21 +98,19 @@ async function hsiconnect()
         {
             const payload = `{type:cn,Authorization:${authdata.hsi_token},Sid:${authdata.hsi_sid},src:WEB}`;
             ws_hsi.send(payload);
+            kotak_socket.notifyme(true);
             console.log('On open hsi ');
         }
     };
 
     ws_hsi.onmessage = (event) => {
-        try {
-            const message = JSON.parse(event.data);
+        const message = JSON.parse(event.data);
 
-            if(message.type === 'order')
-                ordermanager.notifyme(message);
-            else if(message.type === 'cn' && message.msg === 'connected')
-                wshb('hsi', 'start');
-        } catch(error) {
-            console.log('error hsi: ' + error);
-        }          
+        if(message.type === 'order')
+            ordermanager.notifyme(message);
+        else if(message.type === 'cn' && message.msg === 'connected'){
+            wshb('hsi', 'start');
+        }
     };
 
     ws_hsi.onerror = (event) => {
@@ -105,7 +128,7 @@ async function apiLogin(num)
         method: "POST",
         timeout: 0,
         headers: {
-            "Authorization": '3ed099c0-1a60-4a65-b24f-8c42747ecffa',
+            "Authorization": process.env.kotak_apiKey,
             "neo-fin-key": 'neotradeapi',
             "Content-Type": "application/json"
         },
@@ -124,7 +147,7 @@ async function apiValidate(sid, token) {
         method: "POST",
         timeout: 0,
         headers: {
-            'Authorization': '3ed099c0-1a60-4a65-b24f-8c42747ecffa',
+            'Authorization': process.env.kotak_apiKey,
             'neo-fin-key': 'neotradeapi',
             'Content-Type': "application/json",
             'sid': sid,
@@ -138,15 +161,10 @@ async function apiValidate(sid, token) {
     return response.json();
 }
 
-function disconnect()
-{
-    clearInterval(wsping);
-    ws_hsi?.close();
-}
 
 function wshb(type, action)
 {
-    console.log("websocket heartbeat: " + action);
+    console.log("websocket heartbeat: " + type + ' - ' + action);
     qserver.broadcast('hb', {order_socket: ws_hsi?.readyState});
 
     if(action === 'start') {
@@ -156,47 +174,15 @@ function wshb(type, action)
         var recon_attempt = 0;
         wsping = setInterval(async (rn) => 
         {            
+            qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
             if(ws_hsi?.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection');
                 const authdata = getSavedCredentials();
                 await hsiconnect();
                 rn++;
             }
-            qserver.broadcast('hb', {order_socket: ws_hsi.readyState});
         }, 120000, recon_attempt);
     }
-    else
-    {
-        qserver.broadcast('hb', {order_socket: ws_hsi?.readyState});
-        clearInterval(wsping);
-    }
-}
-
-async function authenticate(tpt)
-{
-    if( tpt === undefined || tpt === '')
-        return;
-
-    var lr = await apiLogin(tpt);
-    if (lr.data != undefined && lr.data.status === 'success') 
-    {
-        var vr = await apiValidate(lr.data.sid, lr.data.token);
-        if(vr.data.status === 'success')
-        {
-            const l_authdata = {
-                hsm_sid: lr.data.sid,
-                hsm_token: lr.data.token,
-                baseUrl: vr.data.baseUrl,
-                hsi_sid: vr.data.sid,
-                hsi_token: vr.data.token
-            }
-            hsiconnect();
-            await saveAuthData(l_authdata);
-            return l_authdata;
-        }
-        console.log('kotak authentication failed');
-    }
-    return undefined;
 }
 
 function getSavedCredentials()
@@ -235,16 +221,23 @@ async function saveAuthData(data)
     }
 }
 
+function close() {
+    clearInterval(wsping);
+    ws_hsi?.close();
+    qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
+    return { status: 'success' };
+}
+
 async function init()
 {
     if(!initialized) {
         const authdata = getSavedCredentials();
         if (authdata !== undefined){
-            hsiconnect();
             initialized = true;
+            hsiconnect();
         }
     }
     return initialized;
 }
 
-export default { authenticate, disconnect, hsiconnect, init, getSavedCredentials };
+export default { authenticate, close, hsiconnect, init, getSavedCredentials };

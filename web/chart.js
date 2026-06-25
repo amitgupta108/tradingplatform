@@ -3,23 +3,21 @@ const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
 const ema_alpha = 2/21;
 const ema_beta = 1 - ema_alpha;
 
-function setInitialChart(key, qA)
+function setInitialChart(key, withEma, qA)
 {
   if(qA === undefined || qA === null || qA.length === 0)
     return;
-  var qs = initialSeriesData(key, qA);
+  var qs = initialSeriesData(qA);  
+  series[key].setData(qs);
   
-  const candleSeries = key === 'futures' ? futuresSeries : key === 'index' ? indexSeries : vixSeries;
-  candleSeries.setData(qs);
-  
-  if(key !== 'vix')
+  if(withEma)
   {
-    const emaSeries = key === 'futures' ? fEmaSeries : iEmaSeries;
-    emaSeries.setData(qs);
+    const seriesName = key === 'futures' ? 'fEma' : 'iEma';
+    series[seriesName].setData(qs);
   }
 }
 
-function initialSeriesData(key, qA)
+function initialSeriesData(qA)
 {
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') ||e.datetime.includes('9:05') || e.datetime.includes('9:10')));
   for(var i = 0; i < qs.length; i++)
@@ -31,8 +29,11 @@ function initialSeriesData(key, qA)
   return qs;
 }
 
-function renderChart(mainSeries, emaSeries, q)
+function renderChart(main, ema, q)
 {
+  const mainSeries = series[main];
+  const emaSeries = series[ema];
+
   var curCandle = mainSeries.data().at(-1);
   if(curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
   {  
@@ -60,6 +61,87 @@ function renderChart(mainSeries, emaSeries, q)
     emaSeries.update(curCandle);
 }
 
+const container = {
+  futures: 'futures_chart',
+  index: 'index_chart',
+  strangle_1: 'container_2',
+  strangle_2: 'container_3',
+};
+
+
+const chartOptions = {
+  autoSize: true,
+  layout: {
+    textColor: '#f4f4f48b',
+    background: { color: '#1d1616c8' },
+    attributionLogo: false,
+  },
+  grid: {
+    vertLines: {
+      color: '#f4f4f43f',
+      lineStyle: 2
+    },
+    horzLines: {
+      color: '#f4f4f43f',
+      lineStyle: 2
+    },
+  },
+  crosshair: {
+    mode: 0, // CrosshairMode.Normal
+  },
+  timeScale: {
+    minBarSpacing: 2,
+    visible: true,
+    timeVisible: true,
+    secondsVisible: false,
+    tickMarkMaxCharacterLength: 5,
+  },
+  defaultVisiblePriceScaleId: 'left',
+  handleScale: {
+    axisPressedMouseMove: {
+      timeScale: true,
+      priceScale: true,
+    },
+  },
+};
+
+const chart1 = LightweightCharts.createChart(container.futures, chartOptions);
+
+chart1.priceScale('left').applyOptions({
+  visible: true,
+  autoScale: true,
+  mode: 0,
+});
+chart1.priceScale('right').applyOptions({
+  visible: true,
+  autoScale: true,
+  mode: 0,
+});
+
+const series = {
+  vix: '',
+  futures: '',
+  index: '',
+  fEma: '',
+  iEma: '',
+  strike_1: '',
+  strike_2: '',
+  strangle_1: '',
+}
+
+series.vix = chart1.addSeries(LightweightCharts.CandlestickSeries, {});
+series.futures = chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' });
+series.fEma = chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 });
+chart1.timeScale().fitContent();
+chart1.timeScale().scrollToPosition(15);
+
+const chart2 = LightweightCharts.createChart(container.index, chartOptions);
+series.index = chart2.addSeries(LightweightCharts.CandlestickSeries, {});
+series.iEma = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
+chart2.timeScale().fitContent();
+chart2.timeScale().scrollToPosition(15);
+
+/*
 function updateIndexChart(uQuote)
 {
   var uQuoteTime = sTVtime(new Date(uQuote.datetime).setSeconds(0));
@@ -134,3 +216,4 @@ function setUpInitialOptionsChart(peQuotes, ceQuotes, oExpiry)
   ceSeries.setData(ceQuotes);
   stratSeries.setData(stPoints);
 }
+  */

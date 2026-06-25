@@ -29,7 +29,7 @@ function connect()
       console.log("Reconnection not possible");
   });
 
-rh(socket);
+  rh(socket);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
@@ -37,7 +37,13 @@ function rh(socket)
 {  
   try{
     socket.on("connect", () => {
-      console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered); 
+      console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
+      data_reload = false;
+      bottom_btns[1].disabled = false;
+      bottom_btns[2].disabled = false;
+      bottom_btns[4].disabled = false;
+      if(instrument.mode === 'HISTORY')
+        document.getElementById('optionSpeed').disabled = false;
     });
 
     socket.on("connect_error", (error) => {
@@ -55,26 +61,9 @@ function rh(socket)
       console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
     });
 
-    socket.on("profile", (profile) => {
-      if(Object.hasOwn(profile, 'data')) {
-        if(profile.data === 'live')
-          document.getElementById('optionSpeed').disabled = true;
-      }
-      if(Object.hasOwn(profile, 'trade')) {
-      }
-      if(Object.hasOwn(profile, 'admin')) {
-
-      }
-    });
-    
-    socket.on('prevsession', (streamingstatus) => {
-      
-      if(futuresSeries.data().length === 0)
-        loadPreData();
-    });
-
     socket.on('preData', (key, quotes) => {
-      setInitialChart(key, quotes);
+      const withEma = ['futures', 'index'].includes(key) ? true : false;
+      setInitialChart(key, withEma , quotes);
     });
 
     socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
@@ -82,8 +71,7 @@ function rh(socket)
       setUpInitialOptionsChart(peQuotes, ceQuotes, instrument.oExpiry); 
     });
 
-    socket.on('index', (q) => 
-    {
+    socket.on('index', (q) => {
       qBox.dispatchEvent(generateEvent('index', q));
     });
     
@@ -101,13 +89,30 @@ function rh(socket)
         qBox.dispatchEvent(generateEvent('strikex', q));
     });
 
+    socket.on('stream', (response) => {
+      if(response === 'paused')
+        document.getElementById('btnStopSim').innerText = 'Resume';
+      else if(response === 'resumed')
+        document.getElementById('btnStopSim').innerText = 'Stop';
+      else if (response === 'started') {
+        bottom_btns[2].disabled = false;
+        bottom_btns[5].disabled = false;
+      }    
+    });
+
+    socket.on('exit', (response) => {
+      data_reload = true;
+      bottom_btns.forEach((btn, i) => {
+        if(i !== 0)  
+          btn.disabled = true;
+        });
+      });
+
     socket.on('orderbook', (response) => {
       loadOrders(response);
     });
 
     socket.on('order', (exorder) => {
-      console.log("ws order message " + JSON.stringify(exorder));
-      
       if(exorder.appid !== instrument.appid)
         return;
       
@@ -116,16 +121,24 @@ function rh(socket)
     });
 
     socket.on('hb', (resp) => {
-      if(resp.order_socket === 1)
+      if(resp?.order_socket === 1)
         socn.style.backgroundColor = '#4CAF50';
       else
         socn.style.backgroundColor = '#f44336';
     });
 
-    socket.on('cn', (msg) => {
-      console.log("connection message " + msg)  
-      socn.style.backgroundColor = '#4CAF50';
+    socket.on('wsOps', (action, resp) => {
+      if(action === 'open' && resp.status === 'success')
+        socn.style.backgroundColor = '#4CAF50';
+      else if(action === 'close' && resp.status === 'success')
+        socn.style.backgroundColor = 'white';
     });
+
+    socket.on('live_trading', (locked) => {
+      if(!locked)
+        ws_start_btn.style.backgroundColor = '#4CAF50';
+    });
+
   } catch(error){
     console.log(error);
   }
