@@ -1,5 +1,5 @@
 class Order{
-  exchange = instrument.exc;
+  exchange = instrument.exchange;
   appid = instrument.appid;
   pricetype = 'MARKET';
   product = 'NRML';
@@ -20,6 +20,7 @@ function validate(clickedBtn)
 {
   var isError = false;
   const rows = Array.from(order_rows_tbody.rows);
+  
   const neworders = rows.map((r) => {
     const symbol = qSel(r, 'owsymbol', 'id').textContent;
     const action = r.querySelector('#ow_action_btn').innerText;
@@ -40,6 +41,7 @@ function validate(clickedBtn)
     }
     return n_order;
   });
+
   in_prep_orders.isError = isError;
   in_prep_orders.orders = neworders;
   submitOWinBtn.disabled = isError;

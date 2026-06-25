@@ -1,6 +1,7 @@
 import qs from '../stream.mjs';
 const live_order_map = new Map();
 var counter = 10000;
+const trade_mode = ['T1', 'T2'];
 
 function neworders(appid, orders)
 {
@@ -19,7 +20,8 @@ function neworders(appid, orders)
 function notifyme(message)
 {    
     if(message.type === 'order') {
-        liveOrderMatching(message, 1);
+        console.log('order notifcation ' + message.data.ordSt);
+        liveOrderMatching(message, trade_mode[0]);
     }
 }
 
@@ -27,7 +29,7 @@ function liveOrderMatching(message, mode)
 {
     if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         return;
-    console.log('live order update received ' + JSON.stringify(message.data));
+    //console.log('live order update received ' + JSON.stringify(message.data));
 
     const live_order = formatLiveOrder(message.data);
     var found = Array.from(live_order_map.values()).find((order) => {
@@ -44,8 +46,10 @@ function liveOrderMatching(message, mode)
         live_order.appid = found.appid;
         live_order_map.delete(found.localid);
     }
-    else
+    else {
         live_order.appid = live_order.stockCode + mode;
+        live_order.receiver = {stockCode: live_order.stockCode, trade_mode: mode};
+    }
     
     live_order_map.set(live_order.orderid, live_order);
 

@@ -1,12 +1,15 @@
 export const opt_expiries = {
     NIFTY: {
-        first: {date: '16JUN26', startIdx: 2, endIdx: 7},
-        second: {date: '23JUN26'},
-        third: {date: '30JUN26'}
+        first: {date: '30JUN26', startIdx: 2, endIdx: 7},
+        second: {date: '07JUL26'},
+        third: {date: '14JUL26'}
     },
     CRUDEOIL: {
-        first: {date: '16JUN26', startIdx: 2, endIdx: 7},
-        second: '18JUL26',
+        first: {date: '16JUL26', startIdx: 2, endIdx: 7},
+        second: {date: '17AUG26'}
+
+//       first: {date: '16JUL26', startIdx: 2, endIdx: 7},
+//       second: {date: '17AUG26'}
     },
     BANKNIFTY: {
         first: {date: '30JUN26', startIdx: 2, endIdx: 7},
@@ -21,8 +24,8 @@ export const fut_expiries = {
         second: '28JUL26'
     },
     CRUDEOIL: {
-        first: '18JUN26',
-        second: '18JUL26'
+        first: '18JUL26',
+        second: '20AUG26'
     },
 };
 
