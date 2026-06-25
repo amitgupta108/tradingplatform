@@ -1,118 +1,83 @@
-import consoleStamp from 'console-stamp';
-consoleStamp(console, { format: ':date(HH:MM:ss.l)' });
-
-import { fileURLToPath } from 'node:url';
-import {readFileSync} from 'node:fs';
-import path from 'node:path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-import express from 'express';
-import https from 'node:https';
-import { Server } from "socket.io";
 import Session from './session/session.mjs';
-import kotak_socket from './service/connectionmanager.mjs';
+import services from './service/services.mjs';
 import qserver from './stream.mjs'; 
 import apiserver from './apiserver.mjs'; 
-import { error } from 'node:console';
 
-if(!global.server)
-{
-    const args = process.argv;
 
-    console.log(`First argument: ${args[2]}`);
+export function handleConnection(s)
+{        
+    const appid = s.handshake.auth.token;
+    const stockCode = s.handshake.auth.stockCode;
+    const mode = s.handshake.auth.mode;
+    
+    const profile = services.getProfile(mode);
+    if(profile === undefined) {
+        console.log('profile not found');
+        s.emit('profile', {status: 'error'});
+        return;
+    }
+    s.emit('profile', profile);
+    
+    services.initialize(mode);
+    session(s, appid, stockCode, mode);
+    handler(s, appid, mode);
 
-    const port = args[2] === undefined ? 80 : Number(args[2]);
-    if(args[3] !== undefined)
-        kotak_socket.authenticate(args[3]);
-
-    const app = express();
-    app.use(express.static(path.join(__dirname, '..', 'web')));
-
-    app.use(express.json());
-
-    const options = {
-        key: readFileSync(path.join(__dirname, 'config', 'server.key'), 'utf8'),
-        cert: readFileSync(path.join(__dirname, 'config', 'server.crt'), 'utf8'),
-    };
-
-    const httpsServer = https.createServer(options, app);
-    httpsServer.listen(port, () => {
-        console.log(`Server running at https://127.0.0.1:${port}/`);
-    });
-
-    process.on('uncaughtException', (err) => {
-        console.error('FATAL: Uncaught Exception ', err);
-        setTimeout(() => process.exit(1), 5000); 
-    });
-
-    process.on('unhandledRejection', (event) => {
-        console.log('Undhandled promise, reason ', event.reason);
-        console.log('Undhandled promise, object ', event.promise);
-        console.log('Undhandled promise, stack ', event.reason.stack);
-    });
-
-    const io = new Server(httpsServer, {
-        cors: {
-            origin: `https://localhost:${port}`,
-            methods: ["GET", "POST"],
-        },
-        connectionStateRecovery: {
-            maxDisconnectionDuration: 3 * 60 * 1000,
-            // whether to skip middlewares upon successful recovery
-            skipMiddlewares: true,
-        },
-        pingInterval: 30000,
-        pingTimeout: 30000
-    });
-
-    io.on('connection', (s) => {
-        
-        const appid = s.handshake.auth.token;
-        const mode = s.handshake.auth.mode;
-        const stockCode = s.handshake.auth.stockCode;
-
-        const m = apiserver.init('market', mode);
-        const t = apiserver.init('trading', mode);
-        const a = apiserver.init('vix', mode);
-
-        const i_appid = mode === 0 ? appid : stockCode + mode;
-        let sn = Session.sn(i_appid);
-
-        if(sn === undefined)
-            sn = new Session(i_appid, mode, stockCode);
-        else
-            if(sn.status === 'streaming')
-                s.emit('prevsession', sn.status);
-        
-        sn.shared_with.set(appid, { m_subs: sn.status});
-        qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
-        s.sn = sn;
-
-        s.onAny((event, msg) => {
-            console.log("Received event " + event + " with data " + JSON.stringify(msg));
-            if(mode === 1 && event === 'wsOps')
-                apiserver.handleAdminMessage(s, event, msg);
-            else
-                apiserver.handleMessage(s, appid, event, msg);
-        });
-        
-        s.on("disconnect", (reason) => {
-            if(reason === 'client namespace disconnect')
-            {
-                apiserver.exit(appid, mode);
-                qserver.socketmap.delete(appid);
-                Session.exit(appid, sn);
-
-                console.log('user exited:' + appid);
-            }
-            else if(['server namespace disconnect',
-                'server shutting down', 'transport close', 'transport error'].includes(reason))
-            {
-                console.log("socket disconnected  " + reason);
-            }
+    s.on("error", (err) => {
+        console.error(`[Global Error]  Socket ${s.id}:`, err.message);
+    
+        s.emit("app_error", {
+            status: err.status || 500,
+            message: err.message || "Internal server error"
         });
     });
-    global.server = true;
 }
+
+function session(s, appid, stockCode, mode)
+{
+    const view_mode = services.getProfile(mode)['view']; 
+    const i_appid = view_mode === 'HISTORY' ? appid : stockCode + view_mode;
+    let sn = Session.sn(i_appid);
+
+    if(sn === undefined)
+        sn = new Session(i_appid, mode, stockCode);
+
+    sn.shared_with.set(appid, { m_subs: sn.status});
+    qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
+    s.sn = sn;
+}
+
+function handler(s, appid, mode)
+{
+    const profile = services.getProfile(mode);
+
+    if (Object.hasOwn(profile, 'view'));
+        apiserver.registerDataRequests(s, appid, mode);
+    
+    if (Object.hasOwn(profile, 'trade'));
+        apiserver.registerTradeRequests(s, appid, mode);
+    
+    if (Object.hasOwn(profile, 'admin'))
+        apiserver.registerAdminRequests(s, appid, mode);
+
+    apiserver.registerDisconnectionHandler(s, appid, mode);
+    registerAuthorizer(s, mode);
+}
+
+function registerAuthorizer(s, mode)
+{
+    s.use(([eventName, ...args], next) => {
+        const implementedEvents = s.eventNames(); 
+        
+        if (!implementedEvents.includes(eventName))
+            return next(new Error(`Unsupported event: ${eventName}`));
+
+        if (!services.checkAccess(eventName, mode))
+            return next(new Error("Unauthorized access to admin resource"));
+
+        next();
+    });
+}
+
+export default {
+    handleConnection
+};

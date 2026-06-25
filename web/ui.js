@@ -4,10 +4,7 @@ function createOrder(btn, parent)
   const action = btn.innerText;
   
   const rows = order_rows_tbody.rows;
-
-  if(rows.length === 0)
-    appendOrderRow(symbol, action);
-  else if(rows.length > 0)
+  if(rows.length > 0)
   {
     var idx = Array.from(rows).findIndex((r) => {
       return r.querySelector('#owsymbol').textContent === symbol;
@@ -15,9 +12,8 @@ function createOrder(btn, parent)
     const r_row = !basket.checked ? 0 : idx;
     if(r_row !== -1)
       rows[r_row].remove();
-    
-    appendOrderRow(symbol, action);
-  }
+  }    
+  appendOrderRow(symbol, action);
   showOrderWindow();
 }
 
@@ -28,7 +24,7 @@ function appendOrderRow(symbol, action, quantity = 1)
   var tr = tRow(t_order_window_row);
   tr.querySelector('#owsymbol').textContent  = symbol;
   tr.querySelector('#scripName').textContent  = scripName;
-  tr.querySelector('#lotselect').value = quantity;
+  tr.querySelector('select').value = quantity;
 
   const action_btn = tr.querySelector('#ow_action_btn');
   action_btn.textContent = action;
@@ -36,11 +32,10 @@ function appendOrderRow(symbol, action, quantity = 1)
   if(!basket.checked)
     tr.classList.remove('hover-row');
 
-  if(action === 'B') {
+  if(action === 'B')
     action_btn.classList.replace('sell', 'buy');
-  } else {
+  else
     action_btn.classList.replace('buy', 'sell');
-  }
 
   order_rows_tbody.prepend(tr);
   submitOWinBtn.disabled = true;
@@ -50,23 +45,15 @@ function showOrderWindow()
 {  
   basket.disabled = true;
   const rows = order_rows_tbody.rows;
-  if(rows.length > 1)
-  {
-    if(!oWindow.classList.contains('multi'))
-    {
-      oWindow.classList.remove('buy', 'sell');
-      oWindow.classList.add('multi');
-    }
+  oWindow.classList.remove('buy', 'sell', 'multi');
+  if(rows.length === 1){
+    const action = rows[0].querySelector('#ow_action_btn').textContent;
+    const style = action === 'B' ? 'buy' : 'sell';
+    oWindow.classList.add(style);
   }
-  else if(rows.length  === 1)
-  {
-    const action = rows[0].querySelector('#ow_action_btn').innerText;
-    oWindow.classList.remove('buy', 'sell');
-    if(action === 'B') 
-      oWindow.classList.add('buy');
-    else
-      oWindow.classList.add('sell');
-  }
+  else
+    oWindow.classList.add('multi');
+  
   if(oWindow.style.display !== "block")
     oWindow.style.display = "block";
 }
@@ -120,7 +107,7 @@ function tRow(template, withListener = true){
     new_row.addEventListener('input', (e) => {
       e.stopPropagation();
       
-      if(e.target.id = 'lmtprice' && e.target !== new_row)
+      if(e.target.id === 'lmtprice' && e.target !== new_row)
       submitOWinBtn.disabled = true;
     }, true);
     return new_row;

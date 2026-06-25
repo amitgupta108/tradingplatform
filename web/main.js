@@ -10,7 +10,7 @@ function loadPreData()
 
   const p = {
     appid: instrument.appid,
-    exchange: instrument.exc,
+    exchange: instrument.exchange,
     stockCode: instrument.stockCode,
     fExpiry: instrument.fExpiry,
     startTime: startTime,
@@ -35,12 +35,17 @@ function start()
 
 function stop() 
 {
-  emit('stop', 'user action');
+  if(document.getElementById('btnStopSim').innerText === 'Stop')
+    emit('stream', 'pause');
+  else if (document.getElementById('btnStopSim').innerText === 'Resume')
+    emit('stream', 'resume');
 }
 
 function exit() 
 {
-  socket.disconnect();
+  //socket.disconnect();
+  bottom_btns.forEach((btn) => btn.disabled = true);
+  emit('exit', 'pause');
 }
 
 function listOrders()
@@ -55,16 +60,19 @@ function streamOptionChain(event)
   emit('option_chain', {key: oc_key, action:'toggle'});
 }
 
-function wsconnect(action){
+function wsOps(action){
   const tpt = document.getElementById("tpt").value;
-  if(tpt.length === 15)
-    action = 'unlock_live';
-  
-  emit('wsOps', {action: action, data: tpt});
+  const eventName = tpt.length === 15 ? 'live_trading' : 'wsOps';
+  emit(eventName, action, tpt);
   document.getElementById("tpt").value = "";
 }
 
 function subs_vix()
 {
   emit('vix', {action: 'subs'});
+}
+
+function reload()
+{
+  emit('reload', '');
 }

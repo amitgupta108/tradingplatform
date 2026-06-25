@@ -1,33 +1,52 @@
 import adapter from '../adapter/histadapter.mjs';
+import app from '../app.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
 import qServer from '../stream.mjs';
 
 let initialized = false;
-const mode_live_icici = 3;
+//const subs_cache = new Map();
+const mode_live_icici = 'LIVE_2';
+const mode_history_icici = 'HISTORY';
 
 function clientConfigure(appid, startTime, speed)
 {
-    adapter.init(appid, startTime, speed);
+    return adapter.init(appid, startTime, speed);
 }
 
 function exit(appid)
 {
-    adapter.exit(appid);
+    return adapter.exit(appid);
 }
 
-function subscribe_vix(appid, action)
+function subscribe_vix(appid, mode, action)
 {
-    adapter.subscribe_vix(action);
+    return adapter.subscribe_vix(appid, mode, action);
 }
 
-function subscribe(appid, instruments, action)
+function start(appid, instruments, mode)
 {
-    adapter.subscribe(appid, instruments, action);
+    return adapter.start(appid, instruments, mode);
+}
+
+function subscribe(appid, instruments, action, mode)
+{
+    if(action === 'subs')
+        if(mode === 'HISTORY')
+            adapter.h_subscribe(appid, instruments, action);
+        else
+            adapter.l_subscribe(appid, instruments, action);
+    else
+        adapter.l_subscribe(appid, instruments, action)
+}
+
+function pause(appid, action) 
+{
+    return adapter.pause(appid, action);
 }
 
 function changeSpeed(appid, speed)
 {
-    adapter.changeSpeed(appid, speed);
+    return adapter.changeSpeed(appid, speed);
 }
 
 function onQuotes(q, mode, appid)
@@ -47,16 +66,16 @@ function onQuotes(q, mode, appid)
 function standardizeiq(qt) 
 {
     const tStart = process.hrtime.bigint();
-    if(Object.hasOwn(qt, 'ltt')) {
-        return {key: 'vix', stockCode: 'INDIVX', exchange: 'NSE', ltp: qt.last, ltt: Date.parse(qt.ltt)};
-    }
+    if(typeof qt.ltt === 'string')
+        return {key: 'vix', stockCode: qt.stock_code, exchange: qt.exchange_code, ltp: qt.last, ltt: qt.ltt = Date.parse(qt.ltt)};
+    
 
     const {exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume , datetime, high, low, ...rest} = qt;
     const q = {exchange, stockCode, ...rest};
     
-    q['ltp'] = q['close'];
+    q['ltp'] = qt['close'];
     if(q.ltt === undefined)
-        q.ltt = Date.parse(q.datetime);
+        q.ltt = Date.parse(qt.datetime);
 
     if(q.stockCode === 'CRUDE')
         q.stockCode = 'CRUDEOIL';
@@ -119,9 +138,8 @@ function preD(p, uq) {
 function init()
 {
     if(!initialized) {
-        adapter.addQuoteListener(onQuotes);
-        const sessionid = process.env.breeze_sid;
-        adapter.connect(sessionid, true);
+        const status = adapter.addQuoteListener(onQuotes);
+        adapter.connect();        
         initialized = true;
     }
 }
@@ -129,10 +147,12 @@ function init()
 export default {
     init,
     exit,
+    pause,
     subscribe,
     preF,
     preQ,
     changeSpeed,
     subscribe_vix,
-    clientConfigure
+    clientConfigure,
+    start,
   };
