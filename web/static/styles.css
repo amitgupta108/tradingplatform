@@ -1,6 +1,19 @@
+:root {
+    --body-background: rgba(0, 0, 0, 0.85);
+    --element-background: #4caf4fd4;
+    --element-color: #4caf4fd4;
+    --element-hover: #2e9b31d4;
+    --inside-border: #dddddd50;
+    --disabled-forecolor: #ffffff77;
+    --body-hover: #dddddd2b;
+    --element-forecolor: #ffffffd3;
+    --color-red: #c7372c;
+    --border-radius: 4px;
+}
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    background-color: var(--body-background);
     margin: 0;
     padding: 0;
 }
@@ -10,27 +23,30 @@ body {
     display:flex;
     gap: 6px;
     width: 99.6%;
-    height: 99%;
-    border-radius: 5px;
+    height: 98.5%;
+    border-radius: var(--border-radius);
+    background-color: var(--body-background);
     margin: 6px;
     min-width: 1350px;
 }
 
 .leftcontainer {
     display:block;
-    border: 1px solid #4CAF50;
+    border: 1px solid var(--element-background);
+    background-color: var(--body-background);
     height: 99.2%;
-    width: 58%;
-    border-radius: 5px;
-    min-width: 500px;
+    width: 57%;
+    border-radius: var(--border-radius);
+    min-width: 450px;
 }  
 
 .rightcontainer {
     display: block;
-    border: 1px solid #4CAF50;
+    background-color: var(--body-background);
+    border: 1px solid var(--element-background);
     height: 99.2%;
-    width: 41%;
-    border-radius: 5px;
+    width: 42%;
+    border-radius: var(--border-radius);
     min-width: 300px;
     min-height: 600px;
 }
@@ -48,18 +64,19 @@ body {
 
 .tab-content {
     display: none;
+    width: 100%;
+    height: 70%;
+    background-color: var(--body-background);
 }
 
 .active {
     display:flex;
-    width: 100%;
 }
 
 .tabs {
     display: flex;
     cursor: pointer;
-    background-color: #4CAF50;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     overflow: hidden;
     height: 3.5%;
     font-size: 13px;
@@ -69,61 +86,58 @@ body {
     flex: content;
     padding: 3px;
     text-align: center;
-    color: white;
+    color: var(--element-forecolor);
+    background-color:var(--element-background);
     transition: background-color 0.3s;
     justify-content:center;
     display: flex;
     gap: 10px;
-    border-radius: 5px;
+    border-color: 1px solid var(--inside-border);
     vertical-align: middle;
+    font-size: 13px;
+}
+
+.active-tab {
+    background-color: var(--element-hover);
 }
 
 .tab:hover {
-    background-color: #45a049;
+    background-color:var(--element-hover);
 }
 
 .inert-tab {
-    background-color: #50cd50;
-    display:flex;
-    justify-content: center;
-    font-size: 13px;
-    padding: 3px;
-    gap: 10px;
-    border-radius: 5px;
-    vertical-align: middle;
+    background-color: var(--element-hover);
 }
 
 #positions_div {
     width: 100%;
     height: 52%;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     display: flex;
     overflow: hidden;
 }
 
 #bottomPanel {
     display:flex;
-    border: 1px solid #4CAF50;
+    border: 1px solid var(--element-background);
     width: 99.2%;
     height: 3.3%;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     justify-content: space-between;
     padding: 2px;
     vertical-align: middle;
-    font-size: 14px;
-
 }
 
 #bottomPLPanel {
     display:flex;
-    border: 0px solid lightgray;
     padding: 2px;
     vertical-align: middle;
-    justify-content: space-between;
-    width: 47%;
+    justify-content:space-around;
+    width: 49%;
 }
 
 label {    
+    color: var(--element-forecolor);
     font-size: 13px;
     vertical-align: middle;
     justify-items: center;
@@ -132,7 +146,10 @@ label {
 }
 
 table {
-    border-radius: 4px;
+    background-color: var(--body-background);
+    border: 0.5px solid var(--inside-border);
+    border-radius: var(--border-radius);
+    color: var(--element-forecolor);
     width: 100%;
     height:100%;
     border: 0px;
@@ -141,37 +158,34 @@ table {
     overflow: hidden;
 }
 
-
 tr {
-    background-color: #f2f2f2;
     overflow: hidden;
 }
 
 .tr_straight {
     display: flex;
-    background-color: #f2f2f2;
     overflow: hidden;
+    background-color: var(--body-background);
 }
 
 .tr_reverse {
     display: flex;
-    background-color: #f2f2f2;
     overflow: hidden;
     flex-direction: row-reverse;
+    background-color: var(--body-background);
 }
 
 tr:hover {
-    background-color: #ddd;
+    background-color: var(--body-hover);
 }
 
 th {
-    background-color: #4CAF50;
-    color: white;
+    background-color: var(--element-background);
+    color: var(--element-forecolor);
     text-align: center;
-    border: 1px solid #ddd;
+    border: 1px solid var(--inside-border);
     font-size: 13px;
     overflow: hidden;
-    border-radius: 5px;
     padding: 2px;
 }
 
@@ -179,7 +193,7 @@ td {
     text-align: center;
     align-items: center;
     vertical-align: middle;
-    border: 0.5px solid #ddd;
+    border: 0.5px solid var(--inside-border);
     font-size: 13px;
     padding: 3px;
     height: 18px;
@@ -187,29 +201,29 @@ td {
 }
 
 button {
-    background-color: #4CAF50;
-    color: white;
+    background-color:var(--element-background);
+    border: 0px;
+    color: var(--element-forecolor);
     padding: 4px 4px;
-    border: none;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 13px;
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: var(--element-hover);
 }
 
 button:disabled {
-    color: grey;
+    color: var(--disabled-forecolor);
 }
 
 .smallbutton {
     width: 18px;
     height: 18px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    background: white;
+    border: 1px solid var(--inside-border);
+    border-radius: var(--border-radius);;
     font-size: 12px;
     transition: all .2s ease-in-out;
     display: flex;
@@ -234,8 +248,8 @@ button:disabled {
 }
 
 .smallbutton.sell{
-    color: #d32f2f;
-    border-color: #d32f2f;
+    color:var(--color-red);
+    border-color: var(--color-red);
 }
 
 .icon {
@@ -251,28 +265,26 @@ button:disabled {
 .icon.buy {
     color: rgb(56, 103, 224);
     border-color:rgb(56, 103, 224);
-    border: 0px solid rgb(56, 103, 224);
 }
 
 .icon.sell {
-    color: #d32f2f;
-    border-color: #d32f2f;
-    border: 0px solid #d32f2f;
+    color: var(--color-red);
+    border-color:var(--color-red);
 }
 
 select {
-    height: 20px;
+    height: 24px;
     padding: 2px;
-    border: 1px solid #4CAF50;
-    border-radius: 4px;
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    border: 1px solid var(--element-background);
+    border-radius: var(--border-radius);;
+    background-color: var(--body-background);
+    color: var(--element-forecolor);
     font-size: 12px;
     transition: border-color 0.3s;
 }
 
 select:hover {
-  border-color: #388e3c;
+  border-color: var(--border-color);
 }
 
 .hover-cell {
@@ -287,7 +299,6 @@ select:hover {
     z-index: 200; /* 4. Ensures the div appears above other content. */
     height: 18px;
     width: 90%;
-    border: 0px solid #ccc;
     justify-items:stretch;
 }
   
@@ -304,21 +315,21 @@ select:hover {
     width: 400px;
     z-index: 200;
     display: none;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     padding: 3px;
     overflow:auto;
 }
 
 .orderwindow.buy {
-    background-color: #4CAF50; /* Green */
+    background-color: var(--element-hover);
 }
 
 .orderwindow.sell {
-    background-color: #f44336; /* Red */
+    background-color: var(--color-red);
 }
 
 .orderwindow.multi {
-    background-color: dimgray;
+    background-color: var(--body-hover);
 }
 
 .close-btn {
@@ -327,6 +338,7 @@ select:hover {
     font-size: 14px;
     margin-left: 5px;
     margin-right: 5px;
+    color: var(--element-forecolor);
 }
 
 .trade-buttons {
@@ -339,7 +351,7 @@ select:hover {
     left: 100px;
     width: 250px;
     z-index: 100;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: opacity 1.0s ease-in-out, transform 1.0s ease-in-out;
     transform: translateY(-20px); /* Optional: add a slight slide-in effect */
@@ -349,20 +361,18 @@ select:hover {
 .orderlist-td {
     padding: 2px;
     text-align: center;
-    border: 0px solid #ddd;
     font-size: 13px;
     background-color: dimgray;
-    color: lightgray;
+    color: var(--element-forecolor);
     vertical-align: middle;
 }
 
 /* Container for the switch */
 .switch {
     position: relative;
-    display: inline-block;
+    display:block;
     width: 25px;
     height: 10px;
-    vertical-align: middle;
   }
   
   /* Hide default checkbox */
@@ -373,7 +383,7 @@ select:hover {
     position: absolute;
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #ccc;
+    background-color: var(--disabled-forecolor);
     transition: .4s;
     border-radius: 6px;
   }
@@ -382,25 +392,25 @@ select:hover {
 .slider:before {
     position: absolute;
     content: "";
-    height: 10px; width: 10px;
-    left: 2px; bottom: 2px;
+    height: 12px; width: 12px;
+    left: 1px; bottom: 1px;
     background-color: white;
     transition: .3s;
     border-radius: 50%;
 }
 
 input:checked + .slider { 
-    background-color: #0368475a; 
+    background-color: var(--element-background);
 }
 
 input:checked + .slider:before {
-    transform: translateX(12px);
+    transform: translateX(14px);
 }
 
 .clickable {
     cursor:pointer;
-    color: black;
-    border-radius: 4px;
+    color:var(--element-forecolor);
+    border-radius: var(--border-radius);;
     background-color: rgba(65, 63, 63, 0.281);
     font-size: 12px;
     vertical-align: middle;
@@ -426,7 +436,7 @@ input:checked + .slider:before {
     justify-content:center;
     backdrop-filter: blur(0.5px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: rgba(79, 76, 76, 0.163);
+    background-color: var(--body-background);
 }
 
 .hover-row:hover .hover-row-content { 
@@ -457,5 +467,5 @@ input:checked + .slider:before {
 }
 
 .row_background {
-    background-color: darkkhaki;
+    background-color: rgba(189, 183, 107, 0.618);
 }

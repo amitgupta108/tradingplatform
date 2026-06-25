@@ -1,6 +1,9 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../stream.mjs';
-import live_kotak from './m_t_kotakneo.mjs';
+import ordermanager from '../service/ordermanager.mjs';
+import utils from '../../common/utils.mjs';
+
+import {opt_expiries, live_atm, strike_size} from '../../common/constants.mjs';
 
 let initialized = false;
 const client = new OpenAlgo(process.env.openalgo_key);
@@ -8,12 +11,45 @@ const client = new OpenAlgo(process.env.openalgo_key);
 const symbol_cache = new Map();
 const subs_cache = new Map();
 const regex = /[0-9]/;
-const openalgo_mode_live = 1;
+const openalgo_mode_live = 'LIVE';
 
 function onQuotes(q)
 { 
     const qt = standardizeoq(q);
     qserver.emitQs(qt.stockCode + openalgo_mode_live, qt);
+    //if(qt.key === 'futures')
+        //setImmediate(() => update_atm(qt));    
+}
+
+function update_atm(qt)
+{
+    const key = qt.stockCode + 'occrnt';
+    const val = subs_cache.get(key);
+    const sz = strike_size[qt.stockCode];
+    const oExpiry = opt_expiries[qt.stockCode]['first'];
+    const atm = live_atm[qt.stockCode];
+
+    if(atm === 0)
+    {
+        const strikes = utils._strikes(qt.ltp, oExpiry.startIdx, oExpiry.endIndex, sz);
+        const list = strikes.map((s) => {
+                var symbol = qt.stockCode + oExpiry.date + s.strike + s.right;
+                return {exchange: qt.exchange, symbol: symbol};
+            });    
+        subscribe(undefined, list, 'subs');
+        live_atm[qt.stockCode] = Math.round(qt.ltp / sz) * sz;
+        val.strikes = list;
+    }
+    else if(Math.abs(atm - qt.ltp) > sz)
+    {
+        const offset = Math.round(atm - qt.ltp) / sz;
+        const addn_skprices = Math.sign(offset) > 0 ? atm + (oExpiry.endIdx + 1) * sz : atm + (oExpiry.startIdx - 1) * sz;
+        const ce_strike = qt.stockCode + oExpiry.date + addn_skprices + 'CE';
+        const pe_strike = qt.stockCode + oExpiry.date + addn_skprices + 'PE';
+        subscribe(undefined, [{exchange: qt.exchange, symbol: ce_strike}, {exchange: qt.exchange, symbol: pe_strike}], 'subs');
+        live_atm[qt.stockCode] = Math.round(qt.ltp / sz) * sz;
+        val.strikes.concat([{exchange: qt.exchange, symbol: ce_strike}, {exchange: qt.exchange, symbol: pe_strike}]);
+    }
 }
 
 function exit(appid, sublist)
@@ -28,8 +64,6 @@ function standardizeoq(q)
     q.ltt = Number(q.ltt);
     q.close = (q.ltp);
     q.open = q.ltp;
-    //q.high = q.ltp;
-    //q.low = q.ltp;
     
     const idx = q.symbol.search(regex);
     const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
@@ -64,21 +98,22 @@ function addtocache(symbol, idx)
     return cached;
 }
 
-function subscribe(appid, sublist, action)
+function start(appid, sublist)
 {
-    if(sublist.length === 0)
+    sublist.forEach((st) => {
+        if(st.exchange === 'NSE')
+            st.exchange = 'NSE_INDEX';
+        const key = st.stockCode + st.key;
+        if(subs_cache.get(key) === undefined)
+            subs_cache.set(key, st);
+    }); 
+    subscribe(appid, sublist, 'subs');
+}
+
+function subscribe(appid, list, action)
+{
+    if(list.length === 0)
         return;
-
-    const list = sublist.map((item) => {
-        if(item.exchange === 'NSE')
-            item.exchange= 'NSE_INDEX';
-            if(action === 'subs')
-                subs_cache.set(item.symbol, {exchange: item.exchange, symbol: item.symbol});
-            else
-                subs_cache.delete(item.symbol);
-
-        return {exchange: item.exchange, symbol: item.symbol};
-    });
 
     if(action === 'subs')
         client.subscribe_ltp(list, onQuotes);
@@ -86,26 +121,43 @@ function subscribe(appid, sublist, action)
         client.unsubscribe_ltp(list, onQuotes);
 }
 
-async function orderbook(appid, stockCode)
-{
-    return await live_kotak.orderbook(appid, stockCode);
+function buildSubsList(sublist){
+    sublist.forEach((st) => {
+        if(st.key === 'occrnt') {
+            const expiry = utils.opt_expiries['first'];
+            st.utils_strikes();
+        }
+    });
 }
 
-async function neworders(appid, orders)
+async function orderbook(appid, stockCode)
 {
+    var response = await client.orderbook();
+    if(response.status === 'success')
+        return response.data.orders.flatMap(o => 
+                o.symbol.startsWith(stockCode) ? [formatOutOrder(o)] : []);
+}
 
-    var res = await live_kotak.neworders(appid, orders);
-    console.log('order response ' + JSON.stringify(res));
-    return res;
+function formatOutOrder(order) {
+    let { price: pricedAt, triggerPrice: tPrice, quantity: filled_q = 0, order_status: state, ...rest } = order;
+    let fOrder = { pricedAt, tPrice, filled_q, state, ...rest };
 
-    //const promises = orders.map((order) => live_kotak.placeOrder(appid, order));
-    //return await Promise.all(promises);
+    fOrder.mode = 'live';
+    fOrder.state = fOrder.state === 'open' ? 'opened' : fOrder.state === 'complete' ? 'completed' : fOrder.state;
+
+    return fOrder;
+}
+
+async function neworders(appid, view_mode, message)
+{
+    const promises = message.orders.map((order) => placeOrder(appid, order));
+    return await Promise.all(promises);
 }
 
 async function placeOrder(appid, order)
 {
-    const clone = structuredClone(order);
-    trade_utils.neworders(appid, [order]);
+    const clone = formatInOrder(order);
+    ordermanager.neworders(appid, [order]);
 
     let response = await client.placeOrder(clone);
     if(order.state === 'created') {
@@ -117,25 +169,19 @@ async function placeOrder(appid, order)
     return response;
 }
 
-async function basketorder(appid, orders)
+function formatInOrder(order)
 {
-    trade_utils.neworders(appid, orders);
-
-    let response = await client.basketOrder({orders: orders});
-
-    response.forEach((conf, index) => {
-            orders[index].state = 'submitted';
-            orders[index].orderid = conf.orderid;
-            orders[index].status = conf.status;
-            console.log('order confirmation ' + JSON.stringify(conf) + ' for order ' + JSON.stringify(orders[index]));
-    });
-
-    return response;
+    let {mode, appid, orderN, state, time, stockCode, ...trimmedOrder} = order;
+    return trimmedOrder;
 }
 
-async function cancelorder(appid, order)
+function cancelorder(order)
 {
-    return await live_kotak.cancelorder(appid, order);
+    client.cancelOrder({orderId: order.orderid})
+    .then((resp) => {
+        console.log('order cancellation response ' + JSON.stringify(resp));
+        //Order_Service.cancelOrder(order);
+    });
 }
 
 function init()
@@ -144,11 +190,12 @@ function init()
     {
         client.connect()
         .then(() => {
+            initialized = true;
             console.log('openalgo client connected');
-                console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-                var list = Array.from(subs_cache.values());
-                if(list.length > 0)
-                    client.subscribe_ltp(list, onQuotes);
+            /*console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+            var list = Array.from(subs_cache.values());
+            if(list.length > 0)
+                client.subscribe_ltp(list, onQuotes);
 
             client._wsClient.ws.addEventListener('error', (reason) => {
                 console.log('openalgo websocket error: ' + reason);
@@ -158,8 +205,13 @@ function init()
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
                 //qserver.streaming_status(false, 'openalgo', openalgo_mode_live);
             });
-            initialized = true;
+
+            const atm_timer = setInterval(() => {
+                updateStrikes();
+            }, 10000)*/
+            
         }).catch((error) => console.error('Error connecting to openalgo ' + error));
     }
 }
-export default {subscribe, exit, init};
+
+export default {subscribe, exit, init, start, neworders, orderbook, cancelorder};
