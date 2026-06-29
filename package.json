@@ -18,8 +18,7 @@
   "hotHook": {
     "boundaries": [
       "./serverlocal/app.mjs",
-      "./serverlocal/broker/m_t_openalgo.mjs",
-      "./srvr/connector.mjs"
+      "./srvr/breezeclient.mjs"
     ]
   }
 }

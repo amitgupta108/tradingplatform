@@ -23,7 +23,7 @@
             "request": "launch",
             "name": "History on 449",
             "skipFiles": [
-                "<node_internals>/**"
+                
             ],
             "program": "${workspaceFolder}/start.mjs",
             "args": [

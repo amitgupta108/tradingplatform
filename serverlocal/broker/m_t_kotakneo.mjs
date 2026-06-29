@@ -1,34 +1,41 @@
 import scrip_service from '../service/scripstore.mjs';
-import kotak_socket from '../service/connectionmanager.mjs';
 import ordermanager from '../service/ordermanager.mjs';
 import qserver from '../stream.mjs';
+import socketclient from '../service/socketclient.mjs';
+import connector  from '../service/kotak/connector.os.mjs';
+import path from 'path';
 
-var paths;
+const name = path.parse(import.meta.filename).name;
+let paths;
+
 var initialized = false;
 
-function init()
-{
-    if(!initialized)
-    {
-        initialized = true;
+function init() {
+    if (!initialized) {
+        console.log('connection initiated');
+        return socketclient.hsiconnect()
+            .then((response) => {
+                console.log('kotak neo init ' + response.status)
+            });
     }
-    return initialized;
 }
 
 function notifyme(connected)
 {
-    if(connected) {
+    if(connected){
         paths = {
-            order: apiUrl('quick/order/rule/ms/place'),
-            orderbook: apiUrl('quick/user/orders'),
-            cancel: apiUrl('quick/order/cancel')
+            order: '/quick/order/rule/ms/place',
+            orderbook: '/quick/user/orders',
+            cancel: '/quick/order/cancel'
         };
+        initialized = true;
+        console.log('HSI connected');
     }
 }
 
-function authHeaders()
+function getAuthData()
 {
-    const auth_data = kotak_socket.getSavedCredentials();
+    const auth_data = connector.getCredentials();
     return {headers: {
         'accept': 'application/json',
         'Sid': auth_data.hsi_sid,
@@ -38,16 +45,15 @@ function authHeaders()
     }, baseUrl: auth_data.baseUrl};
 }
 
-function apiUrl(path)
+function apiUrl(url)
 {
-    const auth_data = authHeaders();
-    return new URL(`${path}`, auth_data.baseUrl).href;
+    const baseUrl = getAuthData().baseUrl;
+    return new URL(url, baseUrl).href;
 }
 
-async function request(path, options)
+async function submit(path, options)
 {
-    const url = paths[path];
-    console.log('order submitted');
+    const url = apiUrl(paths[path]);
     return await fetch(url, options);
 }
 
@@ -55,18 +61,19 @@ async function post(path, body)
 {
     const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
 
-    return await request(path, {
+    const response = submit(path, {
         method: 'POST',
-        headers: authHeaders().headers,
+        headers: getAuthData().headers,
         body: requestBody.toString()
     });
+    return (await response).json();
 }
 
 async function get(path)
 {
-    var response = await request(path, {
+    var response = await submit(path, {
         method: 'GET',
-        headers: authHeaders().headers
+        headers: getAuthData().headers
     });
     return await response.json();
 }
@@ -100,6 +107,9 @@ function toKotakModifyOrder(order)
 
 function neworders(appid, view_mode, orders)
 {
+    if (!initialized) {
+        return { status: 'error', reason: 'service not connected' };
+    }
     const promises = orders.map((order) => placeOrder(appid, order));
     return Promise.all(promises);
 }
@@ -137,6 +147,9 @@ async function modifyorder(appid, order)
 
 async function cancelorder(appid, order)
 {
+    if (!initialized) {
+        return { status: 'error', reason: 'service not connected' };
+    }
     const response = await post('cancel', {on: order.orderid});
     if(!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -147,6 +160,9 @@ async function cancelorder(appid, order)
 
 async function orderbook(appid, stockCode)
 {
+    if(!initialized) {
+        return {status: 'error', reason: 'service not connected'};
+    }
     const response =  await get('orderbook');
     const orders = response?.data.map((order) => {
         return ordermanager.formatLiveOrder(order, true);
@@ -180,9 +196,9 @@ function subscribe(appid, sublist, action)
     }
 
     if(action === 'subs')
-        kotak_socket.subscribe(type, subs_string);
+        socketclient.subscribe(type, subs_string);
     else 
-        kotak_socket.unsubscribe(type, subs_string);       
+        socketclient.unsubscribe(type, subs_string);       
 }
 
 function onQuotes(q)
@@ -202,6 +218,7 @@ function exit(appid, sublist)
 }
 
 export default {
+    name,
     neworders,
     cancelorder,
     orderbook,

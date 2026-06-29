@@ -22,7 +22,8 @@ function initialSeriesData(qA)
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') ||e.datetime.includes('9:05') || e.datetime.includes('9:10')));
   for(var i = 0; i < qs.length; i++)
   {
-    qs[i].time = sTVtime(qs[i].datetime);
+    qs[i].time = i === 0 || qs[i].datetime.includes('9:15') ? sTVtime(qs[i].datetime) : qs[i-1].time + 5 * 60;
+    //qs[i].time = sTVtime(qs[i].datetime);
     qs[i].value = ema_alpha * qs[i].close + ema_beta * (i !== 0 ? qs[i-1].value : qs[0].close);
     qs.at(-1).customValues = qs.at(-1).value;
   }
@@ -61,14 +62,6 @@ function renderChart(main, ema, q)
     emaSeries.update(curCandle);
 }
 
-const container = {
-  futures: 'futures_chart',
-  index: 'index_chart',
-  strangle_1: 'container_2',
-  strangle_2: 'container_3',
-};
-
-
 const chartOptions = {
   autoSize: true,
   layout: {
@@ -105,7 +98,17 @@ const chartOptions = {
   },
 };
 
+const container = {
+  futures: 'futures_chart',
+  index: 'index_chart',
+  strikes: 'strikes_chart',
+  strategy: 'strategy_chart',
+};
+
 const chart1 = LightweightCharts.createChart(container.futures, chartOptions);
+const chart2 = LightweightCharts.createChart(container.index, chartOptions);
+const chart_strikes = LightweightCharts.createChart(container.strikes, chartOptions);
+const chart_strategy = LightweightCharts.createChart(container.strategy, chartOptions);
 
 chart1.priceScale('left').applyOptions({
   visible: true,
@@ -126,7 +129,7 @@ const series = {
   iEma: '',
   strike_1: '',
   strike_2: '',
-  strangle_1: '',
+  strategy_1: ''
 }
 
 series.vix = chart1.addSeries(LightweightCharts.CandlestickSeries, {});
@@ -135,11 +138,19 @@ series.fEma = chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'ri
 chart1.timeScale().fitContent();
 chart1.timeScale().scrollToPosition(15);
 
-const chart2 = LightweightCharts.createChart(container.index, chartOptions);
 series.index = chart2.addSeries(LightweightCharts.CandlestickSeries, {});
 series.iEma = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);
+
+series.strike_1 = chart_strikes.addSeries(LightweightCharts.CandlestickSeries, {});
+series.strike_2 = chart_strikes.addSeries(LightweightCharts.CandlestickSeries, {});
+chart_strikes.timeScale().fitContent();
+chart_strikes.timeScale().scrollToPosition(15);
+
+series.strategy_1 = chart_strategy.addSeries(LightweightCharts.CandlestickSeries, {});
+chart_strategy.timeScale().fitContent();
+chart_strategy.timeScale().scrollToPosition(15);
 
 /*
 function updateIndexChart(uQuote)

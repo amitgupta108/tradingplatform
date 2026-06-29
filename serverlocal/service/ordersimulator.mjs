@@ -1,5 +1,9 @@
 import qServer from '../stream.mjs';
 import services from './services.mjs';
+import path from 'path';
+
+const name = path.parse(import.meta.filename).name;
+
 
 const sim_order_map = new Map();
 var counter = 50000;
@@ -17,7 +21,7 @@ function init()
 
 function neworders(appid, mode, orders)
 {
-    services.getProfile(app)
+    services.getProfile(appid);
     orders.forEach((order) => {
         order.filled_q = 0;
         order.pricedAt = 0;
@@ -88,6 +92,7 @@ function orderbook(appid, stockCode)
 }
 
 export default {
+    name,
     neworders,
     cancelOrder,
     orderbook,

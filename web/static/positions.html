@@ -17,33 +17,35 @@
         <!------------------------------------------------------------------------------------------------------------------------------>    
         <div id="leftContainer" class="leftcontainer">
             <div class="tabs">   
-                <div id="chart_tab_1" class="tab active-tab">
+                <div id="chart_tab_1" class="tab active-tab" onclick="switchCharts(0)">
                     <label>Chart 1</label>
                 </div>
-                <div id="chart_tab_2" class="tab">
+                <div id="chart_tab_2" class="tab" onclick="switchCharts(1)">
                     <label>Chart 2</label>
                 </div>
-                <div id="chart_tab_3" class="tab">
+                <div id="chart_tab_3" class="tab" onclick="switchCharts(2)">
                     <label>Chart 3</label>
                 </div>
             </div>
         <!------------------------------------------------------------------------------------------------------------------------------>        
             <div id="leftContainer_1">
                 <div>
-                    <div id="futures_chart" style="width: 100%; height: 465px; position: relative;"></div>
+                    <div id="futures_chart" style="width: 100%; height: 470px; position: relative;"></div>
                 </div>
                 <div>
                     <div id="index_chart" style="width: 100%; height: 315px; position: relative;"></div>
                 </div>
             </div>
-            <div id="leftContainer_2">
+            <div id="leftContainer_2" style="display: none;">
                 <div>
-                    <div id="chart_2" style="width: 100%; height: 750px; position: relative; display: none;"></div>
+                    <div id="strikes_chart" style="width: 100%; height: 470px; position: relative;"></div>
+                </div>
+                <div>
+                    <div id="strategy_chart" style="width: 100%; height: 315px; position: relative;"></div>
                 </div>
             </div>
             <div id="leftContainer_3">
                 <div>
-                    <div id="chart_3" style="width: 100%; height: 750px; position: relative; display:none"></div>
                 </div>
             </div>
         </div>
@@ -93,9 +95,9 @@
             <div class="tabs">
                
                 <div id="tabButton1" class="tab">
-                    <label id="expiry_label_1" onclick="switchTabs(this)"></label>
+                    <button id="expiry_btn_1" class="barely-raised-btn" onclick="switchTabs(0)"></label>
                     <button id="oc_action_btn" class="smallbutton order" onclick="streamOptionChain(event)">^</button>
-                    <label id="expiry_label_2" onclick="switchTabs(event)"></label>
+                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)" disabled></label>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
                     <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;height:15px;">
@@ -153,7 +155,6 @@
                     <button id="btnConnect" onclick="connect()">Connect</button>
                     <button id="btnStartSim" onclick="start()" disabled>Start</button>
                     <button id="btnStopSim" onclick="stop()" disabled>Stop</button>
-                    <button id="btnExit" onclick="exit()" disabled>Exit</button>
                     <button id="btnListOrders" onclick="listOrders()" disabled>Orders</button>
                     <button id="btnVixSubs" onclick="subs_vix()" disabled>Vix</button>
                     <select id="optionSpeed" onchange="changeSpeed()" style="width: 35px;" disabled>
@@ -163,6 +164,7 @@
                         <option value="5x">5x</option>
                         <option value="10x">10x</option>
                     </select>
+                    <button id="btnExit" onclick="exit()" disabled>Exit</button>
                 </div>
 
                 <div id="bottomPLPanel">

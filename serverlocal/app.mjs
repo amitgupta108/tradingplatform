@@ -3,8 +3,7 @@ import services from './service/services.mjs';
 import qserver from './stream.mjs'; 
 import apiserver from './apiserver.mjs'; 
 
-
-export function handleConnection(s)
+function connect(s)
 {        
     const appid = s.handshake.auth.token;
     const stockCode = s.handshake.auth.stockCode;
@@ -13,22 +12,15 @@ export function handleConnection(s)
     const profile = services.getProfile(mode);
     if(profile === undefined) {
         console.log('profile not found');
-        s.emit('profile', {status: 'error'});
         return;
     }
-    s.emit('profile', profile);
     
     services.initialize(mode);
     session(s, appid, stockCode, mode);
-    handler(s, appid, mode);
+    registerHandlers(s, appid, mode);
 
     s.on("error", (err) => {
         console.error(`[Global Error]  Socket ${s.id}:`, err.message);
-    
-        s.emit("app_error", {
-            status: err.status || 500,
-            message: err.message || "Internal server error"
-        });
     });
 }
 
@@ -46,7 +38,7 @@ function session(s, appid, stockCode, mode)
     s.sn = sn;
 }
 
-function handler(s, appid, mode)
+function registerHandlers(s, appid, mode)
 {
     const profile = services.getProfile(mode);
 
@@ -78,6 +70,4 @@ function registerAuthorizer(s, mode)
     });
 }
 
-export default {
-    handleConnection
-};
+export default {connect}

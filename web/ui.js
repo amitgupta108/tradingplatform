@@ -80,11 +80,34 @@ function flipAction(orderRowBtn, orderRow)
   showOrderWindow();
 }
 
-function switchTabs(evt) 
+function switchTabs(idx) 
 {  
-  expiry_label.textContent = expiry_label.textContent === instrument.oExpiry ? instrument.oExpiryNxt : instrument.oExpiry;
   document.getElementById('c_oc_div').classList.toggle('active');
   document.getElementById('n_oc_div').classList.toggle('active');
+
+  const active = idx === 1 ? 0 : 1;
+  const btns = [expiry_btn_1, expiry_btn_2];
+  btns[idx].disabled = true;
+  btns[active].disabled = false; 
+}
+
+function switchCharts(idx)
+{
+  const left = document.getElementById('leftContainer');
+  const tabs = left.querySelectorAll('div[id^="chart_tab_"]');
+  const panes = left.querySelectorAll('div[id^="leftContainer_"]');
+  for(var i = 0; i < 3; i++)
+  {
+    const selected = i === idx ? true : false;
+    if(selected) {
+      tabs[i].classList.add('active-tab');
+      panes[i].style.display = 'block';
+    }
+    else {
+      tabs[i].classList.remove('active-tab');
+      panes[i].style.display = 'none';
+    }
+  }
 }
 
 function tRow(template, withListener = true){
@@ -110,8 +133,8 @@ function tRow(template, withListener = true){
       if(e.target.id === 'lmtprice' && e.target !== new_row)
       submitOWinBtn.disabled = true;
     }, true);
-    return new_row;
   }
+  return new_row;
 }
 
 function handleChangeEvent(e)
@@ -164,11 +187,7 @@ function flipOrderType(c, p)
 
 function hl_row(c, p)
 {
-  const scrip = expandSymbol(p.title);
-  const oc = OptionChain.get(scrip.expiry_date);
-  const r = oc.row_map.get(p.title);
-  r.hl = !r.hl;
-  r.row.classList.toggle('row_background');
+  p.classList.toggle('row_background');
 }
 
 function removeOrderRow(c, p){

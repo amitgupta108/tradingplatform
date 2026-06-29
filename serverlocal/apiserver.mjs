@@ -1,5 +1,4 @@
 import scrip_store from './service/scripstore.mjs';
-import service_breeze from './broker/m_breeze.mjs';
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
 import qserver from './stream.mjs'; 
@@ -11,8 +10,7 @@ function registerDataRequests(s, appid, mode)
     const market_service = services.getService('view', mode);
 
     s.on('vix', (msg) => {
-        const vix_service = services.getService('vix', mode);
-        vix_service.subscribe_vix(appid, mode, msg.action);
+        market_service.subscribe_vix(appid, mode, msg.action);
     });
 
     s.on('start', (msg) => {
@@ -28,18 +26,13 @@ function registerDataRequests(s, appid, mode)
         s.emit('stream', 'started');
     });
 
-    s.on('preData', async (msg) => {
-        const vix_service = services.getService('vix', mode);
-        if(msg.exchange === 'NFO')
-        {
-            console.log("Pre data request " + new Date(msg.startTime));
-            for(var i in msg.keys)
-            {
-                var preQ = await vix_service.preQ(msg.keys[i], msg);
-                s.emit('preData', msg.keys[i], await preQ);
-            }
-        }
-    });
+    s.on('history', catchAsync(async (msg) => {
+        console.log("history request " + new Date(msg.startTime));
+        var response = await market_service.history(msg);
+        if(response.Success !== undefined)
+            s.emit('history', msg.key, response.Success);
+            
+    }, s, 'history'));
 
     s.on('speed', (msg) => {
         if(mode.startsWith('HISTORY'))
@@ -54,12 +47,15 @@ function registerDataRequests(s, appid, mode)
     });
 
     s.on('exit', (msg) => {
-        if(mode.startsWith('HISTORY')) {
-            s.sn.remove(s.sn);
+        s.emit('exit', 'Exit initiated, connection being closed');
+        if (mode.startsWith('HISTORY'))
             market_service.exit(appid);
-        }
-        else
-            s.sn.exit(appid, s.sn);
+
+        s.sn.exit(appid, s.sn);
+        qserver.socketmap.delete(appid);
+        s.disconnect();
+
+        console.log('user exited:' + appid);
     });
     
     s.on('option_chain', (msg) => {
@@ -101,15 +97,12 @@ function registerAdminRequests(s, appid, mode)
             s.emit('live_trading', lock);
         }, s);
 
-        s.on('wsOps', catchAsync(async (action, key) => {
-            let response;
+        s.on('wsOps', catchAsync((action, key) => {
             if(action === 'open')
-                response = await admin_service.authenticate(key);
+                return admin_service.authenticate(key);
             else if(action === 'close')
-                response = admin_service.close(key);
-            
-            return {eventName:'wsOps', action:action, response:response};
-        }, s));
+                return admin_service.close(key);            
+        }, s, 'wsOps'));
     }
 
     if (profile['admin'] === 'LIVE_STREAMING') {    
@@ -151,24 +144,11 @@ function unlockLiveOrders(action, key)
     return live_order_locked;
 }
 
-function exit(s, appid, mode)
-{
-    if (mode.startsWith('HISTORY'))
-        service_breeze.exit(appid);
-
-    s.emit('exit', 'Exit initiated, connection being closed');
-    Session.exit(appid, s.sn);
-    qserver.socketmap.delete(appid);
-    s.disconnect();
-
-    console.log('user exited:' + appid);
-}
-
-const catchAsync = (handler, socket) => {
+const catchAsync = (handler, socket, eventName) => {
     return (...args) => {
         handler(...args)
-        .then((result) => {
-            toConsole(result);
+        .then((response) => {
+            toConsole(eventName + ' ' + response);
         })
         .catch ((err) => {
             console.error(err);
@@ -176,7 +156,7 @@ const catchAsync = (handler, socket) => {
     };
 };
 
-function toConsole(result){
+function toConsole(status){
     console.log(result);
 }
 
