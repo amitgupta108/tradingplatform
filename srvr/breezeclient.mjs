@@ -1,40 +1,57 @@
 import connector from './connector.mjs';
 
-function connect(callback) {
-    connector.connect(callback);
+function connect(callback, withsocket) {
+    return connector.connect(callback, withsocket);
 }
 
 async function getHistoricalData(st, instrument, sTime) 
 {
-    var resp = await getHistoricalDatav2(instrument, sTime).catch((error) => {
+    var resp = await getHistoricalDatav2(instrument, sTime)
+    .catch((error) => {
         console.warn("getHistoricalDatav2 failed, ", error.message);
         return Promise.reject(error); 
     });
 
     var quotes = resp.Success;
     if (Array.isArray(quotes)) {
-        const indexA = new Array();
-        quotes.forEach((q) => {
-            const ltt =Date.parse(q.datetime);
-            q.ltt = ltt;
-            indexA.push(ltt);
-        });
+        
         st.quotes = quotes;
-        st.indexA = indexA;
         st.trimIndex = 0;
         st.state = 'ready to stream';
         st.lastUpdated = sTime;
+        st.indexA = processResults(st.quotes, 50);
     }
     return st;
 }
 
-async function getHistory(instrument, sTime, endTime, interval) 
+function processResults(quotes, index)
 {
-    var resp = await getHistoricalDatav2(instrument, sTime, endTime, interval);
-    return resp.Success;
+    index = Math.max(Math.round(quotes.length * 0.10), index);
+    const frontend = quotes.slice(0, index);
+    const backend = quotes.slice(index);
+    const indexA = new Array();
+    frontend.forEach((q) => {
+        const ltt = Date.parse(q.datetime);
+        q.ltt = ltt;
+        indexA.push(ltt);
+    });
+    setImmediate(() => {
+        backend.forEach((q) => {
+            const ltt = Date.parse(q.datetime);
+            q.ltt = ltt;
+            indexA.push(ltt);
+        }); 
+    });
+    return indexA;
 }
 
-function getHistoricalDatav2(instrument, sTime, endTime, interval) 
+
+function getHistory(instrument, sTime, endTime, interval) 
+{
+    return getHistoricalDatav2(instrument, sTime, endTime, interval);
+}
+
+async function getHistoricalDatav2(instrument, sTime, endTime, interval) 
 {
     var b = { exchangeCode: instrument.exchange };
     b.interval = interval != undefined ? interval : '1second';
@@ -46,7 +63,7 @@ function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.fromDate = ISODate(sTime);
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
-    const breeze = connector.getLiveConnection();
+    const breeze = await connector.getLiveConnection();
     if(breeze)
         return breeze.getHistoricalDatav2(b);
 }

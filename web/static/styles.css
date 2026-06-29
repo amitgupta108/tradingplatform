@@ -1,12 +1,12 @@
 :root {
-    --body-background: rgba(0, 0, 0, 0.85);
-    --element-background: #4caf4fd4;
-    --element-color: #4caf4fd4;
-    --element-hover: #2e9b31d4;
-    --inside-border: #dddddd50;
-    --disabled-forecolor: #ffffff77;
+    --body-background: rgb(25, 18, 18);
+    --element-background: #4aa84e;
+    --element-color: #43a747;
+    --element-hover: #2a8f2d;
+    --inside-border: #454444;
+    --disabled-forecolor: #6a6262;
     --body-hover: #dddddd2b;
-    --element-forecolor: #ffffffd3;
+    --element-forecolor: #f4f0f0;
     --color-red: #c7372c;
     --border-radius: 4px;
 }
@@ -35,7 +35,7 @@ body {
     border: 1px solid var(--element-background);
     background-color: var(--body-background);
     height: 99.2%;
-    width: 57%;
+    width: 56%;
     border-radius: var(--border-radius);
     min-width: 450px;
 }  
@@ -45,7 +45,7 @@ body {
     background-color: var(--body-background);
     border: 1px solid var(--element-background);
     height: 99.2%;
-    width: 42%;
+    width: 43%;
     border-radius: var(--border-radius);
     min-width: 300px;
     min-height: 600px;
@@ -107,6 +107,7 @@ body {
 
 .inert-tab {
     background-color: var(--element-hover);
+    cursor:default;
 }
 
 #positions_div {
@@ -143,6 +144,19 @@ label {
     justify-items: center;
     justify-content: center;
     padding: 2px;
+}
+
+.clickable {
+    cursor: pointer;
+    color: var(--element-forecolor);
+    border-radius: var(--border-radius);
+    ;
+    background-color: rgba(65, 63, 63, 0.281);
+    font-size: 12px;
+    vertical-align: middle;
+    align-items: center;
+    padding: 3px;
+    min-width: 30px;
 }
 
 table {
@@ -210,12 +224,13 @@ button {
     font-size: 13px;
 }
 
-button:hover {
+button:not(:disabled):hover {
     background-color: var(--element-hover);
 }
 
 button:disabled {
     color: var(--disabled-forecolor);
+    cursor: not-allowed;
 }
 
 .smallbutton {
@@ -407,18 +422,6 @@ input:checked + .slider:before {
     transform: translateX(14px);
 }
 
-.clickable {
-    cursor:pointer;
-    color:var(--element-forecolor);
-    border-radius: var(--border-radius);;
-    background-color: rgba(65, 63, 63, 0.281);
-    font-size: 12px;
-    vertical-align: middle;
-    align-items: center;
-    padding: 3px;
-    min-width: 30px;
-}
-
 .hover-row { 
     position: relative; 
     padding: 3px;
@@ -468,4 +471,44 @@ input:checked + .slider:before {
 
 .row_background {
     background-color: rgba(189, 183, 107, 0.618);
+}
+
+.barely-raised-btn {
+    /* Reset default styles */
+    background-color: var(--element-background);
+    border: 0.5px solid var(--disabled-forecolor);
+
+    /* Typography */
+    padding: 5px 6px;
+    font-size: 12px;
+    color: var(--element-forecolor);
+    cursor: pointer;
+
+    /* Rounded corners */
+    border-radius: var(--border-radius);
+    /* The "Barely Raised" Effects */
+    box-shadow:
+        0 1px 2px 0 rgba(0, 0, 0, 0.05),
+        /* Subtle shadow underneath */
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    /* Inner top highlight */
+
+    /* Smooth transition for hover/click states */
+    transition: all 0.2s ease-in-out;
+}
+
+/* Slight hover elevation */
+.barely-raised-btn:hover {
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Pressed state to make it sink slightly */
+.barely-raised-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+        inset 0 1px 2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
 }

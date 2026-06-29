@@ -1,21 +1,22 @@
 import OpenAlgo from 'openalgo';
 import qserver from '../stream.mjs';
 import ordermanager from '../service/ordermanager.mjs';
+import adapter from '../adapter/breezeadapter.mjs';
 import utils from '../../common/utils.mjs';
-
+import qutils from './quotesutils.mjs';
+import path from 'path';
 import {opt_expiries, live_atm, strike_size} from '../../common/constants.mjs';
 
+const name = path.parse(import.meta.filename).name;
 let initialized = false;
 const client = new OpenAlgo(process.env.openalgo_key);
 
-const symbol_cache = new Map();
 const subs_cache = new Map();
-const regex = /[0-9]/;
 const openalgo_mode_live = 'LIVE';
 
 function onQuotes(q)
 { 
-    const qt = standardizeoq(q);
+    const qt = qutils.standardizeoq(q);
     qserver.emitQs(qt.stockCode + openalgo_mode_live, qt);
     //if(qt.key === 'futures')
         //setImmediate(() => update_atm(qt));    
@@ -56,46 +57,6 @@ function exit(appid, sublist)
 {
     //subscribe(appid, sublist, 'unsub');
     client._wsClient.ws._sendMessage({action: unsubscribe_all});
-}
-
-function standardizeoq(q) 
-{
-    q.ltp = Number(q.ltp);
-    q.ltt = Number(q.ltt);
-    q.close = (q.ltp);
-    q.open = q.ltp;
-    
-    const idx = q.symbol.search(regex);
-    const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
-    q.stockCode = st_code;
-    q.key = q.symbol.endsWith('FUT') ? 'futures' : q.symbol.endsWith('PE') || q.symbol.endsWith('CE') ? 'strikex' : 'index';
-    
-    if(idx === -1)
-        return q;
-
-    const cached = addtocache(q.symbol, idx);
-    q.expiry_date = cached.expiry;        
-    q.right = cached.right;
-    q.strike_price = cached.strike;
-
-    return q;
-} 
-
-function addtocache(symbol, idx)
-{
-    if(symbol_cache.has(symbol))
-        return symbol_cache.get(symbol);
-    
-    const expiry = symbol.slice(idx, idx + 7);
-    const cached = {expiry: expiry};
-
-    if(!symbol.endsWith('FUT'))
-    {
-        cached.strike = symbol.slice(idx + 7, -2);
-        cached.right = symbol.slice(-2);
-    }
-    symbol_cache.set(symbol, cached);
-    return cached;
 }
 
 function start(appid, sublist)
@@ -184,6 +145,14 @@ function cancelorder(order)
     });
 }
 
+function subscribe_vix(appid, mode, action) {
+    return adapter.subscribe_vix(appid, mode, action);
+}
+
+function history(p) {
+    return adapter.getHistory(p);
+}
+
 function init()
 {
     if(!initialized)
@@ -214,4 +183,4 @@ function init()
     }
 }
 
-export default {subscribe, exit, init, start, neworders, orderbook, cancelorder};
+export default {subscribe, exit, init, start, neworders, orderbook, cancelorder, subscribe_vix, history, name};

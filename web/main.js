@@ -15,10 +15,13 @@ function loadPreData()
     fExpiry: instrument.fExpiry,
     startTime: startTime,
     endTime: endTime - 1000,
-    interval: '5minute',
-    keys: keys
+    interval: '5minute'
   }
-  emit('preData', p);
+
+  keys.forEach((k) => {
+    p.key = k;
+    emit('history', p);
+  });
 }
 
 function changeSpeed()
@@ -44,7 +47,7 @@ function stop()
 function exit() 
 {
   //socket.disconnect();
-  bottom_btns.forEach((btn) => btn.disabled = true);
+  //bottom_btns.forEach((btn) => btn.disabled = true);
   emit('exit', 'pause');
 }
 
@@ -56,7 +59,7 @@ function listOrders()
 function streamOptionChain(event)
 {  
   event.stopPropagation();
-  var oc_key = expiry_label.innerText === instrument.oExpiry ? 'occrnt' : 'ocnxt';
+  var oc_key = expiry_btn_1.disabled === false ? 'occrnt' : 'ocnxt';
   emit('option_chain', {key: oc_key, action:'toggle'});
 }
 

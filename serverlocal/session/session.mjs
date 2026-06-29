@@ -19,8 +19,8 @@ class Session
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true},
             {key: 'futures', stockCode: stockCode, toStream: true},
-            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 10},
-            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 10},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 8},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 8},
         ];
     }
 
@@ -33,10 +33,7 @@ class Session
             this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
             this.st[i].toStream = i === 3 || (i === 0 && p.exchange === 'MCX') ? false : true
             if(i != 0)
-            {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
-                this.st[i].n = (i === 2 || i === 3)? p.lscount + 2: 0;
-            }
         }
         this.subsupdate = callback;
         this.status = 'initialized';
@@ -154,7 +151,7 @@ class Session
         return state;
     }
 
-    option_chain(key, action)
+    option_chain(key)
     {
         var oc = this.st.find((e) => e.key === key);
         oc.toStream = oc.toStream === true ? false : true;
@@ -182,11 +179,10 @@ class Session
     }
 
     exit(appid, sn) {
-        sn.shared_with.delete(appid);
-    }
-
-    remove(sn) {
-        us.delete(sn.appid);
+        if(this.mode === 'HISTORY')
+            us.delete(this.appid);
+        else
+            sn.shared_with.delete(appid);
     }
 
     static sn(appid)

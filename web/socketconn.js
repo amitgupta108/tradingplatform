@@ -8,25 +8,8 @@ function connect()
       mode: instrument.mode,
       stockCode: instrument.stockCode
     },
-    timeout: 20000,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-  });
-
-  socket.io.on("reconnect", (attempt) => {
-      console.log("Reconnected on attempt # " + attempt);
-  });
-
-  socket.io.on("reconnect_attempt", (attempt) => {
-      console.log("Reconnection being tried attempt # " + attempt);
-  });
-
-  socket.io.on("reconnect_error", (error) => {
-      console.log("Reconnection error " + error.message);
-  });
-
-  socket.io.on("reconnect_failed", () => {
-      console.log("Reconnection not possible");
+    reconnection: false,
+    timeout: 20000
   });
 
   rh(socket);
@@ -39,9 +22,12 @@ function rh(socket)
     socket.on("connect", () => {
       console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
       data_reload = false;
+      bottom_btns[0].disabled = true;
       bottom_btns[1].disabled = false;
-      bottom_btns[2].disabled = false;
+      bottom_btns[3].disabled = false;
       bottom_btns[4].disabled = false;
+      bottom_btns[5].disabled = false;
+
       if(instrument.mode === 'HISTORY')
         document.getElementById('optionSpeed').disabled = false;
     });
@@ -57,11 +43,12 @@ function rh(socket)
       }
     });
 
-    socket.on("disconnect", (reason, details) => {
-      console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason + '-' + JSON.stringify(details));
+    socket.on("disconnect", (reason) => {
+      bottom_btns[0].disabled = false;
+      console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
     });
 
-    socket.on('preData', (key, quotes) => {
+    socket.on('history', (key, quotes) => {
       const withEma = ['futures', 'index'].includes(key) ? true : false;
       setInitialChart(key, withEma , quotes);
     });
@@ -101,12 +88,11 @@ function rh(socket)
     });
 
     socket.on('exit', (response) => {
-      data_reload = true;
       bottom_btns.forEach((btn, i) => {
-        if(i !== 0)  
-          btn.disabled = true;
-        });
+          btn.disabled = i === 0 ? false : true;
       });
+      window.location.reload();
+    });
 
     socket.on('orderbook', (response) => {
       loadOrders(response);

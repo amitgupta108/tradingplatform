@@ -19,7 +19,7 @@ async function apiLogin(num) {
         }),
     };
     const response = await fetch(process.env.kotak_loginURL, headers);
-    return await response.json();
+    return await response.json();    
 }
 
 async function apiValidate(sid, token) {
@@ -58,7 +58,7 @@ async function authenticate(tpt) {
                 hsi_sid: vr.data.sid,
                 hsi_token: vr.data.token
             }
-            await saveAuthData(l_authdata);
+            saveAuthData(l_authdata);
             return { status: 'success', reason: '' };
         }
         response = 'kotak validate authentication failed';
@@ -68,17 +68,24 @@ async function authenticate(tpt) {
     return { status: 'error', reason: response };
 }
 
+function getCredentials()
+{
+    if (authdata !== undefined && authdata['date'] === new Date().toDateString())
+        return authdata;
+}
+
 async function getSavedCredentials() {
 
-    const v = authdata !== undefined ? authdata : await values('kotak_socket', undefined);
-
-    if (v !== undefined && v['date'] === new Date().toDateString())
-        return v;
+    authdata = await authkeys('kotak_socket');
+    if (authdata !== undefined && authdata['date'] === new Date().toDateString())
+        return authdata;
+                
+    return undefined;
 }
 
 async function saveAuthData(data) {
     try {
-        authdata = values('kotak_socket', data);
+        authdata = await authkeys('kotak_socket', data);
         console.log('Auth data saved successfully.');
         initialized = true;
     } catch (error) {
@@ -86,7 +93,7 @@ async function saveAuthData(data) {
     }
 }
 
-async function values(app, v) {
+async function authkeys(app, v) {
     const keys = ['date', 'hsm_token', 'hsm_sid', 'baseUrl', 'hsi_token', 'hsi_sid'];
     const l_authData = {};
 
@@ -100,4 +107,4 @@ async function values(app, v) {
     return v === undefined ? l_authData : v;
 }
 
-export { authenticate, getSavedCredentials };
+export default { authenticate, getSavedCredentials, getCredentials };
