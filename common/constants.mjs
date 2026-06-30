@@ -1,41 +1,32 @@
-export const opt_expiries = {
+export const OPT_EXPIRIES = {
     NIFTY: {
-        first: {date: '30JUN26', startIdx: 2, endIdx: 7},
-        second: {date: '07JUL26'},
-        third: {date: '14JUL26'}
+        FIRST: {date: '07JUL26', startIdx: 2, endIdx: 7, toStream: true},
+        SECOND: { date: '14JUL26', startIdx: 2, endIdx: 7, toStream: false},
+        THIRD: {date: '14JUL26', toStream: false}
     },
     CRUDEOIL: {
-        first: {date: '16JUL26', startIdx: 2, endIdx: 7},
-        second: {date: '17AUG26'}
-
-//       first: {date: '16JUL26', startIdx: 2, endIdx: 7},
-//       second: {date: '17AUG26'}
+        FIRST: {date: '16JUL26', startIdx: 2, endIdx: 7},
+        SECOND: {date: '17AUG26'}
     },
     BANKNIFTY: {
-        first: {date: '30JUN26', startIdx: 2, endIdx: 7},
-        second: {date: '28JUL26'},
-        third: {date: '30JUN26'}
+        FIRST: {date: '28JUL26', startIdx: 2, endIdx: 7},
+        SECOND: {date: '28JUL26'},
+        THIRD: {date: '30JUN26'}
     },
 };
 
-export const fut_expiries = {
+export const FUT_EXPIRIES = {
     NIFTY: {
-        first: '30JUN26',
-        second: '28JUL26'
+        FIRST: '28JUL26',
+        SECOND: '28JUL26'
     },
     CRUDEOIL: {
-        first: '18JUL26',
-        second: '20AUG26'
+        FIRST: '18JUL26',
+        SECOND: '20AUG26'
     },
 };
 
-export const live_atm = {
-    NIFTY: 0,
-    CRUDEOIL: 0,
-    BANKNIFTY: 0
-};
-
-export const strike_size = {
+export const STRIKE_SIZE = {
     NIFTY: 50,
     BANKNIFTY: 100,
     CRUDEOIL: 50,

@@ -97,7 +97,7 @@
                 <div id="tabButton1" class="tab">
                     <button id="expiry_btn_1" class="barely-raised-btn" onclick="switchTabs(0)"></label>
                     <button id="oc_action_btn" class="smallbutton order" onclick="streamOptionChain(event)">^</button>
-                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)" disabled></label>
+                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)"></label>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
                     <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;height:15px;">
@@ -210,8 +210,8 @@
             <td class="orderlist-td" width="3%">
                 <label id="conf_cancel_lb">X</label>
                 <div class="orderlist-row-overlay">
-                    <button id='cancel_order_btn' class="clickable">Delete</button>
-                    <button id='drop_cancel_btn' class="clickable">Cancel</button>
+                    <label id='cancel_order_btn' class="clickable">Delete</label>
+                    <label id='drop_cancel_btn' class="clickable">Cancel</label>
                 </div>
             </td>
         </tr>
@@ -232,7 +232,7 @@
             <td style='width:6%;justify-items: center;'>
                 <button  id='ow_action_btn' class="smallbutton buy"></button>
                 <div class="hover-row-content">
-                    <button id="ow_row_rm_btn" class="smallbutton order">X</button>
+                    <label id="ow_row_rm_btn" class="clickable">X</label>
                 </div>
             </td>
             <td style='width:32%'>

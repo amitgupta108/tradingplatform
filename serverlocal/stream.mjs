@@ -9,11 +9,9 @@ function addEventLsitener(eventName, callback)
     subsService.addListener(eventName, callback);
 }
 
-function streaming_status(running, service, mode)
+function streaming_status(random_keys)
 {
-    console.log('streaming_status running ' + running + ' ' + service + ' ' + mode);
-    const app_obj = Array.from(socketmap.values()).find((e) => e.mode === mode);
-    app_obj.socket.sn.status = 'stopped';
+    console.log('need more info to mark session stopped ' + random_keys);
 }
 
 function emitOrders(appid, type, order)
@@ -28,9 +26,10 @@ function emitQs(appid, q)
     if (q?.key === 'strikex')
         subsService.emit(q.key, q);
 
-    const sn = Session.sn(appid);
+    /*const sn = Session.sn(appid);
     if (sn !== undefined && q?.key === 'futures')
         sn.lastuq(q);
+    */
 }
 
 function send(appid, type, msg)

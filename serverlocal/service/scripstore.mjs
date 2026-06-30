@@ -2,7 +2,7 @@ import axios from 'axios';
 import csv from 'csv-parser';
 import fs from 'fs/promises';
 import path from 'path';
-import {opt_expiries} from '../../common/constants.mjs';
+import {OPT_EXPIRIES} from '../../common/constants.mjs';
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -218,7 +218,7 @@ async function load(expiryDates, reload = false) {
 
   /*const filters = {
     exchangeSegment: ['nse_fo'],
-    expiryDate: [opt_expiries['NIFTY']['first'], opt_expiries['CRUDEOIL']['first']], 
+    expiryDate: OPT_EXPIRIES['NIFTY']['FIRST']['date'], OPT_EXPIRIES['CRUDEOIL']['FIRST']['date']], 
     underlying: ['NIFTY', 'CRUDEOIL'],
     exchange: [],
     instrumentType: ['OPTIDX', 'OPTFUT']

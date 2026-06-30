@@ -5,7 +5,8 @@
     --element-hover: #2a8f2d;
     --inside-border: #454444;
     --disabled-forecolor: #6a6262;
-    --body-hover: #dddddd2b;
+    --hover-seethrough: #6a626268;
+    --body-hover: #1c1a1a;
     --element-forecolor: #f4f0f0;
     --color-red: #c7372c;
     --border-radius: 4px;
@@ -150,7 +151,6 @@ label {
     cursor: pointer;
     color: var(--element-forecolor);
     border-radius: var(--border-radius);
-    ;
     background-color: rgba(65, 63, 63, 0.281);
     font-size: 12px;
     vertical-align: middle;
@@ -236,7 +236,7 @@ button:disabled {
 .smallbutton {
     width: 18px;
     height: 18px;
-    background: white;
+    background-color: var(--element-forecolor);
     border: 1px solid var(--inside-border);
     border-radius: var(--border-radius);;
     font-size: 12px;
@@ -248,13 +248,13 @@ button:disabled {
     cursor: pointer;
 }
 
-.smallbutton:hover {
-    background-color: #ddd;
-}
-
 .smallbutton.order {
     color: #0e63e3;
     border-color: #0e63e3;    
+}
+
+.smallbutton.order:hover {
+    background-color: var(--element-forecolor);
 }
 
 .smallbutton.buy {
@@ -262,9 +262,17 @@ button:disabled {
     border-color: #00897b;
 }
 
+.smallbutton.buy:hover {
+    background-color: var(--element-forecolor);
+}
+
 .smallbutton.sell{
     color:var(--color-red);
     border-color: var(--color-red);
+}
+
+.smallbutton.sell:hover {
+    background-color: var(--element-forecolor);
 }
 
 .icon {
@@ -344,7 +352,7 @@ select:hover {
 }
 
 .orderwindow.multi {
-    background-color: var(--body-hover);
+    background-color: rgb(91, 90, 90);
 }
 
 .close-btn {
@@ -370,15 +378,15 @@ select:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: opacity 1.0s ease-in-out, transform 1.0s ease-in-out;
     transform: translateY(-20px); /* Optional: add a slight slide-in effect */
-    background-color: gray;
+    background-color: rgb(91, 90, 90);
 }
 
 .orderlist-td {
     padding: 2px;
     text-align: center;
     font-size: 13px;
-    background-color: dimgray;
     color: var(--element-forecolor);
+    background-color: rgb(91, 90, 90);
     vertical-align: middle;
 }
 
@@ -429,9 +437,9 @@ input:checked + .slider:before {
 
 .hover-row-content {
     position: absolute;
-    top: 0;
-    left: 60px;
-    width: 45%;
+    top: 0px;
+    left: 0px;
+    width: 100%;
     z-index: 200;
     height: 100%;
     display: none;
@@ -439,7 +447,7 @@ input:checked + .slider:before {
     justify-content:center;
     backdrop-filter: blur(0.5px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: var(--body-background);
+    background-color: var(--hover-seethrough);
 }
 
 .hover-row:hover .hover-row-content { 
@@ -457,16 +465,17 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     left: 0;
-    width:90%;
+    width:100%;
     z-index: 200;
     height: 100%;
     display: none;
+    gap: 10px;
     align-items: end;
     justify-content:end;
     vertical-align: middle;
     backdrop-filter: blur(0.3px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: rgba(241, 235, 235, 0.521);
+    background-color:var(--hover-seethrough);
 }
 
 .row_background {

@@ -16,8 +16,8 @@ const streamers = [
 
     ];  
 
-function connect(withsocket) {
-    return sutils.connect(wsmessage, withsocket);
+function connect() {
+    return sutils.connect(wsmessage);
 }
 
 function clientInit(appid, simStartTime, speed = '1x') {
@@ -232,7 +232,7 @@ function live_sub(list, action)
 
 function subscribe_vix(appid, mode, action)
 {
-    var instrument = {exchange: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
+    var instrument = {exchangeCode: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
 
     if(mode.startsWith('HISTORY')) {
         const request = {
@@ -248,10 +248,10 @@ function subscribe_vix(appid, mode, action)
     else     
         sutils.subscribe(instrument, action)
         .then((resp) => console.log(resp))
-        .catch((error) => console.log(resp));
+        .catch((error) => console.log(error));
 }
 
-function wsmessage(q)
+export function wsmessage(q)
 {
     futsocket.emit('live-quote', q);
 }

@@ -86,7 +86,7 @@ qBox.addEventListener('vix', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp;
+  fut_title = 'F: ' + q.ltp.toFixed(2);
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
   renderChart('futures', 'fEma', q);

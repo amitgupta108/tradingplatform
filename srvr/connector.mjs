@@ -1,33 +1,46 @@
 import { BreezeConnect } from 'breezeconnect';
+import {wsmessage} from './qserver.mjs';
 
-let breeze;
+const breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+
 let isConnected = false;
-let ws_callback;
+let isConnecting = false;
 
-function connect(callback, withsocket = false) {
-    ws_callback = callback;
-    if (!breeze || !isConnected)
-        return startSession(withsocket);
+function connect() {
+    if (!breeze || !isConnecting || !isConnected)
+        return startSession()
+            .then((response) => console.log('breeze start triggered'));
 }
 
-async function getLiveConnection(withsocket = false) {
-    if(!breeze || !isConnected)
-        await startSession(withsocket);
-
-    return breeze;
-}
-
-function startSession(withsocket)
+async function getLiveConnection()
 {
-    breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
-    return breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
-    .then((resp) => {
-        if(withsocket) {
-            breeze.wsConnect();
-            breeze.onTicks = ws_callback;
+    const promises = [];
+    const p = new Promise(async (resolve, reject) => {
+        if(breeze && isConnected)
+            resolve(breeze);
+        else if(!isConnected && !isConnecting)
+        {
+            isConnecting = true;
+            let response = await startSession();
+            if(response && response.status === 'success')
+                resolve(breeze);
         }
-        isConnected = true;
-        console.log('breeze session started');
     });
+    promises.push(p);
+    return Promise.any(promises);
 }
-export default {connect, getLiveConnection};
+
+function startSession()
+{
+    return breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
+        .then((resp) => {
+            breeze.wsConnect();
+            breeze.onTicks = wsmessage;
+
+            isConnected = true;
+            isConnecting = false;
+            return {status: 'success'};
+        });
+}
+
+export default {connect, getLiveConnection}

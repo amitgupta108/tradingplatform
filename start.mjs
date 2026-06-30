@@ -12,13 +12,13 @@ const __dirname = path.dirname(__filename);
 import { Server } from "socket.io";
 import { hot } from 'hot-hook';
 
-process.on('uncaughtException', (err) => {
-    console.error('FATAL: Uncaught Exception ' +  err.stack);
+process.on('uncaughtException', (error) => {
+    console.error('FATAL: Uncaught Exception ' +  error.stack);
     //setTimeout(() => process.exit(1), 5000); 
 });
 
 process.on('unhandledRejection', (error) => {
-    console.error('Unhandled promise, reason ' + error);
+    console.error('Unhandled promise, reason ' + error.stack);
 });
 
 const args = process.argv;

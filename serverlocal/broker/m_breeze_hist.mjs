@@ -33,7 +33,6 @@ function subscribe(appid, instruments, action, mode)
 {
     if(action === 'subs')
         adapter.h_subscribe(appid, instruments, action);
-
 }
 
 function pause(appid, action) 
@@ -60,7 +59,7 @@ function init()
 {
     if(!initialized) {
         adapter.addQuoteListener('hist-quote', onQuotes);
-        const promise = adapter.connect(false);
+        const promise = adapter.connect();
         if(promise !== undefined)
             return promise.then(() => initialized = true);
     }

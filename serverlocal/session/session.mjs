@@ -1,5 +1,5 @@
 import utils from '../../common/utils.mjs';
-import {strike_size} from '../../common/constants.mjs';
+import {STRIKE_SIZE} from '../../common/constants.mjs';
 
 
 const us = new Map();

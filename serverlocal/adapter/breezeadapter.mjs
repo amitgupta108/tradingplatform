@@ -1,8 +1,8 @@
 import historyserver from '../../srvr/qserver.mjs';
 
-function connect(withsocket)
+function connect()
 {
-    return historyserver.connect(withsocket);
+    return historyserver.connect();
 }
 
 function init(appid, startTime, speed)
