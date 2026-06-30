@@ -8,16 +8,17 @@ var live_order_locked = true;
 function registerDataRequests(s, appid, mode)
 {
     const market_service = services.getService('view', mode);
+    const profile = services.getProfile(mode);
 
     s.on('vix', (msg) => {
-        market_service.subscribe_vix(appid, mode, msg.action);
+        market_service.subscribe_vix(appid, profile['view'], msg.action);
     });
 
     s.on('start', (msg) => {
         if(['skeletal', 'stopped'].includes(s.sn.status)){
             s.sn.ini(msg, (opSubs) => {
-                market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
-                //console.log('skip subscription list from session');
+                //market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
+                console.log('skip subscription list from session');
             });
             if(mode.startsWith('HISTORY'))
                 market_service.clientConfigure(appid, msg.simStartTime, '1x');
@@ -29,9 +30,10 @@ function registerDataRequests(s, appid, mode)
     s.on('history', catchAsync(async (msg) => {
         console.log("history request " + new Date(msg.startTime));
         var response = await market_service.history(msg);
-        if(response.Success !== undefined)
+        if(response?.Success !== undefined) {
             s.emit('history', msg.key, response.Success);
-            
+            return 'for catchAsync - success';
+        }
     }, s, 'history'));
 
     s.on('speed', (msg) => {
@@ -72,7 +74,7 @@ function registerTradeRequests(s, appid, mode)
         console.log('order received at apiserver');
         if(profile['trade'] === 'SIMULATED' || !live_order_locked) 
             return trading_service.neworders(appid, profile['view'], orders);
-    }, s));
+    }, s), 'order');
 
     s.on('cancelorder', (msg) => {
         if (profile['trade'] === 'SIMULATED' || !live_order_locked)
@@ -146,18 +148,23 @@ function unlockLiveOrders(action, key)
 
 const catchAsync = (handler, socket, eventName) => {
     return (...args) => {
-        handler(...args)
-        .then((response) => {
-            toConsole(eventName + ' ' + response);
-        })
-        .catch ((err) => {
-            console.error(err);
-        });
+        const rv = handler(...args);
+        if(rv instanceof Promise) {
+            rv.then((response) => {
+                toConsole(eventName + ' ' + response?.status);
+            })
+            .catch ((err) => {
+                console.error(err);
+            });
+        }
+        else {
+            toConsole(eventName + ' ' + rv);
+        }
     };
 };
 
 function toConsole(status){
-    console.log(result);
+    console.log(status);
 }
 
 export default {

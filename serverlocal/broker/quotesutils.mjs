@@ -1,19 +1,74 @@
+import utils from '../../common/utils.mjs';
+import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
+
+const live_atm = {
+    NIFTY: 0,
+    CRUDEOIL: 0,
+    BANKNIFTY: 0
+};
 const regex = /[0-9]/;
 const symbol_cache = new Map();
+const subs_cache = new Map();
 
-function addtocache(symbol, idx) {
-    if (symbol_cache.has(symbol))
-        return symbol_cache.get(symbol);
+function atmRefresh(uq, expiryN) 
+{
+    const sz = STRIKE_SIZE[uq.stockCode];
+    const atm = live_atm[uq.stockCode];
+    let requests = []
+ 
+    if (Math.abs(atm - uq.ltp) > sz) {
+        const oExpiry = OPT_EXPIRIES[uq.stockCode][expiryN];
 
-    const expiry = symbol.slice(idx, idx + 7);
-    const cached = { expiry: expiry };
-
-    if (!symbol.endsWith('FUT')) {
-        cached.strike = symbol.slice(idx + 7, -2);
-        cached.right = symbol.slice(-2);
+        const strikes = utils._strikes(uq.ltp, oExpiry.startIdx, oExpiry.endIdx, sz);
+        requests = strikes.map((s) => {
+            var symbol = uq.stockCode + oExpiry.date + s.strike + s.right;
+            return { exchange: uq.exchange, symbol: symbol };
+        });
+        subs_cache.set(uq.stockCode + oExpiry.date, requests);        
+        live_atm[uq.stockCode] = Math.round(uq.ltp / sz) * sz;
     }
-    symbol_cache.set(symbol, cached);
-    return cached;
+    return requests;
+}
+
+function addToCache(requests) 
+{
+    requests.forEach((request) => {
+        if (request.exchange === 'NSE')
+            request.exchange = 'NSE_INDEX';
+
+        const key = request.stockCode + request.key;
+        if (subs_cache.get(key) === undefined)
+            subs_cache.set(key, [request]);
+    });
+}
+
+function getCachedLists(){
+    return subs_cache.entries();
+}
+
+function expandSymbol(symbol)
+{
+    let t = symbol_cache.get(symbol);
+    if(t !== undefined)
+        return t;
+
+    t = {} //template
+    const idx = symbol.search(regex);
+    const st_code = idx === -1 ? symbol : symbol.slice(0, idx);
+    t.stockCode = st_code;
+    t.symbol = symbol;
+    t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
+    
+    if(idx !== -1){
+        t.expiry_date = symbol.slice(idx, idx + 7);
+        if (!symbol.endsWith('FUT')) {
+            t.strike_price = symbol.slice(idx + 7, -2);
+            t.right = symbol.slice(-2);
+        }
+    }
+
+    symbol_cache.set(symbol, t);
+    return t;
 }
 
 function standardizeiq(qt) {
@@ -52,29 +107,22 @@ function standardizeiq(qt) {
     return q;
 }
 
-function standardizeoq(q) {
-    q.ltp = Number(q.ltp);
-    q.ltt = Number(q.ltt);
-    q.close = (q.ltp);
-    q.open = q.ltp;
-
-    const idx = q.symbol.search(regex);
-    const st_code = idx === -1 ? q.symbol : q.symbol.slice(0, idx);
-    q.stockCode = st_code;
-    q.key = q.symbol.endsWith('FUT') ? 'futures' : q.symbol.endsWith('PE') || q.symbol.endsWith('CE') ? 'strikex' : 'index';
-
-    if (idx === -1)
-        return q;
-
-    const cached = addtocache(q.symbol, idx);
-    q.expiry_date = cached.expiry;
-    q.right = cached.right;
-    q.strike_price = cached.strike;
-
+function standardizeoq(quote) {
+    
+    const q = expandSymbol(quote.symbol); 
+    q.ltp = quote.ltp;
+    q.ltt = quote.ltt;
+    q.close = quote.ltp;
+    q.exchange = quote.exchange;
+    
     return q;
 }
 
+
 export default {
     standardizeiq,
-    standardizeoq
+    standardizeoq,
+    atmRefresh,
+    addToCache,
+    getCachedLists
   };

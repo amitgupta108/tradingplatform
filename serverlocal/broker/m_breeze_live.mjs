@@ -2,6 +2,9 @@ import qutils from './quotesutils.mjs';
 import adapter from '../adapter/breezeadapter.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
 import qServer from '../stream.mjs';
+import path from 'path';
+
+const name = path.parse(import.meta.filename).name;
 
 let initialized = false;
 const mode_live_icici = 'LIVE_2';
@@ -35,29 +38,31 @@ function onQuotes(q, mode, appid)
     }
 }
 
-function preQ(key, p) {
-    if(p.exchange === 'MCX')
-        return null;
-
-    p.exchange = key === 'index' || key === 'vix' ? 'NSE' : 'NFO';
-    p.stockCode = key === 'vix' ? 'INDVIX' : p.stockCode;
-    p.expiry = p.fExpiry;
-
+function history(key, p) {
     return adapter.getHistory(p);
+}
+
+function exit(appid)
+{
+    return adapter.exit(appid);
 }
 
 function init()
 {
     if(!initialized) {
         const status = adapter.addQuoteListener('live-quote', onQuotes);
-        adapter.connect(true);        
-        initialized = true;
+        
+        const promise = adapter.connect();
+        if(promise !== undefined)
+            return promise.then(() => initialized = true);
     }
 }
 
 export default {
+    name,
     init,
     subscribe,
     subscribe_vix,
-    preQ
+    history,
+    exit
   };

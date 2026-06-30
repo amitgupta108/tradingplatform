@@ -1,7 +1,8 @@
 import connector from './connector.mjs';
+let breeze;
 
-function connect(callback, withsocket) {
-    return connector.connect(callback, withsocket);
+function connect() {
+    return connector.connect();
 }
 
 async function getHistoricalData(st, instrument, sTime) 
@@ -63,9 +64,10 @@ async function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.fromDate = ISODate(sTime);
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
-    const breeze = await connector.getLiveConnection();
-    if(breeze)
-        return breeze.getHistoricalDatav2(b);
+    if (!breeze)
+        breeze = await connector.getLiveConnection();
+        
+    return breeze.getHistoricalDatav2(b);
 }
 
 function ISODate(datetime) {
@@ -101,13 +103,11 @@ function breeze_input(scrip)
     return b;
 }
 
-function subscribe(request, action)
-{
-    const breeze = connector.getLiveConnection();
+async function subscribe(request, action)
+{ 
     if (!breeze)
-        return 'breeze connection not available';
+        breeze = await connector.getLiveConnection();
     
-    const symbol = request.symbol ?? request.strikePrice;
     if(action === 'subs')
         return breeze.subscribeFeeds(request);
     else

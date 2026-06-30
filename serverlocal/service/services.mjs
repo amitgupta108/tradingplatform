@@ -8,7 +8,7 @@ import paper_trading from './ordersimulator.mjs';
 const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATED', admin: 'SIM_ADMIN' },
     LIVELIVE: { view: 'LIVE', trade: 'LIVE' },
-    LIVESIM: { view: 'LIVE', trade: 'SIMULATED' },
+    S1TSADMINS: { view: 'LIVE', trade: 'SIMULATED', admin: 'LIVE_STREAMING' },
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
@@ -50,9 +50,12 @@ function initialize(mode) {
     [...new Set(list)].forEach((e) => {
         const p = doInit(e);
 
-        if(p !== undefined && p instanceof Promise)
-            p.then((response) => console.log('init message ' + e.name + ' ' + response))
-                .catch((error) => console.error('init async error ' + e.name + ' ' + error));
+        if(p !== undefined) 
+            if(p instanceof Promise)
+                p.then((response) => console.log('init message ' + e.name + ' ' + response?.status))
+                    .catch((error) => console.error('init async error ' + e.name + ' ' + error?.reason));
+            else
+                console.log(e.name + ' ' + p?.status);
     });
 }
 
@@ -63,6 +66,10 @@ function doInit(service)
     } catch (exception) {
         console.error('init sync error ' + service.name + ' ' + exception);
     }
+}
+
+function getProviderProfile(name){
+
 }
 
 function getService(type, mode) {

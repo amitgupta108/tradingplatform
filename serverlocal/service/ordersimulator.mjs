@@ -4,7 +4,6 @@ import path from 'path';
 
 const name = path.parse(import.meta.filename).name;
 
-
 const sim_order_map = new Map();
 var counter = 50000;
 let initialized = false;
@@ -15,7 +14,8 @@ function init()
         initialized = true;
         qServer.addEventLsitener('strikex', ((q) => {
             orderExecutionSim(q);
-        }) );
+        }));
+        return {status:'success'}
     }
 }
 
@@ -87,7 +87,7 @@ function cancelOrder(appid, sim_order)
 function orderbook(appid, stockCode)
 {
     return Array.from(sim_order_map.values()).filter((order) => {
-        return order.appid === appid
+        return order.appid === appid;
     });
 }
 
