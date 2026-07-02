@@ -18,10 +18,20 @@ const modes = {
     ADMINALL: { admin: ['LIVE_STREAMING', 'LIVE_TRADING'] }
 };
 
+const services = {
+    OPENALGOVIEW: live_openalgo,
+    OPENALGOTRADE: live_openalgo,
+    KOTAKNEOTRADE: live_kotak,
+    ICICIHISTORY: history_breeze,
+    ICICILIVEVIEW: live_breeze,
+    SOCKETTRADE: trading_socket,
+    TPSIMTRADE: paper_trading
+};
+
 const providers = {
-    view: { HISTORY: history_breeze, LIVE: live_openalgo, LIVE_2: live_breeze },
-    trade: { LIVE: live_kotak, LIVE_2: live_openalgo, SIMULATED: paper_trading },
-    admin: { LIVE_TRADING: trading_socket, LIVE_STREAMING: live_openalgo, SIM_ADMIN: history_breeze }
+    view: { HISTORY: 'ICICIHISTORY', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW' },
+    trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
+    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING: 'OPENALGOVIEW', SIM_ADMIN: 'ICICIHISTORY' }
 };
 
 const access = {
@@ -37,14 +47,14 @@ function initialize(mode) {
 
     const list = new Array();
     if (profile['view'] !== undefined)
-        list.push(providers['view'][profile['view']]);
+        list.push(services[providers['view'][profile['view']]]);
     if (profile['trade'] !== undefined)
-        list.push(providers['trade'][profile['trade']])
+        list.push(services[providers['trade'][profile['trade']]]);
     if (profile['admin'] !== undefined)
-        list.push(providers['admin'][profile['admin']])
+        list.push(services[providers['admin'][profile['admin']]]);
     if (profile['admin'] !== undefined && Array.isArray(profile['admin']))
         profile['admin'].forEach((item) => {
-            list.push(providers['admin'][profile[item]]);
+            list.push(services[providers['admin'][profile[item]]]);
         });
 
     [...new Set(list)].forEach((e) => {
@@ -68,13 +78,18 @@ function doInit(service)
     }
 }
 
-function getProviderProfile(name){
-
+function getProviderModeKey(name, mode){
+    
+    return Object.entries(providers[mode]).find(([k, v]) => {
+        return v === name;
+    });
 }
 
-function getService(type, mode) {
-    const services = modes[mode];
-    return providers[type][services[type]];
+function getService(type, modename) {
+    const modeobject = modes[modename];
+    const providerid = modeobject[type];
+    const providername = providers[type][providerid];
+    return services[providername];
 }
 
 function getProfile(mode) {
@@ -95,4 +110,4 @@ function checkAccess(eventName, mode) {
     return false;
 }
 
-export default { initialize, getService, getProfile, checkAccess };
+export default { initialize, getService, getProfile, checkAccess, getProviderModeKey };

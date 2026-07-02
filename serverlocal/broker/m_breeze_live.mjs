@@ -9,10 +9,7 @@ const name = path.parse(import.meta.filename).name;
 let initialized = false;
 const mode_live_icici = 'LIVE_2';
 
-function subscribe_vix(appid, mode, action)
-{
-    return adapter.subscribe_vix(appid, mode, action);
-}
+
 
 function start(appid, instruments, mode)
 {
@@ -31,15 +28,6 @@ function onQuotes(q, mode, appid)
 {
     var q = qutils.standardizeiq(q);
     qServer.emitQs(q.stockCode + mode_live_icici, q);
-
-    if(q.key === 'vix' && mode === 'live') {
-        qServer.broadcast('vix', q, 'all_nse_live');
-        return;
-    }
-}
-
-function history(key, p) {
-    return adapter.getHistory(p);
 }
 
 function exit(appid)
@@ -62,7 +50,5 @@ export default {
     name,
     init,
     subscribe,
-    subscribe_vix,
-    history,
     exit
   };

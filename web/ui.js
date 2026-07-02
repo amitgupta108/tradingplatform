@@ -98,16 +98,12 @@ function switchCharts(idx)
   const panes = left.querySelectorAll('div[id^="leftContainer_"]');
   for(var i = 0; i < 3; i++)
   {
-    const selected = i === idx ? true : false;
-    if(selected) {
-      tabs[i].classList.add('active-tab');
-      panes[i].style.display = 'block';
-    }
-    else {
-      tabs[i].classList.remove('active-tab');
-      panes[i].style.display = 'none';
-    }
+    tabs[i].classList.remove('active-tab');
+    panes[i].style.display = 'none';
   }
+  
+  tabs[idx].classList.add('active-tab');
+  panes[idx].style.display = 'block';
 }
 
 function tRow(template, withListener = true){

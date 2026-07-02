@@ -1,4 +1,4 @@
-var socket;
+let socket;
 
 function connect()
 {
@@ -47,17 +47,12 @@ function rh(socket)
       bottom_btns[0].disabled = false;
       console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
     });
-
+    
     socket.on('history', (key, quotes) => {
       const withEma = ['futures', 'index'].includes(key) ? true : false;
       setInitialChart(key, withEma , quotes);
     });
-
-    socket.on('qdeltastrikes', (uQuotes, peQuotes, ceQuotes) => {
-      setUpInitialNiftyChart(uQuotes);
-      setUpInitialOptionsChart(peQuotes, ceQuotes, instrument.oExpiry); 
-    });
-
+  
     socket.on('index', (q) => {
       qBox.dispatchEvent(generateEvent('index', q));
     });

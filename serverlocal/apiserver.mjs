@@ -1,3 +1,4 @@
+import util_service from './broker/m_common.mjs';
 import scrip_store from './service/scripstore.mjs';
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
@@ -8,10 +9,9 @@ var live_order_locked = true;
 function registerDataRequests(s, appid, mode)
 {
     const market_service = services.getService('view', mode);
-    const profile = services.getProfile(mode);
 
     s.on('vix', (msg) => {
-        market_service.subscribe_vix(appid, profile['view'], msg.action);
+        util_service.subscribe_vix(appid, mode, msg.action);
     });
 
     s.on('start', (msg) => {
@@ -29,10 +29,11 @@ function registerDataRequests(s, appid, mode)
 
     s.on('history', catchAsync(async (msg) => {
         console.log("history request " + new Date(msg.startTime));
-        var response = await market_service.history(msg);
-        if(response?.Success !== undefined) {
-            s.emit('history', msg.key, response.Success);
-            return 'for catchAsync - success';
+        var response = await util_service.history(msg);
+        if(response?.Error === null) {
+            var event = msg.key === 'strikex' ? 'opt_history' : 'history';
+            s.emit(event, msg.key, response.Success);
+            return {status: 'success'};
         }
     }, s, 'history'));
 

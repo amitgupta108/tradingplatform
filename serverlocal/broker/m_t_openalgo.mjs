@@ -6,21 +6,29 @@ import adapter from '../adapter/breezeadapter.mjs';
 import utils from '../../common/utils.mjs';
 import qutils from './quotesutils.mjs';
 import path from 'path';
+import services from '../service/services.mjs';
 
 const name = path.parse(import.meta.filename).name;
+const logical_view_name = 'OPENALGOVIEW';
+const logical_trade_name = 'OPENALGOTRADE'
+
 let initialized = false;
-const client = new OpenAlgo(process.env.openalgo_key);
+let subs_lost = true;
+let client;
 let counter = 0;
-const openalgo_mode_live = 'LIVE';
+let view_mode;
 
 function onQuotes(q)
 { 
     const qt = qutils.standardizeoq(q);
-    streamer.emitQs(qt.stockCode + openalgo_mode_live, qt);
+    streamer.emitQs(qt.stockCode + view_mode, qt);
     if(qt.key === 'futures' && (counter === 0 || counter++ === 6)) {
         counter = 1;
         const requests = qutils.atmRefresh(qt, 'FIRST');
-        subscribe(qt.stockCode + openalgo_mode_live, requests, 'subs');
+        if(requests.refreshed === true || subs_lost === true) {
+            subscribe(qt.stockCode + view_mode, requests.list, 'subs');
+            subs_lost = false;
+        }
     }
 }
 
@@ -112,23 +120,19 @@ function cancelorder(order)
     });
 }
 
-function subscribe_vix(appid, mode, action) {
-    return adapter.subscribe_vix(appid, mode, action);
-}
-
-function history(p) {
-    return adapter.getHistory(p);
-}
-
 function init()
 {
     if(!initialized)
     {
+        view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
+        if(!client)
+            client = new OpenAlgo(process.env.openalgo_key);
         return client.connect()
         .then(() => {
             initialized = true;
             client._wsClient.ws.addEventListener('close', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+                subs_lost = true;
                 autoSubscribe();
             });
             return {status: 'success'}
@@ -137,4 +141,4 @@ function init()
     }
 }
 
-export default {subscribe, exit, init, start, neworders, orderbook, cancelorder, subscribe_vix, history, name};
+export default {subscribe, exit, init, start, neworders, orderbook, cancelorder, name};

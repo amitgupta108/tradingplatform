@@ -28,24 +28,23 @@
                 </div>
             </div>
         <!------------------------------------------------------------------------------------------------------------------------------>        
-            <div id="leftContainer_1">
-                <div>
-                    <div id="futures_chart" style="width: 100%; height: 470px; position: relative;"></div>
+            <div style="display: grid; height: 95.4%;row-gap: 5px;align-content: space-around;">
+                <div id="leftContainer_1" >
+                    <div>
+                        <div id="futures_chart" style="width: 100%; height: 470px; position: relative;"></div>
+                    </div>
+                    <div>
+                        <div id="index_chart" style="width: 100%; height: 310px; position: relative;"></div>
+                    </div>
                 </div>
-                <div>
-                    <div id="index_chart" style="width: 100%; height: 315px; position: relative;"></div>
+                <div id="leftContainer_2" style="display: none;">
+                    <div>
+                        <div id="strikes_chart" style="width: 100%; height: 785px; position: relative;"></div>
+                    </div>
                 </div>
-            </div>
-            <div id="leftContainer_2" style="display: none;">
-                <div>
-                    <div id="strikes_chart" style="width: 100%; height: 470px; position: relative;"></div>
-                </div>
-                <div>
-                    <div id="strategy_chart" style="width: 100%; height: 315px; position: relative;"></div>
-                </div>
-            </div>
-            <div id="leftContainer_3">
-                <div>
+                <div id="leftContainer_3" style="display: none;">
+                    <div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,7 +86,7 @@
                     <table id="oc_put_table">
                     </table>
                 </div>
-                <button id="options-chart-btn" style="padding: 3px;width: 60px;">
+                <button id="options-chart-btn" style="padding: 3px;width: 60px;" onclick="showChart()">
                     Chart
                 </button>
             </div>
