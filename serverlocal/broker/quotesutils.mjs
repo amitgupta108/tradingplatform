@@ -1,5 +1,7 @@
 import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
+import adapter from '../adapter/breezeadapter.mjs';
+import streamer from '../stream.mjs';
 
 const live_atm = {
     NIFTY: 0,
@@ -14,10 +16,10 @@ function atmRefresh(uq, expiryN)
 {
     const sz = STRIKE_SIZE[uq.stockCode];
     const atm = live_atm[uq.stockCode];
-    let requests = []
+    const oExpiry = OPT_EXPIRIES[uq.stockCode][expiryN];
+    let requests = subs_cache.get(uq.stockCode + oExpiry.date);
  
     if (Math.abs(atm - uq.ltp) > sz) {
-        const oExpiry = OPT_EXPIRIES[uq.stockCode][expiryN];
 
         const strikes = utils._strikes(uq.ltp, oExpiry.startIdx, oExpiry.endIdx, sz);
         requests = strikes.map((s) => {
@@ -26,8 +28,10 @@ function atmRefresh(uq, expiryN)
         });
         subs_cache.set(uq.stockCode + oExpiry.date, requests);        
         live_atm[uq.stockCode] = Math.round(uq.ltp / sz) * sz;
+
+        return {refreshed: true, list: requests};
     }
-    return requests;
+    return { refreshed: false, list: requests };
 }
 
 function addToCache(requests) 
@@ -73,9 +77,6 @@ function expandSymbol(symbol)
 
 function standardizeiq(qt) {
     const tStart = process.hrtime.bigint();
-    if (typeof qt.ltt === 'string')
-        return { key: 'vix', stockCode: qt.stock_code, exchange: qt.exchange_code, ltp: qt.last, ltt: qt.ltt = Date.parse(qt.ltt) };
-
 
     const { exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume, datetime, high, low, ...rest } = qt;
     const q = { exchange, stockCode, ...rest };

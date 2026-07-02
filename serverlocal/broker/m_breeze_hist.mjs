@@ -51,17 +51,17 @@ function onQuotes(q, appid)
     qServer.emitQs(appid, q);
 }
 
-function history(p) {
-    return adapter.getHistory(p);
-}
-
 function init()
 {
     if(!initialized) {
         adapter.addQuoteListener('hist-quote', onQuotes);
         const promise = adapter.connect();
-        if(promise !== undefined)
-            return promise.then(() => initialized = true);
+        if(promise !== undefined){
+            return promise.then(() => {
+                initialized = true;
+                return {status:'success'};
+            });
+        }
     }
 }
 
@@ -75,5 +75,4 @@ export default {
     subscribe_vix,
     clientConfigure,
     start,
-    history
   };

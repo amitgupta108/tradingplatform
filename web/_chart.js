@@ -62,87 +62,6 @@ function renderChart(main, ema, q)
     emaSeries.update(curCandle);
 }
 
-class Chart {
-  constructor(container, options) 
-  {
-    if (this.chart === undefined) {
-      this.chart = LightweightCharts.createChart(container, options);
-      
-      this.series = new Array(3);
-      this.series[0] = this.chart.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right', title: 'CE' });
-      this.series[1] = this.chart.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right', title: 'PE'});
-      this.series[2] = this.chart.addSeries(LightweightCharts.CandlestickSeries, {});
-      
-      this.chart.timeScale().fitContent();
-      this.chart.timeScale().scrollToPosition(15);
-      this.chart.priceScale('right').applyOptions({
-        visible: true,
-        autoScale: true,
-        mode: 0,
-      });
-    }
-
-    this.symbols = Array(2);
-    this.lastdp = [];
-    this.strategy = (p1, p2) => p1 + p2;
-  }
-
-  addReplaceStrike(symbols) 
-  {
-    if(symbols?.length === 0)
-      return
-    
-    this.checkListener();
-    for(const s of symbols)
-    {
-      this.renderHistory(s);
-    }
-  }
-
-  checkListener(){
-    if(socket.listeners('opt_history').length === 0){
-      socket.on('opt_history', (key, qA) => {
-        const qs = initialSeriesData(qA);
-        if (qs && qs.length > 0) {
-          const idx = qs[0].right === 'Call' ? 0 : 1;
-          this.series[idx].setData(qs);
-        }
-      });
-    }
-  }
-  
-  renderHistory(symbol) {
-
-    if (symbol !== undefined && symbol.endsWith('CE'))
-      this.symbols[0] = symbol;
-    else if (symbol !== undefined && symbol.endsWith('PE'))
-      this.symbols[1] = symbol;
-
-    const scrip = expandSymbol(symbol);
-
-    const p = historyParams('oExpiry');
-    p.strike = scrip.strike_price;
-    p.right = scrip.right;
-    p.key = 'strikex';
-
-    socket.emit('history', p);
-  }
-
-  updateChart(seriesnames, qs) {
-
-  }
-
-  addseries(seriesnames) {
-
-  }
-}
-
-const charts = {
-  futures: { container: 'futures_chart' },
-  index: { container: 'index_chart' },
-  strikes: { container: 'strikes_chart' }
-};
-
 const chartOptions = {
   autoSize: true,
   layout: {
@@ -153,13 +72,11 @@ const chartOptions = {
   grid: {
     vertLines: {
       color: '#f4f4f43f',
-      style: 2,
-      visible: true
+      lineStyle: 2
     },
     horzLines: {
       color: '#f4f4f43f',
-      style: 2,
-      visible: true
+      lineStyle: 2
     },
   },
   crosshair: {
@@ -181,11 +98,17 @@ const chartOptions = {
   },
 };
 
-const chart1 = LightweightCharts.createChart(charts['futures'].container, chartOptions);
-const chart2 = LightweightCharts.createChart(charts['index'].container, chartOptions);
-const options_chart = new Chart(charts['strikes'].container, chartOptions);
-//const chart_strikes = LightweightCharts.createChart(container.strikes, chartOptions);
-//const chart_strategy = LightweightCharts.createChart(container.strategy, chartOptions);
+const container = {
+  futures: 'futures_chart',
+  index: 'index_chart',
+  strikes: 'strikes_chart',
+  strategy: 'strategy_chart',
+};
+
+const chart1 = LightweightCharts.createChart(container.futures, chartOptions);
+const chart2 = LightweightCharts.createChart(container.index, chartOptions);
+const chart_strikes = LightweightCharts.createChart(container.strikes, chartOptions);
+const chart_strategy = LightweightCharts.createChart(container.strategy, chartOptions);
 
 chart1.priceScale('left').applyOptions({
   visible: true,
@@ -220,7 +143,88 @@ series.iEma = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF',
 chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);
 
-function showChart(){
-  switchCharts(1);
-  options_chart.addReplaceStrike(['NIFTY30JUN2624500CE', 'NIFTY30JUN2624000PE']);
+series.strike_1 = chart_strikes.addSeries(LightweightCharts.CandlestickSeries, {});
+series.strike_2 = chart_strikes.addSeries(LightweightCharts.CandlestickSeries, {});
+chart_strikes.timeScale().fitContent();
+chart_strikes.timeScale().scrollToPosition(15);
+
+series.strategy_1 = chart_strategy.addSeries(LightweightCharts.CandlestickSeries, {});
+chart_strategy.timeScale().fitContent();
+chart_strategy.timeScale().scrollToPosition(15);
+
+/*
+function updateIndexChart(uQuote)
+{
+  var uQuoteTime = sTVtime(new Date(uQuote.datetime).setSeconds(0));
+  indexSeries.update({"time": uQuoteTime, "value": uQuote.close});
 }
+
+function setChartQuotes(optionChainQuotes)
+{
+  var cTime = serverTime;
+  cTime = sTVtime(new Date(cTime)).setSeconds(0);
+
+  for(var i = 0; i < optionsChartConfig.length; i++)
+  {
+    for(var j = 0; j < optionsChartConfig[i].attributeSet.length; j++)
+    {
+      var strikeRep = optionsChartConfig[i].attributeSet[j];
+      var index = findItemIndex(strikeRep, optionChainQuotes);
+      optionsChartConfig[i].tick.time = cTime;
+      if(index != -1)
+        optionsChartConfig[i].tick.prices[j] = optionChainQuotes[index].close;  
+    }
+  }
+}
+
+function updateOptionsChart()
+{
+  for(var i = 0; i < optionsChartConfig.length; i++)
+  {
+    var cPrice = 0; var cTime = 0;
+    for(var j = 0; j < optionsChartConfig[i].attributeSet.length; j++)
+    {
+      cPrice += optionsChartConfig[i].tick.prices[j];
+    }
+    cTime = optionsChartConfig[i].tick.time;
+    if( cPrice != 0 && cTime != 0)
+      optionsChartConfig[i].lineRef.update({"time": cTime, "value": cPrice});
+  }
+}
+
+function setUpInitialNiftyChart(uq)
+{
+  for(var i = 0; i < uq.length; i++)
+  { 
+    uq[i].time = sTVtime(uq[i].datetime);
+    uq[i].value = uq[i].close;
+  }
+  indexSeries.setData(uq);
+
+  chart2.timeScale().fitContent();
+  chart2.timeScale().scrollToPosition(5);
+}
+
+function setUpInitialOptionsChart(peQuotes, ceQuotes, oExpiry)
+{
+  setQDeltaStrikesCharts(ceQuotes[0].strike_price, peQuotes[0].strike_price, oExpiry);
+  peSeries.applyOptions({title: peQuotes[0].strike_price + " " + peQuotes[0].right});
+  ceSeries.applyOptions({title: ceQuotes[0].strike_price + " " + ceQuotes[0].right});
+
+  const stPoints = new Array(peQuotes.length);
+  for(var i = 0; i < peQuotes.length; i++)
+  {
+    peQuotes[i].time = sTVtime(peQuotes[i].datetime);
+    peQuotes[i].value = peQuotes[i].close;
+
+    ceQuotes[i].time = sTVtime(ceQuotes[i].datetime);
+    ceQuotes[i].value = ceQuotes[i].close;
+    
+    stPoints[i] = {time: peQuotes[i].time,
+        value: ceQuotes[i].value + peQuotes[i].value,};
+  }
+  peSeries.setData(peQuotes);
+  ceSeries.setData(ceQuotes);
+  stratSeries.setData(stPoints);
+}
+  */

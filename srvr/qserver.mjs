@@ -17,7 +17,7 @@ const streamers = [
     ];  
 
 function connect() {
-    return sutils.connect(wsmessage);
+    return sutils.connect(emit);
 }
 
 function clientInit(appid, simStartTime, speed = '1x') {
@@ -159,7 +159,7 @@ function q(appid, instrument, time)
         }
 
         if (idx >= 0)
-            futsocket.emit('hist-quote', st.quotes[idx], appid);
+            emit('hist', st.quotes[idx], appid);
     }
     
     if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')
@@ -217,6 +217,9 @@ function getHistory(p)
 function addListener(eventName, callback)
 {
     futsocket.addListener(eventName, callback);
+    
+    const list = futsocket.listeners(eventName);
+    console.log('listener count on qserver ' + eventName + ' ' + list.length);
 }
 
 function live_sub(list, action)
@@ -251,9 +254,14 @@ function subscribe_vix(appid, mode, action)
         .catch((error) => console.log(error));
 }
 
-export function wsmessage(q)
+export function emit(q, eventName, appid)
 {
-    futsocket.emit('live-quote', q);
+    const mode = eventName ?? 'live';
+
+    if(q.stock_code === 'INDVIX')
+        futsocket.emit(mode + '-vix', q, appid);    
+    else 
+        futsocket.emit(mode + '-quote', q, appid);
 }
 
 export default {

@@ -1,46 +1,43 @@
 import { BreezeConnect } from 'breezeconnect';
-import {wsmessage} from './qserver.mjs';
+import {emit} from './qserver.mjs';
 
-const breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
-
+const breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });;
+let anyPromises = [];
 let isConnected = false;
-let isConnecting = false;
+
 
 function connect() {
-    if (!breeze || !isConnecting || !isConnected)
-        return startSession()
-            .then((response) => console.log('breeze start triggered'));
+    if (!isConnected)
+        return startSession();
 }
 
-async function getLiveConnection()
+function getLiveConnection()
 {
-    const promises = [];
-    const p = new Promise(async (resolve, reject) => {
-        if(breeze && isConnected)
-            resolve(breeze);
-        else if(!isConnected && !isConnecting)
-        {
-            isConnecting = true;
-            let response = await startSession();
-            if(response && response.status === 'success')
-                resolve(breeze);
-        }
-    });
-    promises.push(p);
-    return Promise.any(promises);
+    if (isConnected)
+        return breeze;
+    else
+        return startSession();
+        
 }
 
 function startSession()
-{
-    return breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
+{        
+    const p = new Promise((resolve,  reject) => {
+        breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
         .then((resp) => {
             breeze.wsConnect();
-            breeze.onTicks = wsmessage;
+            breeze.onTicks = emit;
 
             isConnected = true;
-            isConnecting = false;
-            return {status: 'success'};
+            resolve(breeze);
+            anyPromises = [];
+        }).catch((error) => {
+            console.error('breeze start session ' + error);
+            reject(error);
         });
+    });
+    anyPromises.push(p);
+    return Promise.any(anyPromises);
 }
 
 export default {connect, getLiveConnection}

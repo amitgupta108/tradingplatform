@@ -31,7 +31,7 @@ function getHistory(p) {
 
     p.exchange = p.key === 'index' || p.key === 'vix' ? 'NSE' : 'NFO';
     p.stockCode = p.key === 'vix' ? 'INDVIX' : p.stockCode;
-    p.expiry = p.fExpiry;
+    p.expiry = p.fExpiry || p.oExpiry;
     
     return historyserver.getHistory(p);
 }
