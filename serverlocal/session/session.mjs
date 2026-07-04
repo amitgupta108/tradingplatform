@@ -55,7 +55,7 @@ class Session
             
         }
         */
-       const gap = strike_size[this.stockCode]; 
+       const gap = STRIKE_SIZE[this.stockCode]; 
         if(ost.atm === undefined || ost.atm === 0)
             ost.atm = Math.round(uq.ltp/gap) * gap;
         else
@@ -171,7 +171,7 @@ class Session
         var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnxt'], toStream: [true] });
         for (var j = 0; j < ost.length; j++)
         {
-            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > strike_size[this.stockCode])
+            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > STRIKE_SIZE[this.stockCode])
                 this.#oq(uq, ost[j]);
         }
         this.status = 'streaming';

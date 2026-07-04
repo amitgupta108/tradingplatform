@@ -5,6 +5,7 @@ import connector from './kotak/connector.os.mjs';
 import path from 'path';
 
 const name = path.parse(import.meta.filename).name;
+const logical_trade_name = 'KOTAKNEOTRADE';
 var authenticated = false;
 var wsping;
 var ws_hsi;
@@ -71,8 +72,11 @@ async function hsiconnect()
     ws_hsi.onmessage = (event) => {
         const message = JSON.parse(event.data);
 
-        if(message.type === 'order')
+        if(message.type === 'order'){
+            const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
+            
             ordermanager.notifyme(message);
+        }
         else if(message.type === 'cn' && message.msg === 'connected'){
             kotak_service.notifyme(true);
             wshb('hsi', 'start');

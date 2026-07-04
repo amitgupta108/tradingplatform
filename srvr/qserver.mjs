@@ -159,7 +159,7 @@ function q(appid, instrument, time)
         }
 
         if (idx >= 0)
-            emit('hist', st.quotes[idx], appid);
+            emit(st.quotes[idx], 'hist', appid);
     }
     
     if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')

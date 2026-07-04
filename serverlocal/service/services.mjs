@@ -96,6 +96,10 @@ function getProfile(mode) {
     return modes[mode];
 }
 
+function getFeatureMode(mode, feature){
+    return modes[mode][feature];
+}
+
 function checkAccess(eventName, mode) {
     const usertype = getProfile(mode);
     if (Object.hasOwn(usertype, 'view') && access['view'].includes(eventName))
@@ -110,4 +114,4 @@ function checkAccess(eventName, mode) {
     return false;
 }
 
-export default { initialize, getService, getProfile, checkAccess, getProviderModeKey };
+export default { initialize, getService, getProfile, checkAccess, getProviderModeKey, getFeatureMode };
