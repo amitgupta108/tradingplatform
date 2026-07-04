@@ -1,4 +1,5 @@
 import Session from './session/session.mjs';
+import services from './service/services.mjs';
 
 import EventEmitter  from 'node:events';
 const subsService = new EventEmitter();
@@ -26,10 +27,9 @@ function emitQs(appid, q)
     if (q?.key === 'strikex')
         subsService.emit(q.key, q);
 
-    /*const sn = Session.sn(appid);
+    const sn = Session.sn(appid);
     if (sn !== undefined && q?.key === 'futures')
         sn.lastuq(q);
-    */
 }
 
 function send(appid, type, msg)
@@ -58,8 +58,8 @@ function getReceivers(appid, type, msg)
     if (type === 'order' && msg.receiver !== undefined) {
         const mode_type = type === 'order' ? 'trade_mode' : 'view_mode';
         socketmap.forEach((v, k) => {
-            if( v.stockCode === msg.receiver.stockCode
-                && v.mode.contains(msg.receiver[mode_type]))
+            if( v.stockCode === msg.receiver.stockCode &&
+                services.getFeatureMode(v.mode, 'trade') === msg.receiver[mode_type])
                 receivers.push(k);
         });
     }
@@ -83,12 +83,11 @@ function broadcast(type, msg, group)
 
 function emit(s, type, msg)
 {
-    try{
-        const key = type === 'quote' ? msg.key : type;
-        s.emit(key, msg);
-    } catch (error) {
-        console.error(error);
-    }
+    const key = type === 'quote' ? msg.key : type;
+    s.emit(key, msg);
+    /*if(key === 'strikex'){
+        s.emit(msg.symbol, msg);
+    }*/
 }
 
 export default {

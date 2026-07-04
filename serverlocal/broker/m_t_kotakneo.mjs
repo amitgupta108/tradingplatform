@@ -201,17 +201,6 @@ function subscribe(appid, sublist, action)
         socketclient.unsubscribe(type, subs_string);       
 }
 
-function onQuotes(q)
-{ 
-    console.log('hsm quotes ' + JSON.stringify(q));
-    /*const qt = standardizeoq(q);
-    qserver.emitQs(qt.stockCode + mode_live, qt);
-
-    if(qt.key === 'strikex')
-        Order_Service.orderExecutionSim(qt);
-    */
-}
-
 function exit(appid, sublist)
 {
     subscribe(appid, sublist, 'unsub');

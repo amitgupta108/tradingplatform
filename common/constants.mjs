@@ -21,7 +21,7 @@ export const FUT_EXPIRIES = {
         SECOND: '28JUL26'
     },
     CRUDEOIL: {
-        FIRST: '18JUL26',
+        FIRST: '20JUL26',
         SECOND: '20AUG26'
     },
 };
