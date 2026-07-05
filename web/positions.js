@@ -82,7 +82,11 @@ class Position
     var ltp = Number(lastorder.pricedAt);
 
     this.pnlUpdate(abp, asp, ltp)
-    pBox.dispatchEvent(generateEvent('position', {symbol: this.symbol, unbookedQ: this.psize}));    
+
+    const scrip = expandSymbol(this.symbol);
+    const oc = OptionChain.get(scrip.expiry_date);
+    oc.markPosition(scrip, this.psize);    
+    
     this.#pRow.querySelector('#pos_exit_cb').disabled = this.psize === 0 ? true : false;
     this.#pRow.style.display = 'table-row';
   }
