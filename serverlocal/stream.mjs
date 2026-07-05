@@ -1,4 +1,5 @@
 import Session from './session/session.mjs';
+import services from './service/services.mjs';
 
 import EventEmitter  from 'node:events';
 const subsService = new EventEmitter();
@@ -9,11 +10,9 @@ function addEventLsitener(eventName, callback)
     subsService.addListener(eventName, callback);
 }
 
-function streaming_status(running, service, mode)
+function streaming_status(random_keys)
 {
-    console.log('streaming_status running ' + running + ' ' + service + ' ' + mode);
-    const app_obj = Array.from(socketmap.values()).find((e) => e.mode === mode);
-    app_obj.socket.sn.status = 'stopped';
+    console.log('need more info to mark session stopped ' + random_keys);
 }
 
 function emitOrders(appid, type, order)
@@ -59,8 +58,8 @@ function getReceivers(appid, type, msg)
     if (type === 'order' && msg.receiver !== undefined) {
         const mode_type = type === 'order' ? 'trade_mode' : 'view_mode';
         socketmap.forEach((v, k) => {
-            if( v.stockCode === msg.receiver.stockCode
-                && v.mode.contains(msg.receiver[mode_type]))
+            if( v.stockCode === msg.receiver.stockCode &&
+                services.getFeatureMode(v.mode, 'trade') === msg.receiver[mode_type])
                 receivers.push(k);
         });
     }
@@ -84,12 +83,11 @@ function broadcast(type, msg, group)
 
 function emit(s, type, msg)
 {
-    try{
-        const key = type === 'quote' ? msg.key : type;
-        s.emit(key, msg);
-    } catch (error) {
-        console.error(error);
-    }
+    const key = type === 'quote' ? msg.key : type;
+    s.emit(key, msg);
+    /*if(key === 'strikex'){
+        s.emit(msg.symbol, msg);
+    }*/
 }
 
 export default {

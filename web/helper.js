@@ -1,4 +1,7 @@
-let optionsChartConfig = new Array(0);
+const STRIKE_SIZE = {
+  NIFTY: 50,
+  CRUDEOIL: 50
+}
 
 function convertDate(es)
 {
@@ -8,46 +11,12 @@ function convertDate(es)
   return shortDateFormat.format(new Date(es));
 }
 
-function setQDeltaStrikesCharts(ceStrike, peStrike, oExpiry)
-{
-  var attributePE = {
-    expiry: oExpiry,
-    strikep: peStrike,
-    right: 'PE',
-    source: 'chart',
-  };
-  var chartConfigItem = {
-    lineRef: peSeries, 
-    attributeSet: [attributePE],
-    visible: true,
-    type: 'instrument',
-    tick: {time: 0, prices: [0],},
-  };
-  optionsChartConfig.push(chartConfigItem);
-  
-  var attributeCE = {
-    expiry: oExpiry,
-    strikep: ceStrike,
-    right: 'CE',
-    source: 'chart',
-  };
-  chartConfigItem = {
-    lineRef: ceSeries, 
-    attributeSet: [attributeCE],
-    visible: true,
-    type: 'instrument',
-    tick: {time: 0, prices: [0],},
-  };
-  optionsChartConfig.push(chartConfigItem);
-
-  chartConfigItem = {
-    lineRef: stratSeries, 
-    attributeSet: [attributePE, attributeCE],
-    visible: true,
-    type: 'strategy', 
-    tick: {time: 0, prices: [0,0],},
-    } ;
-  optionsChartConfig.push(chartConfigItem);
+function getSymbol(q) {
+  if (q.expiry_date !== undefined) {
+    q.expiry_date = (q.expiry_date.replaceAll('-20', '').replaceAll('-', '')).toUpperCase();
+    q.right = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
+    return q.stock_code + q.expiry_date + q.strike_price + q.right;
+  }
 }
 
 function expandSymbol(symbol)
@@ -72,11 +41,6 @@ function generateEvent(type, nv)
     bubbles: true,   // Allow the event to bubble up the DOM
     cancelable: true // Allow event.preventDefault()
   });
-}
-const strike_size = {
-    NIFTY: 50,
-    BANKNIFTY: 100,
-    CRUDEOIL: 50,
 }
 
 function qSel(element, name, type){

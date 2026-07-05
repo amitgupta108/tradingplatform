@@ -1,5 +1,5 @@
 import utils from '../../common/utils.mjs';
-import {strike_size} from '../../common/constants.mjs';
+import {STRIKE_SIZE} from '../../common/constants.mjs';
 
 
 const us = new Map();
@@ -19,8 +19,8 @@ class Session
         this.st = [
             {key: 'index', stockCode: stockCode, toStream: true},
             {key: 'futures', stockCode: stockCode, toStream: true},
-            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 10},
-            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 10},
+            {key: 'occrnt', stockCode: stockCode, toStream: true, atm:0, n: 8},
+            {key: 'ocnxt', stockCode: stockCode, toStream: false, atm:0, n: 8},
         ];
     }
 
@@ -33,10 +33,7 @@ class Session
             this.st[i].symbol = i === 1 ? this.stockCode.concat(p.fExpiry).concat('FUT') : this.st[i].stockCode;
             this.st[i].toStream = i === 3 || (i === 0 && p.exchange === 'MCX') ? false : true
             if(i != 0)
-            {
                 this.st[i].expiry = i === 1 ? p.fExpiry : i === 2 ? p.oExpiry : p.oExpiryNxt;
-                this.st[i].n = (i === 2 || i === 3)? p.lscount + 2: 0;
-            }
         }
         this.subsupdate = callback;
         this.status = 'initialized';
@@ -58,7 +55,7 @@ class Session
             
         }
         */
-       const gap = strike_size[this.stockCode]; 
+       const gap = STRIKE_SIZE[this.stockCode]; 
         if(ost.atm === undefined || ost.atm === 0)
             ost.atm = Math.round(uq.ltp/gap) * gap;
         else
@@ -154,7 +151,7 @@ class Session
         return state;
     }
 
-    option_chain(key, action)
+    option_chain(key)
     {
         var oc = this.st.find((e) => e.key === key);
         oc.toStream = oc.toStream === true ? false : true;
@@ -174,7 +171,7 @@ class Session
         var ost = utils.filter(this.st, { keys: ['occrnt', 'ocnxt'], toStream: [true] });
         for (var j = 0; j < ost.length; j++)
         {
-            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > strike_size[this.stockCode])
+            if (st.uq === undefined || (Math.abs(ost[j].atm  - uq.ltp)) > STRIKE_SIZE[this.stockCode])
                 this.#oq(uq, ost[j]);
         }
         this.status = 'streaming';
@@ -182,11 +179,10 @@ class Session
     }
 
     exit(appid, sn) {
-        sn.shared_with.delete(appid);
-    }
-
-    remove(sn) {
-        us.delete(sn.appid);
+        if(this.mode === 'HISTORY')
+            us.delete(this.appid);
+        else
+            sn.shared_with.delete(appid);
     }
 
     static sn(appid)

@@ -5,6 +5,7 @@ let in_prep_orders = {};
 const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
 let data_reload = false;
+const chart_strikes = {ce:'', pe:''};
   
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
@@ -34,13 +35,13 @@ const date_label = document.getElementById('timer_date_lb');
 const time_label = document.getElementById('timer_time_lb');
 const spot_label = document.getElementById('timer_spot_lb');
 const latency_label = document.getElementById('timer_latency_lb');
-const expiry_label_1 = document.getElementById('expiry_label_1');
-const expiry_label_2 = document.getElementById('expiry_label_2');
+const expiry_btn_1 = document.getElementById('expiry_btn_1');
+const expiry_btn_2 = document.getElementById('expiry_btn_2');
 const simDate = new Date(instrument.simStartTime);
 
 date_label.textContent = simDate.toDateString();
-expiry_label_1.textContent = instrument.oExpiry;
-expiry_label_2.textContent = instrument.oExpiryNxt;
+expiry_btn_1.textContent = instrument.oExpiry;
+expiry_btn_2.textContent = instrument.oExpiryNxt;
 
 let spot_title = ' | S: ';
 let fut_title = 'F: ';
@@ -70,7 +71,7 @@ const pNL = new EventTarget();
 
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
-  const ltp = q.ltp;
+  const ltp = Number(q.ltp).toFixed(2);
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
   spot_label.textContent = ltp;
@@ -86,7 +87,7 @@ qBox.addEventListener('vix', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp;
+  fut_title = 'F: ' + q.ltp.toFixed(2);
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
   renderChart('futures', 'fEma', q);
