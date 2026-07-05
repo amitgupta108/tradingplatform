@@ -5,6 +5,7 @@ let in_prep_orders = {};
 const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
 let data_reload = false;
+const chart_strikes = {ce:'', pe:''};
   
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');

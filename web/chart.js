@@ -3,11 +3,41 @@ const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
 const ema_alpha = 2/21;
 const ema_beta = 1 - ema_alpha;
 
+class ChartEventEmitter extends EventTarget {
+
+  constructor(){
+    super();
+    this.symbols = [];
+    qBox.addEventListener('strikex', this);
+  }
+
+  handleEvent(event)
+  {
+    const q = event.detail;
+    if(this.symbols.includes(q.symbol))
+      this.dispatchEvent(generateEvent(q.symbol, q));
+  }
+  
+  addEventListener(symbol, handler){
+    this.symbols.push(symbol);
+    super.addEventListener(symbol, handler);
+  }
+
+  removeEventListener(symbol, handler){
+    const idx = this.symbols.findIndex((s) => s === symbol);
+    if(idx !== -1)
+      this.symbols.slice(idx);
+    super.removeEventListener(symbol, handler);
+  }
+}
+
+const ChartEventer = new ChartEventEmitter();
+
 function setInitialChart(key, withEma, qA)
 {
   if(qA === undefined || qA === null || qA.length === 0)
     return;
-  var qs = initialSeriesData(qA);  
+  var qs = initialSeriesData(qA, withEma);  
   series[key].setData(qs);
   
   if(withEma)
@@ -17,7 +47,7 @@ function setInitialChart(key, withEma, qA)
   }
 }
 
-function initialSeriesData(qA)
+function initialSeriesData(qA, withEma = false)
 {
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') ||e.datetime.includes('9:05') || e.datetime.includes('9:10')));
   for(var i = 0; i < qs.length; i++)
@@ -62,62 +92,134 @@ function renderChart(main, ema, q)
     emaSeries.update(curCandle);
 }
 
-class Chart {
+const series = {
+  vix: '',
+  futures: '',
+  index: '',
+  fEma: '',
+  iEma: '',
+  strike_1: '',
+  strike_2: '',
+  strategy_1: ''
+};
+
+class Chart 
+{
   constructor(container, options) 
   {
-    if (this.chart === undefined) {
-      this.chart = LightweightCharts.createChart(container, options);
-      
-      this.series = new Array(3);
-      this.series[0] = this.chart.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right', title: 'CE' });
-      this.series[1] = this.chart.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right', title: 'PE'});
-      this.series[2] = this.chart.addSeries(LightweightCharts.CandlestickSeries, {});
-      
-      this.chart.timeScale().fitContent();
-      this.chart.timeScale().scrollToPosition(15);
-      this.chart.priceScale('right').applyOptions({
-        visible: true,
-        autoScale: true,
-        mode: 0,
-      });
-    }
+    this.maxcount = 3;
+    this.symbols = new Array(this.maxcount);
 
-    this.symbols = Array(2);
-    this.lastdp = [];
-    this.strategy = (p1, p2) => p1 + p2;
-  }
-
-  addReplaceStrike(symbols) 
-  {
-    if(symbols?.length === 0)
-      return
+    this.setupChart(container, options);  
     
-    this.checkListener();
-    for(const s of symbols)
-    {
-      this.renderHistory(s);
+    this.series = new Array(this.maxcount);
+    this.setupSeries(this.maxcount);
+    this.listener = this.renderLiveStream;
+
+    this.lastdp = new Array(this.maxcount);
+    this.histData = new Array(this.maxcount);
+    this.withStrategy = false;
+  }
+
+  setupChart(container, options)
+  {
+    this.chart = LightweightCharts.createChart(container, options);
+    this.chart.timeScale().fitContent();
+    this.chart.timeScale().scrollToPosition(15);
+    this.chart.priceScale('right').applyOptions({
+      visible: true,
+      mode: 0,
+    });
+    this.chart.priceScale('left').applyOptions({
+      visible: true,
+      mode: 0,
+    });
+  }
+
+  setupSeries()
+  {
+    this.series[0] = this.chart.addSeries(LightweightCharts.CandlestickSeries,
+      { priceScaleId: '',});
+    
+    this.series[0].priceScale().applyOptions({
+      scaleMargins: {top: 0, bottom: 0.70,},
+    });
+
+    series['strategy_1'] = this.series[0];
+
+    for(var i = 1; i < this.maxcount; i++) {
+      const priceScale = i === 1 ? 'right' : 'left';
+      const title = i === 1 ? 'CE' : 'PE';
+      this.series[i] = this.chart.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: priceScale, title: title});
+      series[`strike_${i}`] = this.series[i];
     }
   }
 
-  checkListener(){
-    if(socket.listeners('opt_history').length === 0){
-      socket.on('opt_history', (key, qA) => {
-        const qs = initialSeriesData(qA);
-        if (qs && qs.length > 0) {
-          const idx = qs[0].right === 'Call' ? 0 : 1;
-          this.series[idx].setData(qs);
-        }
-      });
+  strategyImpl()
+  {
+    return this.lastdp[1].ltp + this.lastdp[2].ltp;
+  }  
+
+  show(strikes, withStrategy) 
+  {
+    if(strikes.length === this.maxcount)
+    {
+      this.symbols = strikes;
+      for(var i = 1; i < strikes.length; i++)
+      {
+        if(this.symbols[i] !== undefined)
+          ChartEventer.removeEventListener(this.symbols[i], this.listener); 
+
+        this.requestHistory(strikes[i]);
+        ChartEventer.addEventListener(strikes[i], this.listener);
+      }
+      this.withStrategy = withStrategy;
     }
   }
   
-  renderHistory(symbol) {
+  renderLiveStream = (event) => {
+    const q = event.detail;
+    const s = q.symbol === this.symbols[1] ? 'strike_1' : 'strike_2';
+    const idx = q.symbol === this.symbols[1] ? 1 : 2;
+    this.lastdp[idx] = q;
+    
+    renderChart(s, undefined, q);
+    if(this.withStrategy && this.lastdp[1] !== undefined && this.lastdp[2] !== undefined)
+    {
+      const sq = {ltp: this.strategyImpl()};
+      sq.ltt = q.ltt;
+      renderChart('strategy_1', undefined, sq);
+    }
+  }
 
-    if (symbol !== undefined && symbol.endsWith('CE'))
-      this.symbols[0] = symbol;
-    else if (symbol !== undefined && symbol.endsWith('PE'))
-      this.symbols[1] = symbol;
+  renderHistory(qA) 
+  {    
+    const qs = initialSeriesData(qA);
+    if (qs && qs.length > 0) {
+      const symbol = getSymbol(qs[0]);
+      const idx = symbol === this.symbols[1]? 1 : 2;
+      this.series[idx].setData(qs);
+      this.histData[idx] = qs;
+    }
 
+    if (this.withStrategy && this.histData.at(1)?.length > 0 && this.histData.at(2)?.length > 0) {
+      this.histData[0] = new Array(this.histData[1].length);
+      for (var i = 0; i < this.histData[0].length; i++) {
+        this.histData[0][i] = {
+          close: this.histData[1][i].close + this.histData[2][i].close,
+          high: this.histData[1][i].high + this.histData[2][i].high,
+          open: this.histData[1][i].open + this.histData[2][i].open,
+          low: this.histData[1][i].low + this.histData[2][i].low,
+          time: this.histData[1][i].time
+        };
+      }
+      this.series[0].setData(this.histData[0]);
+      this.histData = new Array(3);
+    }
+  }
+
+  requestHistory(symbol)
+  {
     const scrip = expandSymbol(symbol);
 
     const p = historyParams('oExpiry');
@@ -126,14 +228,6 @@ class Chart {
     p.key = 'strikex';
 
     socket.emit('history', p);
-  }
-
-  updateChart(seriesnames, qs) {
-
-  }
-
-  addseries(seriesnames) {
-
   }
 }
 
@@ -198,16 +292,6 @@ chart1.priceScale('right').applyOptions({
   mode: 0,
 });
 
-const series = {
-  vix: '',
-  futures: '',
-  index: '',
-  fEma: '',
-  iEma: '',
-  strike_1: '',
-  strike_2: '',
-  strategy_1: ''
-}
 
 series.vix = chart1.addSeries(LightweightCharts.CandlestickSeries, {});
 series.futures = chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' });
@@ -221,6 +305,9 @@ chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);
 
 function showChart(){
-  switchCharts(1);
-  options_chart.addReplaceStrike(['NIFTY30JUN2624500CE', 'NIFTY30JUN2624000PE']);
+  if(chart_strikes.pe !== '' && chart_strikes.ce !== '')
+  {
+    switchCharts(1);
+    options_chart.show(['strategy', chart_strikes.ce, chart_strikes.pe], true);
+  }
 }

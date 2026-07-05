@@ -183,6 +183,8 @@ function flipOrderType(c, p)
 
 function hl_row(c, p)
 {
+  const property = p.title.endsWith('CE') ? 'ce' : 'pe';
+  chart_strikes[property] = p.title;
   p.classList.toggle('row_background');
 }
 

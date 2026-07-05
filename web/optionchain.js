@@ -12,7 +12,7 @@ class OptionChain
   {
     this.expiry = expiry;
     this.#buildHTMLOC(v_oc_id);
-    this.interval = strike_size[instrument.stockCode];
+    this.interval = STRIKE_SIZE[instrument.stockCode];
 
     optionChains.push(this);
     qBox.addEventListener('strikex', this);

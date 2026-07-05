@@ -2,36 +2,38 @@ import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
 import adapter from '../adapter/breezeadapter.mjs';
 import streamer from '../stream.mjs';
+import { subs_cache } from '../session/appstate.mjs';
 
 const live_atm = {
     NIFTY: 0,
     CRUDEOIL: 0,
     BANKNIFTY: 0
 };
+
 const regex = /[0-9]/;
 const symbol_cache = new Map();
-const subs_cache = new Map();
 
-function atmRefresh(uq, expiryN) 
+function atmRefresh(provider, uq) 
 {
     const sz = STRIKE_SIZE[uq.stockCode];
-    const atm = live_atm[uq.stockCode];
-    const oExpiry = OPT_EXPIRIES[uq.stockCode][expiryN];
-    let requests = subs_cache.get(uq.stockCode + oExpiry.date);
- 
-    if (Math.abs(atm - uq.ltp) > sz) {
+    const atm = live_atm[uq.stockCode]; 
+    const keys = [];
 
-        const strikes = utils._strikes(uq.ltp, oExpiry.startIdx, oExpiry.endIdx, sz);
-        requests = strikes.map((s) => {
-            var symbol = uq.stockCode + oExpiry.date + s.strike + s.right;
-            return { exchange: uq.exchange, symbol: symbol };
-        });
-        subs_cache.set(uq.stockCode + oExpiry.date, requests);        
+    if (Math.abs(atm - uq.ltp) > sz) 
+    {
+        const provider_subs = subs_cache[provider];
+        const stock_subs = provider_subs.getSubscriptions(uq.stockCode);
+        const opChains = stock_subs.getActiveOptionChains();
+
+        for(const oc of opChains) {
+            stock_subs.buildOptionChain(uq, oc.key);
+            keys.push(oc.key);
+        }
+
         live_atm[uq.stockCode] = Math.round(uq.ltp / sz) * sz;
-
-        return {refreshed: true, list: requests};
+        return {refreshed: true, list: keys};
     }
-    return { refreshed: false, list: requests };
+    return { refreshed: false, list: keys};
 }
 
 function addToCache(requests) 
@@ -108,8 +110,8 @@ function standardizeiq(qt) {
     return q;
 }
 
-function standardizeoq(quote) {
-    
+function standardizeoq(quote) 
+{
     const q = expandSymbol(quote.symbol); 
     q.ltp = quote.ltp;
     q.ltt = quote.ltt;

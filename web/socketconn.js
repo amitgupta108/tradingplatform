@@ -53,6 +53,10 @@ function rh(socket)
       setInitialChart(key, withEma , quotes);
     });
   
+    socket.on('opt_history', (key, quotes) => {
+      options_chart.renderHistory(quotes);
+    });
+
     socket.on('index', (q) => {
       qBox.dispatchEvent(generateEvent('index', q));
     });
