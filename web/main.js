@@ -2,23 +2,31 @@ function emit(event, arg1, arg2) {
   socket.emit(event, arg1, arg2);
 }
 
-function loadPreData()
+function historyParams(expiry)
 {
   const endTime = instrument.simStartTime;
   const startTime = endTime - (simDate.getDay() === 1 ? 3 : 2) * 24 * 60 * 60 * 1000; // 2 days back
-  const keys = ['futures', 'index', 'vix'];
 
   const p = {
-    appid: instrument.appid,
     exchange: instrument.exchange,
     stockCode: instrument.stockCode,
-    fExpiry: instrument.fExpiry,
     startTime: startTime,
     endTime: endTime - 1000,
-    interval: '5minute',
-    keys: keys
+    interval: '5minute'
   }
-  emit('preData', p);
+  p[expiry] = instrument[expiry];
+  return p;
+}
+
+function loadPreData()
+{
+  const p = historyParams('fExpiry');
+  const keys = ['futures', 'index', 'vix'];
+
+  keys.forEach((k) => {
+    p.key = k;
+    emit('history', p);
+  });
 }
 
 function changeSpeed()
@@ -44,7 +52,7 @@ function stop()
 function exit() 
 {
   //socket.disconnect();
-  bottom_btns.forEach((btn) => btn.disabled = true);
+  //bottom_btns.forEach((btn) => btn.disabled = true);
   emit('exit', 'pause');
 }
 
@@ -56,7 +64,7 @@ function listOrders()
 function streamOptionChain(event)
 {  
   event.stopPropagation();
-  var oc_key = expiry_label.innerText === instrument.oExpiry ? 'occrnt' : 'ocnxt';
+  var oc_key = expiry_btn_1.disabled === false ? 'occrnt' : 'ocnxt';
   emit('option_chain', {key: oc_key, action:'toggle'});
 }
 
