@@ -1,33 +1,43 @@
 import { BreezeConnect } from 'breezeconnect';
+import {emit} from './qserver.mjs';
 
-let breeze;
+const breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });;
+let anyPromises = [];
 let isConnected = false;
-let ws_callback;
 
-function connect(callback) {
-    ws_callback = callback;
-    startSession();
+
+function connect() {
+    if (!isConnected)
+        return startSession();
 }
 
-function getLiveConnection() {
-    if(!breeze || !isConnected)
-        startSession();
-    
-    return breeze;
+function getLiveConnection()
+{
+    if (isConnected)
+        return breeze;
+    else
+        return startSession();
+        
 }
 
 function startSession()
-{
-    breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
-    breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
-    .then((resp) => {
+{        
+    const p = new Promise((resolve,  reject) => {
+        breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
+        .then((resp) => {
             breeze.wsConnect();
-            breeze.onTicks = ws_callback;
+            breeze.onTicks = emit;
+
             isConnected = true;
-            console.log('breeze session started');
-        })
-        .catch((error) => {
-            console.log('Error generating Breeze session ' + error)
+            resolve(breeze);
+            anyPromises = [];
+        }).catch((error) => {
+            console.error('breeze start session ' + error);
+            reject(error);
         });
+    });
+    anyPromises.push(p);
+    return Promise.any(anyPromises);
 }
-export default {connect, getLiveConnection};
+
+export default {connect, getLiveConnection}

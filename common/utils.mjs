@@ -99,9 +99,9 @@ function _strikes(price, startIdx = 2, endIdx = 7, sz)
     const idxs = endIdx - startIdx;
     var strikes = new Array(idxs * 2); 
 
-    for(var j = startIdx; j < endIdx ; j++) {
+    for(var j = startIdx; j <= endIdx ; j++) {
         strikes[j - startIdx] = {strike: (atmIdx - j) * sz, right: 'PE'};
-        strikes[j + idxs - startIdx] = {strike: (atmIdx + j) * sz, right: 'CE'};
+        strikes[j + idxs - startIdx + 1] = {strike: (atmIdx + j) * sz, right: 'CE'};
     }
     return strikes;
 }

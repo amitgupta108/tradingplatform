@@ -1,4 +1,4 @@
-import sutils from './serverutils.mjs';
+import sutils from './breezeclient.mjs';
 
 import EventEmitter  from 'node:events';
 const futsocket = new EventEmitter();
@@ -17,8 +17,7 @@ const streamers = [
     ];  
 
 function connect() {
-    return sutils.connect(wsmessage);
-
+    return sutils.connect(emit);
 }
 
 function clientInit(appid, simStartTime, speed = '1x') {
@@ -86,16 +85,6 @@ function runclient_clocks(stmrkey)
     }
 }
 
-function changeSpeed(appid, stmrkey){
-    var clock = client_clocks.get(appid);
-    clock.key = stmrkey;
-    
-    var stmr = streamers.find((s) => s.key === stmrkey);
-    var exReq = subsRequests.get(appid) || [];
-    if(stmr.state === 'stopped' && exReq.length > 0)
-        startStreamer(stmrkey);
-}
-
 function start_sim(appid, requests) {
 
     if(requests?.length > 0)
@@ -105,16 +94,12 @@ function start_sim(appid, requests) {
         c.lastaction = 'start';
         startStreamer(c.key);
         c.state = 'start initiated';
-
-        return { status: 'success' };
     }
 }
 
 function subscribe(appid, requests) {
     
     const exReqs = subsRequests.get(appid);
-    const qArray = client_store.get(appid);
-    const c = client_clocks.get(appid);
 
     requests.forEach((request) => {
         const idx = exReqs.findIndex((s) => s.symbol === request.symbol
@@ -123,23 +108,26 @@ function subscribe(appid, requests) {
         if(idx === -1)
             exReqs.push(request);
             
-        let st = qArray.find((q) => q.symbol === request.symbol);
-        if(st === undefined) {
-            st = {appid: appid, symbol: request.instrument.symbol, quotes: undefined, indexA: undefined,
-                 trimIndex: -1, state: 'initialized', lastUpdated: c.currentTime}
-            qArray.push(st);
-            
-            st.state = 'load requested';  
-            qw(st, request.instrument, c.currentTime);
-        }
+        addToClientStore(appid, request.instrument);
     });
 }
 
-function pause(appid, action) {
+function addToClientStore(appid, instrument)
+{
+    const qArray = client_store.get(appid);
     const c = client_clocks.get(appid);
-    c.lastaction = action;
-    c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
-    return c.state;
+
+    let st = qArray.find((q) => q.symbol === instrument.symbol);
+    if (st === undefined) {
+        let st = {
+            appid: appid, symbol: instrument.symbol, quotes: undefined, indexA: undefined,
+            trimIndex: -1, state: 'initialized', lastUpdated: c.currentTime};
+
+        qArray.push(st);
+
+        st.state = 'load requested';
+        qw(st, instrument, c.currentTime);
+    }
 }
 
 function unsubscribe(appid, requests) {
@@ -154,57 +142,68 @@ function unsubscribe(appid, requests) {
     });
 }
 
-function clear(appid)
-{
-    client_clocks.delete(appid);
-    client_store.delete(appid);
-    subsRequests.delete(appid);
-    
-    console.log('Drop user ' + appid);
-    return {status: 'success'};
-}
-
 function q(appid, instrument, time)
 {
     var qArray = client_store.get(appid);
     var st = qArray.find((q) => q.symbol === instrument.symbol);
 
-    var idx = -1;
-    if (st?.quotes !== undefined && st.trimIndex > 0)
-    {
-        if(st.quotes[st.trimIndex].ltt === time)
+    if (st?.quotes !== undefined) {
+        var idx = -1;
+        if (idx < 0) {
+            idx = st.indexA.indexOf(time);
+            if (idx >= 0)
+                st.trimIndex = idx + 1;
+        }
+        else if (st.trimIndex > 0 && st.quotes[st.trimIndex].ltt === time) {
             idx = st.trimIndex++;
-    }
-    else if(st?.quotes !== undefined && idx < 0)
-    {
-        idx = st.indexA.indexOf(time);
-        if(idx >= 0)
-            st.trimIndex = idx + 1;
-    }
-    else if(st === undefined) {
-        st = {appid: appid, symbol: instrument.symbol, quotes: undefined, indexA: undefined, trimIndex: -1, state: 'initialized', lastUpdated: time};
-        qArray.push(st);
-    }
+        }
 
-    if(idx >= 0)
-        futsocket.emit('quote', st.quotes[idx], 'history', appid);
-
-    if ((st.quotes === undefined || st.quotes.length - idx < 40) && st.state != 'load requested')
+        if (idx >= 0)
+            emit(st.quotes[idx], 'hist', appid);
+    }
+    
+    if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')
     {
-        st.state = 'load requested';
-        qw(st, instrument, time);
+        setImmediate(() => {
+            st.state = 'load requested';
+            qw(st, instrument, time);
+        });
     }
 }
 
 function qw(st, instrument, time) {
     var qs = sutils.getHistoricalData(st, instrument, time);
 
-    return qs.then((resp) => {
-        return resp;   
-    }).catch((reason) => {
+    qs.catch((reason) => {
         st.state = 'load failed';
         console.log('Rejection for appid: ' + st.appid + ' ' + reason);
     });
+}
+
+function clear(appid) {
+    client_clocks.delete(appid);
+    client_store.delete(appid);
+    subsRequests.delete(appid);
+
+    console.log('Drop user ' + appid);
+    return { status: 'success' };
+}
+
+function changeSpeed(appid, stmrkey) {
+    var clock = client_clocks.get(appid);
+    clock.key = stmrkey;
+
+    var stmr = streamers.find((s) => s.key === stmrkey);
+    var exReq = subsRequests.get(appid) || [];
+    if (stmr.state === 'stopped' && exReq.length > 0)
+        startStreamer(stmrkey);
+}
+
+function pause(appid, action) {
+    const c = client_clocks.get(appid);
+    c.lastaction = action;
+    c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
+    return c.state;
 }
 
 function getHistory(p)
@@ -218,8 +217,9 @@ function getHistory(p)
 function addListener(eventName, callback)
 {
     futsocket.addListener(eventName, callback);
-    return { status: 'success' };
-
+    
+    const list = futsocket.listeners(eventName);
+    console.log('listener count on qserver ' + eventName + ' ' + list.length);
 }
 
 function live_sub(list, action)
@@ -235,27 +235,33 @@ function live_sub(list, action)
 
 function subscribe_vix(appid, mode, action)
 {
-    var b = {exchangeCode: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
+    var instrument = {exchange: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
 
     if(mode.startsWith('HISTORY')) {
-        const vix_request = subsRequests.get(appid)?.find((r) => 
-            r.symbol === appid 
-            && r.model === 'history');
-
-            if(vix_request === undefined && action === 'subs')
-                subsRequests.get(appid)?.push({ appid: appid,
-                    symbol: b.stockCode,
-                    instrument: b});
+        const request = {
+            appid: appid,
+            symbol: instrument.stockCode,
+            instrument: instrument
+        };
+        if(action === 'subs')
+            subscribe(appid, [request]);
+        else
+            unsubscribe(appid, [request]);
     }
     else     
-        sutils.subscribe(b, action)
+        sutils.subscribe(instrument, action)
         .then((resp) => console.log(resp))
-        .catch((error) => console.log(resp));
+        .catch((error) => console.log(error));
 }
 
-function wsmessage(q)
+export function emit(q, eventName, appid)
 {
-    futsocket.emit('quote', q, 'live', undefined);
+    const mode = eventName ?? 'live';
+
+    if(q.stock_code === 'INDVIX')
+        futsocket.emit(mode + '-vix', q, appid);    
+    else 
+        futsocket.emit(mode + '-quote', q, appid);
 }
 
 export default {

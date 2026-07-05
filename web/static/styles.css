@@ -1,12 +1,13 @@
 :root {
-    --body-background: rgba(0, 0, 0, 0.85);
-    --element-background: #4caf4fd4;
-    --element-color: #4caf4fd4;
-    --element-hover: #2e9b31d4;
-    --inside-border: #dddddd50;
-    --disabled-forecolor: #ffffff77;
-    --body-hover: #dddddd2b;
-    --element-forecolor: #ffffffd3;
+    --body-background: rgb(25, 18, 18);
+    --element-background: #4aa84e;
+    --element-color: #43a747;
+    --element-hover: #2a8f2d;
+    --inside-border: #454444;
+    --disabled-forecolor: #6a6262;
+    --hover-seethrough: #6a626268;
+    --body-hover: #1c1a1a;
+    --element-forecolor: #f4f0f0;
     --color-red: #c7372c;
     --border-radius: 4px;
 }
@@ -35,7 +36,7 @@ body {
     border: 1px solid var(--element-background);
     background-color: var(--body-background);
     height: 99.2%;
-    width: 57%;
+    width: 56%;
     border-radius: var(--border-radius);
     min-width: 450px;
 }  
@@ -45,7 +46,7 @@ body {
     background-color: var(--body-background);
     border: 1px solid var(--element-background);
     height: 99.2%;
-    width: 42%;
+    width: 43%;
     border-radius: var(--border-radius);
     min-width: 300px;
     min-height: 600px;
@@ -107,6 +108,7 @@ body {
 
 .inert-tab {
     background-color: var(--element-hover);
+    cursor:default;
 }
 
 #positions_div {
@@ -143,6 +145,18 @@ label {
     justify-items: center;
     justify-content: center;
     padding: 2px;
+}
+
+.clickable {
+    cursor: pointer;
+    color: var(--element-forecolor);
+    border-radius: var(--border-radius);
+    background-color: rgba(65, 63, 63, 0.281);
+    font-size: 12px;
+    vertical-align: middle;
+    align-items: center;
+    padding: 3px;
+    min-width: 30px;
 }
 
 table {
@@ -210,18 +224,19 @@ button {
     font-size: 13px;
 }
 
-button:hover {
+button:not(:disabled):hover {
     background-color: var(--element-hover);
 }
 
 button:disabled {
     color: var(--disabled-forecolor);
+    cursor: not-allowed;
 }
 
 .smallbutton {
     width: 18px;
     height: 18px;
-    background: white;
+    background-color: var(--element-forecolor);
     border: 1px solid var(--inside-border);
     border-radius: var(--border-radius);;
     font-size: 12px;
@@ -233,13 +248,13 @@ button:disabled {
     cursor: pointer;
 }
 
-.smallbutton:hover {
-    background-color: #ddd;
-}
-
 .smallbutton.order {
     color: #0e63e3;
     border-color: #0e63e3;    
+}
+
+.smallbutton.order:hover {
+    background-color: var(--element-forecolor);
 }
 
 .smallbutton.buy {
@@ -247,9 +262,17 @@ button:disabled {
     border-color: #00897b;
 }
 
+.smallbutton.buy:hover {
+    background-color: var(--element-forecolor);
+}
+
 .smallbutton.sell{
     color:var(--color-red);
     border-color: var(--color-red);
+}
+
+.smallbutton.sell:hover {
+    background-color: var(--element-forecolor);
 }
 
 .icon {
@@ -329,7 +352,7 @@ select:hover {
 }
 
 .orderwindow.multi {
-    background-color: var(--body-hover);
+    background-color: rgb(91, 90, 90);
 }
 
 .close-btn {
@@ -355,15 +378,15 @@ select:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: opacity 1.0s ease-in-out, transform 1.0s ease-in-out;
     transform: translateY(-20px); /* Optional: add a slight slide-in effect */
-    background-color: gray;
+    background-color: rgb(91, 90, 90);
 }
 
 .orderlist-td {
     padding: 2px;
     text-align: center;
     font-size: 13px;
-    background-color: dimgray;
     color: var(--element-forecolor);
+    background-color: rgb(91, 90, 90);
     vertical-align: middle;
 }
 
@@ -407,18 +430,6 @@ input:checked + .slider:before {
     transform: translateX(14px);
 }
 
-.clickable {
-    cursor:pointer;
-    color:var(--element-forecolor);
-    border-radius: var(--border-radius);;
-    background-color: rgba(65, 63, 63, 0.281);
-    font-size: 12px;
-    vertical-align: middle;
-    align-items: center;
-    padding: 3px;
-    min-width: 30px;
-}
-
 .hover-row { 
     position: relative; 
     padding: 3px;
@@ -426,9 +437,9 @@ input:checked + .slider:before {
 
 .hover-row-content {
     position: absolute;
-    top: 0;
-    left: 60px;
-    width: 45%;
+    top: 0px;
+    left: 0px;
+    width: 100%;
     z-index: 200;
     height: 100%;
     display: none;
@@ -436,7 +447,7 @@ input:checked + .slider:before {
     justify-content:center;
     backdrop-filter: blur(0.5px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: var(--body-background);
+    background-color: var(--hover-seethrough);
 }
 
 .hover-row:hover .hover-row-content { 
@@ -454,18 +465,59 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     left: 0;
-    width:90%;
+    width:100%;
     z-index: 200;
     height: 100%;
     display: none;
+    gap: 10px;
     align-items: end;
     justify-content:end;
     vertical-align: middle;
     backdrop-filter: blur(0.3px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    background-color: rgba(241, 235, 235, 0.521);
+    background-color:var(--hover-seethrough);
 }
 
 .row_background {
     background-color: rgba(189, 183, 107, 0.618);
+}
+
+.barely-raised-btn {
+    /* Reset default styles */
+    background-color: var(--element-background);
+    border: 0.5px solid var(--disabled-forecolor);
+
+    /* Typography */
+    padding: 5px 6px;
+    font-size: 12px;
+    color: var(--element-forecolor);
+    cursor: pointer;
+
+    /* Rounded corners */
+    border-radius: var(--border-radius);
+    /* The "Barely Raised" Effects */
+    box-shadow:
+        0 1px 2px 0 rgba(0, 0, 0, 0.05),
+        /* Subtle shadow underneath */
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    /* Inner top highlight */
+
+    /* Smooth transition for hover/click states */
+    transition: all 0.2s ease-in-out;
+}
+
+/* Slight hover elevation */
+.barely-raised-btn:hover {
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Pressed state to make it sink slightly */
+.barely-raised-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+        inset 0 1px 2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
 }

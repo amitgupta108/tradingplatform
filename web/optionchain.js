@@ -6,34 +6,20 @@ class OptionChain
   atm = 0;
   row_map = new Map();
   u_price = 0;
-  lscount = instrument.lscount;
+  OTMRange = {high: 7, low: 2};
 
   constructor(expiry, v_oc_id)
   {
     this.expiry = expiry;
     this.#buildHTMLOC(v_oc_id);
-    this.interval = strike_size[instrument.stockCode];
+    this.interval = STRIKE_SIZE[instrument.stockCode];
 
     optionChains.push(this);
     qBox.addEventListener('strikex', this);
-    
+
     qBox.addEventListener('futures', (event) => {
-      this.handleUnderlying(event.detail);
-    }); 
-    
-    pBox.addEventListener('position', (event) => {
-        const symbol = event.detail.symbol;
-        const unbookedQ = event.detail.unbookedQ;
-        const r = this.row_map.get(symbol);
-        if(r !== undefined) {
-          r.psize = unbookedQ;
-          r.row.cells[2].childNodes[1].textContent = unbookedQ;
-          r.row.cells[2].childNodes[1].classList.remove('buy', 'sell');
-          
-          if(!(unbookedQ === '' || unbookedQ === 0))
-            r.row.cells[2].childNodes[1].classList.add((Number(unbookedQ) > 0 ? 'buy' : 'sell'));
-      }
-    });
+      this.setup(event.detail);
+    }, { once: true });
   }
 
   #buildHTMLOC(v_oc_id)
@@ -41,84 +27,100 @@ class OptionChain
     const h_oc_div = document.getElementById(v_oc_id);
     const tbls = Array.from(h_oc_div.querySelectorAll('table'));
     [this.h_call_tbl, this.h_put_tbl] = tbls;
+  }
 
-    for(var i = 0; i < lscount; i++)
-    {
-      var new_tr_c = tRow(t_option_chain_row);
-      var new_tr_p = tRow(t_option_chain_row);
-      new_tr_c.classList.add('tr_straight');
-      new_tr_p.classList.add('tr_reverse');
+  setup(q)
+  {
+    this.u_price = q.ltp;
+    this.atm = Math.round(q.ltp / this.interval) * this.interval;
+  
+    const range = this.OTMRange.high - this.OTMRange.low;  
+    for (var i = 0; i <= range; i++) {
       
-      tbls[0].append(new_tr_c);
-      tbls[1].append(new_tr_p);
+      let ce_strike = this.atm + (this.OTMRange.low + i) * this.interval;
+      let pe_strike = this.atm - (this.OTMRange.high - i) * this.interval
+
+      this.addRowCombo(ce_strike, pe_strike);
+    }
+
+    qBox.addEventListener('futures', (event) => {
+      this.handleUnderlying(event.detail);
+    });
+  }
+
+  addRowCombo(ce_strike, pe_strike, direction = 1)
+  {
+    for(var i = 0; i < 2; i++) 
+    {
+      var key = i === 0 ? ce_strike + 'CE' : pe_strike + 'PE';
+      if(this.row_map.get(key) === undefined)
+      {
+        const tr = tRow(t_option_chain_row);
+        tr.classList.add(i ===  0 ? 'tr_straight' : 'tr_reverse');
+        const tbl = i === 0 ? this.h_call_tbl : this.h_put_tbl;
+        tr.cells[2].childNodes[3].textContent = i === 0 ? ce_strike : pe_strike;
+        tr.title = instrument.stockCode + this.expiry + key;
+      
+        if(direction === 1)
+          tbl.append(tr);
+        else
+          tbl.prepend(tr);
+
+        if(this.row_map.get(key) === undefined)
+          this.row_map.set(key, {row: tr});
+      }
     }
   }
 
   handleEvent(event)
   {
     var q = event.detail;
-    if(q === undefined || q.expiry_date !== this.expiry)
+
+    if(q?.expiry_date !== this.expiry)
       return;
 
-    const r = this.row_map.get(q.symbol);
-    const offset = (Number(q.strike_price) - this.atm) / this.interval;
-
-    if(r !== undefined && (q.right === 'PE' && offset <= 1 && offset >= 2 - lscount || 
-      q.right === 'CE' && offset >= -1 && offset <= lscount - 2))
-    {   
-      r.row.cells[1].textContent = q.ltp.toFixed(2);
-      
-      q = addIVNDelta(q, this.u_price);
-      
-      if(Math.abs(Number(r.row.cells[0].textContent) - q.delta) > 0.5)
-        r.row.cells[0].textContent = q.delta.toFixed(2);
-    }
+    const r = this.row_map.get(q.strike_price + q.right);
+    
+    if(r === undefined)
+      return;
+   
+    r.row.cells[1].textContent = q.ltp.toFixed(2);  
+    q = addIVNDelta(q, this.u_price);
+    r.row.cells[0].textContent = q.delta.toFixed(2);
   }
 
   handleUnderlying(q)
   {
-    this.u_price = q.ltp;
-    const atm_move = q.ltp - this.atm;
-
-    if(Math.abs(atm_move) > this.interval) {
-      const atm_shift = Math.round(atm_move / this.interval);
-      this.atm = this.atm + atm_shift * this.interval;
-      this.atm_reset();
+    const ltp_move = q.ltp - this.atm;
+    if (Math.abs(ltp_move) > this.interval )
+    {
+      const direction = Math.sign(ltp_move);
+      this.atm = this.atm + this.interval * direction;
+      
+      const ce_offset = (direction === 1 ? this.OTMRange.high : this.OTMRange.low) * this.interval;
+      const pe_offset = (direction === 1 ? this.OTMRange.low : this.OTMRange.high) * this.interval;
+      
+      this.addRowCombo(this.atm + (ce_offset * direction), this.atm + (pe_offset * direction), direction);
     }
   }
 
-  atm_reset()
+  markPosition(scrip, psize)
   {
-    const size = this.row_map.size;  
-    for(var i = 0; i < lscount * 2; i++)
+    const key = (scrip.strike_price / this.interval - this.atm_index) + scrip.right;
+    const r = this.row_map.get(key);
+    
+    if (r !== undefined) 
     {
-      const cg = i < lscount ? 
-        {right: 'CE', sign: 1, idx: i, offset: i - 1, tbl: this.h_call_tbl} : 
-        {right: 'PE', sign: -1, idx: i - lscount, offset: 2 * lscount - i - 2, tbl: this.h_put_tbl};
-
-      const strike = this.atm + (cg.offset * cg.sign) * this.interval;
-      const symbol = instrument.stockCode + this.expiry + strike + cg.right;
-      
-      cg.tbl.rows[cg.idx].title = symbol;
-      cg.tbl.rows[cg.idx].cells[2].childNodes[3].textContent = strike;
-
-      const r = this.row_map.get(symbol);
-      if(size === 0 || r === undefined)
-        this.row_map.set(symbol, {row: cg.tbl.rows[cg.idx]});
-      else { 
-        if(r.hl === true) {
-          r.row.classList.remove('row_background');
-          cg.tbl.rows[cg.idx].classList.add('row_background');
-        }
-        if(r.psize !== undefined && r.psize !== '') {
-          cg.tbl.rows[cg.idx].cells[2].childNodes[1].textContent = r.psize;
-          cg.tbl.rows[cg.idx].cells[2].childNodes[1].classList.add((Number(r.psize) > 0 ? 'buy' : 'sell'));
-          r.row.cells[2].childNodes[1].textContent = '';
-          r.row.cells[2].childNodes[1].classList.remove('buy', 'sell');
-        }
-        r.row = cg.tbl.rows[cg.idx];
+      if (psize === '' || psize === 0) {
+        r.row.cells[2].childNodes[1].textContent = '';
+        r.row.classList.remove('buy', 'sell');
       }
-    }    
+      else
+      {
+        r.row.cells[2].childNodes[1].textContent = psize;
+        r.row.cells[2].childNodes[1].classList.add(psize > 0 ? 'buy' : 'sell');
+      }
+    }
   }
 
   static get(expiry)
