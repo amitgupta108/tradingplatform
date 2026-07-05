@@ -17,13 +17,18 @@ function registerDataRequests(s, appid, mode)
     s.on('start', (msg) => {
         if(['skeletal', 'stopped'].includes(s.sn.status)){
             s.sn.ini(msg, (opSubs) => {
-                //market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
-                console.log('skip subscription list from session');
+                market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
+                //console.log('skip subscription list from session');
             });
             if(mode.startsWith('HISTORY'))
                 market_service.clientConfigure(appid, msg.simStartTime, '1x');
         }
         market_service.start(appid, s.sn.inqsub(false), mode);
+        s.emit('stream', 'started');
+    });
+
+    s.on('startv2', (msg) => {
+        market_service.start(appid, msg.stockCode);
         s.emit('stream', 'started');
     });
 

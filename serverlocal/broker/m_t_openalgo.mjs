@@ -7,6 +7,7 @@ import utils from '../../common/utils.mjs';
 import qutils from './quotesutils.mjs';
 import path from 'path';
 import services from '../service/services.mjs';
+import { subs_cache } from '../session/appstate.mjs';
 
 const name = path.parse(import.meta.filename).name;
 const logical_view_name = 'OPENALGOVIEW';
@@ -22,12 +23,16 @@ function onQuotes(q)
 { 
     const qt = qutils.standardizeoq(q);
     streamer.emitQs(qt.stockCode + view_mode, qt);
+
     if(qt.key === 'futures' && (counter === 0 || counter++ === 6)) {
         counter = 1;
-        const requests = qutils.atmRefresh(qt, 'FIRST');
-        if(requests.refreshed === true || subs_lost === true) {
-            subscribe(qt.stockCode + view_mode, requests.list, 'subs');
-            subs_lost = false;
+        const response = qutils.atmRefresh(logical_view_name, qt);
+        if(response.refreshed === true || subs_lost === true) {
+            const chains = subs_cache[logical_view_name].getSubscriptions(qt.stockCode).getSubsItembyKey(response.list);
+            chains.forEach((oc) => {
+                subscribe(qt.stockCode + view_mode, oc.strikes, 'subs');
+                subs_lost = false; 
+            });
         }
     }
 }
@@ -39,10 +44,13 @@ function exit(appid, sublist)
         client?._wsClient?.ws._sendMessage({action: unsubscribe_all});
 }
 
-function start(appid, sublist)
+function start(appid, stockCode)
 {
-    qutils.addToCache(sublist);
-    subscribe(appid, sublist, 'subs');
+    const provider_subs = subs_cache[logical_view_name];
+    const stock_subs = provider_subs.addNewSubscription(stockCode);
+    const requests = stock_subs.getRequestsByKey(['index', 'futures']);
+    
+    subscribe(appid, requests, 'subs');
 }
 
 function subscribe(appid, list, action)
@@ -57,7 +65,7 @@ function subscribe(appid, list, action)
 }
 
 function autoSubscribe()
-{
+{   
     setTimeout(() => {
         const entries = qutils.getCachedLists();
         entries.forEach((v, k) => {
