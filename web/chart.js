@@ -53,7 +53,6 @@ function initialSeriesData(qA, withEma = false)
   for(var i = 0; i < qs.length; i++)
   {
     qs[i].time = i === 0 || qs[i].datetime.includes('9:15') ? sTVtime(qs[i].datetime) : qs[i-1].time + 5 * 60;
-    //qs[i].time = sTVtime(qs[i].datetime);
     qs[i].value = ema_alpha * qs[i].close + ema_beta * (i !== 0 ? qs[i-1].value : qs[0].close);
     qs.at(-1).customValues = qs.at(-1).value;
   }
@@ -142,6 +141,9 @@ class Chart
       { priceScaleId: '',});
     
     this.series[0].priceScale().applyOptions({
+      visible: true,
+      autoScale: true,
+      mode: 0,
       scaleMargins: {top: 0, bottom: 0.70,},
     });
 
@@ -237,6 +239,12 @@ const charts = {
   strikes: { container: 'strikes_chart' }
 };
 
+const gridLineOptions = {
+  color: '#f4f4f43f',
+  style: 2,
+  visible: true
+};
+
 const chartOptions = {
   autoSize: true,
   layout: {
@@ -245,16 +253,8 @@ const chartOptions = {
     attributionLogo: false,
   },
   grid: {
-    vertLines: {
-      color: '#f4f4f43f',
-      style: 2,
-      visible: true
-    },
-    horzLines: {
-      color: '#f4f4f43f',
-      style: 2,
-      visible: true
-    },
+    vertLines: gridLineOptions,
+    horzLines: gridLineOptions,
   },
   crosshair: {
     mode: 0, // CrosshairMode.Normal
@@ -266,7 +266,7 @@ const chartOptions = {
     secondsVisible: false,
     tickMarkMaxCharacterLength: 5,
   },
-  defaultVisiblePriceScaleId: 'left',
+  defaultVisiblePriceScaleId: 'right',
   handleScale: {
     axisPressedMouseMove: {
       timeScale: true,
@@ -281,25 +281,21 @@ const options_chart = new Chart(charts['strikes'].container, chartOptions);
 //const chart_strikes = LightweightCharts.createChart(container.strikes, chartOptions);
 //const chart_strategy = LightweightCharts.createChart(container.strategy, chartOptions);
 
-chart1.priceScale('left').applyOptions({
+const priceScaleOptions = {
   visible: true,
   autoScale: true,
   mode: 0,
-});
-chart1.priceScale('right').applyOptions({
-  visible: true,
-  autoScale: true,
-  mode: 0,
-});
+};
+chart1.priceScale('left').applyOptions(priceScaleOptions);
+//chart1.priceScale('right').applyOptions(priceScaleOptions);
 
-
-series.vix = chart1.addSeries(LightweightCharts.CandlestickSeries, {});
+series.vix = chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'left'});
 series.futures = chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' });
 series.fEma = chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 });
 chart1.timeScale().fitContent();
 chart1.timeScale().scrollToPosition(15);
 
-series.index = chart2.addSeries(LightweightCharts.CandlestickSeries, {});
+series.index = chart2.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'right'});
 series.iEma = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);

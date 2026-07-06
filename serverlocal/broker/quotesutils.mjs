@@ -2,7 +2,7 @@ import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
 import adapter from '../adapter/breezeadapter.mjs';
 import streamer from '../stream.mjs';
-import { subs_cache } from '../session/appstate.mjs';
+import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
 
 const live_atm = {
     NIFTY: 0,
@@ -21,12 +21,12 @@ function atmRefresh(provider, uq)
 
     if (Math.abs(atm - uq.ltp) > sz) 
     {
-        const provider_subs = subs_cache[provider];
+        const provider_subs = subs_store_all[provider];
         const stock_subs = provider_subs.getSubscriptions(uq.stockCode);
         const opChains = stock_subs.getActiveOptionChains();
 
         for(const oc of opChains) {
-            stock_subs.buildOptionChain(uq, oc.key);
+            stock_subs.buildOptionChain(uq, oc);
             keys.push(oc.key);
         }
 
@@ -43,13 +43,13 @@ function addToCache(requests)
             request.exchange = 'NSE_INDEX';
 
         const key = request.stockCode + request.key;
-        if (subs_cache.get(key) === undefined)
-            subs_cache.set(key, [request]);
+        if (subs_store_all.get(key) === undefined)
+            subs_store_all.set(key, [request]);
     });
 }
 
-function getCachedLists(){
-    return subs_cache.entries();
+function getCachedLists(view_name, stockCode){
+    return subs_store_all[view_name].getSubscriptions(stockCode);
 }
 
 function expandSymbol(symbol)

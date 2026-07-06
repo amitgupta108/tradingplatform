@@ -27,9 +27,10 @@ function emitQs(appid, q)
     if (q?.key === 'strikex')
         subsService.emit(q.key, q);
 
-    const sn = Session.sn(appid);
+    /*const sn = Session.sn(appid);
     if (sn !== undefined && q?.key === 'futures')
         sn.lastuq(q);
+    */
 }
 
 function send(appid, type, msg)
