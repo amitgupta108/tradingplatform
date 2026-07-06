@@ -7,7 +7,8 @@ import utils from '../../common/utils.mjs';
 import qutils from './quotesutils.mjs';
 import path from 'path';
 import services from '../service/services.mjs';
-import { subs_cache } from '../session/appstate.mjs';
+import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
+import { log } from 'console';
 
 const name = path.parse(import.meta.filename).name;
 const logical_view_name = 'OPENALGOVIEW';
@@ -28,7 +29,7 @@ function onQuotes(q)
         counter = 1;
         const response = qutils.atmRefresh(logical_view_name, qt);
         if(response.refreshed === true || subs_lost === true) {
-            const chains = subs_cache[logical_view_name].getSubscriptions(qt.stockCode).getSubsItembyKey(response.list);
+            const chains = subs_store_all[logical_view_name].getSubscriptions(qt.stockCode).getSubsItemsByKey(response.list);
             chains.forEach((oc) => {
                 subscribe(qt.stockCode + view_mode, oc.strikes, 'subs');
                 subs_lost = false; 
@@ -46,11 +47,19 @@ function exit(appid, sublist)
 
 function start(appid, stockCode)
 {
-    const provider_subs = subs_cache[logical_view_name];
-    const stock_subs = provider_subs.addNewSubscription(stockCode);
-    const requests = stock_subs.getRequestsByKey(['index', 'futures']);
+    const provider_subs = new Subscriptions(logical_view_name);
+    const stock_subs = provider_subs.addNewSubscriptions(stockCode);
+    const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
     
     subscribe(appid, requests, 'subs');
+}
+
+function autoStart(stockCode = 'NIFTY') {
+    setTimeout(() => {
+        const stock_subs = qutils.getCachedLists(logical_view_name, stockCode);
+        const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
+        subscribe(appid, requests, 'subs');
+    }, 3000);
 }
 
 function subscribe(appid, list, action)
@@ -62,17 +71,6 @@ function subscribe(appid, list, action)
         client.subscribe_ltp(list, onQuotes);
     else 
         client.unsubscribe_ltp(list, onQuotes);
-}
-
-function autoSubscribe()
-{   
-    setTimeout(() => {
-        const entries = qutils.getCachedLists();
-        entries.forEach((v, k) => {
-            streamer.streaming_status(k);
-            subscribe(undefined, v, 'subs');
-        })
-    }, 5000);
 }
 
 async function orderbook(appid, stockCode)
@@ -141,7 +139,7 @@ function init()
             client._wsClient.ws.addEventListener('close', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
                 subs_lost = true;
-                autoSubscribe();
+                autoStart();
             });
             return {status: 'success'}
         })

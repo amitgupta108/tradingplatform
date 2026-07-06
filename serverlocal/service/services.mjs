@@ -35,7 +35,7 @@ const providers = {
 };
 
 const access = {
-    view: ['vix', 'start', 'history', 'speed', 'exit', 'stream', 'option_chain'],
+    view: ['vix', 'start', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
     trade: ['order', 'cancelorder', 'orderbook'],
     admin: ['live_trading', 'wsOps', 'unsubscribe', 'remove', 'reload']
 };

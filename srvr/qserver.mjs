@@ -235,21 +235,22 @@ function live_sub(list, action)
 
 function subscribe_vix(appid, mode, action)
 {
-    var instrument = {exchange: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
+    var instrument = {exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
 
+    const request = {
+        appid: appid,
+        symbol: instrument.stockCode,
+        instrument: instrument
+    };
+    
     if(mode.startsWith('HISTORY')) {
-        const request = {
-            appid: appid,
-            symbol: instrument.stockCode,
-            instrument: instrument
-        };
         if(action === 'subs')
-            subscribe(appid, [request]);
+            subscribe([request], 'subs');
         else
-            unsubscribe(appid, [request]);
+            unsubscribe([request], 'unsub');
     }
     else     
-        sutils.subscribe(instrument, action)
+        sutils.wssub([request], action)
         .then((resp) => console.log(resp))
         .catch((error) => console.log(error));
 }
