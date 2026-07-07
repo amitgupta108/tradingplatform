@@ -22,16 +22,16 @@ const services = {
     OPENALGOVIEW: live_openalgo,
     OPENALGOTRADE: live_openalgo,
     KOTAKNEOTRADE: live_kotak,
-    ICICIHISTORY: history_breeze,
+    ICICIHISTVIEW: history_breeze,
     ICICILIVEVIEW: live_breeze,
     SOCKETTRADE: trading_socket,
     TPSIMTRADE: paper_trading
 };
 
 const providers = {
-    view: { HISTORY: 'ICICIHISTORY', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW' },
+    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW' },
     trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
-    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING: 'OPENALGOVIEW', SIM_ADMIN: 'ICICIHISTORY' }
+    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING: 'OPENALGOVIEW', SIM_ADMIN: 'TPSIMTRADE' }
 };
 
 const access = {
