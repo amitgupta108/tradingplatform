@@ -3,8 +3,10 @@
     "configurations": [
         {
             "name": "Live on 80",
+            "type": "node",
             "program": "${workspaceFolder}/start.mjs",
             "request": "launch",
+            "noDebug": true,
             "skipFiles": [
                 "<node_internals>/**"
             ],
@@ -15,7 +17,6 @@
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
             ],
-            "type": "node",
             "outputCapture": "std"
         },
         {
@@ -23,8 +24,9 @@
             "request": "launch",
             "name": "History on 449",
             "skipFiles": [
-                
+                "<node_internals>/**"
             ],
+            "preLaunchTask": "Kill Port 449",
             "program": "${workspaceFolder}/start.mjs",
             "args": [
                 "449"

@@ -21,6 +21,9 @@ process.on('unhandledRejection', (error) => {
     console.error('Unhandled promise, reason ' + error.stack);
 });
 
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
 const args = process.argv;
 console.log(`First argument: ${args[2]}`);
 const port = args[2] === undefined ? 80 : Number(args[2]);
@@ -98,3 +101,17 @@ io.on('connection', (s) => {
 
     app.default.connect(s)
 });
+
+function shutdown(signal) 
+{
+    io.close(() => {
+        console.log("All Socket.IO connections cleared and HTTP server closed.");
+
+        process.exit(0);
+    });
+
+    setTimeout(() => {
+        console.error("Forced shutdown due to timeout.");
+        process.exit(1);
+    }, 5000);
+}
