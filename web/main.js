@@ -38,7 +38,7 @@ function changeSpeed()
 function start()
 {
   loadPreData();
-  emit('start', instrument); 
+  emit('startv2', instrument); 
 }
 
 function stop() 

@@ -17,7 +17,7 @@ function exit(appid)
 
 function addQuoteListener(eventName, callback)
 {
-    return historyserver.addListener(eventName, callback);
+   historyserver.addListener(eventName, callback);
 }
 
 function subscribe_vix(appid, mode, action)

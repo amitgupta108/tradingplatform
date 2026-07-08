@@ -60,7 +60,7 @@ function dothings(stmrkey)
     {
         for (const c of client_clocks.values()) {
             if (c.key === stmrkey && c.lastaction !== 'pause') {
-                var reqs = subsRequests.get(c.appid)?.filter((s) => s.instrument.model === 'history') || [];
+                var reqs = subsRequests.get(c.appid) || [];
                 reqs.forEach((req) => {
                     q(req.appid, req.instrument, c.currentTime);
                 });
@@ -102,8 +102,7 @@ function subscribe(appid, requests) {
     const exReqs = subsRequests.get(appid);
 
     requests.forEach((request) => {
-        const idx = exReqs.findIndex((s) => s.symbol === request.symbol
-            && s.instrument.model === request.instrument.model);
+        const idx = exReqs.findIndex((s) => s.symbol === request.symbol);
         
         if(idx === -1)
             exReqs.push(request);
@@ -134,8 +133,7 @@ function unsubscribe(appid, requests) {
     const i_reqs = subsRequests.get(appid);
     requests.forEach((request) => {
         
-        var idx = i_reqs.findIndex((s) => s.symbol === request.symbol
-            && request.instrument.model === s.instrument.model);
+        var idx = i_reqs.findIndex((s) => s.symbol === request.symbol);
     
         if(idx !== -1)
             i_reqs.splice(idx, 1);
@@ -216,10 +214,11 @@ function getHistory(p)
 
 function addListener(eventName, callback)
 {
-    futsocket.addListener(eventName, callback);
-    
     const list = futsocket.listeners(eventName);
-    console.log('listener count on qserver ' + eventName + ' ' + list.length);
+    if(list.length === 0)
+        futsocket.addListener(eventName, callback);
+    
+    console.log('listener count on qserver ' + eventName + ' ' + futsocket.listeners(eventName).length);
 }
 
 function live_sub(list, action)
@@ -235,21 +234,22 @@ function live_sub(list, action)
 
 function subscribe_vix(appid, mode, action)
 {
-    var instrument = {exchange: 'NSE', stockCode: 'INDVIX', symbol: 'INDVIX', model: mode.toLowerCase(), interval: '1second'};
+    var instrument = {exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second'};
 
+    const request = {
+        appid: appid,
+        symbol: instrument.stockCode,
+        instrument: instrument
+    };
+    
     if(mode.startsWith('HISTORY')) {
-        const request = {
-            appid: appid,
-            symbol: instrument.stockCode,
-            instrument: instrument
-        };
         if(action === 'subs')
-            subscribe(appid, [request]);
+            subscribe([request], 'subs');
         else
-            unsubscribe(appid, [request]);
+            unsubscribe([request], 'unsub');
     }
     else     
-        sutils.subscribe(instrument, action)
+        sutils.wssub([request], action)
         .then((resp) => console.log(resp))
         .catch((error) => console.log(error));
 }
