@@ -15,7 +15,7 @@ function subscribe_vix(appid, mode, action) {
 
 function onQuotes(q, appid){
 
-    const ltt = (typeof q.ltt === 'string') ? Date.parse(q.ltt) : q.ltt;
+    const ltt = (typeof q.datetime === 'string') ? Date.parse(q.datetime) : q.ltt;
     const ltp = q.close ?? q.last;
     const qt = { key: 'vix', stockCode: q.stock_code, exchange: q.exchange_code, ltp: ltp, ltt: ltt };
     if(appid === undefined)

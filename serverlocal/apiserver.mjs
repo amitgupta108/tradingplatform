@@ -28,7 +28,10 @@ function registerDataRequests(s, appid, mode)
     });
 
     s.on('startv2', (msg) => {
-        market_service.start(appid, msg.stockCode);
+        if (mode.startsWith('HISTORY'))
+            market_service.clientConfigure(appid, msg.simStartTime, '1x');
+        
+        market_service.startv2(appid, msg.stockCode);
         s.emit('stream', 'started');
     });
 

@@ -17,7 +17,7 @@ class OptionChain
     optionChains.push(this);
     qBox.addEventListener('strikex', this);
 
-    qBox.addEventListener('futures', (event) => {
+    qBox.addEventListener('index', (event) => {
       this.setup(event.detail);
     }, { once: true });
   }

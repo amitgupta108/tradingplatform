@@ -51,8 +51,8 @@ instrumentMap.set('BL1', {
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   fExpiry: "28JUL26",
-  oExpiry: "07JUL26",
-  oExpiryNxt: "14JUl26",
+  oExpiry: "14JUL26",
+  oExpiryNxt: "21JUl26",
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,

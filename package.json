@@ -5,6 +5,8 @@
   "type": "module",
   "main": "start.mjs",
   "scripts": {
+    "prestart": "kill-port 449",
+    "start": "node --env-file=./serverlocal/config/.env.d --env-file=./serverlocal/config/.env.s ./start.mjs 80",
     "dev": "node --import=hot-hook/register --env-file=./serverlocal/config/.env.d --env-file=./serverlocal/config/.env.s ./start.mjs 449"
   },
   "keywords": [],
