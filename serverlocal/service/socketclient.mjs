@@ -1,6 +1,7 @@
 import qserver from '../stream.mjs';
 import ordermanager from './ordermanager.mjs';
 import kotak_service from '../broker/m_t_kotakneo.mjs';
+import services from './services.mjs';
 import connector from './kotak/connector.os.mjs';
 import path from 'path';
 
