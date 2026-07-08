@@ -3,53 +3,25 @@ import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
 import adapter from '../adapter/breezeadapter.mjs';
 import streamer from '../stream.mjs';
 import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
+import simulator from '../service/ordersimulator.mjs';
 
-const live_atm = {
-    NIFTY: 0,
-    CRUDEOIL: 0,
-    BANKNIFTY: 0
-};
-
-const regex = /[0-9]/;
 const symbol_cache = new Map();
 
-function atmRefresh(provider, uq) 
-{
-    const sz = STRIKE_SIZE[uq.stockCode];
-    const atm = live_atm[uq.stockCode]; 
-    const keys = [];
+function atmRefresh(provider, appid, uq) 
+{    
+    const provider_subs = subs_store_all[provider]; 
+    const t = provider_subs.getSubscriptions(appid);
+    const atm = t.getPreviousATM('FIRST');
 
-    if (Math.abs(atm - uq.ltp) > sz) 
+    if (Math.abs(atm - uq.ltp) > STRIKE_SIZE[uq.stockCode])
     {
-        const provider_subs = subs_store_all[provider];
-        const stock_subs = provider_subs.getSubscriptions(uq.stockCode);
-        const opChains = stock_subs.getActiveOptionChains();
-
-        for(const oc of opChains) {
-            stock_subs.buildOptionChain(uq, oc);
-            keys.push(oc.key);
-        }
-
-        live_atm[uq.stockCode] = Math.round(uq.ltp / sz) * sz;
-        return {refreshed: true, list: keys};
-    }
-    return { refreshed: false, list: keys};
-}
-
-function addToCache(requests) 
-{
-    requests.forEach((request) => {
-        if (request.exchange === 'NSE')
-            request.exchange = 'NSE_INDEX';
-
-        const key = request.stockCode + request.key;
-        if (subs_store_all.get(key) === undefined)
-            subs_store_all.set(key, [request]);
-    });
-}
-
-function getCachedLists(view_name, stockCode){
-    return subs_store_all[view_name].getSubscriptions(stockCode);
+        const osts = t.getActiveOptionChains();
+        osts.forEach((ost) => {
+            t.buildOptionChain(uq, ost);
+        });
+        return {rebuild: true, list: osts}
+    }  
+    return {rebuild: false, list: []};
 }
 
 function expandSymbol(symbol)
@@ -58,20 +30,7 @@ function expandSymbol(symbol)
     if(t !== undefined)
         return t;
 
-    t = {} //template
-    const idx = symbol.search(regex);
-    const st_code = idx === -1 ? symbol : symbol.slice(0, idx);
-    t.stockCode = st_code;
-    t.symbol = symbol;
-    t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
-    
-    if(idx !== -1){
-        t.expiry_date = symbol.slice(idx, idx + 7);
-        if (!symbol.endsWith('FUT')) {
-            t.strike_price = symbol.slice(idx + 7, -2);
-            t.right = symbol.slice(-2);
-        }
-    }
+    t = utils.expandSymbol(symbol);
 
     symbol_cache.set(symbol, t);
     return t;
@@ -121,11 +80,15 @@ function standardizeoq(quote)
     return q;
 }
 
+function sendQsToSim(view_mode, q)
+{
+    if(simulator.open_orders[view_mode])
+        simulator.orderExecutionSim(view_mode, q);
+}
 
 export default {
     standardizeiq,
     standardizeoq,
     atmRefresh,
-    addToCache,
-    getCachedLists
+    sendQsToSim
   };

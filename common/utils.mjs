@@ -106,14 +106,29 @@ function _strikes(price, startIdx = 2, endIdx = 7, sz)
     return strikes;
 }
 
-const safeAwait = (promise) => 
-  promise
-    .then(data => [null, data])
-    .catch(err => [err, null]);
+function expandSymbol(symbol) 
+{
+    const t = {} //template
+    const regex = /[0-9]/;
+    const idx = symbol.search(regex);
+    const st_code = idx === -1 ? symbol : symbol.slice(0, idx);
+    t.stockCode = st_code;
+    t.symbol = symbol;
+    t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
+
+    if (idx !== -1) {
+        t.expiry_date = symbol.slice(idx, idx + 7);
+        if (!symbol.endsWith('FUT')) {
+            t.strike_price = symbol.slice(idx + 7, -2);
+            t.right = symbol.slice(-2);
+        }
+    }
+    return t;
+}
 
 export default {
-    addIVNDelta,
     filter,
     strikes,
-    _strikes  
+    _strikes,
+    expandSymbol
 };
