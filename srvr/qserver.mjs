@@ -244,9 +244,9 @@ function subscribe_vix(appid, mode, action)
     
     if(mode.startsWith('HISTORY')) {
         if(action === 'subs')
-            subscribe([request], 'subs');
+            subscribe(appid, [request]);
         else
-            unsubscribe([request], 'unsub');
+            unsubscribe(appid, [request]);
     }
     else     
         sutils.wssub([request], action)

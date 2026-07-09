@@ -2,7 +2,7 @@ import util_service from './broker/m_common.mjs';
 import scrip_store from './service/scripstore.mjs';
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
-import qserver from './stream.mjs'; 
+import { socketmap } from './session/appstate.mjs';
 
 var live_order_locked = true;
 
@@ -31,7 +31,7 @@ function registerDataRequests(s, appid, mode)
         if (mode.startsWith('HISTORY'))
             market_service.clientConfigure(appid, msg.simStartTime, '1x');
         
-        market_service.startv2(appid, msg.stockCode);
+        market_service.startv2(appid, msg);
         s.emit('stream', 'started');
     });
 
@@ -63,7 +63,7 @@ function registerDataRequests(s, appid, mode)
             market_service.exit(appid);
 
         s.sn.exit(appid, s.sn);
-        qserver.socketmap.delete(appid);
+        socketmap.delete(appid);
         s.disconnect();
 
         console.log('user exited:' + appid);
@@ -127,7 +127,7 @@ function registerAdminRequests(s, appid, mode)
         admin_service.subscribe([], 'unsubsall');
         s.sn.shared_with.forEach((item) => {
             if (item.appid != appid)
-                qserver.socketmap.delete(item.appid);
+                socketmap.delete(item.appid);
         })
         s.sn.remove(s.sn);
     });
