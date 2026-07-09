@@ -1,5 +1,8 @@
-import {OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE} from '../../common/constants.mjs';
+import {OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG} from '../../common/constants.mjs';
 import utils from '../../common/utils.mjs';
+
+export const socketmap = new Map();
+export const us = new Map();
 
 export class ScripAppMap
 {
@@ -26,10 +29,10 @@ export class Subscriptions {
         subs_store_all[provider] = this;
     }
 
-    addNewSubscriptions(appid, stockCode) {
+    addNewSubscriptions(appid, session) {
         let subs = this.subs_map.get(appid);
         if(subs === undefined) {
-            subs = new SubsTemplate(stockCode);
+            subs = new SubsTemplate(session);
             this.subs_map.set(appid, subs);
         }
         return subs;
@@ -55,22 +58,24 @@ export class Subscriptions {
 
 export class SubsTemplate
 {
-    constructor(stockCode)
+    constructor(session)
     {
-        this.stockCode = stockCode;
+        this.stockCode = session.stockCode;
         this.atm = 0;
         this.st = [
-            { key: 'index', stockCode: stockCode, toStream: true },
-            { key: 'futures', stockCode: stockCode, toStream: true },
-            { key: 'ocfirst', stockCode: stockCode, toStream: true, near: 'FIRST'},
+            { key: 'index', stockCode: this.stockCode, toStream: true },
+            { key: 'futures', stockCode: this.stockCode, toStream: true },
+            { key: 'ocfirst', stockCode: this.stockCode, toStream: true, near: 'FIRST'},
         ];
+        this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
+        this.oExpiries = session.oExpiries ?? [OPT_EXPIRIES[this.stockCode]['FIRST']];
 
         for (var i = 0; i < 3; i++) {
             this.st[i].exchange = this.stockCode === 'CRUDEOIL' ? 'MCX' : this.st[i].key === 'index' ? 'NSE' : 'NFO';
-            this.st[i].symbol = i === 1 ? this.stockCode.concat(FUT_EXPIRIES[this.stockCode].FIRST).concat('FUT') : this.st[i].stockCode;
+            this.st[i].symbol = i === 1 ? this.stockCode.concat(this.fExpiry).concat('FUT') : this.st[i].stockCode;
             this.st[i].toStream = i === 0 && this.st[i].exchange === 'MCX' ? false : true;
             if (i != 0)
-                this.st[i].expiry = i === 1 ? FUT_EXPIRIES[this.stockCode]['FIRST'] : OPT_EXPIRIES[this.stockCode]['FIRST'];
+                this.st[i].expiry = i === 1 ? this.fExpiry : this.oExpiries.at(0);
         }
     }
 
@@ -92,7 +97,7 @@ export class SubsTemplate
 
     getPreviousATM(near)
     {
-        const oc_config = OPT_EXPIRIES[this.stockCode][near];
+        const oc_config = OPT_CONFIG['FIVE'];
         const ost_first = this.getSubsItemsByKey('ocfirst')[0];
         const strikes = ost_first.strikes;
         if(strikes !== undefined){
@@ -106,13 +111,15 @@ export class SubsTemplate
 
     buildOptionChain(uq, ost)
     {
-        const oc_config = OPT_EXPIRIES[this.stockCode][ost.near];
+        const idx = ost.near === 'FIRST' ? 0 : 1;
+        const oc_config = OPT_CONFIG['FIVE'];
         const st_prices = utils._strikes(uq.ltp, oc_config.startIdx, oc_config.endIdx, STRIKE_SIZE[this.stockCode]);
         const strikes = st_prices.map((s) => {
-            s.exchange = uq.exchange;
-            s.expiry = oc_config.date;
+            s.exchange = uq.exchange === 'NSE' ? 'NFO' : uq.exchange;
+            s.expiry = this.oExpiries[idx];
             s.key = 'strikex';
-            s.symbol = uq.stockCode + oc_config.date + s.strike + s.right;
+            s.stockCode = uq.stockCode;
+            s.symbol = uq.stockCode + this.oExpiries[idx] + s.strike + s.right;
             return s;
         });
 

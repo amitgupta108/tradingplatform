@@ -1,18 +1,23 @@
 export const OPT_EXPIRIES = {
     NIFTY: {
-        FIRST: {date: '14JUL26', startIdx: 2, endIdx: 6, toStream: true},
-        SECOND: { date: '21JUL26', startIdx: 3, endIdx: 8, toStream: false},
-        THIRD: {date: '28JUL26', toStream: false}
+        FIRST: '14JUL26',
+        SECOND: '21JUL26',
+        THIRD: '28JUL26'
     },
     CRUDEOIL: {
-        FIRST: {date: '16JUL26', startIdx: 2, endIdx: 7},
-        SECOND: {date: '17AUG26'}
+        FIRST: '16JUL26',
+        SECOND: '17AUG26'
     },
     BANKNIFTY: {
-        FIRST: {date: '28JUL26', startIdx: 2, endIdx: 7},
-        SECOND: {date: '28JUL26'},
-        THIRD: {date: '30JUN26'}
+        FIRST: '28JUL26',
+        SECOND: '28JUL26',
+        THIRD: '30JUN26'
     },
+};
+
+export const OPT_CONFIG = {
+    FIVE: {startIdx: 2, endIdx: 7, toStream: true},
+    SIX: {startIdx: 2, endIdx: 8, toStream: true },
 };
 
 export const FUT_EXPIRIES = {
