@@ -1,8 +1,7 @@
 import utils from '../../common/utils.mjs';
 import {STRIKE_SIZE} from '../../common/constants.mjs';
+import {us} from './appstate.mjs';
 
-
-const us = new Map();
 
 class Session
 {

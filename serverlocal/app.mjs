@@ -1,7 +1,7 @@
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
-import qserver from './stream.mjs'; 
 import apiserver from './apiserver.mjs'; 
+import { socketmap } from './session/appstate.mjs';
 
 function connect(s)
 {        
@@ -34,7 +34,7 @@ function session(s, appid, stockCode, mode)
         sn = new Session(i_appid, mode, stockCode);
 
     sn.shared_with.set(appid, { m_subs: sn.status});
-    qserver.socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
+    socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
     s.sn = sn;
 }
 
