@@ -1,7 +1,6 @@
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
-
-const socketmap = new Map();
+import {socketmap} from './session/appstate.mjs';
 
 function emitOrders(appid, type, order)
 {    
@@ -11,11 +10,6 @@ function emitOrders(appid, type, order)
 function emitQs(appid, q)
 {
     send(appid, 'quote', q);
-
-    /*const sn = Session.sn(appid);
-    if (sn !== undefined && q?.key === 'futures')
-        sn.lastuq(q);
-    */
 }
 
 function send(appid, type, msg)
@@ -74,7 +68,6 @@ function emit(s, type, msg)
 }
 
 export default {
-    socketmap,
     emitQs,
     emitOrders,
     broadcast,

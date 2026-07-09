@@ -5,8 +5,8 @@ let in_prep_orders = {};
 const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
 let data_reload = false;
-const chart_strikes = {ce:'', pe:''};
-  
+
+const oc_container = document.getElementById('c_oc_div');
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
 const order_list_tbody = document.getElementById('order-list-tbody');
@@ -40,8 +40,8 @@ const expiry_btn_2 = document.getElementById('expiry_btn_2');
 const simDate = new Date(instrument.simStartTime);
 
 date_label.textContent = simDate.toDateString();
-expiry_btn_1.textContent = instrument.oExpiry;
-expiry_btn_2.textContent = instrument.oExpiryNxt;
+expiry_btn_1.textContent = instrument.oExpiries[0];
+expiry_btn_2.textContent = instrument.oExpiries[1];
 
 let spot_title = ' | S: ';
 let fut_title = 'F: ';

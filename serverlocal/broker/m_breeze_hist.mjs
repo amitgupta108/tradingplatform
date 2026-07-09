@@ -19,13 +19,12 @@ function onQuotes(q, appid) {
     
     if(qt.key === 'strikex')
         qutils.sendQsToSim(view_mode, qt);
-    else if (qt.key === 'futures' && (counter === 0 || counter++ === 6)) {
+    else if (qt.key === 'index' && (counter === 0 || counter++ === 6)) {
         counter = 1;
         const response = qutils.atmRefresh(logical_view_name, appid, qt);
-        if (response.refreshed === true) {
-            const chains = subs_store_all[logical_view_name].getSubscriptions(appid).getSubsItemsByKey(response.list);
-            chains.forEach((oc) => {
-                subscribe(appid, oc.strikes, 'subs');
+        if (response.rebuild) {
+            response.list.forEach((ost) => {
+                subscribe(appid, ost.strikes, 'subs');
             });
         }
     }
@@ -41,10 +40,10 @@ function exit(appid)
     return adapter.exit(appid);
 }
 
-function startv2(appid, stockCode)
+function startv2(appid, p)
 {
     const provider_subs = new Subscriptions(logical_view_name);
-    const stock_subs = provider_subs.addNewSubscriptions(appid, stockCode);
+    const stock_subs = provider_subs.addNewSubscriptions(appid, p);
     const instruments = stock_subs.getSubsItemsByKey(['index', 'futures']);
 
     return adapter.start(appid, instruments, view_mode);

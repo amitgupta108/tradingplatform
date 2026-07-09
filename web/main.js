@@ -14,7 +14,7 @@ function historyParams(expiry)
     endTime: endTime - 1000,
     interval: '5minute'
   }
-  p[expiry] = instrument[expiry];
+  p[expiry] = expiry === 'fExpiry'? instrument[expiry] : instrument['oExpiries'][0];
   return p;
 }
 
