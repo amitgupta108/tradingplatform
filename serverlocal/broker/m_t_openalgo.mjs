@@ -47,10 +47,10 @@ function exit(appid, sublist)
         client?._wsClient?.ws._sendMessage({action: unsubscribe_all});
 }
 
-function startv2(appid, stockCode)
+function startv2(appid, p)
 {
     const provider_subs = new Subscriptions(logical_view_name);
-    const stock_subs = provider_subs.addNewSubscriptions(stockCode + view_mode, stockCode);
+    const stock_subs = provider_subs.addNewSubscriptions(p.stockCode + view_mode, p);
     const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
     const st = requests.find((r) => r.key === 'index');
     if(st !== undefined)
