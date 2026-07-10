@@ -75,7 +75,7 @@ async function hsiconnect()
 
         if(message.type === 'order'){
             const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
-            ordermanager.notifyme(message);
+            ordermanager.notifyme(message, trade_mode);
         }
         else if(message.type === 'cn' && message.msg === 'connected'){
             kotak_service.notifyme(true);
