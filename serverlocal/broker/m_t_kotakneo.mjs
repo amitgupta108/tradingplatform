@@ -66,6 +66,7 @@ async function post(path, body)
         headers: getAuthData().headers,
         body: requestBody.toString()
     });
+    console.log('order just submitted ' + requestBody);
     return (await response).json();
 }
 
@@ -80,7 +81,8 @@ async function get(path)
 
 function toKotakOrder(order, isKotakOrder)
 {    
-    const ts = order.exchange === 'NFO' ? order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2): order.symbol; 
+    const key = order.exchange === 'NFO' ? order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2) : order.symbol;
+    const ts = scrip_service.findScripByKey('scripReferenceKey', key).tradingSymbol;
     return {
         am: 'NO',
         dq: '0',
@@ -135,7 +137,6 @@ async function placeOrder(appid, order)
         order.stCode = status.stCode;
         order.error = status.emsg;
     };
-    //console.log('order confirmation ' + JSON.stringify(status) + ' for order ' + JSON.stringify(order));
     return status;
 }
 
