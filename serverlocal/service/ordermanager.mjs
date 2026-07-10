@@ -17,11 +17,11 @@ function neworders(appid, orders)
     });
 }
 
-function notifyme(message)
+function notifyme(message, trade_mode)
 {    
     if(message.type === 'order') {
         console.log('order notifcation ' + message.data.ordSt);
-        liveOrderMatching(message, trade_mode[0]);
+        liveOrderMatching(message, trade_mode);
     }
 }
 
@@ -41,19 +41,14 @@ function liveOrderMatching(message, mode)
                 && order.symbol === live_order.symbol); 
     });
 
-    if(found !== undefined)
-    {
-        live_order.appid = found.appid;
+    live_order.appid = found !== undefined ? found.appid : live_order.stockCode + mode;
+    if(found === undefined)
+        live_order.receiver = { stockCode: live_order.stockCode, trade_mode: mode };    
+    else 
         live_order_map.delete(found.localid);
-    }
-    else {
-        live_order.appid = live_order.stockCode + mode;
-        live_order.receiver = {stockCode: live_order.stockCode, trade_mode: mode};
-    }
     
-    live_order_map.set(live_order.orderid, live_order);
-
     qs.emitOrders(live_order.appid, 'order', live_order);
+    live_order_map.set(live_order.orderid, live_order);
 }
 
 function formatLiveOrder(order)

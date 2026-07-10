@@ -1,6 +1,7 @@
 import qserver from '../stream.mjs';
 import ordermanager from './ordermanager.mjs';
 import kotak_service from '../broker/m_t_kotakneo.mjs';
+import services from './services.mjs';
 import connector from './kotak/connector.os.mjs';
 import path from 'path';
 
@@ -74,7 +75,6 @@ async function hsiconnect()
 
         if(message.type === 'order'){
             const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
-            
             ordermanager.notifyme(message);
         }
         else if(message.type === 'cn' && message.msg === 'connected'){

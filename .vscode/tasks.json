@@ -1,29 +1,25 @@
+
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
-    "tasks": 
-    [
+    "tasks": [
         {
-            "label": "echo",
+            "label": "Kill Port 449",
             "type": "shell",
-            "command": "echo Hello"
-        },
-        {
-            "label": "Vite-Node Watch (Mac)",
-            "type": "shell",
-            "command": "npx vite-node --watch ${file}",
-            "isBackground": true,
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
+            "osx": {
+                "command": "lsof -t -i :449 | xargs kill -9 || true"
             },
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "linux": {
+                "command": "lsof -t -i :449 | xargs kill -9 || true"
+            },
+            "windows": {
+                "command": "Stop-Process -Id (Get-NetTCPConnection -LocalPort 449 -ErrorAction SilentlyContinue).OwningProcess -Force -ErrorAction SilentlyContinue"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "close": true
+            },
+            "problemMatcher": []
         }
     ]
 }

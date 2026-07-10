@@ -12,8 +12,7 @@ const instrumentMap = new Map();
 instrumentMap.set('NH2', {
   fExpiry: "26MAY26",
   simStartTime: new Date("2026-05-15 09:15:00").getTime(),
-  oExpiry: "19MAY26",
-  oExpiryNxt: "26MAY26",
+  oExpiries: ["19MAY26", "26MAY26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -25,8 +24,7 @@ instrumentMap.set('NH2', {
 instrumentMap.set('NH1', {
   simStartTime: new Date("2026-06-12 09:15:00").getTime(),
   fExpiry: "30JUN26",
-  oExpiry: "17JUN26",
-  oExpiryNxt: "23JUN26",
+  oExpiries: ["17JUN26", "23JUN26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -50,9 +48,6 @@ instrumentMap.set('BL1', {
 
 instrumentMap.set('NL1', {
   simStartTime: Date.now(),
-  fExpiry: "28JUL26",
-  oExpiry: "07JUL26",
-  oExpiryNxt: "14JUl26",
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -64,8 +59,7 @@ instrumentMap.set('NL1', {
 instrumentMap.set('NL2', {
   simStartTime: Date.now(),
   fExpiry: "28JUL26",
-  oExpiry: "07JUL26",
-  oExpiryNxt: "14JUL26",
+  oExpiries: ["21JUL26", "28JUL26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,

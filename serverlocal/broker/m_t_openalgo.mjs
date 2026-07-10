@@ -1,37 +1,40 @@
 import OpenAlgo from 'openalgo';
-import session from '../session/session.mjs';
 import streamer from '../stream.mjs';
 import ordermanager from '../service/ordermanager.mjs';
-import adapter from '../adapter/breezeadapter.mjs';
 import utils from '../../common/utils.mjs';
 import qutils from './quotesutils.mjs';
 import path from 'path';
 import services from '../service/services.mjs';
-import { subs_cache } from '../session/appstate.mjs';
+import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
+import { OPT_EXPIRIES } from '../../common/constants.mjs';
 
 const name = path.parse(import.meta.filename).name;
 const logical_view_name = 'OPENALGOVIEW';
 const logical_trade_name = 'OPENALGOTRADE'
 
 let initialized = false;
-let subs_lost = true;
 let client;
+let ws_direct;
+let reconn_count = 0; 
 let counter = 0;
 let view_mode;
 
 function onQuotes(q)
 { 
     const qt = qutils.standardizeoq(q);
-    streamer.emitQs(qt.stockCode + view_mode, qt);
-
-    if(qt.key === 'futures' && (counter === 0 || counter++ === 6)) {
+    const l_appid = qt.stockCode + view_mode;
+    streamer.emitQs(l_appid, qt);
+    
+    if(qt.key === 'strikex')
+        qutils.sendQsToSim(view_mode, qt);
+    else if(qt.key === 'futures' && (counter === 0 || counter++ === 6)) 
+    {
         counter = 1;
-        const response = qutils.atmRefresh(logical_view_name, qt);
-        if(response.refreshed === true || subs_lost === true) {
-            const chains = subs_cache[logical_view_name].getSubscriptions(qt.stockCode).getSubsItembyKey(response.list);
-            chains.forEach((oc) => {
-                subscribe(qt.stockCode + view_mode, oc.strikes, 'subs');
-                subs_lost = false; 
+        const response = qutils.atmRefresh(logical_view_name, l_appid, qt);
+        if(response.rebuild) 
+        {
+            response.list.forEach((ost) => {
+                subscribe(l_appid, ost.strikes, 'subs');
             });
         }
     }
@@ -44,13 +47,43 @@ function exit(appid, sublist)
         client?._wsClient?.ws._sendMessage({action: unsubscribe_all});
 }
 
-function start(appid, stockCode)
+function startv2(appid, p)
 {
-    const provider_subs = subs_cache[logical_view_name];
-    const stock_subs = provider_subs.addNewSubscription(stockCode);
-    const requests = stock_subs.getRequestsByKey(['index', 'futures']);
+    const provider_subs = new Subscriptions(logical_view_name);
+    const stock_subs = provider_subs.addNewSubscriptions(p.stockCode + view_mode, p);
+    const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
+    const st = requests.find((r) => r.key === 'index');
+    if(st !== undefined)
+        st.exchange = 'NSE_INDEX';
     
     subscribe(appid, requests, 'subs');
+}
+
+function start(appid, sublist) 
+{
+    subscribe(appid, sublist, 'subs');
+}
+
+function autoStart() {
+    
+    setTimeout(() => {
+        const list = subs_store_all[logical_view_name].getFullSubsList();
+        for(const [k, v] of list)
+        {
+            const requests = v.getSubsItemsByKey(['index', 'futures']);
+            subscribe(k, requests, 'subs');
+            const chains = v.getActiveOptionChains();
+            chains.forEach((oc) => {
+                subscribe(k, oc.strikes, 'subs');
+            });
+        }
+
+        ws_direct = client._wsClient.ws;
+        ws_direct.addEventListener('close', () => {
+            console.log('openalgo websocket reconn count ' + reconn_count);
+            autoStart();
+        })
+    }, 5000);
 }
 
 function subscribe(appid, list, action)
@@ -62,17 +95,6 @@ function subscribe(appid, list, action)
         client.subscribe_ltp(list, onQuotes);
     else 
         client.unsubscribe_ltp(list, onQuotes);
-}
-
-function autoSubscribe()
-{   
-    setTimeout(() => {
-        const entries = qutils.getCachedLists();
-        entries.forEach((v, k) => {
-            streamer.streaming_status(k);
-            subscribe(undefined, v, 'subs');
-        })
-    }, 5000);
 }
 
 async function orderbook(appid, stockCode)
@@ -132,16 +154,19 @@ function init()
 {
     if(!initialized)
     {
-        view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
+        if(view_mode === undefined)
+            view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
+        
         if(!client)
             client = new OpenAlgo(process.env.openalgo_key);
+        
         return client.connect()
         .then(() => {
             initialized = true;
-            client._wsClient.ws.addEventListener('close', () => {
+            ws_direct = client._wsClient.ws;
+            ws_direct.addEventListener('close', () => {
                 console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-                subs_lost = true;
-                autoSubscribe();
+                autoStart();
             });
             return {status: 'success'}
         })
@@ -149,4 +174,4 @@ function init()
     }
 }
 
-export default {subscribe, exit, init, start, neworders, orderbook, cancelorder, name};
+export default {subscribe, exit, init, start, startv2, neworders, orderbook, cancelorder, name};
