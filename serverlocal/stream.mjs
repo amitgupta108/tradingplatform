@@ -1,19 +1,6 @@
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
-
-import EventEmitter  from 'node:events';
-const subsService = new EventEmitter();
-const socketmap = new Map();
-
-function addEventLsitener(eventName, callback)
-{
-    subsService.addListener(eventName, callback);
-}
-
-function streaming_status(random_keys)
-{
-    console.log('need more info to mark session stopped ' + random_keys);
-}
+import {socketmap} from './session/appstate.mjs';
 
 function emitOrders(appid, type, order)
 {    
@@ -23,13 +10,6 @@ function emitOrders(appid, type, order)
 function emitQs(appid, q)
 {
     send(appid, 'quote', q);
-
-    if (q?.key === 'strikex')
-        subsService.emit(q.key, q);
-
-    const sn = Session.sn(appid);
-    if (sn !== undefined && q?.key === 'futures')
-        sn.lastuq(q);
 }
 
 function send(appid, type, msg)
@@ -85,16 +65,10 @@ function emit(s, type, msg)
 {
     const key = type === 'quote' ? msg.key : type;
     s.emit(key, msg);
-    /*if(key === 'strikex'){
-        s.emit(msg.symbol, msg);
-    }*/
 }
 
 export default {
-    socketmap,
     emitQs,
     emitOrders,
     broadcast,
-    streaming_status,
-    addEventLsitener
 }
