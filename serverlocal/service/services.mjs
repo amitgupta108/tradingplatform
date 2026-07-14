@@ -2,6 +2,7 @@ import history_breeze from '../broker/m_breeze_hist.mjs';
 import live_breeze from '../broker/m_breeze_live.mjs';
 import live_openalgo from '../broker/m_t_openalgo.mjs';
 import live_kotak from '../broker/m_t_kotakneo.mjs';
+import live_kotak_hsm from '../broker/m_kotak_hsm.mjs';
 import trading_socket from './socketclient.mjs';
 import paper_trading from './ordersimulator.mjs';
 
@@ -12,6 +13,7 @@ const modes = {
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
+    S3T1ADMINT: { view: 'LIVE_3', trade: 'LIVE', admin: 'LIVE_TRADING' },
     L1L2ADMINT: { view: 'LIVE', trade: 'LIVE_2', admin: 'LIVE_TRADING' },
     L1L0ADMINS: { view: 'LIVE', admin: 'LIVE_STREAMING' },
     L2L2ADMINS: { view: 'LIVE_2', trade: 'LIVE_2', admin: 'LIVE_STREAMING' },
@@ -22,6 +24,7 @@ const services = {
     OPENALGOVIEW: live_openalgo,
     OPENALGOTRADE: live_openalgo,
     KOTAKNEOTRADE: live_kotak,
+    KOTAKHSMVIEW: live_kotak_hsm,
     ICICIHISTVIEW: history_breeze,
     ICICILIVEVIEW: live_breeze,
     SOCKETTRADE: trading_socket,
@@ -29,13 +32,13 @@ const services = {
 };
 
 const providers = {
-    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW' },
+    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW', LIVE_3: 'KOTAKHSMVIEW' },
     trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
     admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING: 'OPENALGOVIEW', SIM_ADMIN: 'TPSIMTRADE' }
 };
 
 const access = {
-    view: ['vix', 'start', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
+    view: ['vix', 'start', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain', 'snapshot'],
     trade: ['order', 'cancelorder', 'orderbook'],
     admin: ['live_trading', 'wsOps', 'unsubscribe', 'remove', 'reload']
 };
