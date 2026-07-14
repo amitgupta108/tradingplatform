@@ -86,9 +86,20 @@ function sendQsToSim(view_mode, q)
         simulator.orderExecutionSim(view_mode, q);
 }
 
+function buildRequests(appid, instruments) {
+    return instruments.map((inst) => {
+        return {
+            appid: appid,
+            symbol: inst.symbol,
+            instrument: inst
+        }
+    });
+}
+
 export default {
     standardizeiq,
     standardizeoq,
     atmRefresh,
-    sendQsToSim
+    sendQsToSim,
+    buildRequests
   };

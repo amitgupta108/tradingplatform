@@ -16,7 +16,7 @@ export const OPT_EXPIRIES = {
 };
 
 export const OPT_CONFIG = {
-    FIVE: {startIdx: 2, endIdx: 7, toStream: true},
+    FIVE: { startIdx: 0, endIdx: 5, toStream: true },
     SIX: {startIdx: 2, endIdx: 8, toStream: true },
 };
 
