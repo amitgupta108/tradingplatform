@@ -63,6 +63,7 @@ async function hsiconnect()
         return {status: 'error', reason: 'credentials not available'};
     
     ws_hsi = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
+    
     ws_hsi.onopen = (event) => {
 
         const payload = `{type:cn,Authorization:${authdata.hsi_token},Sid:${authdata.hsi_sid},src:WEB}`;
@@ -75,7 +76,7 @@ async function hsiconnect()
 
         if(message.type === 'order'){
             const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
-            ordermanager.notifyme(message);
+            ordermanager.notifyme(message, trade_mode);
         }
         else if(message.type === 'cn' && message.msg === 'connected'){
             kotak_service.notifyme(true);
@@ -90,6 +91,8 @@ async function hsiconnect()
     ws_hsi.onclose = (event) => {
         console.log("connection closed hsi" + event.reason);
     };
+
+    return {status: 'hsi connect initiated'};
 }
 
 function wshb(type, action)

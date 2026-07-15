@@ -3,16 +3,16 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Kill Port 449",
+            "label": "Kill Port 80",
             "type": "shell",
             "osx": {
-                "command": "lsof -t -i :449 | xargs kill -9 || true"
+                "command": "lsof -t -i :80 | xargs kill -9 || true"
             },
             "linux": {
-                "command": "lsof -t -i :449 | xargs kill -9 || true"
+                "command": "lsof -t -i :80 | xargs kill -9 || true"
             },
             "windows": {
-                "command": "Stop-Process -Id (Get-NetTCPConnection -LocalPort 449 -ErrorAction SilentlyContinue).OwningProcess -Force -ErrorAction SilentlyContinue"
+                "command": "Stop-Process -Id (Get-NetTCPConnection -LocalPort 80 -ErrorAction SilentlyContinue).OwningProcess -Force -ErrorAction SilentlyContinue"
             },
             "presentation": {
                 "reveal": "silent",
