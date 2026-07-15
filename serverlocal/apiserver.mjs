@@ -37,6 +37,9 @@ function registerDataRequests(s, appid, mode)
 
     s.on('history', catchAsync(async (msg) => {
         console.log("history request " + new Date(msg.startTime));
+        if(msg.exchange === 'MCX')
+            return {status: 'history not available for MCX'};
+        
         var response = await util_service.history(msg);
         if(response?.Error === null) {
             var event = msg.key === 'strikex' ? 'opt_history' : 'history';
@@ -83,6 +86,8 @@ function registerTradeRequests(s, appid, mode)
         console.log('order received at apiserver');
         if(profile['trade'] === 'SIMULATED' || !live_order_locked) 
             return trading_service.neworders(appid, profile['view'], orders);
+        else 
+            return `live order lock - ${live_order_locked}`;
     }, s), 'order');
 
     s.on('cancelorder', (msg) => {
