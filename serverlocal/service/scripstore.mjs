@@ -199,8 +199,8 @@ async function load(expiryDates, reload = false) {
     "data": {
       "baseFolder": "https://kotaksecurities.com",
       "filesPaths": [
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-25/transformed/mcx_fo.csv",
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-25/transformed/nse_fo.csv"
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-13/transformed/mcx_fo.csv",
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-13/transformed/nse_fo.csv"
       ]
     }
   };
@@ -209,11 +209,11 @@ async function load(expiryDates, reload = false) {
   //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed/mcx_fo.csv"
   
   const filters = {
-    exchangeSegment: ['nse_fo'],
+    exchangeSegment: ['nse_fo', 'mcx_fo'],
     expiryDate: [], //1784246399
-    underlying: ['NIFTY'],
+    underlying: ['NIFTY', 'CRUDEOIL'],
     exchange: [],
-    instrumentType: ['OPTIDX']
+    instrumentType: []
   };
 
   /*const filters = {

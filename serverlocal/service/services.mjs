@@ -12,6 +12,7 @@ const modes = {
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
+    S2T1ADMINT: { view: 'LIVE_2', trade: 'LIVE', admin: 'LIVE_TRADING' },
     L1L2ADMINT: { view: 'LIVE', trade: 'LIVE_2', admin: 'LIVE_TRADING' },
     L1L0ADMINS: { view: 'LIVE', admin: 'LIVE_STREAMING' },
     L2L2ADMINS: { view: 'LIVE_2', trade: 'LIVE_2', admin: 'LIVE_STREAMING' },
