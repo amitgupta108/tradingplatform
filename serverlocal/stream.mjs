@@ -28,6 +28,8 @@ function group_emit(appid, type, msg)
 { 
     const receivers = getReceivers(appid, type, msg);   
     receivers.forEach((appid) => {
+        if(type === 'order')
+            msg.appid = appid;
         emit(socketmap.get(appid).socket, type, msg);
     });
 }

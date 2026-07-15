@@ -115,7 +115,7 @@ export class SubsTemplate
         const oc_config = OPT_CONFIG['FIVE'];
         const st_prices = utils._strikes(uq.ltp, oc_config.startIdx, oc_config.endIdx, STRIKE_SIZE[this.stockCode]);
         const strikes = st_prices.map((s) => {
-            s.exchange = uq.exchange === 'NSE' ? 'NFO' : uq.exchange;
+            s.exchange = uq.exchange.startsWith('NSE') ? 'NFO' : uq.exchange;
             s.expiry = this.oExpiries[idx];
             s.key = 'strikex';
             s.stockCode = uq.stockCode;

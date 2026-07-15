@@ -25,9 +25,10 @@ function onQuotes(q)
     const l_appid = qt.stockCode + view_mode;
     streamer.emitQs(l_appid, qt);
     
+    const key = qt.exchange === 'MCX' ? 'futures' : 'index';
     if(qt.key === 'strikex')
         qutils.sendQsToSim(view_mode, qt);
-    else if(qt.key === 'futures' && (counter === 0 || counter++ === 6)) 
+    else if(qt.key === key && (counter === 0 || counter++ === 6)) 
     {
         counter = 1;
         const response = qutils.atmRefresh(logical_view_name, l_appid, qt);
