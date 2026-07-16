@@ -20,6 +20,25 @@
                 "close": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Kill Port 449",
+            "type": "shell",
+            "osx": {
+                "command": "lsof -t -i :449 | xargs kill -9 || true"
+            },
+            "linux": {
+                "command": "lsof -t -i :449 | xargs kill -9 || true"
+            },
+            "windows": {
+                "command": "Stop-Process -Id (Get-NetTCPConnection -LocalPort 449 -ErrorAction SilentlyContinue).OwningProcess -Force -ErrorAction SilentlyContinue"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "close": true
+            },
+            "problemMatcher": []
         }
     ]
 }

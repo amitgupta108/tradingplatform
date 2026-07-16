@@ -50,10 +50,10 @@ instrumentMap.set('NL1', {
   simStartTime: Date.now(),
   stockCode: 'NIFTY',
   fExpiry: "28JUL26",
-  oExpiries: ["14JUL26", "21JUL26"],
+  oExpiries: ["21JUL26", "28JUL26"],
   exchange: 'NFO',
   lscount: lscount,
-  mode: 'S1T1ADMINT',
+  mode: 'S1T2ADMINT',
   lotsize: 65,
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
 });

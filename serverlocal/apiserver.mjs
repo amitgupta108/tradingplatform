@@ -1,10 +1,7 @@
 import util_service from './broker/m_common.mjs';
-import scrip_store from './service/scripstore.mjs';
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
 import { socketmap } from './session/appstate.mjs';
-
-var live_order_locked = true;
 
 function registerDataRequests(s, appid, mode)
 {
@@ -18,7 +15,6 @@ function registerDataRequests(s, appid, mode)
         if(['skeletal', 'stopped'].includes(s.sn.status)){
             s.sn.ini(msg, (opSubs) => {
                 market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
-                //console.log('skip subscription list from session');
             });
             if(mode.startsWith('HISTORY'))
                 market_service.clientConfigure(appid, msg.simStartTime, '1x');
@@ -32,14 +28,15 @@ function registerDataRequests(s, appid, mode)
             market_service.clientConfigure(appid, msg.simStartTime, '1x');
         
         market_service.startv2(appid, msg);
-        s.emit('stream', 'started');
+        util_service.subscribe_vix(appid, mode, 'subs');
     });
 
     s.on('history', catchAsync(async (msg) => {
-        console.log("history request " + new Date(msg.startTime));
         if(msg.exchange === 'MCX')
             return {status: 'history not available for MCX'};
-        
+        if(!mode.startsWith('HISTORY'))
+            msg.simStartTime = Date.now();
+
         var response = await util_service.history(msg);
         if(response?.Error === null) {
             var event = msg.key === 'strikex' ? 'opt_history' : 'history';
@@ -83,16 +80,12 @@ function registerTradeRequests(s, appid, mode)
     const profile = services.getProfile(mode);
 
     s.on('order', catchAsync((orders) => {
-        console.log('order received at apiserver');
-        if(profile['trade'] === 'SIMULATED' || !live_order_locked) 
-            return trading_service.neworders(appid, profile['view'], orders);
-        else 
-            return `live order lock - ${live_order_locked}`;
+        console.log('order received at apiserver');        
+        return trading_service.neworders(appid, profile['view'], orders);
     }, s), 'order');
 
     s.on('cancelorder', (msg) => {
-        if (profile['trade'] === 'SIMULATED' || !live_order_locked)
-            trading_service.cancelorder(appid, msg);
+        return trading_service.cancelorder(appid, msg);
     });
     
     s.on('orderbook', async (msg) => {
@@ -147,17 +140,6 @@ async function registerDisconnectionHandler(s, appid, mode)
                 'server shutting down', 'transport close', 'transport error'].includes(reason))
             console.log("socket disconnected  " + reason);
     });
-}
-
-function unlockLiveOrders(action, key)
-{
-    const today = new Date();
-    if(key === today.toDateString()) {
-        live_order_locked = action === 'open' ? false: action === 'close' ? true : true;
-        scrip_store.load();
-    }
-    console.log('live order lock ' + live_order_locked);
-    return live_order_locked;
 }
 
 const catchAsync = (handler, socket, eventName) => {
