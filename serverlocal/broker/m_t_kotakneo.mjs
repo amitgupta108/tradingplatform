@@ -1,41 +1,32 @@
 import scrip_service from '../service/scripstore.mjs';
 import ordermanager from '../service/ordermanager.mjs';
-import qserver from '../stream.mjs';
 import socketclient from '../service/socketclient.mjs';
-import connector  from '../service/kotak/connector.os.mjs';
+import { state_kotakneo as mystate } from '../session/appstate.mjs';
+
 import path from 'path';
-import scripstore from '../service/scripstore.mjs';
 
 const name = path.parse(import.meta.filename).name;
-let endpoints = {
-    order: '/quick/order/rule/ms/place',
-    orderbook: '/quick/user/orders',
-    cancel: '/quick/order/cancel'
-};
-
 var initialized = false;
 
-function init() {
+async function init() {
     if (!initialized) {
-        console.log('connection initiated');
-        return socketclient.hsiconnect()
-            .then((response) => {
-                console.log('kotak neo init ' + response.status)
-            });
+        mystate.authData = await socketclient.getSavedCredentials();
+        if (mystate.authData !== undefined)
+            initialized = true;
+
+        return { status: initialized ? 'success' : 'authData not found' };
     }
+    return { status: 'already initialized' };
 }
 
-function notifyme(connected)
-{
-    if(connected){
-        initialized = true;
-        console.log('HSI connected');
-    }
+function notifyme(authData) {
+    initialized = true;
+    mystate.authData = authData;
 }
 
-async function getHeaders()
+function getHeaders()
 {
-    const auth_data = await connector.getSavedCredentials();
+    const auth_data = mystate.authData;
     const headers = {
         'accept': 'application/json',
         'Sid': auth_data.hsi_sid,
@@ -46,10 +37,10 @@ async function getHeaders()
     return {headers: headers, baseUrl: auth_data.baseUrl};
 }
 
-async function post(endpt, body)
+function post(endpt, body)
 {
     const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
-    const cred = await getHeaders();
+    const cred = getHeaders();
     const headers = cred.headers;
     const baseUrl = cred.baseUrl;
     const api_url = new URL(endpoints[endpt], baseUrl).href;
@@ -62,7 +53,7 @@ async function post(endpt, body)
     const response = fetch(api_url, options);
     console.log('order just submitted');
 
-    return (await response).json();
+    return response;
 }
 
 async function get(endpt)
@@ -79,51 +70,35 @@ async function get(endpt)
     return (await response).json();
 }
 
-async function submit(api_url, options) {
-    return await fetch(api_url, options);
-}
-
-function toKotakModifyOrder(order)
+function neworders(appid, orders)
 {
-    const kotakOrder = toKotakOrder(order);
-    kotakOrder.nOrdNo = order.orderid ?? order.orderId;
-    return kotakOrder;
+    const responses = [orders.length];
+    orders.forEach((order, i) => {
+        responses[i] = post('order', toKotakOrder(order));
+    });
+    ordermanager.neworders(appid, orders);
+
+    return handleOrderResponse(orders, responses);
 }
 
-function neworders(appid, view_mode, orders)
+function handleOrderResponse(orders, responses)
 {
-    if (!initialized) {
-        return { status: 'error', reason: 'service not connected' };
-    }
-    const promises = orders.map((order) => placeOrder(appid, order));
-    return Promise.all(promises);
+    orders.forEach(async (order, i) => {
+        const response = await responses[i];
+
+        if (response.stat === 'Ok') {
+            if (order.state === 'created') {
+                order.state = 'submitted';
+                order.orderid = response.nOrdNo;
+                order.status = response.stat;
+                order.stCode = response.stCode;
+                order.error = response.emsg;
+            }
+        }
+    });
 }
 
-async function placeOrder(appid, order)
-{
-    const clone = toKotakOrder(order);
-    if(clone.ts === undefined)
-        return 'trading symbol not found ' + order.symbol;
-    
-    ordermanager.neworders(appid, [order]);
-    let response = await post('order', clone);
-    console.log('order submission return ' + JSON.stringify(clone));
-    if (response.stat !== 'Ok') {
-        return { status: response.errMsg };
-    }
-
-    //const status = await response.json();
-    if(order.state === 'created') {
-        order.state = 'submitted';
-        order.orderid = response.nOrdNo;
-        order.status = response.stat;
-        order.stCode = response.stCode;
-        order.error = response.emsg;
-    };
-    return {status: order.state, message: order.orderid};
-}
-
-function toKotakOrder(order, isKotakOrder) {
+function toKotakOrder(order) {
     let ts = order.symbol;
     if (order.exchange === 'NFO') {
         const key = order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2);
@@ -145,12 +120,6 @@ function toKotakOrder(order, isKotakOrder) {
         ts: ts,
         tt: order.action === 'BUY' ? 'B' : 'S'
     };
-}
-
-async function modifyorder(appid, order)
-{
-    const kotakOrder = toKotakModifyOrder(order);
-    return await post('order/modifyOrder', kotakOrder, true);
 }
 
 async function cancelorder(appid, order)
@@ -184,34 +153,6 @@ async function orderbook(appid, stockCode)
     return orders?.sort((a, b) => a.orderid - b.orderid);
 }
 
-function subscribe(appid, sublist, action)
-{
-    if(sublist.length === 0)
-        return;
-
-    var subs_string = '';
-    for(var item of sublist) {
-        if(item.key === 'strikex'){
-            var key = 'scripreferenceKey';
-            var value = item.symbol.slice(0, -2);
-            value += item.symbol.endsWith('PE') ? '.00PE' : '.00CE';
-            var type = 'mws'
-        }
-        else {
-            var key = 'tradingSymbol';
-            var value = item.symbol;
-            var type = item.key === 'index' ? 'ifs' : 'mws';
-        }
-        var instrument = scrip_service.findScripByKey(key, value);
-        subs_string = (subs_string !== '' ? subs_string + '&' : '') + `${instrument.exchangeSegment}|${instrument.symbol}`;
-    }
-
-    if(action === 'subs')
-        socketclient.subscribe(type, subs_string);
-    else 
-        socketclient.unsubscribe(type, subs_string);       
-}
-
 function exit(appid, sublist)
 {
     subscribe(appid, sublist, 'unsub');
@@ -222,10 +163,7 @@ export default {
     neworders,
     cancelorder,
     orderbook,
-    placeOrder,
-    modifyorder,
     exit,
-    subscribe,
     init,
     notifyme
 };

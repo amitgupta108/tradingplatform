@@ -77,15 +77,15 @@ function registerDataRequests(s, appid, mode)
 function registerTradeRequests(s, appid, mode)
 {
     const trading_service = services.getService('trade', mode);
-    const profile = services.getProfile(mode);
 
-    s.on('order', catchAsync((orders) => {
+    s.on('order', async (orders) => {
         console.log('order received at apiserver');        
-        return trading_service.neworders(appid, profile['view'], orders);
-    }, s), 'order');
+        const responses = await trading_service.neworders(appid, orders);
+        console.log('number of orders processed' + responses.length);
+    });
 
     s.on('cancelorder', (msg) => {
-        return trading_service.cancelorder(appid, msg);
+        trading_service.cancelorder(appid, msg);
     });
     
     s.on('orderbook', async (msg) => {
