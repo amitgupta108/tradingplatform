@@ -4,6 +4,15 @@ import utils from '../../common/utils.mjs';
 export const socketmap = new Map();
 export const us = new Map();
 
+export const state_kotakneo = {
+    authData: {},
+    paths: {
+        order: '/quick/order/rule/ms/place',
+        orderbook: '/quick/user/orders',
+        cancel: '/quick/order/cancel'
+    }
+};
+
 export class ScripAppMap
 {
     constructor(){
