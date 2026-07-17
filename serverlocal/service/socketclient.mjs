@@ -10,55 +10,13 @@ const logical_trade_name = 'KOTAKNEOTRADE';
 var authenticated = false;
 var wsping;
 var ws_hsi;
-var ws_hsm;
-
-function hsmconnect()
-{
-    if(ws_hsm?.readyState === 1)
-        return;
-    
-    if (authenticated !== true)
-        return { status: 'credentials not available' };
-    
-    ws_hsm = new WebSocket(`wss://${process.env.kotak_hsmURL}`);
-
-    ws_hsm.onopen = (event) => {
-        let authdata = connector.getCredentials();
-        if(authdata !== undefined)
-        {
-            //const payload = `{Authorization:${hsm_token},Sid:${hsm_sid},type:cn}`;
-            const payload = JSON.stringify({Authorization: authdata.hsm_token, Sid: authdata.hsm_sid, type: 'cn'});
-            ws_hsm.send(payload);
-            wshb('hsm', 'start');
-            console.log('On open hsm');
-        }   
-    };
-
-    ws_hsm.onmessage = (event) => {
-        try {
-            const message = JSON.parse(event);
-            console.log('HSM Message received ' + JSON.stringify(message));
-            //kotak_neo.onQuotes(message);
-        } catch(error) {
-            console.log('error hsm: ' + error);
-        }          
-    };
-
-    ws_hsm.onerror = (event) => {
-        console.log("connection error hsm" + JSON.stringify(event));
-    }; 
-    
-    ws_hsm.onclose = (event) => {
-        console.log("connection closed hsm" + event.reason);
-    };
-}
 
 async function hsiconnect()
 {
     if(ws_hsi?.readyState === 1)
         return;
     
-    const authdata = await connector.getSavedCredentials();
+    const authdata = await getSavedCredentials();
     if(authdata === undefined)
         return {status: 'error', reason: 'credentials not available'};
     
@@ -72,13 +30,12 @@ async function hsiconnect()
 
     ws_hsi.onmessage = (event) => {
         const message = JSON.parse(event.data);
-
         if(message.type === 'order'){
             const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
             ordermanager.notifyme(message, trade_mode);
         }
         else if(message.type === 'cn' && message.msg === 'connected'){
-            kotak_service.notifyme(true);
+            kotak_service.notifyme(authdata);
             wshb('hsi', 'start');
         }
     };
@@ -90,6 +47,7 @@ async function hsiconnect()
     ws_hsi.onclose = (event) => {
         console.log("connection closed hsi" + event.reason);
     };
+    return { status: 'hsi connect initiated' };
 }
 
 function wshb(type, action)
@@ -123,14 +81,22 @@ async function authenticate(tpt) {
     return response;
 }
 
+function getSavedCredentials()
+{
+    return connector.getSavedCredentials();
+}
+
 async function init()
 {
-    let response = await connector.getSavedCredentials();
-    if(response !== undefined) {
-        console.log('valid authdata found');
-        authenticated = true;
+    if(!authenticated) {
+        let response = await getSavedCredentials();
+        if(response !== undefined) {
+            authenticated = true;
+            hsiconnect();
+            return { status: 'success: valid authdata found'};
+        }
+        return { status: 'authdata not available' };
     }
-    
-    return response;
+    return {status: 'already authenticated'};
 }
-export default {name, hsiconnect, init, authenticate };
+export default {name, init, authenticate, getSavedCredentials };
