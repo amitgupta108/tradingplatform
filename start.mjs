@@ -84,6 +84,7 @@ httpsServer.listen(port, () => {
 });
 
 let app = await import('./serverlocal/app.mjs', import.meta.hot?.boundary);
+app.default.startServices();
 
 io.on('connection', (s) => {
 
@@ -91,7 +92,7 @@ io.on('connection', (s) => {
         try {
             if (import.meta.hot) {
                 app = await import('./serverlocal/app.mjs', import.meta.hot?.boundary);
-
+                app.default.startServices();
                 console.log('[HMR] Swap completed successfully.');
             }
         } catch (err) {

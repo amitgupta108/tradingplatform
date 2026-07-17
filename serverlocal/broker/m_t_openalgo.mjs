@@ -13,6 +13,7 @@ const logical_view_name = 'OPENALGOVIEW';
 const logical_trade_name = 'OPENALGOTRADE'
 
 let initialized = false;
+let provider_subs;
 let client;
 let ws_direct;
 let reconn_count = 0; 
@@ -50,7 +51,6 @@ function exit(appid, sublist)
 
 function startv2(appid, p)
 {
-    const provider_subs = new Subscriptions(logical_view_name);
     const stock_subs = provider_subs.addNewSubscriptions(p.stockCode + view_mode, p);
     const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
     const st = requests.find((r) => r.key === 'index');
@@ -158,9 +158,12 @@ function init()
         if(view_mode === undefined)
             view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
         
+        
         if(!client)
             client = new OpenAlgo(process.env.openalgo_key);
         
+        provider_subs = new Subscriptions(logical_view_name);
+
         return client.connect()
         .then(() => {
             initialized = true;

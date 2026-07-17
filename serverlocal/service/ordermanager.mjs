@@ -19,10 +19,7 @@ function neworders(appid, orders)
 
 function notifyme(message, trade_mode)
 {    
-    if(message.type === 'order') {
-        console.log('order notifcation ' + message.data.ordSt);
         liveOrderMatching(message, trade_mode);
-    }
 }
 
 function liveOrderMatching(message, mode)
@@ -30,6 +27,7 @@ function liveOrderMatching(message, mode)
     if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         return;
 
+    console.log('order notifcation ' + message.data.ordSt);
     const live_order = formatLiveOrder(message.data);
     let found = findMatch(live_order);
 
