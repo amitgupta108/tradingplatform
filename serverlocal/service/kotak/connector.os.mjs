@@ -76,6 +76,9 @@ function getCredentials()
 
 async function getSavedCredentials() {
 
+    if(getCredentials() !== undefined)
+        return getCredentials();
+
     authdata = await authkeys('kotak_socket');
     if (authdata !== undefined && authdata['date'] === new Date().toDateString())
         return authdata;
@@ -107,4 +110,4 @@ async function authkeys(app, v) {
     return v === undefined ? l_authData : v;
 }
 
-export default { authenticate, getSavedCredentials, getCredentials };
+export default { authenticate, getSavedCredentials };
