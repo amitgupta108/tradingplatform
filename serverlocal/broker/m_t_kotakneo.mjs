@@ -120,7 +120,7 @@ async function placeOrder(appid, order)
         order.stCode = response.stCode;
         order.error = response.emsg;
     };
-    return {status: order.status, message: order.orderid};
+    return {status: order.state, message: order.orderid};
 }
 
 function toKotakOrder(order, isKotakOrder) {

@@ -4,9 +4,9 @@
         {
             "name": "Live on 80",
             "type": "node",
+            "preLaunchTask": "Kill Port 80",
             "program": "${workspaceFolder}/start.mjs",
             "request": "launch",
-            "noDebug": true,
             "skipFiles": [
                 "<node_internals>/**"
             ],
@@ -14,7 +14,6 @@
                 "80"
             ],
             "runtimeArgs": [
-                "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
             ],
             "outputCapture": "std"

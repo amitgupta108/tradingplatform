@@ -3,6 +3,11 @@ import services from './service/services.mjs';
 import apiserver from './apiserver.mjs'; 
 import { socketmap } from './session/appstate.mjs';
 
+function startServices()
+{
+    const list = services.initializeAll();
+}
+
 function connect(s)
 {        
     const appid = s.handshake.auth.token;
@@ -15,7 +20,7 @@ function connect(s)
         return;
     }
     
-    services.initialize(mode);
+    //services.initialize(mode);
     session(s, appid, stockCode, mode);
     registerHandlers(s, appid, mode);
 
@@ -70,4 +75,4 @@ function registerAuthorizer(s, mode)
     });
 }
 
-export default {connect}
+export default {startServices, connect}
