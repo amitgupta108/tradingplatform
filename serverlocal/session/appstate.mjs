@@ -6,7 +6,7 @@ export const us = new Map();
 
 export const state_kotakneo = {
     authData: {},
-    paths: {
+    endpoints: {
         order: '/quick/order/rule/ms/place',
         orderbook: '/quick/user/orders',
         cancel: '/quick/order/cancel'

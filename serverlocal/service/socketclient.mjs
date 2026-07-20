@@ -76,8 +76,10 @@ function wshb(type, action)
 async function authenticate(tpt) 
 {
     let response = await connector.authenticate(tpt);
-    if (response.status === 'success')
+    if (response.status === 'success') {
         authenticated = true;
+        hsiconnect();
+    }
     return response;
 }
 
