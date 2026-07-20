@@ -78,19 +78,21 @@ function registerTradeRequests(s, appid, mode)
 {
     const trading_service = services.getService('trade', mode);
 
-    s.on('order', async (orders) => {
+    s.on('order', (orders) => {
         console.log('order received at apiserver');        
-        const responses = await trading_service.neworders(appid, orders);
-        console.log('number of orders processed' + responses.length);
+        orders.forEach(async (order) => {
+            const updated = await trading_service.placeOrder(appid, order);
+            console.log('order state ' + updated.state + ' ' + (updated.error ?? updated.orderid));
+        });
     });
 
-    s.on('cancelorder', (msg) => {
-        trading_service.cancelorder(appid, msg);
+    s.on('cancelorder', async (msg) => {
+        const response = await trading_service.cancelorder(appid, msg);
+        console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
     });
     
     s.on('orderbook', async (msg) => {
-        var response = await trading_service.orderbook(appid, msg);
-        s.emit('orderbook', response);
+        s.emit('orderbook', await trading_service.orderbook(appid, msg));
     });
 }
 

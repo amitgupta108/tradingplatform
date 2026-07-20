@@ -10,6 +10,14 @@ export const state_kotakneo = {
         order: '/quick/order/rule/ms/place',
         orderbook: '/quick/user/orders',
         cancel: '/quick/order/cancel'
+    },
+    oTemplate: {
+        am: 'NO',
+        dq: '0',
+        mp: '6',
+        pf: 'N',
+        rt: 'DAY',
+        tp: '0',
     }
 };
 

@@ -2,7 +2,7 @@ let socket;
 
 function connect()
 {
-  socket = io(`https://localhost:${window.location.port}`, {
+  socket = io(`${window.location.host}`, {
     auth: {
       token: instrument.appid,
       mode: instrument.mode,
