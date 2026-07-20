@@ -99,7 +99,7 @@ instrumentMap.set('MP1',{
 instrumentMap.set('ML1',{
   simStartTime: Date.now(),
   fExpiry: "20JUL26",
-  oExpiries: ["16JUL26", "17AUG26"],
+  oExpiries: ["17AUG26", "17AUG26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,

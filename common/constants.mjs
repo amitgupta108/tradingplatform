@@ -5,7 +5,7 @@ export const OPT_EXPIRIES = {
         THIRD: '28JUL26'
     },
     CRUDEOIL: {
-        FIRST: '16JUL26',
+        FIRST: '17JUL26',
         SECOND: '17AUG26'
     },
     BANKNIFTY: {
