@@ -64,8 +64,14 @@ async function getHistoricalDatav2(instrument, sTime, endTime, interval)
     b.toDate = endTime != undefined ? ISODate(endTime) : ISODate(sTime + ((16 * 60) * 1000));  
 
     const breeze = await connector.getLiveConnection();
-        
-    return breeze.getHistoricalDatav2(b);
+    console.log('calling getHistoricalDatav2 ' + instrument.key + ' ' + Date.now());    
+    
+    return breeze.getHistoricalDatav2(b)
+    .then((response) => 
+    {
+        console.log('response getHistoricalDatav2 ' + response.Success.length + ' ' + Date.now());
+        return response;
+    });
 }
 
 function ISODate(datetime) {
