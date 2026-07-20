@@ -43,7 +43,7 @@ function post(endpt, body)
     const cred = getHeaders();
     const headers = cred.headers;
     const baseUrl = cred.baseUrl;
-    const api_url = new URL(endpoints[endpt], baseUrl).href;
+    const api_url = new URL(mystate.endpoints[endpt], baseUrl).href;
     const options = {
         method: 'POST',
         headers: headers,
@@ -83,7 +83,7 @@ function neworders(appid, orders)
 
 function handleOrderResponse(orders, responses)
 {
-    orders.forEach(async (order, i) => {
+    return orders.forEach(async (order, i) => {
         const response = await responses[i];
 
         if (response.stat === 'Ok') {
