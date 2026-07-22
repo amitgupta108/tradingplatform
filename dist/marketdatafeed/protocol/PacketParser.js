@@ -15,59 +15,34 @@ class PacketParser {
     static init(data)
     {
         let pos = 0;
-        let packetsCount = buf2Long(data.slice(pos, 2));
+        //const packetsCount = buf2Long(data.slice(pos, 2));
         //console.log("packets.length: " + packetsCount);
         pos += 2;
-        let respType = buf2Long(data.slice(pos, pos + 1));
+        const respType = buf2Long(data.slice(pos, pos + 1));
         pos += 1;
         //console.log("TYPE:: " + respType);
         return {responseType: respType, position: pos};
     }
 
     static parseData(data, resp, topicList)
-    {   let respType = resp.responseType;
-        let pos = resp.position;
+    {   
+        const respType = resp.responseType;
+        const pos = resp.position;
 
-        if (respType  == BinRespTypes.CONNECTION_TYPE)
+        if (respType == BinRespTypes.DATA_TYPE)
+            return this.parseDataMessage(pos, data, topicList);
+        else
+            return this.parseConfirmationMessge(pos, respType, data);
+    }
+
+    static parseConfirmationMessge(pos, respType, data)
+    {
+        if (respType == BinRespTypes.CONNECTION_TYPE)
             return this.parseConnectionMessge(pos, data);
         else
-            return this.parseNonConnMessage(pos, respType , data, topicList);
-    }
-
-    static _parseData(data, resp, topicList) {
-        let respType = resp.responseType;
-        let pos = resp.position;
-
-        switch (respType) {
-            case BinRespTypes.CONNECTION_TYPE :
-                return this.parseConnectionMessge(pos, data);
-                break;
-            case BinRespTypes.DATA_TYPE :
-                return this.parseDataMessage(pos, data, topicList);
-                break;
-            case BinRespTypes.SUBSCRIBE_TYPE :
-                return this.parseSubsMessage(pos, respType, data);
-                break; 
-            case BinRespTypes.UNSUBSCRIBE_TYPE:
-                return this.parseSubsMessage(pos, respType, data);
-                break;
-            case BinRespTypes.SNAPSHOT:
-                return this.parseSnapshotMessage(pos, respType, data);
-                break;
-            case BinRespTypes.CHPAUSE_TYPE :
-                return parseChannelMessage(pos, respType, data);
-                break;
-            case BinRespTypes.CHRESUME_TYPE :
-                return parseChannelMessage(pos, respType, data);
-                break;
-            case BinRespTypes.OPC_SUBSCRIBE :
-                return this.parseOPCMessage(pos, respType, data);
-                break;
-            default:
-                return sendJsonArrResp([]);
-        }
-    }
-
+            return this.parseOtherMessage(pos, respType, data);
+    } 
+  
     static parseConnectionMessge(pos, data)
     {
         let jsonRes = {};
@@ -129,33 +104,25 @@ class PacketParser {
                 jsonRes.stCode = RespCodes.CONNECTION_INVALID;
             }
         }
-        return {JSONArrayResp: sendJsonArrResp(jsonRes), ackCount: ackCount};
+        return {resp: jsonRes, ackCount: ackCount};
     }
-
-    static parseNonConnMessage(pos, respType , data, topicList)
-    {
-        if (respType  == BinRespTypes.DATA_TYPE) 
-            return this.parseDataMessage(pos, data, topicList);
-        else 
-            return this.parseConfMessage(pos, respType , data);
-    } 
 
     static parseDataMessage(pos, data, topicList)
     {
         const h = [];
-        var g = buf2Long(data.slice(pos, pos + 2));
+        const g = buf2Long(data.slice(pos, pos + 2));
         pos += 2;
         for (let n = 0; n < g; n++) {
             pos += 2;
-            var c = buf2Long(data.slice(pos, pos + 1));
-            console.log("ResponseType: " + c);
+            const c = buf2Long(data.slice(pos, pos + 1));
+            //console.log("ResponseType: " + c);
             pos++;
-            if (c == RespTypes.SNAP) {
+            if (c === RespTypes.SNAP) {
                 const returnval = this.parseSnapshot(pos, data, topicList);
                 h.push(returnval.data);
                 pos = returnval.pos;
             }
-            else if (c == RespTypes.UPDATE) {
+            else if (c === RespTypes.UPDATE) {
                 const returnVal = this.parseTopic(pos, data, topicList);
                 h.push(returnVal.data);
                 pos = returnVal.pos;
@@ -163,28 +130,28 @@ class PacketParser {
             else
                 console.error("Invalid ResponseType: " + c);
         }
-        return JSON.stringify(h);
+        return h;
     }
 
     static parseSnapshot(pos, data, topicList)
     {
-        let f = buf2Long(data.slice(pos, pos + 4));
+        const f = buf2Long(data.slice(pos, pos + 4));
         pos += 4;
         //console.log("topic Id: " + f);
-        let nameLen = buf2Long(data.slice(pos, pos + 1));
+        const nameLen = buf2Long(data.slice(pos, pos + 1));
         pos++;
         //console.log("nameLen:" + nameLen);
-        let topicName = buf2String(data.slice(pos, pos + nameLen));
+        const topicName = buf2String(data.slice(pos, pos + nameLen));
         pos += nameLen;
         //console.log("topicName: " + topicName);
-        let d = this.getNewTopicData(topicName);
+        const d = this.getNewTopicData(topicName);
         if (d) {
             topicList[f] = d;
             let fcount = buf2Long(data.slice(pos, pos + 1));
             pos++;
             //console.log("fcount1: " + fcount);
             for (let index = 0; index < fcount; index++) {
-                let fvalue = buf2Long(data.slice(pos, pos + 4));
+                const fvalue = buf2Long(data.slice(pos, pos + 4));
                 d.setLongValues(index, fvalue);
                 pos += 4;
                 //console.log(index + ":" + fvalue)
@@ -194,56 +161,53 @@ class PacketParser {
             pos++;
             //console.log("fcount2: " + fcount);
             for (let index = 0; index < fcount; index++) {
-                let fid = buf2Long(data.slice(pos, pos + 1));
+                const fid = buf2Long(data.slice(pos, pos + 1));
                 pos++;
-                let dataLen = buf2Long(data.slice(pos, pos + 1));
+                const dataLen = buf2Long(data.slice(pos, pos + 1));
                 pos++;
-                let strVal = buf2String(data.slice(pos, pos + dataLen));
+                const strVal = buf2String(data.slice(pos, pos + dataLen));
                 pos += dataLen;
                 d.setStringValues(fid, strVal);
                 //console.log(fid + ":" + strVal)
             }
             return {data: d.prepareData(), pos: pos};
-        } else {
-            console.log("Invalid topic feed type !")
-        }
+        } else
+            console.log("Invalid topic feed type !");
     }
 
     static parseTopic(pos, data, topicList)
     {
-        //console.log("updates ......");
-        var f = buf2Long(data.slice(pos, pos + 4));
-        console.log("topic Id: " + f);
+        const f = buf2Long(data.slice(pos, pos + 4));
+        //console.log("topic Id: " + f);
         pos += 4;
-        var d = topicList[f];
-        if (!d) {
-            console.error("Topic Not Available in TopicList!")
-        } else {
-            let fcount = buf2Long(data.slice(pos, pos + 1));
+        const d = topicList[f];
+        if (d) {
+            const fcount = buf2Long(data.slice(pos, pos + 1));
             pos++;
             //console.log("fcount1: " + fcount);
             for (let index = 0; index < fcount; index++) {
-                let fvalue = buf2Long(data.slice(pos, pos + 4));
+                const fvalue = buf2Long(data.slice(pos, pos + 4));
                 d.setLongValues(index, fvalue);
                 //console.log("index:" + index + ", val:" + fvalue);
                 pos += 4
-            }
-        }
-        return { data: d.prepareData(), pos: pos };
+            }            
+            return { data: d.prepareData(), pos: pos };
+        } else
+            console.error("Topic Not Available in TopicList!");
     }
 
-    static parseConfMessage(pos, respType , data)
+    static parseOtherMessage(pos, respType , data)
     {
         if (respType  == BinRespTypes.SUBSCRIBE_TYPE || respType  == BinRespTypes.UNSUBSCRIBE_TYPE)
             return this.parseSubsMessage(pos, respType , data);
         else if (respType == BinRespTypes.SNAPSHOT)
             return this.parseSnapshotMessage(pos, respType , data);
-        else if ((respType == BinRespTypes.CHPAUSE_TYPE || respType == BinRespTypes.CHRESUME_TYPE))
+/*        else if ((respType == BinRespTypes.CHPAUSE_TYPE || respType == BinRespTypes.CHRESUME_TYPE))
             return parseChannelMessage(pos, respType, data);
         else if (respType == BinRespTypes.OPC_SUBSCRIBE)
             return this.parseOPCMessage(pos, respType, data);
-        else 
-            return sendJsonArrResp([]);
+*/       else 
+            return {};
     }
 
     static parseSubsMessage(pos, respType , data)
@@ -270,7 +234,7 @@ class PacketParser {
                 }
                 break
         }
-        return sendJsonArrResp(jsonRes)
+        return jsonRes;
     }
 
     static parseSnapshotMessage(pos, respType , data)
@@ -291,7 +255,7 @@ class PacketParser {
                 jsonRes.stCode = RespCodes.SNAPSHOT_FAILED;
                 break
         }
-        return sendJsonArrResp(jsonRes)    
+        return jsonRes;
     }
     
     static parseChannelMessage(pos, respType, data)
@@ -312,7 +276,7 @@ class PacketParser {
                 jsonRes.stCode = respType  == BinRespTypes.CHPAUSE_TYPE ? RespCodes.CHANNELP_FAILED : RespCodes.CHANNELR_FAILED;
                 break
         }
-        return sendJsonArrResp(jsonRes)
+        return jsonRes;
     }
     
     static parseOPCMessage(pos, respType, data)
@@ -346,7 +310,7 @@ class PacketParser {
                 jsonRes.stCode = 11040;
                 break
         }
-        return sendJsonArrResp(jsonRes)
+        return jsonRes;
     }
 
     static getStatus(data, pos)
@@ -432,6 +396,40 @@ class PacketParser {
         }
         catch {
             return { raw: data };
+        }
+    }
+
+    static _parseData(data, resp, topicList) {
+        let respType = resp.responseType;
+        let pos = resp.position;
+
+        switch (respType) {
+            case BinRespTypes.CONNECTION_TYPE:
+                return this.parseConnectionMessge(pos, data);
+                break;
+            case BinRespTypes.DATA_TYPE:
+                return this.parseDataMessage(pos, data, topicList);
+                break;
+            case BinRespTypes.SUBSCRIBE_TYPE:
+                return this.parseSubsMessage(pos, respType, data);
+                break;
+            case BinRespTypes.UNSUBSCRIBE_TYPE:
+                return this.parseSubsMessage(pos, respType, data);
+                break;
+            case BinRespTypes.SNAPSHOT:
+                return this.parseSnapshotMessage(pos, respType, data);
+                break;
+            case BinRespTypes.CHPAUSE_TYPE:
+                return parseChannelMessage(pos, respType, data);
+                break;
+            case BinRespTypes.CHRESUME_TYPE:
+                return parseChannelMessage(pos, respType, data);
+                break;
+            case BinRespTypes.OPC_SUBSCRIBE:
+                return this.parseOPCMessage(pos, respType, data);
+                break;
+            default:
+                return sendJsonArrResp([]);
         }
     }
 }

@@ -1,7 +1,6 @@
 import { BaseClient } from './BaseClient.js';
 import { RespTypeValues, STAT, BinRespTypes, SCRIP_PREFIX, INDEX_PREFIX, DEPTH_PREFIX } from '../types/types.js';
 import { PacketBuilder } from '../protocol/PacketBuilder.js';
-import e from 'express';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';
 
@@ -36,35 +35,40 @@ class HSMClient extends BaseClient
         this.log('Authentication request sent');
     }
 
-    handleBinaryMessage(jsonData, responseType) 
+    handleBinaryMessage(message, responseType, t) 
     {
-        let parsed = JSON.parse(jsonData);
-        
-        parsed = Array.isArray(parsed) ? parsed : [parsed];
-
-        parsed.forEach((element) => {
-            if(responseType === BinRespTypes.DATA_TYPE)
-                this.log(this.convert(element));
-            else 
-                this.handleConfirmations(element);
-        });
+        if (responseType === BinRespTypes.DATA_TYPE)
+            this.handleQuote(message, t);
+        else
+            this.handleConfirmations(message);
     }
 
-    convert(parsed)
+    handleQuote(parsed, t)
     {
-        if(parsed.name === 'sf') {
-            const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, ...rest } = parsed;
-            return {quotetype, token, exchange, symbol, ltp, ltt, volume};
+        if(!Array.isArray(parsed))
+            this.convertAndSend(parsed, t);
+        else
+            parsed.forEach((quote) => {
+                this.convertAndSend(quote, t);
+            });
+    }
+
+    convertAndSend(quote, t)
+    {
+        if (quote.name === 'sf' && quote.ltp !== undefined) {
+            const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, ...rest } = quote;
+            this.emit('quote', {quotetype, token, exchange, symbol, ltp, ltt, volume}, t);
         }
-        else if(parsed.name === 'if'){
-            const { name: quotetype, tk: token, e: exchange, iv: ltp, tvalue: ltt, ...rest } = parsed;
-            return { quotetype, token, exchange, ltp, ltt};
+        else if (quote.name === 'if' && quote.iv !== undefined){
+            const { name: quotetype, tk: token, e: exchange, iv: ltp, tvalue: ltt, ...rest } = quote;
+            this.emit('quote', { quotetype, token, exchange, ltp, ltt}, t);
         }
     }
     
     handleConfirmations(parsed)
     {
-        if (parsed.type === RespTypeValues.CONN) {
+        if(parsed.type === RespTypeValues.CONN) 
+        {
             if (parsed.stat === STAT.OK)
                 this.throttleIntId = setInterval(() => {
                     this.requestThrottling('');
@@ -79,7 +83,7 @@ class HSMClient extends BaseClient
         else if (parsed.type === RespTypeValues.SNAP)
             this.log('snapshot', parsed);
         else
-            this.log('heart beat ', parsed);
+            this.log('heart beat');
     }
 
     handleTopicMessage(parsed) 
