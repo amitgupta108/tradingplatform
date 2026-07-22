@@ -1,6 +1,7 @@
 import { BaseClient } from './BaseClient.js';
 import { RespTypeValues, STAT, BinRespTypes, SCRIP_PREFIX, INDEX_PREFIX, DEPTH_PREFIX } from '../types/types.js';
 import { PacketBuilder } from '../protocol/PacketBuilder.js';
+import e from 'express';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';
 
@@ -35,40 +36,52 @@ class HSMClient extends BaseClient
         this.log('Authentication request sent');
     }
 
-    handleBinaryMessage(response) {
-
-        let parsed = JSON.parse(response);
-        if(!parsed) {
-            this.log('handleBinaryMessage - invalid/unparsable response');
-            return;
-        }
-        parsed = Array.isArray(parsed) ? parsed[0] : parsed;
+    handleBinaryMessage(jsonData, responseType) 
+    {
+        let parsed = JSON.parse(jsonData);
         
-        if (parsed.type === RespTypeValues.CONN) {
-            if (parsed.stat === STAT.OK) {
-                this.throttleIntId = setInterval(() => {
-                    this.requestThrottling('');
-                }, this.options.throttleInterval);
-            }
-            else {
-                this.log('HSM authentication failed:', parsed.msg);
-            }
+        parsed = Array.isArray(parsed) ? parsed : [parsed];
+
+        parsed.forEach((element) => {
+            if(responseType === BinRespTypes.DATA_TYPE)
+                this.log(this.convert(element));
+            else 
+                this.handleConfirmations(element);
+        });
+    }
+
+    convert(parsed)
+    {
+        if(parsed.name === 'sf') {
+            const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, ...rest } = parsed;
+            return {quotetype, token, exchange, symbol, ltp, ltt, volume};
         }
-        else if (parsed.type === RespTypeValues.SUBS) {
-            this.log('subscribed', parsed);
-        }
-        else if (parsed.type === RespTypeValues.UNSUBS) {
-            this.log('unsubscribed', parsed);
-        }
-        else if (parsed.type === RespTypeValues.SNAP) {
-            this.log('snapshot', parsed);
-        }
-        else
-        {
-            this.log('data feed ? ' + response);
+        else if(parsed.name === 'if'){
+            const { name: quotetype, tk: token, e: exchange, iv: ltp, tvalue: ltt, ...rest } = parsed;
+            return { quotetype, token, exchange, ltp, ltt};
         }
     }
     
+    handleConfirmations(parsed)
+    {
+        if (parsed.type === RespTypeValues.CONN) {
+            if (parsed.stat === STAT.OK)
+                this.throttleIntId = setInterval(() => {
+                    this.requestThrottling('');
+                }, this.options.throttleInterval);
+            else
+                this.log('HSM authentication failed:', parsed.msg);
+        }
+        else if (parsed.type === RespTypeValues.SUBS)
+            this.log('subscribed', parsed);
+        else if (parsed.type === RespTypeValues.UNSUBS)
+            this.log('unsubscribed', parsed);
+        else if (parsed.type === RespTypeValues.SNAP)
+            this.log('snapshot', parsed);
+        else
+            this.log('heart beat ', parsed);
+    }
+
     handleTopicMessage(parsed) 
     {
         if (parsed.topicData) {
@@ -99,6 +112,13 @@ class HSMClient extends BaseClient
         const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.UNSUBSCRIBE_TYPE, SCRIP_PREFIX, this.channel);
         this.sendMessage(request);
         this.log('Unsubscribing from scrips:', scripStr);
+    }
+
+    requestIndexSnapshot(scrips) {
+        const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
+        this.log('Requesting index snapshot:', scripStr);
+        const request = PacketBuilder.buildSnapshotRequest(scripStr, BinRespTypes.SNAPSHOT, INDEX_PREFIX);
+        this.sendMessage(request);
     }
 
     requestScripSnapshot(scrips) {

@@ -124,7 +124,7 @@ class BaseClient extends EventEmitter {
         try {
             
             if (data instanceof ArrayBuffer) {
-                let resp = PacketParser.init(data); 
+                const resp = PacketParser.init(data); 
                 if (resp.responseType === BinRespTypes.DATA_TYPE)
                     this.someAcknowledgementBusiness(data, resp);
 
@@ -134,7 +134,7 @@ class BaseClient extends EventEmitter {
                     this.ackObj.ackNum = jsonData.ackCount;
                     jsonData = jsonData.JSONArrayResp;
                 }
-                this.handleBinaryMessage(jsonData);
+                this.handleBinaryMessage(jsonData, resp.responseType);
             } 
             else if (typeof data === 'string') {
                 const parsed = PacketParser.parseTextMessage(data);
