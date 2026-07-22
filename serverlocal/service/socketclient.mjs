@@ -11,15 +11,15 @@ var authenticated = false;
 var wsping;
 var ws_hsi;
 
-async function hsiconnect() 
+async function hsiconnect()
 {
-    if (ws_hsi?.readyState === 1)
+    if(ws_hsi?.readyState === 1)
         return;
-
+    
     const authdata = await getSavedCredentials();
-    if (authdata === undefined)
-        return { status: 'error', reason: 'credentials not available' };
-
+    if(authdata === undefined)
+        return {status: 'error', reason: 'credentials not available'};
+    
     ws_hsi = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
     ws_hsi.onopen = (event) => {
 
@@ -30,11 +30,11 @@ async function hsiconnect()
 
     ws_hsi.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message.type === 'order') {
+        if(message.type === 'order'){
             const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
             ordermanager.notifyme(message, trade_mode);
         }
-        else if (message.type === 'cn' && message.msg === 'connected') {
+        else if(message.type === 'cn' && message.msg === 'connected'){
             kotak_service.notifyme(authdata);
             wshb('hsi', 'start');
         }
@@ -83,22 +83,22 @@ async function authenticate(tpt)
     return response;
 }
 
-function getSavedCredentials() 
+function getSavedCredentials()
 {
     return connector.getSavedCredentials();
 }
 
-async function init() 
+async function init()
 {
-    if (!authenticated) {
+    if(!authenticated) {
         let response = await getSavedCredentials();
-        if (response !== undefined) {
+        if(response !== undefined) {
             authenticated = true;
             hsiconnect();
-            return { status: 'success: valid authdata found' };
+            return { status: 'success: valid authdata found'};
         }
         return { status: 'authdata not available' };
     }
-    return { status: 'already authenticated' };
+    return {status: 'already authenticated'};
 }
-export default { name, init, authenticate, getSavedCredentials };
+export default {name, init, authenticate, getSavedCredentials };

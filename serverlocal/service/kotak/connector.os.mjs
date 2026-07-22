@@ -75,7 +75,7 @@ function getCredentials() {
 
 async function getSavedCredentials() {
 
-    if (getCredentials() !== undefined)
+    if(getCredentials() !== undefined)
         return getCredentials();
 
     authdata = await authkeys('kotak_socket');

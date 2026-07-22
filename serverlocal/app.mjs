@@ -3,9 +3,9 @@ import services from './service/services.mjs';
 import apiserver from './apiserver.mjs'; 
 import { socketmap } from './session/appstate.mjs';
 
-function startServices()
+function startServices(skip_list) 
 {
-    const list = services.initializeAll();
+    const list = services.initializeAll([]);
 }
 
 function connect(s)
@@ -75,4 +75,4 @@ function registerAuthorizer(s, mode)
     });
 }
 
-export default {startServices, connect}
+export default {connect, startServices}
