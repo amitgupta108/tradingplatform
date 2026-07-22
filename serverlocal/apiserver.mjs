@@ -4,9 +4,7 @@ import Session from './session/session.mjs';
 import services from './service/services.mjs';
 import { socketmap } from './session/appstate.mjs';
 
-var live_order_locked = true;
-
-function registerDataRequests(s, appid, mode)
+function registerDataRequests(s, appid,  mode)
 {
     const market_service = services.getService('view', mode);
 
@@ -18,7 +16,6 @@ function registerDataRequests(s, appid, mode)
         if(['skeletal', 'stopped'].includes(s.sn.status)){
             s.sn.ini(msg, (opSubs) => {
                 market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
-                //console.log('skip subscription list from session');
             });
             if(mode.startsWith('HISTORY'))
                 market_service.clientConfigure(appid, msg.simStartTime, '1x');
@@ -32,17 +29,12 @@ function registerDataRequests(s, appid, mode)
             market_service.clientConfigure(appid, msg.simStartTime, '1x');
         
         market_service.startv2(appid, msg);
-        s.emit('stream', 'started');
+        util_service.subscribe_vix(appid, mode, 'subs');
     });
 
-    s.on('history', catchAsync(async (msg) => {
-        console.log("history request " + new Date(msg.startTime));
-        var response = await util_service.history(msg);
-        if(response?.Error === null) {
-            var event = msg.key === 'strikex' ? 'opt_history' : 'history';
-            s.emit(event, msg.key, response.Success);
-            return {status: 'success'};
-        }
+    s.on('history', catchAsync(async (requests) => {
+        console.log("history request " + requests.length);
+        return util_service.history(appid, requests);
     }, s, 'history'));
 
     s.on('speed', (msg) => {
@@ -70,29 +62,32 @@ function registerDataRequests(s, appid, mode)
     });
     
     s.on('option_chain', (msg) => {
-        s.sn.option_chain(msg.key, msg.action);
+       market_service.option_chain(appid, msg.key, msg.action);
     });
+
+    s.on('snapshot', (msg) => {
+        market_service.snapshot(appid, msg);
+    })
 }
 
-function registerTradeRequests(s, appid, mode)
-{
+function registerTradeRequests(s, appid, mode) {
     const trading_service = services.getService('trade', mode);
-    const profile = services.getProfile(mode);
 
-    s.on('order', catchAsync((orders) => {
+    s.on('order', (orders) => {
         console.log('order received at apiserver');
-        if(profile['trade'] === 'SIMULATED' || !live_order_locked) 
-            return trading_service.neworders(appid, profile['view'], orders);
-    }, s), 'order');
-
-    s.on('cancelorder', (msg) => {
-        if (profile['trade'] === 'SIMULATED' || !live_order_locked)
-            trading_service.cancelorder(appid, msg);
+        orders.forEach(async (order) => {
+            const updated = await trading_service.placeOrder(appid, order);
+            console.log('order state ' + updated.state + ' ' + (updated.error ?? updated.orderid));
+        });
     });
-    
+
+    s.on('cancelorder', async (msg) => {
+        const response = await trading_service.cancelorder(appid, msg);
+        console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
+    });
+
     s.on('orderbook', async (msg) => {
-        var response = await trading_service.orderbook(appid, msg);
-        s.emit('orderbook', response);
+        s.emit('orderbook', await trading_service.orderbook(appid, msg));
     });
 }
 
@@ -144,26 +139,15 @@ async function registerDisconnectionHandler(s, appid, mode)
     });
 }
 
-function unlockLiveOrders(action, key)
-{
-    const today = new Date();
-    if(key === today.toDateString()) {
-        live_order_locked = action === 'open' ? false: action === 'close' ? true : true;
-        scrip_store.load();
-    }
-    console.log('live order lock ' + live_order_locked);
-    return live_order_locked;
-}
-
 const catchAsync = (handler, socket, eventName) => {
     return (...args) => {
         const rv = handler(...args);
         if(rv instanceof Promise) {
             rv.then((response) => {
-                toConsole(eventName + ' ' + response?.status);
+                toConsole(eventName + ' ' + 'successful');
             })
             .catch ((err) => {
-                console.error(err);
+                console.error(eventName + ' ' + err);
             });
         }
         else {

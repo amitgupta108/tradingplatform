@@ -11,8 +11,10 @@ var initialized = false;
 async function init() {
     if (!initialized) {
         mystate.authData = await socketclient.getSavedCredentials();
-        if (mystate.authData !== undefined)
+        if (mystate.authData !== undefined) {
             initialized = true;
+            cache_url();
+        }
 
         return { status: initialized ? 'success' : 'authData not found' };
     }
@@ -20,77 +22,69 @@ async function init() {
 }
 
 function notifyme(authData) {
-    initialized = true;
     mystate.authData = authData;
+    cache_url();
+    initialized = true;
+}
+
+function cache_url() {
+    const baseUrl = mystate.authData.baseUrl;
+    mystate.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
+    mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
+    mystate.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
 }
 
 function getHeaders() {
     const auth_data = mystate.authData;
-    const headers = {
+    return {
         'accept': 'application/json',
         'Sid': auth_data.hsi_sid,
         'Auth': auth_data.hsi_token,
         'neo-fin-key': 'neotradeapi',
         'Content-Type': 'application/x-www-form-urlencoded'
     };
-    return { headers: headers, baseUrl: auth_data.baseUrl };
 }
 
 function post(endpt, body) {
     const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
-    const cred = getHeaders();
-    const headers = cred.headers;
-    const baseUrl = cred.baseUrl;
-    const api_url = new URL(endpoints[endpt], baseUrl).href;
+    const headers = getHeaders();
+    const api_url = mystate.endpoints[endpt];
     const options = {
         method: 'POST',
         headers: headers,
         body: requestBody.toString()
     };
-
-    const response = fetch(api_url, options);
-    console.log('order just submitted');
-
-    return response;
+    return fetch(api_url, options);
 }
 
-async function get(endpt) {
-    const cred = await getHeaders();
-    const headers = cred.headers;
-    const baseUrl = cred.baseUrl;
-    const api_url = new URL(endpoints[endpt], baseUrl).href;
-    var options = {
+function get(endpt) {
+    const headers = getHeaders();
+    const api_url = mystate.endpoints[endpt];
+    const options = {
         method: 'GET',
         headers: headers
     }
-    const response = fetch(api_url, options);
-    return (await response).json();
+    return fetch(api_url, options);
 }
 
-function neworders(appid, orders) {
-    const responses = [orders.length];
-    orders.forEach((order, i) => {
-        responses[i] = post('order', toKotakOrder(order));
-    });
-    ordermanager.neworders(appid, orders);
-
-    return handleOrderResponse(orders, responses);
-}
-
-function handleOrderResponse(orders, responses) {
-    orders.forEach(async (order, i) => {
-        const response = await responses[i];
-
-        if (response.stat === 'Ok') {
-            if (order.state === 'created') {
-                order.state = 'submitted';
-                order.orderid = response.nOrdNo;
-                order.status = response.stat;
-                order.stCode = response.stCode;
-                order.error = response.emsg;
-            }
+async function placeOrder(appid, order) {
+    const korder = toKotakOrder(order);
+    const response = await post('order', korder);
+    ordermanager.neworders(appid, [order]);
+    if (response.ok) {
+        const result = (await response.json());
+        if (result.stat === 'Ok') {
+            order.state = 'submitted';
+            order.orderid = result.nOrdNo;
         }
-    });
+        else {
+            order.state = 'failed';
+            order.stCode = result.stCode;
+            order.error = result.emsg;
+        }
+        return order;
+    }
+    return { state: 'NOT_OK', emsg: response.errMsg };
 }
 
 function toKotakOrder(order) {
@@ -99,51 +93,37 @@ function toKotakOrder(order) {
         const key = order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2);
         ts = scrip_service.findScripByKey('scripReferenceKey', key).tradingSymbol;
     }
+    const new_order = mystate.oTemplate;
 
-    return {
-        am: 'NO',
-        dq: '0',
-        es: order.exchange === 'NFO' ? 'nse_fo' : 'mcx_fo',
-        mp: '6',
-        pc: order.product,
-        pf: 'N',
-        pr: String(order.price),
-        pt: order.pricetype === 'MARKET' ? 'MKT' : 'L',
-        qt: String(order.quantity),
-        rt: 'DAY',
-        tp: '0',
-        ts: ts,
-        tt: order.action === 'BUY' ? 'B' : 'S'
-    };
+    new_order.es = order.exchange === 'NFO' ? 'nse_fo' : 'mcx_fo';
+    new_order.pc = order.product;
+    new_order.pr = String(order.price);
+    new_order.pt = order.pricetype === 'MARKET' ? 'MKT' : 'L';
+    new_order.qt = String(order.quantity);
+    new_order.tt = order.action === 'BUY' ? 'B' : 'S';
+    new_order.ts = ts;
+
+    return new_order;
 }
 
 async function cancelorder(appid, order) {
-    if (!initialized) {
-        return { status: 'error', reason: 'service not connected' };
-    }
     const response = await post('cancel', { on: order.orderid });
-    if (response.stat !== 'Ok') {
-        return { status: response.errMsg };
-    }
-    console.log('cancel response ' + JSON.stringify(response) + ' for order ' + JSON.stringify(order));
-    return response.json();
+    if (response.ok)
+        return (await response.json());
+
+    return { stat: 'NOT_OK', emsg: response.errMsg };
 }
 
 async function orderbook(appid, stockCode) {
-    if (!initialized) {
-        return { status: 'error', reason: 'service not connected' };
-    }
     const response = await get('orderbook');
-    if (response.stat !== 'Ok') {
-        return { status: response.errMsg };
-    }
-    const orders = response?.data.map((order) => {
-        return ordermanager.formatLiveOrder(order, true);
-    }).filter((order) => {
-        return order.stockCode === stockCode;
-    });
+    if (response.ok) {
+        const orders = (await response.json()).data;
 
-    return orders?.sort((a, b) => a.orderid - b.orderid);
+        return orders.map((order) => ordermanager.formatLiveOrder(order, true))
+            .filter((order) => order.stockCode === stockCode)
+            .sort((a, b) => a.orderid - b.orderid);
+    }
+    return { status: response.errMsg };
 }
 
 function exit(appid, sublist) {
@@ -152,7 +132,7 @@ function exit(appid, sublist) {
 
 export default {
     name,
-    neworders,
+    placeOrder,
     cancelorder,
     orderbook,
     exit,
