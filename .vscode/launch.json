@@ -2,19 +2,18 @@
     "inputs": [],
     "configurations": [
         {
-            "name": "Live on 80",
-            "type": "node",
+            "name": "Debug on 449",
             "program": "${workspaceFolder}/start.mjs",
             "request": "launch",
-            "noDebug": true,
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "type": "node",
             "args": [
-                "80"
+                "449"
             ],
             "runtimeArgs": [
-                "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
+                "--import=hot-hook/register",
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
             ],
             "outputCapture": "std"
@@ -33,7 +32,6 @@
             ],
             "runtimeArgs": [
                 "--import=hot-hook/register",
-                "--env-file=${workspaceFolder}/serverlocal/config/.env.d",
                 "--env-file=${workspaceFolder}/serverlocal/config/.env.s",
             ],
             "outputCapture": "std"

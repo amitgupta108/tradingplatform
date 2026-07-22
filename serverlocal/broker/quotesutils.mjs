@@ -1,6 +1,5 @@
 import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
-import adapter from '../adapter/breezeadapter.mjs';
 import streamer from '../stream.mjs';
 import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
 import simulator from '../service/ordersimulator.mjs';
@@ -39,7 +38,7 @@ function expandSymbol(symbol)
 function standardizeiq(qt) {
     const tStart = process.hrtime.bigint();
 
-    const { exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume, datetime, high, low, ...rest } = qt;
+    const { exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume, high, low, ...rest } = qt;
     const q = { exchange, stockCode, ...rest };
 
     q['ltp'] = qt['close'];

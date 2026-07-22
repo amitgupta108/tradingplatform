@@ -1,9 +1,4 @@
-import historyserver from '../../srvr/qserver.mjs';
-
-function connect()
-{
-    return historyserver.connect();
-}
+/*import historyserver from '../../srvr/hserver.mjs';
 
 function init(appid, startTime, speed)
 {
@@ -14,36 +9,21 @@ function exit(appid)
 {
     return historyserver.clear(appid);
 }
+*/
+function getHistory(appid, requests) {
+    const promises = [];
+    /*
+    requests.forEach((r) => {
+        if (r.exchange === 'MCX')
+            return;
+        
+        r.exchange = ['index', 'vix'].includes(r.key) ? 'NSE' : 'NFO';
+        r.stockCode = r.key === 'vix' ? 'INDVIX' : r.stockCode;
+        r.expiry = r.fExpiry || r.oExpiry;
 
-function addQuoteListener(eventName, callback)
-{
-   historyserver.addListener(eventName, callback);
-}
-
-function subscribe_vix(appid, mode, action)
-{
-    return historyserver.subscribe_vix(appid, mode, action);
-}
-
-function getHistory(p) {
-    if(p.exchange === 'MCX')
-        return;
-
-    p.exchange = p.key === 'index' || p.key === 'vix' ? 'NSE' : 'NFO';
-    p.stockCode = p.key === 'vix' ? 'INDVIX' : p.stockCode;
-    p.expiry = p.fExpiry || p.oExpiry;
-    
-    return historyserver.getHistory(p);
-}
-
-function buildRequests(appid, instruments) {
-    return instruments.map((inst) => {
-        return {
-            appid: appid,
-            symbol: inst.symbol,
-            instrument: inst
-        }
-    });
+        promises.push(historyserver.getHistory(appid, r));
+    });*/
+    return Promise.all(promises);
 }
 
 function h_subscribe(appid, instruments, action) 
@@ -84,17 +64,3 @@ function pause(appid, action)
 {
     return historyserver.pause(appid, action);
 }
-
-export default  {
-    init,
-    getHistory,
-    h_subscribe,  
-    l_subscribe,  
-    changeSpeed,
-    addQuoteListener,
-    exit,
-    connect,
-    subscribe_vix,
-    start,
-    pause,
-};

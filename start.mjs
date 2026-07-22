@@ -22,9 +22,10 @@ console.log(`First argument: ${args[2]}`);
 const port = args[2] === undefined ? 80 : Number(args[2]);
 
 const io = socketio(port);
-const servertoken = startUWS(8080);
+//const servertoken = startUWS(8080);
 
 let app = await import('./serverlocal/app.mjs', import.meta.hot?.boundary);
+app.default.startServices();
 
 io.on('connection', (s) => {
 
@@ -32,7 +33,7 @@ io.on('connection', (s) => {
         try {
             if (import.meta.hot) {
                 app = await import('./serverlocal/app.mjs', import.meta.hot?.boundary);
-
+                app.default.startServices();
                 console.log('[HMR] Swap completed successfully.');
             }
         } catch (err) {

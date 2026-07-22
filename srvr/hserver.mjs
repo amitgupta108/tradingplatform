@@ -1,6 +1,5 @@
-import sutils from './breezeclient.mjs';
-import {state_qserver as st_q, QuotesEmitter} from './appstate.mjs';
-
+//import breezeclient from './breezeclient.mjs';
+/*
 function clientInit(appid, simStartTime, speed = '1x') {
     st_q.subs_reqs.set(appid, new Array(0));
     if(st_q.clocks.get(appid) === undefined) {
@@ -234,14 +233,8 @@ function emit(q, appid)
         QuotesEmitter.emit('hist-quote', q, appid);
 }
 export default {
-    clientInit,
-    subscribe,
-    unsubscribe,
-    changeSpeed,
-    clear,
     getHistory,
-    addListener,
     subscribe_vix,
-    start_sim,
-    pause
 };
+
+*/
