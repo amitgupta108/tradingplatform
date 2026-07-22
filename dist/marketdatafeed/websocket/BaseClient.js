@@ -58,7 +58,7 @@ class BaseClient extends EventEmitter {
                     resolve();
                 };
                 this.ws.onmessage = (event) => {
-                    this.handleMessage(event.data);
+                    this.handleMessage(event.data, Date.now());
                 };
                 this.ws.onerror = (error) => {
                     this.log('WebSocket error:', error.message);
@@ -120,9 +120,8 @@ class BaseClient extends EventEmitter {
         this.ws.send(data);
     }
 
-    handleMessage(data) {
+    handleMessage(data, t) {
         try {
-            
             if (data instanceof ArrayBuffer) {
                 const resp = PacketParser.init(data); 
                 if (resp.responseType === BinRespTypes.DATA_TYPE)
@@ -130,11 +129,12 @@ class BaseClient extends EventEmitter {
 
                 let jsonData = PacketParser.parseData(data, resp, this.topicList);
                 if (resp.responseType === BinRespTypes.CONNECTION_TYPE
-                    && jsonData.ackCount !== undefined) {
+                    && jsonData.ackCount !== undefined) 
+                {
                     this.ackObj.ackNum = jsonData.ackCount;
-                    jsonData = jsonData.JSONArrayResp;
+                    jsonData = jsonData.resp;
                 }
-                this.handleBinaryMessage(jsonData, resp.responseType);
+                this.handleBinaryMessage(jsonData, resp.responseType, t);
             } 
             else if (typeof data === 'string') {
                 const parsed = PacketParser.parseTextMessage(data);
@@ -157,9 +157,9 @@ class BaseClient extends EventEmitter {
             msgNum = buf2Long(data.slice(resp.position, resp.position + 4));
             resp.position += 4;
             if (this.ackObj.counter === this.ackObj.ackNum) {
-                let req = PacketBuilder.buildAcknowledgementRequest(msgNum);
+                const req = PacketBuilder.buildAcknowledgementRequest(msgNum);
                 this.sendMessage(req);                
-                this.ackObj.counter = 0
+                this.ackObj.counter = 0;
             }
         }
     }

@@ -10,7 +10,7 @@ const streamers = [
     { key: '10x', speed: 10, qsid: 0, state: 'stopped' },
 ];
 
-export const mystate = {
+export const simstate = {
     clocks: client_clocks,
     qs_store: client_store,
     subs_reqs: subsRequests,
