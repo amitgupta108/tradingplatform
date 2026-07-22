@@ -56,9 +56,9 @@ class TopicData {
     }
 
     prepareCommonData() {
-        this.updatedFieldsArray[STRING_INDEX.NAME] = true;
-        this.updatedFieldsArray[STRING_INDEX.EXCHG] = true;
-        this.updatedFieldsArray[STRING_INDEX.SYMBOL] = true;
+        this.updatedFieldsArray[STRING_INDEX.NAME] = true;  //51
+        this.updatedFieldsArray[STRING_INDEX.EXCHG] = true; //52
+        this.updatedFieldsArray[STRING_INDEX.SYMBOL] = true;//53 
     }
 }
 
