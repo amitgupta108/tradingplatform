@@ -1,5 +1,4 @@
 import util_service from './broker/m_common.mjs';
-import scrip_store from './service/scripstore.mjs';
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
 import { socketmap } from './session/appstate.mjs';
