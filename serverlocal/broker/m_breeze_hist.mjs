@@ -1,8 +1,9 @@
 import qutils from './quotesutils.mjs';
-import adapter from '../adapter/breezeadapter.mjs';
+import {simmanager} from '../service/simmanager.mjs';
+import { EventService } from '../service/eventservice.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
 import services from '../service/services.mjs';
-import qServer from '../stream.mjs';
+import streamer from '../stream.mjs';
 import path from 'path';
 import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
 
@@ -10,12 +11,13 @@ const name = path.parse(import.meta.filename).name;
 
 let initialized = false;
 let view_mode;
+let my_subs;
 const logical_view_name = 'ICICIHISTVIEW';
 let counter = 0;
 
 function onQuotes(q, appid) {
     var qt = qutils.standardizeiq(q);
-    qServer.emitQs(appid, qt);
+    streamer.emitQs(appid, qt);
     
     if(qt.key === 'strikex')
         qutils.sendQsToSim(view_mode, qt);
@@ -32,59 +34,54 @@ function onQuotes(q, appid) {
 
 function clientConfigure(appid, startTime, speed)
 {
-    return adapter.init(appid, startTime, speed);
+    simmanager.clientInit(appid, startTime, speed);
 }
 
 function exit(appid)
 {
-    return adapter.exit(appid);
+    return simmanager.exit(appid);
 }
 
 function startv2(appid, p)
 {
-    const provider_subs = new Subscriptions(logical_view_name);
-    const stock_subs = provider_subs.addNewSubscriptions(appid, p);
+    const stock_subs = my_subs.addNewSubscriptions(appid, p);
     const instruments = stock_subs.getSubsItemsByKey(['index', 'futures']);
+    const requests = qutils.buildRequests(appid, instruments);
 
-    return adapter.start(appid, instruments, view_mode);
+    return simmanager.start_sim(appid, requests, view_mode);
 }
 
 function start(appid, instruments, mode) {
-    return adapter.start(appid, instruments, mode);
+    return simmanager.start_sim(appid, instruments, mode);
 }
 
 function subscribe(appid, instruments, action)
 {
     if(action === 'subs')
-        adapter.h_subscribe(appid, instruments, action);
+        simmanager.subscribe(appid, qutils.buildRequests(appid, instruments), action);
 }
 
 function pause(appid, action) 
 {
-    return adapter.pause(appid, action);
+    return simmanager.pause(appid, action);
 }
 
 function changeSpeed(appid, speed)
 {
-    return adapter.changeSpeed(appid, speed);
+    return simmanager.changeSpeed(appid, speed);
 }
 
 function init()
 {
     if(!initialized) {
-        
+        my_subs = new Subscriptions(logical_view_name);
         if(view_mode === undefined)
             view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
 
-        adapter.addQuoteListener('hist-quote', onQuotes);
+        EventService.addListener('hist-quote', onQuotes);
         
-        const promise = adapter.connect();
-        if(promise !== undefined){
-            return promise.then(() => {
-                initialized = true;
-                return {status:'success'};
-            });
-        }
+        initialized = true;
+        return {status:'success'};
     }
 }
 
@@ -96,6 +93,5 @@ export default {
     subscribe,
     changeSpeed,
     clientConfigure,
-    start,
     startv2
   };

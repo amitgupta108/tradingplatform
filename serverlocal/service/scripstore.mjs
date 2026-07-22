@@ -199,8 +199,8 @@ async function load(expiryDates, reload = false) {
     "data": {
       "baseFolder": "https://kotaksecurities.com",
       "filesPaths": [
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-13/transformed/mcx_fo.csv",
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-13/transformed/nse_fo.csv"
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-14/transformed/mcx_fo.csv",
+        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-14/transformed/nse_fo.csv"
       ]
     }
   };

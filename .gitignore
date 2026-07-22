@@ -1,4 +1,5 @@
 .DS_Store
-web/js_vollib/
+web/lib/js_vollib/
 node_modules
 a.txt
+serverapps/config/

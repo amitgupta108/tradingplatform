@@ -1,12 +1,10 @@
 import OpenAlgo from 'openalgo';
 import streamer from '../stream.mjs';
 import ordermanager from '../service/ordermanager.mjs';
-import utils from '../../common/utils.mjs';
 import qutils from './quotesutils.mjs';
 import path from 'path';
 import services from '../service/services.mjs';
 import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
-import { OPT_EXPIRIES } from '../../common/constants.mjs';
 
 const name = path.parse(import.meta.filename).name;
 const logical_view_name = 'OPENALGOVIEW';
@@ -16,12 +14,16 @@ let initialized = false;
 let provider_subs;
 let client;
 let ws_direct;
+let my_subs;
 let reconn_count = 0; 
 let counter = 0;
 let view_mode;
 
 function onQuotes(q)
 { 
+    if(q.symbol === 'CRUDEOIL19AUG26FUT')
+        console.log('OpenAlgo quote ' + JSON.stringify(q));
+
     const qt = qutils.standardizeoq(q);
     const l_appid = qt.stockCode + view_mode;
     streamer.emitQs(l_appid, qt);
@@ -29,14 +31,14 @@ function onQuotes(q)
     const key = qt.exchange === 'MCX' ? 'futures' : 'index';
     if(qt.key === 'strikex')
         qutils.sendQsToSim(view_mode, qt);
-    else if(qt.key === key && (counter === 0 || counter++ === 6)) 
+    else if (qt.key === key && (counter === 0 || counter++ === 6)) 
     {
         counter = 1;
         const response = qutils.atmRefresh(logical_view_name, l_appid, qt);
         if(response.rebuild) 
         {
             response.list.forEach((ost) => {
-                subscribe(l_appid, ost.strikes, 'subs');
+                //subscribe(l_appid, ost.strikes, 'subs');
             });
         }
     }
@@ -51,11 +53,8 @@ function exit(appid, sublist)
 
 function startv2(appid, p)
 {
-    const stock_subs = provider_subs.addNewSubscriptions(p.stockCode + view_mode, p);
+    const stock_subs = my_subs.addNewSubscriptions(p.stockCode + view_mode, p);
     const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
-    const st = requests.find((r) => r.key === 'index');
-    if(st !== undefined)
-        st.exchange = 'NSE_INDEX';
     
     subscribe(appid, requests, 'subs');
 }
@@ -96,6 +95,17 @@ function subscribe(appid, list, action)
         client.subscribe_ltp(list, onQuotes);
     else 
         client.unsubscribe_ltp(list, onQuotes);
+}
+
+function option_chain(appid, stockCode, key, action)
+{
+    const provider_subs = subs_store_all[logical_view_name];
+    const stock_subs = provider_subs.getSubscriptionsForStockCode(stockCode);
+    const ost = stock_subs.optionChainAction(key, action);
+    if(ost !== undefined) {
+        const subs_action = ost.toStream === true ? 'subs' : 'unsubs';
+        subscribe(appid, ost.strikes, subs_action);
+    }
 }
 
 async function orderbook(appid, stockCode)
@@ -155,17 +165,17 @@ function init()
 {
     if(!initialized)
     {
+        my_subs = new Subscriptions(logical_view_name);
+          
         if(view_mode === undefined)
             view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
-        
-        
+
         if(!client)
             client = new OpenAlgo(process.env.openalgo_key);
         
-        provider_subs = new Subscriptions(logical_view_name);
+        const p = client.connect();
 
-        return client.connect()
-        .then(() => {
+        return p.then(() => {
             initialized = true;
             ws_direct = client._wsClient.ws;
             ws_direct.addEventListener('close', () => {
@@ -174,7 +184,10 @@ function init()
             });
             return {status: 'success'}
         })
-        .catch((error) => {throw error;});
+        .catch((error) => {
+            client._wsClient.shouldReconnect = false;
+            throw error;
+        });
     }
 }
 

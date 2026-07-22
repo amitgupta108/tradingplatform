@@ -27,16 +27,14 @@ function notifyme(authData) {
     initialized = true;
 }
 
-function cache_url() 
-{
+function cache_url() {
     const baseUrl = mystate.authData.baseUrl;
     mystate.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
     mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
     mystate.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
 }
 
-function getHeaders()
-{
+function getHeaders() {
     const auth_data = mystate.authData;
     return {
         'accept': 'application/json',
@@ -47,8 +45,7 @@ function getHeaders()
     };
 }
 
-function post(endpt, body)
-{
+function post(endpt, body) {
     const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
     const headers = getHeaders();
     const api_url = mystate.endpoints[endpt];
@@ -60,8 +57,7 @@ function post(endpt, body)
     return fetch(api_url, options);
 }
 
-function get(endpt)
-{
+function get(endpt) {
     const headers = getHeaders();
     const api_url = mystate.endpoints[endpt];
     const options = {
@@ -71,13 +67,11 @@ function get(endpt)
     return fetch(api_url, options);
 }
 
-async function placeOrder(appid, order)
-{
-    const korder = toKotakOrder(order); 
+async function placeOrder(appid, order) {
+    const korder = toKotakOrder(order);
     const response = await post('order', korder);
     ordermanager.neworders(appid, [order]);
-    if (response.ok) 
-    {
+    if (response.ok) {
         const result = (await response.json());
         if (result.stat === 'Ok') {
             order.state = 'submitted';
@@ -100,7 +94,7 @@ function toKotakOrder(order) {
         ts = scrip_service.findScripByKey('scripReferenceKey', key).tradingSymbol;
     }
     const new_order = mystate.oTemplate;
-    
+
     new_order.es = order.exchange === 'NFO' ? 'nse_fo' : 'mcx_fo';
     new_order.pc = order.product;
     new_order.pr = String(order.price);
@@ -108,24 +102,21 @@ function toKotakOrder(order) {
     new_order.qt = String(order.quantity);
     new_order.tt = order.action === 'BUY' ? 'B' : 'S';
     new_order.ts = ts;
-    
+
     return new_order;
 }
 
-async function cancelorder(appid, order)
-{
-    const response = await post('cancel', {on: order.orderid});
-    if (response.ok) 
+async function cancelorder(appid, order) {
+    const response = await post('cancel', { on: order.orderid });
+    if (response.ok)
         return (await response.json());
-    
+
     return { stat: 'NOT_OK', emsg: response.errMsg };
 }
 
-async function orderbook(appid, stockCode)
-{
+async function orderbook(appid, stockCode) {
     const response = await get('orderbook');
-    if (response.ok) 
-    {
+    if (response.ok) {
         const orders = (await response.json()).data;
 
         return orders.map((order) => ordermanager.formatLiveOrder(order, true))
@@ -135,8 +126,7 @@ async function orderbook(appid, stockCode)
     return { status: response.errMsg };
 }
 
-function exit(appid, sublist)
-{
+function exit(appid, sublist) {
     subscribe(appid, sublist, 'unsub');
 }
 
