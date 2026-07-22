@@ -142,7 +142,7 @@ class PacketParser {
 
     static parseDataMessage(pos, data, topicList)
     {
-        var h = [];
+        const h = [];
         var g = buf2Long(data.slice(pos, pos + 2));
         pos += 2;
         for (let n = 0; n < g; n++) {
@@ -151,72 +151,85 @@ class PacketParser {
             console.log("ResponseType: " + c);
             pos++;
             if (c == RespTypes.SNAP) {
-                let f = buf2Long(data.slice(pos, pos + 4));
+                const returnval = this.parseSnapshot(pos, data, topicList);
+                h.push(returnval.data);
+                pos = returnval.pos;
+            }
+            else if (c == RespTypes.UPDATE) {
+                const returnVal = this.parseTopic(pos, data, topicList);
+                h.push(returnVal.data);
+                pos = returnVal.pos;
+            }
+            else
+                console.error("Invalid ResponseType: " + c);
+        }
+        return JSON.stringify(h);
+    }
+
+    static parseSnapshot(pos, data, topicList)
+    {
+        let f = buf2Long(data.slice(pos, pos + 4));
+        pos += 4;
+        //console.log("topic Id: " + f);
+        let nameLen = buf2Long(data.slice(pos, pos + 1));
+        pos++;
+        //console.log("nameLen:" + nameLen);
+        let topicName = buf2String(data.slice(pos, pos + nameLen));
+        pos += nameLen;
+        //console.log("topicName: " + topicName);
+        let d = this.getNewTopicData(topicName);
+        if (d) {
+            topicList[f] = d;
+            let fcount = buf2Long(data.slice(pos, pos + 1));
+            pos++;
+            //console.log("fcount1: " + fcount);
+            for (let index = 0; index < fcount; index++) {
+                let fvalue = buf2Long(data.slice(pos, pos + 4));
+                d.setLongValues(index, fvalue);
                 pos += 4;
-                //console.log("topic Id: " + f);
-                let nameLen = buf2Long(data.slice(pos, pos + 1));
+                //console.log(index + ":" + fvalue)
+            }
+            d.setMultiplierAndPrec();
+            fcount = buf2Long(data.slice(pos, pos + 1));
+            pos++;
+            //console.log("fcount2: " + fcount);
+            for (let index = 0; index < fcount; index++) {
+                let fid = buf2Long(data.slice(pos, pos + 1));
                 pos++;
-                //console.log("nameLen:" + nameLen);
-                let topicName = buf2String(data.slice(pos, pos + nameLen));
-                pos += nameLen;
-                //console.log("topicName: " + topicName);
-                let d = this.getNewTopicData(topicName);
-                if (d) {
-                    topicList[f] = d;
-                    let fcount = buf2Long(data.slice(pos, pos + 1));
-                    pos++;
-                    //console.log("fcount1: " + fcount);
-                    for (let index = 0; index < fcount; index++) {
-                        let fvalue = buf2Long(data.slice(pos, pos + 4));
-                        d.setLongValues(index, fvalue);
-                        pos += 4;
-                        //console.log(index + ":" + fvalue)
-                    }
-                    d.setMultiplierAndPrec();
-                    fcount = buf2Long(data.slice(pos, pos + 1));
-                    pos++;
-                    //console.log("fcount2: " + fcount);
-                    for (let index = 0; index < fcount; index++) {
-                        let fid = buf2Long(data.slice(pos, pos + 1));
-                        pos++;
-                        let dataLen = buf2Long(data.slice(pos, pos + 1));
-                        pos++;
-                        let strVal = buf2String(data.slice(pos, pos + dataLen));
-                        pos += dataLen;
-                        d.setStringValues(fid, strVal);
-                        //console.log(fid + ":" + strVal)
-                    }
-                    h.push(d.prepareData())
-                } else {
-                    console.log("Invalid topic feed type !")
-                }
-            } 
-            else if (c == RespTypes.UPDATE) 
-            {
-                //console.log("updates ......");
-                var f = buf2Long(data.slice(pos, pos + 4));
-                console.log("topic Id: " + f);
-                pos += 4;
-                var d = topicList[f];
-                if (!d) {
-                    console.error("Topic Not Available in TopicList!")
-                } else {
-                    let fcount = buf2Long(data.slice(pos, pos + 1));
-                    pos++;
-                    //console.log("fcount1: " + fcount);
-                    for (let index = 0; index < fcount; index++) {
-                        let fvalue = buf2Long(data.slice(pos, pos + 4));
-                        d.setLongValues(index, fvalue);
-                        //console.log("index:" + index + ", val:" + fvalue);
-                        pos += 4
-                    }
-                }
-                h.push(d.prepareData())
-            } else {
-                console.error("Invalid ResponseType: " + c)
+                let dataLen = buf2Long(data.slice(pos, pos + 1));
+                pos++;
+                let strVal = buf2String(data.slice(pos, pos + dataLen));
+                pos += dataLen;
+                d.setStringValues(fid, strVal);
+                //console.log(fid + ":" + strVal)
+            }
+            return {data: d.prepareData(), pos: pos};
+        } else {
+            console.log("Invalid topic feed type !")
+        }
+    }
+
+    static parseTopic(pos, data, topicList)
+    {
+        //console.log("updates ......");
+        var f = buf2Long(data.slice(pos, pos + 4));
+        console.log("topic Id: " + f);
+        pos += 4;
+        var d = topicList[f];
+        if (!d) {
+            console.error("Topic Not Available in TopicList!")
+        } else {
+            let fcount = buf2Long(data.slice(pos, pos + 1));
+            pos++;
+            //console.log("fcount1: " + fcount);
+            for (let index = 0; index < fcount; index++) {
+                let fvalue = buf2Long(data.slice(pos, pos + 4));
+                d.setLongValues(index, fvalue);
+                //console.log("index:" + index + ", val:" + fvalue);
+                pos += 4
             }
         }
-        return JSON.stringify(h)
+        return { data: d.prepareData(), pos: pos };
     }
 
     static parseConfMessage(pos, respType , data)
@@ -372,7 +385,7 @@ class PacketParser {
      * Parse topic data from the payload portion of a binary packet.
      * Format: [topic string null-terminated][binary fields per mapping]
      */
-    static parseTopicData(payload) 
+/*    static parseTopicData(payload) 
     {
         if (payload.length < 2)
             return null;
@@ -398,10 +411,10 @@ class PacketParser {
         }
         return null;
     }
-    /**
+ */   /**
      * Parse snapshot data (similar to topic data but may include multiple entries).
      */
-    static parseSnapshot(payload) {
+/*    static parseSnapshot(payload) {
         const result = {};
         const topicData = this.parseTopicData(payload);
         if (topicData) {
@@ -410,7 +423,7 @@ class PacketParser {
         }
         return result;
     }
-    /**
+*/    /**
      * Parse a JSON text message from the WebSocket.
      */
     static parseTextMessage(data) {
