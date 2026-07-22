@@ -4,8 +4,8 @@ function emit(event, arg1, arg2) {
 
 function historyParams(expiry)
 {
-  const endTime = instrument.simStartTime;
-  const startTime = endTime - (simDate.getDay() === 1 ? 3 : 2) * 24 * 60 * 60 * 1000; // 2 days back
+  const endTime = instrument.simStartTime ?? Date.now();
+  const startTime = endTime - 3 * 24 * 60 * 60 * 1000; // 3 days back
 
   const p = {
     exchange: instrument.exchange,
