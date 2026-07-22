@@ -42,42 +42,44 @@ async function hsiconnect()
 
     ws_hsi.onerror = (event) => {
         console.log("connection error hsi" + JSON.stringify(event));
-    }; 
-    
+    };
+
     ws_hsi.onclose = (event) => {
         console.log("connection closed hsi" + event.reason);
     };
     return { status: 'hsi connect initiated' };
 }
 
-function wshb(type, action)
+function wshb(type, action) 
 {
     console.log("websocket heartbeat: " + type + ' - ' + action);
-    qserver.broadcast('hb', {order_socket: ws_hsi?.readyState});
+    qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
 
-    if(action === 'start') {
-        if(wsping !== undefined)
+    if (action === 'start') {
+        if (wsping !== undefined)
             clearInterval(wsping);
 
         var recon_attempt = 0;
-        wsping = setInterval(async (rn) => 
-        {            
+        wsping = setInterval(async (rn) => {
             qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
-            if(ws_hsi?.readyState !== 1 && rn <= 5) {
+            if (ws_hsi?.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection ' + rn);
                 hsiconnect()
-                .then(() => {})
-                .catch((error) => console.log('reconnection error ' + rn));
+                    .then(() => { })
+                    .catch((error) => console.log('reconnection error ' + rn));
                 rn++;
             }
         }, 120000, recon_attempt);
     }
 }
 
-async function authenticate(tpt) {
-    let response =  await connector.authenticate(tpt);
-    if(response.status === 'success')
+async function authenticate(tpt) 
+{
+    let response = await connector.authenticate(tpt);
+    if (response.status === 'success') {
         authenticated = true;
+        hsiconnect();
+    }
     return response;
 }
 
