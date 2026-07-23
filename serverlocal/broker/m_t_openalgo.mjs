@@ -11,7 +11,6 @@ const logical_view_name = 'OPENALGOVIEW';
 const logical_trade_name = 'OPENALGOTRADE'
 
 let initialized = false;
-let provider_subs;
 let client;
 let ws_direct;
 let my_subs;

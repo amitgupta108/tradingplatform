@@ -13,16 +13,15 @@ let initialized = false;
 let view_mode;
 let my_subs;
 const logical_view_name = 'ICICIHISTVIEW';
-let counter = 0;
 
-function onQuotes(q, appid) {
-    var qt = qutils.standardizeiq(q);
+function onQuotes(q, appid) 
+{
+    const qt = qutils.standardizeiq(q);
     streamer.emitQs(appid, qt);
     
     if(qt.key === 'strikex')
         qutils.sendQsToSim(view_mode, qt);
-    else if (qt.key === 'index' && (counter === 0 || counter++ === 6)) {
-        counter = 1;
+    else if (qt.key === 'index') {
         const response = qutils.atmRefresh(logical_view_name, appid, qt);
         if (response.rebuild) {
             response.list.forEach((ost) => {
@@ -39,7 +38,8 @@ function clientConfigure(appid, startTime, speed)
 
 function exit(appid)
 {
-    return simmanager.exit(appid);
+    my_subs.removeSubscriptions(appid);
+    return simmanager.clear(appid);
 }
 
 function startv2(appid, p)
@@ -75,6 +75,7 @@ function init()
 {
     if(!initialized) {
         my_subs = new Subscriptions(logical_view_name);
+        
         if(view_mode === undefined)
             view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
 
