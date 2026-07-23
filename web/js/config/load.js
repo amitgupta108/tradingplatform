@@ -78,11 +78,6 @@ qBox.addEventListener('index', (event) => {
   
   var lt = new Date(q.ltt);
   time_label.textContent = lt.toLocaleTimeString();
-  renderChart('index', 'iEma', q);
-});
-
-qBox.addEventListener('vix', (event) => {
-  renderChart('vix', undefined, event.detail);
 });
 
 qBox.addEventListener('futures', (event) => {
@@ -90,7 +85,6 @@ qBox.addEventListener('futures', (event) => {
   fut_title = 'F: ' + q.ltp.toFixed(2);
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
-  renderChart('futures', 'fEma', q);
 });
 
 qBox.addEventListener('strikex', (event) => {
@@ -153,7 +147,7 @@ exit_pos_btn.onclick = (event) => {
     const p = Position.findPosition(symbol, false);
     const action = Math.sign(p.psize) === 1 ? 'S' : 'B';
     
-    appendOrderRow(symbol, action, Math.abs(p.psize/instrument.lotsize));
+    appendOrderRow(symbol, action, Math.abs(p.psize/LOT_SIZE[instrument.stockCode]));
     cb.checked = false;
   });
   event.target.style.display = 'none';

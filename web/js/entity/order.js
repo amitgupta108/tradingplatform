@@ -12,7 +12,7 @@ class Order{
   {
     this.symbol = symbol;
     this.action = action === 'B' ? 'BUY' : 'SELL';
-    this.quantity = (quantity !== undefined) ? quantity : instrument.lotsize;
+    this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[instrument.stockCode];
   }
 }
 
@@ -27,7 +27,7 @@ function validate(clickedBtn)
     const lot = r.querySelector('select').value; 
     const pricetype = r.querySelector('#ordertype').innerText;
 
-    let n_order = new Order(symbol, action, lot * instrument.lotsize);
+    let n_order = new Order(symbol, action, lot * LOT_SIZE[instrument.stockCode]);
     n_order.pricetype = pricetype;
     if(pricetype === 'LIMIT') 
     {

@@ -3,6 +3,7 @@ import history_breeze from '../broker/m_breeze_hist.mjs';
 import live_breeze from '../broker/m_breeze_live.mjs';
 import live_openalgo from '../broker/m_t_openalgo.mjs';
 import live_kotak from '../broker/m_t_kotakneo.mjs';
+import live_kotak_hsm from '../broker/m_kotak_hsm.mjs';
 import trading_socket from './socketclient.mjs';
 import paper_trading from './ordersimulator.mjs';
 
@@ -10,6 +11,7 @@ const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATED', admin: 'SIM_ADMIN' },
     LIVELIVE: { view: 'LIVE', trade: 'LIVE' },
     S1TSADMINS: { view: 'LIVE', trade: 'SIMULATED', admin: 'LIVE_STREAMING' },
+    S3T0ADMIN0: { view: 'LIVE_3'},
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
@@ -24,6 +26,7 @@ const services = {
     OPENALGOVIEW: live_openalgo,
     OPENALGOTRADE: live_openalgo,
     KOTAKNEOTRADE: live_kotak,
+    KOTAKHSMVIEW: live_kotak_hsm,
     ICICIHISTVIEW: history_breeze,
     ICICILIVEVIEW: live_breeze,
     SOCKETTRADE: trading_socket,
@@ -31,13 +34,13 @@ const services = {
 };
 
 const providers = {
-    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW' },
+    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW', LIVE_3: 'KOTAKHSMVIEW' },
     trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
     admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING: 'OPENALGOVIEW', SIM_ADMIN: 'TPSIMTRADE' }
 };
 
 const access = {
-    view: ['vix', 'start', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
+    view: ['vix', 'start', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain', 'snapshot'],
     trade: ['order', 'cancelorder', 'orderbook'],
     admin: ['live_trading', 'wsOps', 'unsubscribe', 'remove', 'reload']
 };
@@ -64,11 +67,10 @@ function initialize(mode) {
     });
 }
 
-function doInit(service)
-{    
+function doInit(service) {
     try { //init would return undefined or resolved promise for success, reject promise for async errors and exceptions for sync errors
-        const p = service.init(); 
-        
+        const p = service.init();
+
         if (p !== undefined) {
             if (p instanceof Promise)
                 p.then((response) => console.log('init message ' + service.name + ' ' + response?.status))
@@ -88,11 +90,12 @@ function getProviderModeKey(name, mode){
     });
 }
 
-function initializeAll() {
+function initializeAll(skip_list) {
     scripstore.load();
     const list = Object.values(services);
     [...new Set(list)].forEach((s) => {
-        doInit(s);
+        if(!skip_list.includes(s.name))
+            doInit(s);
     });
 }
 

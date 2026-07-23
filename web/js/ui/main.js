@@ -4,8 +4,8 @@ function emit(event, arg1, arg2) {
 
 function historyParams(expiry)
 {
-  const endTime = instrument.simStartTime;
-  const startTime = endTime - (simDate.getDay() === 1 ? 3 : 2) * 24 * 60 * 60 * 1000; // 2 days back
+  const endTime = instrument.simStartTime ?? Date.now();
+  const startTime = endTime - 3 * 24 * 60 * 60 * 1000; // 3 days back
 
   const p = {
     exchange: instrument.exchange,
@@ -20,13 +20,15 @@ function historyParams(expiry)
 
 function loadPreData()
 {
-  const p = historyParams('fExpiry');
   const keys = ['futures', 'index', 'vix'];
 
+  const requests = new Array();
   keys.forEach((k) => {
+    const p = historyParams('fExpiry');
     p.key = k;
-    emit('history', p);
+    requests.push(p);
   });
+  emit('history', requests);
 }
 
 function changeSpeed()
@@ -64,7 +66,7 @@ function listOrders()
 function streamOptionChain(event)
 {  
   event.stopPropagation();
-  var oc_key = expiry_btn_1.disabled === false ? 'occrnt' : 'ocnxt';
+  const oc_key = document.getElementById('c_oc_div').classList.contains('active') ? 'ocfirst' : 'ocsecond';
   emit('option_chain', {key: oc_key, action:'toggle'});
 }
 
@@ -77,10 +79,21 @@ function wsOps(action){
 
 function subs_vix()
 {
-  emit('vix', {action: 'subs'});
+  //emit('vix', {action: 'subs'});
+  emit('snapshot', 'mcx_fo|520702');
 }
 
 function reload()
 {
   emit('reload', '');
+}
+
+function showChart() {
+  switchCharts(1);
+  const rows = oc_container.querySelectorAll('tr.row_background');
+  if (rows.length === 0)
+    return;
+  const symbols = Array.from(rows).map((r) => r.title);
+  ChartEventer.run(symbols);
+  options_chart.show(symbols, true);
 }

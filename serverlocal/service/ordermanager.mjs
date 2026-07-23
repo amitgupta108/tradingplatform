@@ -22,55 +22,53 @@ function notifyme(message, trade_mode)
         liveOrderMatching(message, trade_mode);
 }
 
-function liveOrderMatching(message, mode)
-{
-    if(!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
+function liveOrderMatching(message, mode) {
+    if (!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         return;
 
     console.log('order notifcation ' + message.data.ordSt);
     const live_order = formatLiveOrder(message.data);
     let found = findMatch(live_order);
 
-    if(found !== undefined) {
+    if (found !== undefined) {
         live_order.appid = found.appid;
         live_order_map.delete(found.localid);
         live_order_map.set(live_order.orderid, live_order);
     }
-    else {  
+    else {
         live_order.receiver = { stockCode: live_order.stockCode, trade_mode: mode };
         live_order.appid = live_order.stockCode + mode;
     }
     qs.emitOrders(live_order.appid, 'order', live_order);
 }
 
-function findMatch(live_order)
-{
+function findMatch(live_order) {
     const local_orders = Array.from(live_order_map.values());
     var found = local_orders.filter((order) => order.orderid === live_order.orderid);
-    if(found === 1)
+    if (found === 1)
         return found[0];
-    else if(found > 1) {
+    else if (found > 1) {
         console.error('inconsistent order map state ');
         return;
     }
 
     found = local_orders.filter((order) => {
         return order.state === 'opened'
-                && order.symbol === live_order.symbol
-                && order.action === live_order.action
-                && order.pricetype === live_order.pricetype
-                && order.price === live_order.price
-                && order.quantity === live_order.quantity
-                && order.quantity >= live_order.filled_q
-                && ((order.state === 'submitted' && ['opened', 'rejected'].includes(live_order.state))
+            && order.symbol === live_order.symbol
+            && order.action === live_order.action
+            && order.pricetype === live_order.pricetype
+            && order.price === live_order.price
+            && order.quantity === live_order.quantity
+            && order.quantity >= live_order.filled_q
+            && ((order.state === 'submitted' && ['opened', 'rejected'].includes(live_order.state))
                 || (order.state === 'opened' && ['completed', 'cancelled'].includes(live_order.state)));
-        });
+    });
 
-    if(found.length === 0)
+    if (found.length === 0)
         return undefined;
-    else if(found.length === 1)
+    else if (found.length === 1)
         return found[0];
-    else if(found.length > 1) //multiple open orders without kotak orderid, all with submitted status?
+    else if (found.length > 1) //multiple open orders without kotak orderid, all with submitted status?
         return undefined;
 }
 

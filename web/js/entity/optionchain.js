@@ -6,7 +6,7 @@ class OptionChain
   atm = 0;
   row_map = new Map();
   u_price = 0;
-  OTMRange = {high: 7, low: 1};
+  OTMRange = { high: 7, low: 1 };
 
   constructor(expiry, v_oc_id)
   {
@@ -91,7 +91,6 @@ class OptionChain
 
   handleUnderlying(q)
   {
-    this.u_price = q.ltp;
     const ltp_move = q.ltp - this.atm;
     if (Math.abs(ltp_move) > this.interval )
     {

@@ -19,7 +19,7 @@ async function apiLogin(num) {
         }),
     };
     const response = await fetch(process.env.kotak_loginURL, headers);
-    return await response.json();    
+    return await response.json();
 }
 
 async function apiValidate(sid, token) {
@@ -68,18 +68,20 @@ async function authenticate(tpt) {
     return { status: 'error', reason: response };
 }
 
-function getCredentials()
-{
+function getCredentials() {
     if (authdata !== undefined && authdata['date'] === new Date().toDateString())
         return authdata;
 }
 
 async function getSavedCredentials() {
 
+    if(getCredentials() !== undefined)
+        return getCredentials();
+
     authdata = await authkeys('kotak_socket');
     if (authdata !== undefined && authdata['date'] === new Date().toDateString())
         return authdata;
-                
+
     return undefined;
 }
 
@@ -107,4 +109,4 @@ async function authkeys(app, v) {
     return v === undefined ? l_authData : v;
 }
 
-export default { authenticate, getSavedCredentials, getCredentials };
+export default { authenticate, getSavedCredentials };

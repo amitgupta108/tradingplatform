@@ -10,60 +10,17 @@ const logical_trade_name = 'KOTAKNEOTRADE';
 var authenticated = false;
 var wsping;
 var ws_hsi;
-var ws_hsm;
-
-function hsmconnect()
-{
-    if(ws_hsm?.readyState === 1)
-        return;
-    
-    if (authenticated !== true)
-        return { status: 'credentials not available' };
-    
-    ws_hsm = new WebSocket(`wss://${process.env.kotak_hsmURL}`);
-
-    ws_hsm.onopen = (event) => {
-        let authdata = connector.getCredentials();
-        if(authdata !== undefined)
-        {
-            //const payload = `{Authorization:${hsm_token},Sid:${hsm_sid},type:cn}`;
-            const payload = JSON.stringify({Authorization: authdata.hsm_token, Sid: authdata.hsm_sid, type: 'cn'});
-            ws_hsm.send(payload);
-            wshb('hsm', 'start');
-            console.log('On open hsm');
-        }   
-    };
-
-    ws_hsm.onmessage = (event) => {
-        try {
-            const message = JSON.parse(event);
-            console.log('HSM Message received ' + JSON.stringify(message));
-            //kotak_neo.onQuotes(message);
-        } catch(error) {
-            console.log('error hsm: ' + error);
-        }          
-    };
-
-    ws_hsm.onerror = (event) => {
-        console.log("connection error hsm" + JSON.stringify(event));
-    }; 
-    
-    ws_hsm.onclose = (event) => {
-        console.log("connection closed hsm" + event.reason);
-    };
-}
 
 async function hsiconnect()
 {
     if(ws_hsi?.readyState === 1)
         return;
     
-    const authdata = await connector.getSavedCredentials();
+    const authdata = await getSavedCredentials();
     if(authdata === undefined)
         return {status: 'error', reason: 'credentials not available'};
     
     ws_hsi = new WebSocket(`wss://${authdata.baseUrl.substring(8)}/realtime`);
-    
     ws_hsi.onopen = (event) => {
 
         const payload = `{type:cn,Authorization:${authdata.hsi_token},Sid:${authdata.hsi_sid},src:WEB}`;
@@ -73,67 +30,75 @@ async function hsiconnect()
 
     ws_hsi.onmessage = (event) => {
         const message = JSON.parse(event.data);
-
         if(message.type === 'order'){
             const trade_mode = services.getProviderModeKey(logical_trade_name, 'trade')?.at(0);
             ordermanager.notifyme(message, trade_mode);
         }
         else if(message.type === 'cn' && message.msg === 'connected'){
-            kotak_service.notifyme(true);
+            kotak_service.notifyme(authdata);
             wshb('hsi', 'start');
         }
     };
 
     ws_hsi.onerror = (event) => {
         console.log("connection error hsi" + JSON.stringify(event));
-    }; 
-    
+    };
+
     ws_hsi.onclose = (event) => {
         console.log("connection closed hsi" + event.reason);
     };
-
-    return {status: 'hsi connect initiated'};
+    return { status: 'hsi connect initiated' };
 }
 
-function wshb(type, action)
+function wshb(type, action) 
 {
     console.log("websocket heartbeat: " + type + ' - ' + action);
-    qserver.broadcast('hb', {order_socket: ws_hsi?.readyState});
+    qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
 
-    if(action === 'start') {
-        if(wsping !== undefined)
+    if (action === 'start') {
+        if (wsping !== undefined)
             clearInterval(wsping);
 
         var recon_attempt = 0;
-        wsping = setInterval(async (rn) => 
-        {            
+        wsping = setInterval(async (rn) => {
             qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
-            if(ws_hsi?.readyState !== 1 && rn <= 5) {
+            if (ws_hsi?.readyState !== 1 && rn <= 5) {
                 console.log('Attempting reconnection ' + rn);
                 hsiconnect()
-                .then(() => {})
-                .catch((error) => console.log('reconnection error ' + rn));
+                    .then(() => { })
+                    .catch((error) => console.log('reconnection error ' + rn));
                 rn++;
             }
         }, 120000, recon_attempt);
     }
 }
 
-async function authenticate(tpt) {
-    let response =  await connector.authenticate(tpt);
-    if(response.status === 'success')
+async function authenticate(tpt) 
+{
+    let response = await connector.authenticate(tpt);
+    if (response.status === 'success') {
         authenticated = true;
+        hsiconnect();
+    }
     return response;
+}
+
+function getSavedCredentials()
+{
+    return connector.getSavedCredentials();
 }
 
 async function init()
 {
-    let response = await connector.getSavedCredentials();
-    if(response !== undefined) {
-        console.log('valid authdata found');
-        authenticated = true;
+    if(!authenticated) {
+        let response = await getSavedCredentials();
+        if(response !== undefined) {
+            authenticated = true;
+            hsiconnect();
+            return { status: 'success: valid authdata found'};
+        }
+        return { status: 'authdata not available' };
     }
-    
-    return response;
+    return {status: 'already authenticated'};
 }
-export default {name, hsiconnect, init, authenticate };
+export default {name, init, authenticate, getSavedCredentials };
