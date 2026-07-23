@@ -47,9 +47,9 @@ io.on('connection', (s) => {
 
 function shutdown(signal) 
 {
-    if (serverToken) {
-        stopUWS(servertoken);
-    }
+//    if (serverToken) {
+//        stopUWS(servertoken);
+//    }
 
     io.close(() => {
         console.log("All Socket.IO connections cleared and HTTP server closed.");
