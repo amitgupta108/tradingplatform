@@ -24,13 +24,13 @@ const modes = {
 
 const services = {
     OPENALGOVIEW: live_openalgo,
-    //OPENALGOTRADE: live_openalgo,
-    //KOTAKNEOTRADE: live_kotak,
+    OPENALGOTRADE: live_openalgo,
+    KOTAKNEOTRADE: live_kotak,
     KOTAKHSMVIEW: live_kotak_hsm,
-    //ICICIHISTVIEW: history_breeze,
-    //ICICILIVEVIEW: live_breeze,
-    //SOCKETTRADE: trading_socket,
-    //TPSIMTRADE: paper_trading
+    ICICIHISTVIEW: history_breeze,
+    ICICILIVEVIEW: live_breeze,
+    SOCKETTRADE: trading_socket,
+    TPSIMTRADE: paper_trading
 };
 
 const providers = {
