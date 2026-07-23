@@ -2,12 +2,19 @@ const nTVtime = unixtime => Math.round(unixtime/1000) + 330 * 60;
 const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
 const ema_alpha = 2/21;
 const ema_beta = 1 - ema_alpha;
+const ema = (previous, current) => {
+  return ema_alpha * current + ema_beta * previous;
+};
 
 class ChartEventEmitter extends EventTarget {
 
   constructor(){
     super();
     this.symbols = [];
+    qBox.addEventListener('index', this);
+    qBox.addEventListener('futures', this);
+    qBox.addEventListener('vix', this);
+
   }
 
   run(symbols) {
@@ -18,22 +25,29 @@ class ChartEventEmitter extends EventTarget {
   handleEvent(event)
   {
     const q = event.detail;
-    const idx = this.symbols.findIndex((s) => s === q.symbol);
-    if(idx !== -1)
-      this.dispatchEvent(generateEvent(''+idx, q));
+    if(event.type === 'index')
+      renderChart(series['index'], series['iEma'], q);
+    else if (event.type === 'futures')
+      renderChart(series['futures'], series['fEma'], q);
+    else if (event.type === 'vix')
+      renderChart(series['vix'], undefined, q);
+    else if (event.type === 'strikex')
+    {
+      const idx = this.symbols.findIndex((s) => s === q.symbol);
+      if(idx !== -1)
+        this.dispatchEvent(generateEvent(''+idx, q));
+    }
   }
   
   stop() {
     qBox.removeEventListener('strikex', this);
   }
 }
-
 const ChartEventer = new ChartEventEmitter();
 
-function setInitialChart(key, withEma, qA)
+function setInitialChart(key, qA)
 {
-  if(qA === undefined || qA === null || qA.length === 0)
-    return;
+  const withEma = ['futures', 'index'].includes(key) ? true : false;
   var qs = initialSeriesData(qA, withEma);  
   series[key].setData(qs);
   
@@ -46,61 +60,51 @@ function setInitialChart(key, withEma, qA)
 
 function initialSeriesData(qA, withEma = false)
 {
+  if (qA === undefined || qA === null || qA.length === 0)
+    return;
+
   var qs = qA.filter((e) => !(e.datetime.includes('9:00') ||e.datetime.includes('9:05') || e.datetime.includes('9:10')));
   for(var i = 0; i < qs.length; i++)
   {
     qs[i].time = i === 0 || qs[i].datetime.includes('9:15') ? sTVtime(qs[i].datetime) : qs[i-1].time + 5 * 60;
-    if(withEma) {
-      qs[i].value = ema_alpha * qs[i].close + ema_beta * (i !== 0 ? qs[i-1].value : qs[0].close);
-      qs.at(-1).customValues = qs.at(-1).value;
-    }
+    if(withEma)
+      qs[i].value = i === 0 ? qs[i].close : ema(qs[i-1].value, qs[i].close);
   }
   return qs;
 }
 
-function renderChart(main, ema, q)
+function renderChart(series_main, series_ema, q)
 {
-  const mainSeries = series[main];
-  const emaSeries = series[ema];
-  renderSeries(mainSeries, emaSeries, q);
-}
-
-function renderSeries(c, e, q){
-  var curCandle = c.data().at(-1);
-  if(curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
-  {  
-    const ema = ema_alpha * q.ltp + ema_beta * (curCandle !== undefined ? curCandle.customValues : q.ltp);
-  
-    curCandle = {
-      time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300), 
-      open: (curCandle) ? curCandle.close : q.open ?? q.ltp, 
-      high: q.ltp, 
-      low: q.ltp, 
-      close: q.ltp,
-      value: ema,
-      customValues: ema,
-    };
-  }
+  var curCandle = series_main.data().at(-1);
+  let c;
+  if (curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
+    c = newCandle(q, curCandle);
   else
-  { 
-    curCandle.high = Math.max(q.ltp, curCandle.high);
-    curCandle.low = Math.min(q.ltp, curCandle.low);
-    curCandle.close = q.ltp;
-    curCandle.value =  ema_alpha * q.ltp + ema_beta * curCandle.customValues;
-  }      
-  c.update(curCandle);
-  if(e !== undefined)
-    e.update(curCandle);
+    c = updateCandle(q, curCandle);
+
+  series_main.update(c);
+
+  if (series_ema !== undefined)
+    series_ema.update({ time: c.time, value: ema(c.value ?? q.ltp, q.ltp)}) 
 }
 
-const series = {
-  vix: '',
-  futures: '',
-  index: '',
-  fEma: '',
-  iEma: '',
-  strategy_1: ''
-};
+function newCandle(q, curCandle){
+  return {
+    time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300),
+    open: (curCandle) ? curCandle.close : q.open ?? q.ltp,
+    high: q.ltp,
+    low: q.ltp,
+    close: q.ltp
+  };
+}
+
+function updateCandle(q, curCandle){
+  curCandle.high = Math.max(q.ltp, curCandle.high);
+  curCandle.low = Math.min(q.ltp, curCandle.low);
+  curCandle.close = q.ltp;
+
+  return curCandle;
+}
 
 class Chart 
 {
@@ -124,13 +128,7 @@ class Chart
   setupChart(container, options)
   {
     this.chart = LightweightCharts.createChart(container, options);
-    this.chart.timeScale().fitContent();
-    this.chart.timeScale().scrollToPosition(15);
     this.chart.priceScale('right').applyOptions({
-      visible: true,
-      mode: 0,
-    });
-    this.chart.priceScale('left').applyOptions({
       visible: true,
       mode: 0,
     });
@@ -139,22 +137,25 @@ class Chart
   setupSeries()
   {
     for (var i = 0; i < this.maxcount; i++) {
-      const priceScale = i % 2 === 0 ? 'right' : 'left';
+      //const priceScale = i % 2 === 0 ? 'right' : 'left';
       this.series[i] = this.chart.addSeries(LightweightCharts.CandlestickSeries,
-        { priceScaleId: priceScale, title: `${i}`});
+        { priceScaleId: 'right', title: `${i}`});
       ChartEventer.addEventListener(`${i}`, this);
     }
-
     this.strategy = this.chart.addSeries(LightweightCharts.CandlestickSeries,
       { priceScaleId: 'right', title: 'ST'});
+    this.chart.timeScale().fitContent();
+    this.chart.timeScale().scrollToPosition(15);
   }
 
   strategyImpl()
   {
     let strategy_price = 0;
     for (var i = 0; i < this.maxcount; i++) {
-      if(this.lastdp[i] !== undefined)
-        strategy_price += this.lastdp[i].ltp;
+      if(this.lastdp[i] === undefined)
+        return 0;
+
+      strategy_price += this.lastdp[i].ltp;
     }
     return strategy_price;
   }  
@@ -162,28 +163,29 @@ class Chart
   show(strikes, withStrategy = true) 
   {
     this.symbols = strikes.slice(0, this.maxcount);
+    this.requestHistory(this.symbols);
     this.currentcount = 0;
     for (var i = 0; i < this.maxcount; i++) {
       this.position[strikes[i]] = i; 
-      this.requestHistory(strikes[i]);
+      this.series[i].applyOptions({ title: this.symbols[i].slice(-7) });
     }
     this.withStrategy = withStrategy;
   }
   
   handleEvent(event) {
     const q = event.detail;
-    if(this.symbols.includes(q.symbol))
-    {
-      const idx = this.position[q.symbol];
-      renderSeries(this.series[idx], undefined, q);
-      this.lastdp[idx] = q;
+    if(!this.symbols.includes(q.symbol))
+      return;
 
-      if(this.withStrategy)
-      {
-        const sq = {ltp: this.strategyImpl()};
-        sq.ltt = q.ltt;
-        renderSeries(this.strategy, undefined, sq);
-      }
+    const idx = this.position[q.symbol];
+    renderChart(this.series[idx], undefined, q);
+    this.lastdp[idx] = q;
+
+    if(this.withStrategy)
+    {
+      const ltp = this.strategyImpl();
+      if(ltp !== 0) 
+        renderChart(this.strategy, undefined, {ltp: ltp, ltt: q.ltt});      
     }
   }
 
@@ -193,14 +195,13 @@ class Chart
     if (qs && qs.length > 0) {
       const symbol = getSymbol(qs[0]);
       const idx = this.position[symbol];
-      this.series[idx].applyOptions({ title: symbol.slice(-7) });
       this.series[idx].setData(qs);
       this.histData[idx] = qs;
       ++this.currentcount;
     }
 
     if (this.withStrategy && this.currentcount === this.maxcount) {
-      const aggregate_hist = [];
+      let aggregate_hist = [];
       
       for (var i = 0; i < this.histData[0].length; i++) {
         aggregate_hist[i] = {
@@ -217,19 +218,24 @@ class Chart
       }
       this.strategy.setData(aggregate_hist);
       this.histData = [];
+      aggregate_hist = [];
     }
   }
 
-  requestHistory(symbol)
+  requestHistory(symbols)
   {
-    const scrip = expandSymbol(symbol);
+    const requests = new Array();
+    for(const s of symbols){
+      const p = historyParams('oExpiry');
+      const scrip = expandSymbol(s);
+      p.strike = scrip.strike_price;
+      p.right = scrip.right;
+      p.key = 'strikex';
+      p.symbol = s;
 
-    const p = historyParams('oExpiry');
-    p.strike = scrip.strike_price;
-    p.right = scrip.right;
-    p.key = 'strikex';
-
-    socket.emit('history', p);
+      requests.push(p);
+    }
+    socket.emit('history', requests);
   }
 }
 
@@ -278,8 +284,6 @@ const chartOptions = {
 const chart1 = LightweightCharts.createChart(charts['futures'].container, chartOptions);
 const chart2 = LightweightCharts.createChart(charts['index'].container, chartOptions);
 const options_chart = new Chart(charts['strikes'].container, chartOptions);
-//const chart_strikes = LightweightCharts.createChart(container.strikes, chartOptions);
-//const chart_strategy = LightweightCharts.createChart(container.strategy, chartOptions);
 
 const priceScaleOptions = {
   visible: true,
@@ -287,25 +291,16 @@ const priceScaleOptions = {
   mode: 0,
 };
 chart1.priceScale('left').applyOptions(priceScaleOptions);
-//chart1.priceScale('right').applyOptions(priceScaleOptions);
 
-series.vix = chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'left'});
-series.futures = chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' });
-series.fEma = chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 });
+const series = {
+  vix: chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'left'}),
+  futures: chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }),
+  fEma: chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 }),
+  index: chart2.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }),
+  iEma: chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 }),
+};
+
 chart1.timeScale().fitContent();
 chart1.timeScale().scrollToPosition(15);
-
-series.index = chart2.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'right'});
-series.iEma = chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 });
 chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);
-
-function showChart(){
-    switchCharts(1);
-    const rows = oc_container.querySelectorAll('tr.row_background');
-    if(rows.length === 0)
-      return;
-    const symbols = Array.from(rows).map((r) =>  r.title);
-    ChartEventer.run(symbols);
-    options_chart.show(symbols, true);
-}

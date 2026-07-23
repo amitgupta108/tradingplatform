@@ -48,15 +48,13 @@ function rh(socket)
       console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
     });
     
-    socket.on('history', (key, quotes) => {
-      const withEma = ['futures', 'index'].includes(key) ? true : false;
-      setInitialChart(key, withEma , quotes);
+    socket.on('history', (data) => {
+      if(data.key === 'strikex')
+        options_chart.renderHistory(data.qA);
+      else 
+        setInitialChart(data.key, data.qA);
     });
   
-    socket.on('opt_history', (key, quotes) => {
-      options_chart.renderHistory(quotes);
-    });
-
     socket.on('index', (q) => {
       qBox.dispatchEvent(generateEvent('index', q));
     });

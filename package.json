@@ -6,21 +6,25 @@
   "main": "start.mjs",
   "scripts": {
     "prestart": "kill-port 449",
-    "start": "node --env-file=./serverlocal/config/.env.d --env-file=./serverlocal/config/.env.s ./start.mjs 80",
-    "dev": "node --import=hot-hook/register --env-file=./serverlocal/config/.env.d --env-file=./serverlocal/config/.env.s ./start.mjs 449"
+    "start": "node --env-file=./serverlocal/config/.env.s ./start.mjs 449",
+    "dev": "node --import=hot-hook/register --env-file=./serverlocal/config/.env.s ./start.mjs 449"
   },
   "keywords": [],
   "devDependencies": {
     "hot-hook": "^1.0.0"
   },
   "dependencies": {
-    "express": "^5.2.1",
+    "@msgpack/msgpack": "^3.1.3",
+    "date-fns": "^4.4.0",
+    "openalgo": "^1.1.0",
+    "pako": "^3.0.1",
     "socket.io": "^4.8.3"
   },
   "hotHook": {
     "boundaries": [
       "./serverlocal/app.mjs",
-      "./srvr/breezeclient.mjs"
+      "./srvr/breezeclient.mjs",
+      "./serverlocal/session/appstate.mjs"
     ]
   }
 }

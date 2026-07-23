@@ -4,13 +4,14 @@
     <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1.0"/>
     <meta http-equiv="Cache-Control" content="no-cache"/>
     <title>Trade Positions</title>
-        <link rel="stylesheet" href="./styles.css">        
+        <link rel="stylesheet" href="./styles.css">   
+        <script src="https://unpkg.com/@msgpack/msgpack"></script>
         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.min.js"></script>
         <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-        <script type="text/javascript" src="../js_vollib/lib/rootFinder/rootFinder.js"></script>
-        <script type="text/javascript" src="../js_vollib/lib/jmat/jmat.min.js"></script>
-        <script type="text/javascript" src="../js_vollib/lib/js_lets_be_rational/build/js_lets_be_rational.js"></script>
-        <script type="text/javascript" src="../js_vollib/build/js_vollib.js"></script>
+        <script type="text/javascript" src="../lib/js_vollib/lib/rootFinder/rootFinder.js"></script>
+        <script type="text/javascript" src="../lib/js_vollib/lib/jmat/jmat.min.js"></script>
+        <script type="text/javascript" src="../lib/js_vollib/lib/js_lets_be_rational/build/js_lets_be_rational.js"></script>
+        <script type="text/javascript" src="../lib/js_vollib/build/js_vollib.js"></script>
     </head>
     <body>
     <div class="top">
@@ -280,16 +281,16 @@
     </template>
 <!------------------------------------------------------------------------------------------------------------------------------>    
     
-    <script src="../data.js"></script>
-    <script src="../load.js"></script>
-    <script src="../ui.js"></script>
-    <script src="../helper.js"></script>
-    <script src="../main.js"></script>
-    <script src="../greeks.js"></script>
-    <script src="../optionchain.js"></script>
-    <script src="../positions.js"></script>
-    <script src="../socketconn.js"></script>
-    <script src="../order.js"></script>
-    <script src="../chart.js"></script>
+    <script src="../js/config/data.js"></script>
+    <script src="../js/config/load.js"></script>
+    <script src="../js/ui/ui.js"></script>
+    <script src="../js/helper/helper.js"></script>
+    <script src="../js/helper/greeks.js"></script>
+    <script src="../js/ui/main.js"></script>
+    <script src="../js/entity/optionchain.js"></script>
+    <script src="../js/entity/position.js"></script>
+    <script src="../js/conn/socketconn.js"></script>
+    <script src="../js/entity/order.js"></script>
+    <script src="../js/entity/chart.js"></script>
   </body>
 </html>

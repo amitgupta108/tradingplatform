@@ -3,7 +3,7 @@ import Session from './session/session.mjs';
 import services from './service/services.mjs';
 import { socketmap } from './session/appstate.mjs';
 
-function registerDataRequests(s, appid, mode)
+function registerDataRequests(s, appid,  mode)
 {
     const market_service = services.getService('view', mode);
 
@@ -31,18 +31,9 @@ function registerDataRequests(s, appid, mode)
         util_service.subscribe_vix(appid, mode, 'subs');
     });
 
-    s.on('history', catchAsync(async (msg) => {
-        if(msg.exchange === 'MCX')
-            return {status: 'history not available for MCX'};
-        if(!mode.startsWith('HISTORY'))
-            msg.simStartTime = Date.now();
-
-        var response = await util_service.history(msg);
-        if(response?.Error === null) {
-            var event = msg.key === 'strikex' ? 'opt_history' : 'history';
-            s.emit(event, msg.key, response.Success);
-            return {status: 'success'};
-        }
+    s.on('history', catchAsync(async (requests) => {
+        console.log("history request " + requests.length);
+        return util_service.history(appid, requests);
     }, s, 'history'));
 
     s.on('speed', (msg) => {
@@ -70,27 +61,32 @@ function registerDataRequests(s, appid, mode)
     });
     
     s.on('option_chain', (msg) => {
-        s.sn.option_chain(msg.key, msg.action);
+       market_service.option_chain(appid, msg.key, msg.action);
     });
+
+    s.on('snapshot', (msg) => {
+        market_service.snapshot(appid, msg);
+    })
 }
 
-function registerTradeRequests(s, appid, mode)
-{
+function registerTradeRequests(s, appid, mode) {
     const trading_service = services.getService('trade', mode);
-    const profile = services.getProfile(mode);
 
-    s.on('order', catchAsync((orders) => {
-        console.log('order received at apiserver');        
-        return trading_service.neworders(appid, profile['view'], orders);
-    }, s), 'order');
-
-    s.on('cancelorder', (msg) => {
-        return trading_service.cancelorder(appid, msg);
+    s.on('order', (orders) => {
+        console.log('order received at apiserver');
+        orders.forEach(async (order) => {
+            const updated = await trading_service.placeOrder(appid, order);
+            console.log('order state ' + updated.state + ' ' + (updated.error ?? updated.orderid));
+        });
     });
-    
+
+    s.on('cancelorder', async (msg) => {
+        const response = await trading_service.cancelorder(appid, msg);
+        console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
+    });
+
     s.on('orderbook', async (msg) => {
-        var response = await trading_service.orderbook(appid, msg);
-        s.emit('orderbook', response);
+        s.emit('orderbook', await trading_service.orderbook(appid, msg));
     });
 }
 
@@ -147,10 +143,10 @@ const catchAsync = (handler, socket, eventName) => {
         const rv = handler(...args);
         if(rv instanceof Promise) {
             rv.then((response) => {
-                toConsole(eventName + ' ' + response?.status);
+                toConsole(eventName + ' ' + 'successful');
             })
             .catch ((err) => {
-                console.error(err);
+                console.error(eventName + ' ' + err);
             });
         }
         else {
