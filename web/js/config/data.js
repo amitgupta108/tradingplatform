@@ -49,20 +49,22 @@ instrumentMap.set('BL1', {
 });
 
 instrumentMap.set('NL1', {
+  fExpiry: "28JUL26",
+  oExpiries: ["28JUL26", "04AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
-  mode: 'S1T1ADMINT',
+  mode: 'S3T0ADMIN0',
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
 });
 
 instrumentMap.set('NL2', {
   fExpiry: "28JUL26",
-  oExpiries: ["21JUL26", "28JUL26"],
+  oExpiries: ["28JUL26", "04AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
-  mode: 'S3T1ADMINT',
+  mode: 'S1T1ADMINT',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
