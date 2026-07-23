@@ -1,20 +1,20 @@
 
-import https from 'node:https';
+import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path'; 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+/*
 const options = {
     key: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.key'), 'utf8'),
     cert: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.crt'), 'utf8'),
 };
-
-export const httpsServer = https.createServer(options, (req, res) => {
+*/
+export const httpServer = http.createServer({}, (req, res) => {
     // Prevent directory traversal attacks
-    const parsedUrl = new URL(req.url, `https://${req.headers.host}`);
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
     let pathname = parsedUrl.pathname; 
 
     let filePath = path.join(__dirname, '../web/', pathname);

@@ -128,7 +128,7 @@ class SimManager
         });
     }
 
-     q(appid, instrument, time)
+    q(appid, instrument, time)
     {
         var qArray = this.simdata.qs_store.get(appid);
         var st = qArray.find((q) => q.symbol === instrument.symbol);
@@ -145,7 +145,7 @@ class SimManager
             }
 
             if (idx >= 0)
-            this.emit(st.quotes[idx], appid);
+            EventService.emit('hist-quote', st.quotes[idx], appid);
         }
         
         if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')
