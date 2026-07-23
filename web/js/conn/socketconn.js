@@ -51,8 +51,7 @@ function rh(socket)
     socket.on('history', (data) => {
       if(data.key === 'strikex')
         options_chart.renderHistory(data.qA);
-      else
-        console.log('Message from socketio Server:', (Date.now() - data.time));
+      else 
         setInitialChart(data.key, data.qA);
     });
   

@@ -21,8 +21,6 @@ function emitHistQs(appid, key, qA) {
     const app_obj = socketmap.get(appid);
     if (app_obj !== undefined)
         emit(app_obj.socket, 'history', { time: Date.now(), key: key, qA: qA });
-
-    //sendHistQs(appid, key, qA);
 }
 
 function sendHistQs(appid, key, qA)
