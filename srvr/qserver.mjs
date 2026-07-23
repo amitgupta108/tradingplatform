@@ -7,9 +7,9 @@ function connect() {
         .then((resp) => {
             breeze.wsConnect();
             breeze.onTicks = wsemit;
-            console.error('breeze session started ');
+            console.log('breeze session started ');
         }).catch((error) => {
-            console.error('breeze start session ' + error);
+            console.error('breeze error ' + error);
         });
 }
 
