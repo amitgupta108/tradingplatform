@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const options = {
-    key: fs.readFileSync(path.join(__dirname, 'config', 'server.key'), 'utf8'),
-    cert: fs.readFileSync(path.join(__dirname, 'config', 'server.crt'), 'utf8'),
+    key: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.key'), 'utf8'),
+    cert: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.crt'), 'utf8'),
 };
 
 export const httpsServer = https.createServer(options, (req, res) => {
