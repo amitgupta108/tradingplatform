@@ -11,7 +11,7 @@ const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATED', admin: 'SIM_ADMIN' },
     LIVELIVE: { view: 'LIVE', trade: 'LIVE' },
     S1TSADMINS: { view: 'LIVE', trade: 'SIMULATED', admin: 'LIVE_STREAMING' },
-    S3T0ADMIN0: { view: 'LIVE_3'},
+    S3T0ADMINT: { view: 'LIVE_3', admin: 'LIVE_TRADING'},
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
