@@ -58,7 +58,7 @@ class BaseClient extends EventEmitter {
                     resolve();
                 };
                 this.ws.onmessage = (event) => {
-                    this.handleMessage(event.data, Date.now());
+                    this.handleMessage(event.data);
                 };
                 this.ws.onerror = (error) => {
                     this.log('WebSocket error:', error.message);
