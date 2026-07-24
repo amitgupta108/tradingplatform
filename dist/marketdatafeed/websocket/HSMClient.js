@@ -38,7 +38,7 @@ class HSMClient extends BaseClient
     handleBinaryMessage(message, responseType, t) 
     {
         if (responseType === BinRespTypes.DATA_TYPE)
-            this.handleQuote(message, t);
+            this.handleQuote(message);
         else
             this.handleConfirmations(message);
     }
@@ -46,22 +46,22 @@ class HSMClient extends BaseClient
     handleQuote(parsed, t)
     {
         if(!Array.isArray(parsed))
-            this.convertAndSend(parsed, t);
+            this.convertAndSend(parsed);
         else
             parsed.forEach((quote) => {
-                this.convertAndSend(quote, t);
+                this.convertAndSend(quote);
             });
     }
 
-    convertAndSend(quote, t)
+    convertAndSend(quote)
     {
         if (quote.name === 'sf' && quote.ltp !== undefined) {
             const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, ...rest } = quote;
-            this.emit('quote', {quotetype, token, exchange, symbol, ltp, ltt, volume}, t);
+            this.emit('quote', {quotetype, token, exchange, symbol, ltp, ltt, volume});
         }
         else if (quote.name === 'if' && quote.iv !== undefined){
             const { name: quotetype, tk: token, e: exchange, iv: ltp, tvalue: ltt, ...rest } = quote;
-            this.emit('quote', { quotetype, token, exchange, ltp, ltt}, t);
+            this.emit('quote', { quotetype, token, exchange, ltp, ltt});
         }
     }
     
