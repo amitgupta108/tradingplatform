@@ -1,15 +1,15 @@
 import { httpServer } from './httpsserver.mjs';
 import { Server } from "socket.io";
 
-export const socketio = (port) => {
+export const socketio = (host, port) => {
     
-    httpServer.listen(port, () => {
-        console.log(`Server running at https://127.0.0.1:${port}/`);
+    httpServer.listen(port, host, () => {
+        console.log(`Server running at http://${host}:${port}/`);
     });
 
     return new Server(httpServer, {
         cors: {
-            origin: `http://localhost:${port}`,
+            origin: '*',
             methods: ["GET", "POST"],
         },
         connectionStateRecovery: {
