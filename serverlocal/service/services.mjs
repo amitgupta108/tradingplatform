@@ -92,10 +92,11 @@ function getProviderModeKey(name, mode){
 
 function initializeAll(skip_list) {
     scripstore.load();
-    const list = Object.values(services);
-    [...new Set(list)].forEach((s) => {
-        if(!skip_list.includes(s.name))
-            doInit(s);
+    const list = Object.entries(services);
+    [...new Set(list)].forEach(([k, v]) => {
+        //if(!skip_list.includes(s.name))
+        if(process.env[k] === 'Y')
+            doInit(v);
     });
 }
 

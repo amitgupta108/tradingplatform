@@ -21,7 +21,8 @@ const args = process.argv;
 console.log(`First argument: ${args[2]}`);
 const port = args[2] === undefined ? 80 : Number(args[2]);
 
-const io = socketio(port);
+const host = process.env.HOST;
+const io = socketio(host, port);
 //const servertoken = startUWS(8080);
 
 let app = await import('./serverlocal/app.mjs', import.meta.hot?.boundary);
