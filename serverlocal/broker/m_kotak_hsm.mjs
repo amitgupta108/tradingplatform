@@ -80,11 +80,9 @@ function onSnapshot(response)
     console.log('snapshot response ' + response);
 }
 
-function onQuotes(q, t) {
+function onQuotes(q) {
     if(q.ltp !== undefined && q.ltt !== undefined) {
-        const timestamped = parse(q.ltt, pattern, new Date()).getTime();
-        console.log('network : processing ' + (t - timestamped) + ' : ' + (Date.now() - t));
-        //console.error('HSM quote ' + JSON.stringify(q));
+        console.error('HSM quote ' + JSON.stringify(q) +  ' ' + Number(process.hrtime.bigint()) / 100000);
     }
 }
 
