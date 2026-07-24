@@ -26,11 +26,11 @@ class ChartEventEmitter extends EventTarget {
   {
     const q = event.detail;
     if(event.type === 'index')
-      renderChart(series['index'], series['iEma'], q);
+      renderChart(series['index'].ref, series['iEma'], q);
     else if (event.type === 'futures')
-      renderChart(series['futures'], series['fEma'], q);
+      renderChart(series['futures'].ref, series['fEma'], q);
     else if (event.type === 'vix')
-      renderChart(series['vix'], undefined, q);
+      renderChart(series['vix'].ref, undefined, q);
     else if (event.type === 'strikex')
     {
       const idx = this.symbols.findIndex((s) => s === q.symbol);
@@ -43,18 +43,19 @@ class ChartEventEmitter extends EventTarget {
     qBox.removeEventListener('strikex', this);
   }
 }
+
 const ChartEventer = new ChartEventEmitter();
 
 function setInitialChart(key, qA)
 {
   const withEma = ['futures', 'index'].includes(key) ? true : false;
   var qs = initialSeriesData(qA, withEma);  
-  series[key].setData(qs);
+  series[key].ref.setData(qs);
   
   if(withEma)
   {
     const seriesName = key === 'futures' ? 'fEma' : 'iEma';
-    series[seriesName].setData(qs);
+    series[seriesName].ref.setData(qs);
   }
 }
 
@@ -77,15 +78,19 @@ function renderChart(series_main, series_ema, q)
 {
   var curCandle = series_main.data().at(-1);
   let c;
-  if (curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299)
+  const newCan = curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299;
+  if (newCan) 
     c = newCandle(q, curCandle);
   else
     c = updateCandle(q, curCandle);
 
   series_main.update(c);
 
-  if (series_ema !== undefined)
-    series_ema.update({ time: c.time, value: ema(c.value ?? q.ltp, q.ltp)}) 
+  if (series_ema !== undefined) {
+    if(newCan)
+      series_ema.val = series_ema.ref.data().at(-1) === undefined ? q.ltp : series_ema.ref.data().at(-1).value;
+    series_ema.ref.update({ time: c.time, value: ema(series_ema.val, q.ltp)});
+  }
 }
 
 function newCandle(q, curCandle){
@@ -105,6 +110,7 @@ function updateCandle(q, curCandle){
 
   return curCandle;
 }
+
 
 class Chart 
 {
@@ -293,11 +299,11 @@ const priceScaleOptions = {
 chart1.priceScale('left').applyOptions(priceScaleOptions);
 
 const series = {
-  vix: chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'left'}),
-  futures: chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }),
-  fEma: chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 }),
-  index: chart2.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }),
-  iEma: chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 }),
+  vix: {ref: chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'left'}), val: 0},
+  futures: {ref: chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }), val: 0},
+  fEma: {ref: chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 }), val: 0},
+  index: {ref: chart2.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }), val: 0},
+  iEma: {ref: chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 }), val: 0},
 };
 
 chart1.timeScale().fitContent();
