@@ -170,7 +170,7 @@ function init()
             view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
 
         if(!client)
-            client = new OpenAlgo(process.env.openalgo_key);
+            client = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
         
         const p = client.connect();
 
