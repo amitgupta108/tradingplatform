@@ -15,9 +15,9 @@ const LOT_SIZE = {
 };
 
 instrumentMap.set('NH2', {
-  fExpiry: "26MAY26",
-  simStartTime: new Date("2026-05-15 09:15:00").getTime(),
-  oExpiries: ["19MAY26", "26MAY26"],
+  fExpiry: "25AUG26",
+  simStartTime: new Date("2026-07-27 15:25:00").getTime(),
+  oExpiries: ["04AUG26", '11AUG26'],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -48,7 +48,7 @@ instrumentMap.set('BL1', {
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
 });
 
-instrumentMap.set('NL1', {
+instrumentMap.set('NL3', {
   fExpiry: "28JUL26",
   oExpiries: ["28JUL26", "04AUG26"],
   stockCode: 'NIFTY',
@@ -66,6 +66,26 @@ instrumentMap.set('NL2', {
   lscount: lscount,
   mode: 'S1T1ADMINT',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
+});
+
+instrumentMap.set('NL2', {
+  fExpiry: "28JUL26",
+  oExpiries: ["28JUL26", "04AUG26"],
+  stockCode: 'NIFTY',
+  exchange: 'NFO',
+  lscount: lscount,
+  mode: 'S1T1ADMINT',
+  appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
+});
+
+instrumentMap.set('NL3', {
+  fExpiry: "28JUL26",
+  oExpiries: ["04AUG26", "11AUG26"],
+  stockCode: 'NIFTY',
+  exchange: 'NFO',
+  lscount: lscount,
+  mode: 'S1T1ADMINT',
+  appid: 'dN2wzV0S-x3Ca-SVQI-AAAH-940b886ee169'
 });
 
 instrumentMap.set('NP1', {

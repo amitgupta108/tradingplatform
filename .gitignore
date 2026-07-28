@@ -3,3 +3,6 @@ web/lib/js_vollib/
 node_modules
 a.txt
 serverapps/config/
+serverlocal/config
+serverlocal/.env
+.vscode
