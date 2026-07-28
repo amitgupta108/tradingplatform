@@ -6,3 +6,4 @@ serverapps/config/
 serverlocal/config
 serverlocal/.env
 .vscode
+*/.DS_Store

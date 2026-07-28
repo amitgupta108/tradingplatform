@@ -1,15 +1,14 @@
 export const OPT_EXPIRIES = {
     NIFTY: {
-        FIRST: '28JUL26',
-        SECOND: '04AUG26',
+        FIRST: '04AUG26',
+        SECOND: '11AUG26',
     },
     CRUDEOIL: {
         FIRST: '17AUG26',
         SECOND: '17SEP26'
     },
     BANKNIFTY: {
-        FIRST: '28JUL26',
-        SECOND: '28JUL26',
+        FIRST: '25AUG26',
     },
 };
 
@@ -20,8 +19,8 @@ export const OPT_CONFIG = {
 
 export const FUT_EXPIRIES = {
     NIFTY: {
-        FIRST: '28JUL26',
-        SECOND: '28JUL26'
+        FIRST: '25AUG26',
+        SECOND: '30SEP26'
     },
     CRUDEOIL: {
         FIRST: '19AUG26',

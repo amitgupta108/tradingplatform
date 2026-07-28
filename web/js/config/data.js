@@ -54,13 +54,13 @@ instrumentMap.set('NL3', {
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
-  mode: 'S3T0ADMIN0',
+  mode: 'S1T1ADMINT',
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
 });
 
-instrumentMap.set('NL2', {
-  fExpiry: "28JUL26",
-  oExpiries: ["28JUL26", "04AUG26"],
+instrumentMap.set('NL1', {
+  fExpiry: "25AUG26",
+  oExpiries: ["04AUG26", "11AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -69,8 +69,8 @@ instrumentMap.set('NL2', {
 });
 
 instrumentMap.set('NL2', {
-  fExpiry: "28JUL26",
-  oExpiries: ["28JUL26", "04AUG26"],
+  fExpiry: "25AUG26",
+  oExpiries: ["04AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -79,7 +79,7 @@ instrumentMap.set('NL2', {
 });
 
 instrumentMap.set('NL3', {
-  fExpiry: "28JUL26",
+  fExpiry: "25AUG26",
   oExpiries: ["04AUG26", "11AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
@@ -118,19 +118,30 @@ instrumentMap.set('ML1',{
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,
-  mode: 'S3T0ADMINT',
+  mode: 'S1T1ADMINT',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
 instrumentMap.set('ML2',{
   fExpiry: "19AUG26",
-  oExpiries: ["17AUG26", "17SEP26"],
+  oExpiries: ["17SEP26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,
   mode: 'S1T1ADMINT',
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
+
+instrumentMap.set('ML3', {
+  fExpiry: "19AUG26",
+  oExpiries: ["15OCT26"],
+  stockCode: 'CRUDEOIL',
+  exchange: 'MCX',
+  lscount: lscount,
+  mode: 'S1T1ADMINT',
+  appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
+});
+
 const urlParams = new URLSearchParams(window.location.search);
 const i = urlParams.get('instrument');
 const instrument = instrumentMap.get(i);
