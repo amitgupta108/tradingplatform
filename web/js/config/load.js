@@ -37,7 +37,7 @@ const spot_label = document.getElementById('timer_spot_lb');
 const latency_label = document.getElementById('timer_latency_lb');
 const expiry_btn_1 = document.getElementById('expiry_btn_1');
 const expiry_btn_2 = document.getElementById('expiry_btn_2');
-const simDate = new Date(instrument.simStartTime);
+const simDate = new Date(instrument.simStartTime ?? Date.now());
 
 date_label.textContent = simDate.toDateString();
 expiry_btn_1.textContent = instrument.oExpiries[0];
