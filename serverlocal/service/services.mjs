@@ -89,7 +89,7 @@ function getProviderModeKey(name, mode){
 }
 
 function initializeAll(skip_list) {
-    //scripstore.load();
+    scripstore.load();
     const list = Object.entries(services);
         
     const active = list.filter(([k, v]) => {
