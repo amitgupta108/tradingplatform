@@ -66,21 +66,21 @@ function listOrders()
 function streamOptionChain(event)
 {  
   event.stopPropagation();
-  const oc_key = document.getElementById('c_oc_div').classList.contains('active') ? 'ocfirst' : 'ocsecond';
-  emit('option_chain', {key: oc_key, action:'toggle'});
+  const idx = document.getElementById('expiry_btn_1').disabled ? 0 : 1;
+  emit('option_chain', {expiry: instrument.oExpiries[idx], action:'toggle'});
 }
 
 function wsOps(action){
   const tpt = document.getElementById("tpt").value;
-  const eventName = tpt.length === 15 ? 'live_trading' : 'wsOps';
-  emit(eventName, action, tpt);
+  emit('wsOps', action, tpt);
   document.getElementById("tpt").value = "";
 }
 
 function subs_vix()
 {
   //emit('vix', {action: 'subs'});
-  emit('snapshot', 'mcx_fo|520702');
+  //emit('snapshot', 'mcx_fo|520702');
+  emit('authenticate', '');
 }
 
 function reload()

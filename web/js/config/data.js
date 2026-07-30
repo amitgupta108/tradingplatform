@@ -74,7 +74,7 @@ instrumentMap.set('NL2', {
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
-  mode: 'S1T1ADMINT',
+  mode: 'S3T0ADMINT',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
@@ -118,7 +118,7 @@ instrumentMap.set('ML1',{
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,
-  mode: 'S1T1ADMINT',
+  mode: 'S4T0ADMINS',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
@@ -128,7 +128,7 @@ instrumentMap.set('ML2',{
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,
-  mode: 'S1T1ADMINT',
+  mode: 'S3T0ADMINT',
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
 

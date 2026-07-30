@@ -16,7 +16,7 @@ const logical_view_name = 'ICICIHISTVIEW';
 
 function onQuotes(q, appid) 
 {
-    const qt = qutils.standardizeiq(q);
+    const qt = qutils.standardize(logical_view_name, q);
     streamer.emitQs(appid, qt);
     
     if(qt.key === 'strikex')

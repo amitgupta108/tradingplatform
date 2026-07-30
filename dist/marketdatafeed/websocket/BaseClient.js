@@ -120,7 +120,7 @@ class BaseClient extends EventEmitter {
         this.ws.send(data);
     }
 
-    handleMessage(data, t) {
+    handleMessage(data) {
         try {
             if (data instanceof ArrayBuffer) {
                 const resp = PacketParser.init(data); 
@@ -134,7 +134,7 @@ class BaseClient extends EventEmitter {
                     this.ackObj.ackNum = jsonData.ackCount;
                     jsonData = jsonData.resp;
                 }
-                this.handleBinaryMessage(jsonData, resp.responseType, t);
+                this.handleBinaryMessage(jsonData, resp.responseType);
             } 
             else if (typeof data === 'string') {
                 const parsed = PacketParser.parseTextMessage(data);
