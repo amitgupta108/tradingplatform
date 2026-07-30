@@ -48,7 +48,7 @@ let fut_title = 'F: ';
 let gtotal_booked =  document.getElementById("vBookedPL");
 let gtotal_unbooked =  document.getElementById("vUnbookedPL");
 let gtotal_pnl =  document.getElementById("vTotalPL");
-
+let counter = 0;
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 
 class TradeButtons extends HTMLElement {
@@ -69,22 +69,32 @@ const pBox = new EventTarget();
 const qBox = new EventTarget();
 const pNL = new EventTarget();
 
+qBox.addEventListener('futures', (event) => {
+  const q = event.detail;
+  counter++;
+  if(counter === 10){
+    counter = 0;
+    const app_entry = new Date(q.app_entry);
+    const app_exit = new Date(q.app_exit);
+    const client_entry = new Date(q.client_entry);
+    latency_label.textContent = q.ltp + ': ' + client_entry.getSeconds() + '.' + client_entry.getMilliseconds();
+  }
+});
+
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
   const ltp = Number(q.ltp).toFixed(2);
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
   spot_label.textContent = ltp;
-  
-  var lt = new Date(q.ltt);
-  time_label.textContent = lt.toLocaleTimeString();
 });
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
   fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
-  latency_label.textContent = Date.now() - q.ltt;
+
+  time_label.textContent = new Date().toLocaleTimeString();
 });
 
 qBox.addEventListener('strikex', (event) => {

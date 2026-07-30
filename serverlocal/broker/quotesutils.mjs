@@ -43,6 +43,7 @@ function completeQ(q)
 
 function standardize(name, q)
 {
+    q.app_entry = Date.now();
     switch (name) {
         case 'ICICILIVEVIEW': 
             return standardizeiq(q) 
