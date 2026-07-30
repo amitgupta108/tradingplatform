@@ -70,7 +70,7 @@ instrumentMap.set('NL1', {
 
 instrumentMap.set('NL2', {
   fExpiry: "25AUG26",
-  oExpiries: ["04AUG26"],
+  oExpiries: ["04AUG26", "11AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   lscount: lscount,
@@ -124,17 +124,17 @@ instrumentMap.set('ML1',{
 
 instrumentMap.set('ML2',{
   fExpiry: "19AUG26",
-  oExpiries: ["17SEP26"],
+  oExpiries: ["17AUG26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,
   mode: 'S3T0ADMINT',
-  appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
+  appid: '531c0a81-0558-4ad7-8b4c-1ea5bf3775d3'
 });
 
 instrumentMap.set('ML3', {
   fExpiry: "19AUG26",
-  oExpiries: ["15OCT26"],
+  oExpiries: ["17AUG26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
   lscount: lscount,
