@@ -95,8 +95,8 @@ function standardizekq(quote)
 {
     let q;
     if (quote.name === 'sf' && quote.ltp !== undefined) {
-        const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, ...rest } = quote;
-        q = { quotetype, token, exchange, symbol, ltp, ltt, volume };
+        const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, app_entry, ...rest } = quote;
+        q = { quotetype, token, exchange, symbol, ltp, ltt, volume, app_entry };
     }
     else if (quote.name === 'if' && quote.iv !== undefined) {
         const { name: quotetype, tk: token, e: exchange, iv: ltp, tvalue: ltt, iv: close, ...rest } = quote;
