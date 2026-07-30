@@ -64,6 +64,7 @@ function rh(socket)
     });
 
     socket.on('futures', (q) => {    
+      q.client_entry = Date.now();
       qBox.dispatchEvent(generateEvent('futures', q));
       if(q.exchange === 'MCX')
         qBox.dispatchEvent(generateEvent('index', q));      
