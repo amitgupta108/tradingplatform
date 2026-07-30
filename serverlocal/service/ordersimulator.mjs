@@ -3,10 +3,12 @@ import services from './services.mjs';
 import path from 'path';
 
 const name = path.parse(import.meta.filename).name;
+const logical_trade_name = 'TPSIMTRADE';
 
 const sim_order_map = new Map();
 var counter = 50000;
 let initialized = false;
+let myviewbuddies;
 
 const open_orders = {
     HISTORY: false,
@@ -15,8 +17,12 @@ const open_orders = {
 };
 
 function init()
-{
+{   
     if(!initialized) {
+        const mymodes = services.getModesForService(logical_trade_name, 'trade');
+        myviewbuddies = mymodes.map((m) => {
+            return services.getService('view', m);
+        });
         initialized = true;
         return {status:'success'}
     }
@@ -24,7 +30,7 @@ function init()
 
 function neworders(appid, view_mode, orders)
 {
-    services.getProfile(appid);
+    services.getProfile(view_mode);
     orders.forEach((order) => {
         order.filled_q = 0;
         order.pricedAt = 0;

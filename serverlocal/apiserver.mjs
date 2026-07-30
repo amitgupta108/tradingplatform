@@ -61,7 +61,8 @@ function registerDataRequests(s, appid,  mode)
     });
     
     s.on('option_chain', (msg) => {
-       market_service.option_chain(appid, msg.key, msg.action);
+        const stockCode = socketmap.get(appid).stockCode;
+        market_service.option_chain(appid, stockCode, msg.expiry, msg.action);
     });
 
     s.on('snapshot', (msg) => {
@@ -110,7 +111,12 @@ function registerAdminRequests(s, appid, mode)
         }, s, 'wsOps'));
     }
 
-    if (profile['admin'] === 'LIVE_STREAMING') {    
+    if (profile['admin'].startsWith('LIVE_STREAMING')) 
+    {    
+        s.on('authenticate', () => {
+            admin_service.authenticate(mode);
+        });
+
         s.on('unsubscribe', (list) => {
             admin_service.subscribe(list, 'unsubs');
             s.sn.unqsub(list, 'unsubscribe')

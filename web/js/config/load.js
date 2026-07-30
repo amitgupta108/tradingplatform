@@ -82,7 +82,7 @@ qBox.addEventListener('index', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp.toFixed(2);
+  fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
   latency_label.textContent = Date.now() - q.ltt;
 });

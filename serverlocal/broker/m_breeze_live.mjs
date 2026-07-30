@@ -7,7 +7,7 @@ import path from 'path';
 const name = path.parse(import.meta.filename).name;
 
 let initialized = false;
-const mode_live_icici = 'LIVE_2';
+const logical_view_name = 'ICICILIVEVIEW';
 
 function subscribe(appid, instruments, action, mode)
 {
@@ -17,7 +17,7 @@ function subscribe(appid, instruments, action, mode)
 
 function onQuotes(q, mode, appid)
 {
-    var q = qutils.standardizeiq(q);
+    var q = qutils.standardize(logical_view_name, q);
     streamer.emitQs(q.stockCode + mode_live_icici, q);
 }
 
