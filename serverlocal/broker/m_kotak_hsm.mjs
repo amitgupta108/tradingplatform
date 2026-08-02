@@ -106,6 +106,7 @@ function onSnapshot(response)
 {
     console.log('snapshot response ' + JSON.stringify(response));
     const qt = quotesutils.toScrip(response);
+    const qt_m = quotesutils.toScripMin(response);
 }
 
 function onATMChange(uq) {
@@ -121,7 +122,7 @@ function onATMChange(uq) {
 
 function onQuotes(q)
 { 
-    const qt = qutils.standardize(myviewname, q);
+    const qt = qutils.standardize(myviewname, q, false);
     if (qt === undefined)
         return;
     

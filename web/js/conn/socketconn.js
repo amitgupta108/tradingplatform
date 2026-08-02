@@ -56,22 +56,22 @@ function rh(socket)
     });
   
     socket.on('index', (q) => {
-      qBox.dispatchEvent(generateEvent('index', q));
+      qBox.dispatchEvent('index', q);
     });
     
     socket.on('vix', (q) => {
-      qBox.dispatchEvent(generateEvent('vix', q));
+      qBox.dispatchEvent('vix', q);
     });
 
     socket.on('futures', (q) => {    
       q.client_entry = Date.now();
-      qBox.dispatchEvent(generateEvent('futures', q));
+      qBox.dispatchEvent('futures', q);
       if(q.exchange === 'MCX')
-        qBox.dispatchEvent(generateEvent('index', q));      
+        qBox.dispatchEvent('index', q);      
     });
 
     socket.on('strikex', (q) => {
-        qBox.dispatchEvent(generateEvent('strikex', q));
+        qBox.dispatchEvent('strikex', q);
     });
 
     socket.on('stream', (response) => {

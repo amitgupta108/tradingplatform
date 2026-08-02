@@ -38,8 +38,8 @@ function generateEvent(type, nv)
   return new CustomEvent(type, {
 
     detail: nv,
-    bubbles: true,   // Allow the event to bubble up the DOM
-    cancelable: true // Allow event.preventDefault()
+    //bubbles: true,   // Allow the event to bubble up the DOM
+    //cancelable: true // Allow event.preventDefault()
   });
 }
 
