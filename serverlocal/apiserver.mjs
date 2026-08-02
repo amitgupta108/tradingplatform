@@ -111,12 +111,16 @@ function registerAdminRequests(s, appid, mode)
         }, s, 'wsOps'));
     }
 
-    if (profile['admin'].startsWith('LIVE_STREAMING')) 
+    if (profile['admin'] === 'BROKER_AUTH')
     {    
-        s.on('authenticate', (provider) => {
-            admin_service.authenticate(provider);
+        s.on('authenticate', (provider, notify) => {
+            services.getService('admin', mode);
+            admin_service.authenticate(provider, notify);
         });
+    }
 
+    if (profile['admin'].startsWith('LIVE_STREAMING')) 
+    {
         s.on('unsubscribe', (list) => {
             admin_service.subscribe(list, 'unsubs');
             s.sn.unqsub(list, 'unsubscribe')

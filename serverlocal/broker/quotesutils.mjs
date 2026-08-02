@@ -41,7 +41,7 @@ function completeQ(q)
     return { ...q, ...scrip };
 }
 
-function standardize(name, q)
+function standardize(name, q, min = false)
 {
     q.app_entry = Date.now();
     switch (name) {
@@ -52,7 +52,7 @@ function standardize(name, q)
         case 'OPENALGOVIEW':
             return standardizeoq(q) 
         case 'KOTAKHSMVIEW':
-            return standardizekq(q) 
+            return standardizekq(q, min) 
     }
 }
 
@@ -91,7 +91,7 @@ function standardizeoq(quote)
     return completeQ(quote); 
 }
 
-function standardizekq(quote)
+function standardizekq(quote, min)
 {
     const qt = state_qutils.quote_cache.get('k' + quote.tk);
     if(qt === undefined)
@@ -100,7 +100,7 @@ function standardizekq(quote)
     if(quote.ltp !== undefined){
         qt.ltp = Number(quote.ltp);
         qt.ltt = quote.app_entry - qt.offset;
-        qt.app_entry = quote.app_entry;
+        qt.m1 = quote.app_entry;
         return qt;
     }
 }
@@ -118,9 +118,27 @@ function toScrip(quote)
         qt.exchange = quote.e === 'mcx_fo' ? 'MCX' : quote.e === 'nse_fo' ? 'NFO' : 'NSE';
         qt.key = quote.ts.endsWith('FUT') ? 'futures' : quote.ts.endsWith('PE') || quote.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
+        qt.min = false;
         state_qutils.quote_cache.set('k' + quote.tk, { ...qt, ...utils.expandSymbol(quote.ts) });
     }
     return state_qutils.quote_cache.get('k' + quote.tk);
+}
+
+function toScripMin(quote) {
+    const qt = state_qutils.quote_cache.get('k_m' + quote.tk);
+    if (qt === undefined) {
+        const offset = Date.now() - parse(quote.fdtm, pattern, new Date()).getTime();
+        const { tk, e, ts, ltp: ltp_f, c, fdtm, ltt, ...rest } = quote;
+        const qt = { tk, e, ts, ltp_f, c, fdtm, ltt };
+
+        qt.ts = quote.ts.replaceAll('.00', '');
+        qt.e = quote.e === 'mcx_fo' ? 'MCX' : quote.e === 'nse_fo' ? 'NFO' : 'NSE';
+        qt.key = quote.ts.endsWith('FUT') ? 'futures' : quote.ts.endsWith('PE') || quote.ts.endsWith('CE') ? 'strikex' : 'index';
+        qt.offset = offset;
+        qt.min = true;
+        state_qutils.quote_cache.set('k_m' + quote.tk, qt);
+    }
+    return state_qutils.quote_cache.get('k_m' + quote.tk);
 }
 
 function sendQsToSim(view_mode, q)

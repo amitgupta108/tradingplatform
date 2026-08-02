@@ -1,56 +1,39 @@
-import {fyers_connector} from './fyers/connector.mjs';
-import { EventService } from '../eventservice.mjs';
+import Connector from './connector.mjs';
+import { eventservice } from '../eventservice.mjs';
 
-let initialized = false;
-const name = 'ADMINSTREAM';
+const conn_data = {
+    fyers: { type: 'web', key: 'RVHE8SFZF4-100', redirect_url: 'http://127.0.0.1/redirect/fyers.html', loopback_value: '' },
+    icici: { type: 'web', redirect_url: 'http://127.0.0.1/redirect/icici.html', loopback_value: '' },
+};
 
 class AuthService
 {
     constructor()
     {
-        EventService.addListener('ext_auth', (msg) => {
-            this.generateSession(msg);
-        });
-
+        this.name = 'AUTHSERVICE';
+        this.initialized = false;
         this.connectors = {
-            fyers: fyers_connector
+            fyers: new Connector('fyers'),
+            icici: new Connector('icici')
         };
     }
 
-    authenticate() {
-        this.connectors.fyers.authenticate();
+    init()
+    {
+        eventservice.addListener('ext_auth', (msg) => {
+            this.saveAuthCode(msg);
+        });
+        this.initialized = true;
     }
 
-    generateSession(authdata) {
-        this.connectors.fyers.generateSession(authdata);
+    authenticate(provider, notify = true) 
+    {
+        this.connectors[provider].authenticate(notify);
     }
-}
 
-let authservice;
-
-function init()
-{
-    authservice = new AuthService();
-    initialized = true;
-    return { status: 'success' };
-}
-
-function authenticate(mode)
-{
-    if(initialized){
-        authservice.authenticate();
+    saveAuthCode(authdata) {
+        this.connectors[authdata.provider].saveAuthCode(authdata);
     }
 }
 
-function generateSession(auth_code)
-{
-    if(initialized)
-        authservice.generateSession(auth_code);
-}
-
-export default {
-    init,
-    authenticate,
-    generateSession,
-    name
-}
+export const authservice = new AuthService();
