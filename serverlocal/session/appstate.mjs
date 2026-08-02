@@ -27,6 +27,10 @@ export const state_kotakhsm = {
 
 }
 
+export const state_qutils = {
+    quote_cache: new Map()
+}
+
 export class ScripAppMap
 {
     constructor(){
@@ -89,11 +93,11 @@ export class SubsTemplate extends EventEmitter
         super();
         this.stockCode = session.stockCode;
         this.exchange = session.exchange;
+        this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [
             { key: 'index', stockCode: this.stockCode, toStream: true },
             { key: 'futures', stockCode: this.stockCode, toStream: true },
-            { key: 'optionchain', stockCode: this.stockCode, toStream: true, near: 'FIRST'},
         ];
 
         this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
@@ -214,10 +218,17 @@ export class SubsTemplate extends EventEmitter
 
     getNotified(type, uq)
     {
-        const sz = STRIKE_SIZE[this.stockCode];
-        if (type === 'index' && Math.abs(this.atm - uq.ltp) > sz) {
-            this.atm = Math.round(uq.ltp / sz) * sz;
+        this.atm_check_counter++;
+        if(this.atm_check_counter === 0)
             this.emit('ATMChange', uq);
+        else if(this.atm_check_counter === 10)
+        {
+            this.atm_check_counter = 1;
+            const sz = STRIKE_SIZE[this.stockCode];
+            if (type === 'index' && Math.abs(this.atm - uq.ltp) > sz) {
+                this.atm = Math.round(uq.ltp / sz) * sz;
+                this.emit('ATMChange', uq);
+            }
         }
     }
 }

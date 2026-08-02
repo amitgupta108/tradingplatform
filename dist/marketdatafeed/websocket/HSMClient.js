@@ -1,5 +1,5 @@
 import { BaseClient } from './BaseClient.js';
-import { RespTypeValues, STAT, BinRespTypes, SCRIP_PREFIX, INDEX_PREFIX, DEPTH_PREFIX } from '../types/types.js';
+import { RespTypeValues, STAT, BinRespTypes, SCRIP_PREFIX, INDEX_PREFIX, DEPTH_PREFIX, RespTypes } from '../types/types.js';
 import { PacketBuilder } from '../protocol/PacketBuilder.js';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';
@@ -45,12 +45,9 @@ class HSMClient extends BaseClient
 
     handleQuote(parsed)
     {
-        if(!Array.isArray(parsed))
-            this.emit('quote', parsed);
-        else
-            parsed.forEach((quote) => {
-                this.emit('quote', quote);
-            });
+        parsed.forEach((item) => {
+            this.emit(item.type === RespTypes.UPDATE ? 'quote' : 'snapshot', item.data);
+        });
     }
 
     handleConfirmations(parsed)
@@ -104,6 +101,20 @@ class HSMClient extends BaseClient
         const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.UNSUBSCRIBE_TYPE, SCRIP_PREFIX, this.channel);
         this.sendMessage(request);
         this.log('Unsubscribing from scrips:', scripStr);
+    }
+
+    subscribeIndicies(scrips) {
+        const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
+        const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.SUBSCRIBE_TYPE, INDEX_PREFIX, this.channel);
+        this.sendMessage(request);
+        this.log('Subscribing to indicies:', scripStr);
+    }
+
+    unsubscribeIndicies(scrips) {
+        const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
+        const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.UNSUBSCRIBE_TYPE, INDEX_PREFIX, this.channel);
+        this.sendMessage(request);
+        this.log('Unsubscribing from indicies:', scripStr);
     }
 
     requestIndexSnapshot(scrips) {

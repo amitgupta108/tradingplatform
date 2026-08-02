@@ -119,12 +119,12 @@ class PacketParser {
             pos++;
             if (c === RespTypes.SNAP) {
                 const returnval = this.parseSnapshot(pos, data, topicList);
-                h.push(returnval.data);
+                h.push({data: returnval.data, type: c});
                 pos = returnval.pos;
             }
             else if (c === RespTypes.UPDATE) {
                 const returnVal = this.parseTopic(pos, data, topicList);
-                h.push(returnVal.data);
+                h.push({ data: returnVal.data, type: c });
                 pos = returnVal.pos;
             }
             else

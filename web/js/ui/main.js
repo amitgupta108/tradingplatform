@@ -80,7 +80,8 @@ function subs_vix()
 {
   //emit('vix', {action: 'subs'});
   //emit('snapshot', 'mcx_fo|520702');
-  emit('authenticate', '');
+  const provider = document.getElementById("tpt").value;
+  emit('authenticate', provider);
 }
 
 function reload()

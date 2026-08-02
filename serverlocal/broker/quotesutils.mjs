@@ -1,13 +1,13 @@
-import scrip_service from '../service/scripstore.mjs';
 import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
-import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
+import { subs_store_all, Subscriptions, state_qutils } from '../session/appstate.mjs';
 import simulator from '../service/ordersimulator.mjs';
 import { parse } from 'date-fns';
 
 const pattern = "dd/MM/yyyy HH:mm:ss";
 const symbol_cache = new Map();
 
+/*
 function atmRefresh(provider, appid, uq) 
 {    
     const provider_subs = subs_store_all[provider]; 
@@ -24,7 +24,7 @@ function atmRefresh(provider, appid, uq)
     }  
     return {rebuild: false, list: []};
 }
-
+*/
 function completeQ(q)
 {
     q.close = q.ltp;
@@ -93,39 +93,34 @@ function standardizeoq(quote)
 
 function standardizekq(quote)
 {
-    let q;
-    if (quote.name === 'sf' && quote.ltp !== undefined) {
-        const { name: quotetype, tk: token, e: exchange, ts: symbol, ltp, ltt, v: volume, app_entry, ...rest } = quote;
-        q = { quotetype, token, exchange, symbol, ltp, ltt, volume, app_entry };
+    const qt = state_qutils.quote_cache.get('k' + quote.tk);
+    if(qt === undefined)
+        return {ltp: 0, ltt: 0};
+
+    if(quote.ltp !== undefined){
+        qt.ltp = Number(quote.ltp);
+        qt.ltt = quote.app_entry - qt.offset;
+        qt.app_entry = quote.app_entry;
+        return qt;
     }
-    else if (quote.name === 'if' && quote.iv !== undefined) {
-        const { name: quotetype, tk: token, e: exchange, iv: ltp, tvalue: ltt, iv: close, ...rest } = quote;
-        q = { quotetype, token, exchange, ltp, ltt };
-    }
-    q.exchange = q.exchange === 'mcx_fo' ? 'MCX' : q.exchange === 'nse_fo' ? 'NFO' : 'NSE';
-    q.ltp = Number(q.ltp);
-    q.ltt = parse(q.ltt, pattern, new Date()).getTime();
-    
-    return { ...q, ...tokenToScrip(q.token) };
 }
 
-function tokenToScrip(token)
+function toScrip(quote)
 {
-    let s = symbol_cache.get('k' + token);
-    if(s !== undefined)
-        return s;
+    const qt = state_qutils.quote_cache.get('k' + quote.tk);
+    if (qt === undefined)
+    {
+        const offset = Date.now() - parse(quote.fdtm, pattern, new Date()).getTime();
+        const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = quote;
+        const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
 
-    const scrip = scrip_service.findScripByKey('symbol', token);
-    const {underlying: stockCode, scripReferenceKey: symbol, tradingSymbol: ts, ...rest } = scrip;
-    s = {stockCode, symbol, ts};
-    if(s.symbol === undefined || s.symbol === '')
-        s.symbol = s.ts;
-
-    s.key = s.symbol.endsWith('FUT') ? 'futures' : s.symbol.endsWith('PE') || s.symbol.endsWith('CE') ? 'strikex' : 'index';
-    
-    s = {...s, ...utils.expandSymbol(s.symbol)};
-    symbol_cache.set('k' + token, s);
-    return s;
+        qt.symbol = quote.ts.replaceAll('.00', '');
+        qt.exchange = quote.e === 'mcx_fo' ? 'MCX' : quote.e === 'nse_fo' ? 'NFO' : 'NSE';
+        qt.key = quote.ts.endsWith('FUT') ? 'futures' : quote.ts.endsWith('PE') || quote.ts.endsWith('CE') ? 'strikex' : 'index';
+        qt.offset = offset;
+        state_qutils.quote_cache.set('k' + quote.tk, { ...qt, ...utils.expandSymbol(quote.ts) });
+    }
+    return state_qutils.quote_cache.get('k' + quote.tk);
 }
 
 function sendQsToSim(view_mode, q)
@@ -134,19 +129,21 @@ function sendQsToSim(view_mode, q)
         simulator.orderExecutionSim(view_mode, q);
 }
 
-function buildRequests(appid, instruments) {
-    return instruments.map((inst) => {
-        return {
-            appid: appid,
-            symbol: inst.symbol,
-            instrument: inst
-        }
+function buildRequests(appid, instruments) 
+{
+    const requests = [];    
+    instruments.forEach((inst) => {
+        const mcx_index = inst.key === 'index' && inst.exchange === 'MCX'; 
+        if(!mcx_index)
+            requests.push({ appid: appid, symbol: inst.symbol, instrument: inst});
     });
+
+    return requests;
 }
 
 export default {
     standardize,
-    atmRefresh,
     sendQsToSim,
-    buildRequests
+    buildRequests,
+    toScrip
   };

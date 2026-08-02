@@ -113,8 +113,8 @@ function registerAdminRequests(s, appid, mode)
 
     if (profile['admin'].startsWith('LIVE_STREAMING')) 
     {    
-        s.on('authenticate', () => {
-            admin_service.authenticate(mode);
+        s.on('authenticate', (provider) => {
+            admin_service.authenticate(provider);
         });
 
         s.on('unsubscribe', (list) => {
