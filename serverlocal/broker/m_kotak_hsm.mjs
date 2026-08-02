@@ -1,10 +1,11 @@
-import scrip_service from '../service/scripstore.mjs';
+import {scripstore} from '../service/scripstore.mjs';
 import qutils from './quotesutils.mjs';
 import streamer from '../stream.mjs';
 import services from '../service/services.mjs';
 import socketclient from '../service/socketclient.mjs';
 import { HSMClient } from '../../dist/marketdatafeed/websocket/HSMClient.js'
 import { Subscriptions } from '../session/appstate.mjs';
+import quotesutils from './quotesutils.mjs';
 
 const myviewname = 'KOTAKHSMVIEW';
 const name = myviewname;
@@ -33,6 +34,7 @@ async function init(feature)
         if (!client) {
             client = new HSMClient(config);
             client.addListener('quote', onQuotes);
+            client.addListener('snapshot', onSnapshot);
         }
 
         authData = await socketclient.getSavedCredentials();
@@ -52,8 +54,14 @@ function startv2(appid, p)
     const stock_subs = my_subs.addNewSubscriptions(p.stockCode + view_mode, p);
     stock_subs.addListener('ATMChange', onATMChange);
     const requests = stock_subs.getSubsItems(['index', 'futures']);
-    
     subscribe(appid, requests, 'subs');
+    //testSubs();
+}
+
+function testSubs()
+{
+    //client.subscribeScrips('nse_cm|26000');
+    client.subscribeScrips('mcx_fo|560977');
 }
 
 function subscribe(appid, list, action) 
@@ -66,11 +74,10 @@ function subscribe(appid, list, action)
         const exchange = e.exchange === 'MCX' ? 'mcx_fo' : e.key === 'index' ? 'nse_cm' : 'nse_fo';    
         const key = e.exchange === 'NFO' && e.key === 'strikex' ? e.symbol.slice(0, -2) + '.00' + e.symbol.slice(-2) : e.symbol;
         const column = (e.exchange === 'NFO') ? 'scripReferenceKey' : 'tradingSymbol';
+        const mcx_no_index = e.key === 'index' && e.exchange === 'MCX'; 
+        const token = e.key === 'index' && !mcx_no_index ? '26000' : scripstore.findScripByKey(column, key)?.symbol;
         
-        const token = e.key === 'index' ? '26000' : scrip_service.findScripByKey(column, key)?.symbol;
-        
-        
-        if(exchange !== undefined && token !== undefined)
+        if(exchange !== undefined && token !== undefined && !mcx_no_index)
             requests.push(exchange + '|' + token);
     });
 
@@ -88,7 +95,7 @@ function option_chain(appid, stockCode, expiry, action) {
     }
 }
 
-function snapshot(appid, list) {
+function snapshot(list) {
     if (list.length !== 0) {
         client.requestIndexSnapshot(['nse_cm|Nifty 50']);
         client.requestScripSnapshot(['nse_fo|61093', 'nse_fo|63951']); 
@@ -97,7 +104,8 @@ function snapshot(appid, list) {
 
 function onSnapshot(response)
 {
-    console.log('snapshot response ' + response);
+    console.log('snapshot response ' + JSON.stringify(response));
+    const qt = quotesutils.toScrip(response);
 }
 
 function onATMChange(uq) {
@@ -113,22 +121,18 @@ function onATMChange(uq) {
 
 function onQuotes(q)
 { 
-    if(q.ltp === undefined || q.ltt === undefined)
-        return;
-
     const qt = qutils.standardize(myviewname, q);
+    if (qt === undefined)
+        return;
+    
     const l_appid = qt.stockCode + view_mode;
     streamer.emitQs(l_appid, qt);
-    
-    if(qt.key === 'strikex')
-        qutils.sendQsToSim(view_mode, qt);
 
-    const key = qt.exchange === 'MCX' ? 'futures' : 'index';
-    if (qt.key === key) {
-        setTimeout(() => {
-            const stock_subs = my_subs.getSubscriptions(l_appid);
-            stock_subs.getNotified('index', qt);
-        }, 1000);
-    }
+    setImmediate(() => {
+        if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
+            my_subs.getSubscriptions(l_appid)?.getNotified('index', qt);
+        else if (qt.key === 'strikex')
+            qutils.sendQsToSim(view_mode, qt);
+    });
 }
-export default {init, subscribe, snapshot, onSnapshot, startv2, option_chain, name}
+export default {init, subscribe, snapshot, startv2, option_chain, name}
