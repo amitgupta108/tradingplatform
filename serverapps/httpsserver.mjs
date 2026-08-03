@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path'; 
 
-import { EventService } from '../serverlocal/service/eventservice.mjs';
+import { eventservice } from '../serverlocal/service/eventservice.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +28,7 @@ export const httpServer = http.createServer({}, (req, res) => {
     const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
     let pathname = parsedUrl.pathname; 
 
-    if(pathname === '/redirect/index.html')
+    if(pathname.startsWith('/redirect'))
         handleAuthReq(parsedUrl, res)
     else 
         handleStaticReq(parsedUrl, res);
@@ -58,13 +58,21 @@ function handleStaticReq(parsedUrl, res)
 
 function handleAuthReq(parsedUrl, res)
 {
-    const authcode = parsedUrl.searchParams.get('auth_code');
-    const status = parsedUrl.searchParams.get('s');
-    const code = parsedUrl.searchParams.get('code');
-    
-    EventService.emit('ext_auth', { date: new Date().toDateString(), authcode: authcode, status: status, code: code});
-    
+    const authdata = {date: new Date().toString()};
+    if(parsedUrl.pathname.endsWith('/fyers.html'))
+    {    
+        authdata.provider = 'fyers'
+        authdata.authcode = parsedUrl.searchParams.get('auth_code');
+        authdata.status = parsedUrl.searchParams.get('s');
+        authdata.code = parsedUrl.searchParams.get('code');
+    }
+    else if(parsedUrl.pathname.endsWith('/icici.html'))
+    {
+        authdata.provider = 'icici';
+        authdata.authcode = parsedUrl.searchParams.get('apisession');        
+    }        
+    eventservice.emit('ext_auth', authdata);
     const responseType = 'text/html';
     res.writeHead(200, { 'Content-Type': responseType });
-    res.end('X', 'utf-8');
+    res.end('<!DOCTYPE html><title>C</title><label onclick="window.close()">X</label>', 'utf-8');
 }

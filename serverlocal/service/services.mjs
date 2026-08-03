@@ -1,22 +1,25 @@
-import scripstore from './scripstore.mjs';
+import paper_trading from './ordersimulator.mjs';
+import {scripstore} from './scripstore.mjs';
+import { eventservice } from './eventservice.mjs';
+import { authservice } from './auth/authservice.mjs';
+
 import history_breeze from '../broker/m_breeze_hist.mjs';
 import live_breeze from '../broker/m_breeze_live.mjs';
 import live_openalgo from '../broker/m_t_openalgo.mjs';
 import live_kotak from '../broker/m_t_kotakneo.mjs';
 import live_kotak_hsm from '../broker/m_kotak_hsm.mjs';
 import trading_socket from './socketclient.mjs';
-import paper_trading from './ordersimulator.mjs';
-import live_auth from './auth/authservice.mjs';
 
 const modes = {
-    HISTORY: { view: 'HISTORY', trade: 'SIMULATED', admin: 'SIM_ADMIN' },
+    HISTORY: { view: 'HISTORY', trade: 'SIMULATED'},
     LIVELIVE: { view: 'LIVE', trade: 'LIVE' },
     S1TSADMINS: { view: 'LIVE', trade: 'SIMULATED', admin: 'LIVE_STREAMING' },
+    S2T0ADMINS: { view: 'LIVE_2', admin: 'BROKER_AUTH' },
     S3T0ADMINT: { view: 'LIVE_3', admin: 'LIVE_TRADING'},
     S4T0ADMINS: { view: 'LIVE_4', admin: 'LIVE_STREAMING_2' },
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
-    L1L0ADMINS: { view: 'LIVE', admin: 'LIVE_STREAMING' },
+    L1L0ADMINS: { view: 'LIVE', admin: 'LIVE_STREAMING_1' },
     ADMINALL: { admin: ['LIVE_STREAMING', 'LIVE_TRADING'] }
 };
 
@@ -26,15 +29,18 @@ const services = {
     KOTAKNEOTRADE: live_kotak,
     KOTAKHSMVIEW: live_kotak_hsm,
     ICICIHISTVIEW: history_breeze,
+    ICICILIVEVIEW: live_breeze,
     SOCKETTRADE: trading_socket,
-    ADMINSTREAM: live_auth,
-    TPSIMTRADE: paper_trading
+    TPSIMTRADE: paper_trading,
+    SCRIPSTORE: scripstore,
+    EVENTSERVICE: eventservice,
+    AUTHSERVICE: authservice
 };
 
 const providers = {
     view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW', LIVE_3: 'KOTAKHSMVIEW', LIVE_4: 'FYERSVIEW'},
     trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
-    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING_1: 'OPENALGOVIEW', SIM_ADMIN: 'TPSIMTRADE', LIVE_STREAMING_2: 'ADMINSTREAM'}
+    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING_1: 'OPENALGOVIEW', BROKER_AUTH: 'AUTHSERVICE'}
 };
 
 const access = {
@@ -88,8 +94,7 @@ function getProviderModeKey(name, mode){
     });
 }
 
-function initializeAll(skip_list) {
-    scripstore.load();
+function initializeAll() {
     const list = Object.entries(services);
         
     const active = list.filter(([k, v]) => {

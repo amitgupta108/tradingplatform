@@ -11,18 +11,6 @@ function registerDataRequests(s, appid,  mode)
         util_service.subscribe_vix(appid, mode, msg.action);
     });
 
-    s.on('start', (msg) => {
-        if(['skeletal', 'stopped'].includes(s.sn.status)){
-            s.sn.ini(msg, (opSubs) => {
-                market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
-            });
-            if(mode.startsWith('HISTORY'))
-                market_service.clientConfigure(appid, msg.simStartTime, '1x');
-        }
-        market_service.start(appid, s.sn.inqsub(false), mode);
-        s.emit('stream', 'started');
-    });
-
     s.on('startv2', (msg) => {
         if (mode.startsWith('HISTORY'))
             market_service.clientConfigure(appid, msg.simStartTime, '1x');
@@ -86,8 +74,12 @@ function registerTradeRequests(s, appid, mode) {
         console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
     });
 
-    s.on('orderbook', async (msg) => {
-        s.emit('orderbook', await trading_service.orderbook(appid, msg));
+    s.on('orderbook', async (stockCode) => {
+        s.emit('orderbook', await trading_service.orderbook(appid, stockCode));
+    });
+
+    s.on('positions', async (stockCode) => {
+        s.emit('positions', await trading_service.orderbook(appid, stockCode));
     });
 }
 
@@ -97,11 +89,6 @@ function registerAdminRequests(s, appid, mode)
     const admin_service = services.getService('admin', mode);
 
     if(profile['admin'] === 'LIVE_TRADING'){
-        s.on('live_trading', (action, key) => {
-            const lock = unlockLiveOrders(action, key);
-
-            s.emit('live_trading', lock);
-        }, s);
 
         s.on('wsOps', catchAsync((action, key) => {
             if(action === 'open')

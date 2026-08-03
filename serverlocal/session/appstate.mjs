@@ -11,7 +11,8 @@ export const state_kotakneo = {
     endpoints: {
         order: '/quick/order/rule/ms/place',
         orderbook: '/quick/user/orders',
-        cancel: '/quick/order/cancel'
+        cancel: '/quick/order/cancel',
+        positions: 'quick/user/positions'
     },
     oTemplate: {
         am: 'NO',
@@ -103,7 +104,7 @@ export class SubsTemplate extends EventEmitter
         this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
         this.oExpiries = session.oExpiries ?? [OPT_EXPIRIES[this.stockCode]['FIRST']];
 
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 2; i++) {
             this.st[i].exchange = this.st[i].key === 'index' && this.exchange === 'NFO' ? 'NSE' : this.exchange;
             this.st[i].symbol = i === 1 ? this.stockCode.concat(this.fExpiry).concat('FUT') : this.st[i].stockCode;
             this.st[i].toStream = i === 0 && this.st[i].exchange === 'MCX' ? false : true;

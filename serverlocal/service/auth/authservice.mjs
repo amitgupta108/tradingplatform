@@ -1,11 +1,6 @@
 import Connector from './connector.mjs';
 import { eventservice } from '../eventservice.mjs';
 
-const conn_data = {
-    fyers: { type: 'web', key: 'RVHE8SFZF4-100', redirect_url: 'http://127.0.0.1/redirect/fyers.html', loopback_value: '' },
-    icici: { type: 'web', redirect_url: 'http://127.0.0.1/redirect/icici.html', loopback_value: '' },
-};
-
 class AuthService
 {
     constructor()
@@ -13,7 +8,7 @@ class AuthService
         this.name = 'AUTHSERVICE';
         this.initialized = false;
         this.connectors = {
-            fyers: new Connector('fyers'),
+            //fyers: new Connector('fyers'),
             icici: new Connector('icici')
         };
     }
@@ -23,6 +18,10 @@ class AuthService
         eventservice.addListener('ext_auth', (msg) => {
             this.saveAuthCode(msg);
         });
+        Object.values(this.connectors).forEach((v) => {
+            v.loadAuthdata();
+        });
+
         this.initialized = true;
     }
 
