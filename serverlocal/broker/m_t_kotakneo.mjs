@@ -1,4 +1,4 @@
-import scrip_service from '../service/scripstore.mjs';
+import {scripstore} from '../service/scripstore.mjs';
 import ordermanager from '../service/ordermanager.mjs';
 import socketclient from '../service/socketclient.mjs';
 import { state_kotakneo as mystate } from '../session/appstate.mjs';
@@ -30,8 +30,9 @@ function notifyme(authData) {
 function cache_url() {
     const baseUrl = mystate.authData.baseUrl;
     mystate.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
-    mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
     mystate.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
+    mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
+    mystate.endpoints.positions = new URL('/quick/user/poistions', baseUrl).href;
 }
 
 function getHeaders() {
@@ -91,7 +92,7 @@ function toKotakOrder(order) {
     let ts = order.symbol;
     if (order.exchange === 'NFO') {
         const key = order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2);
-        ts = scrip_service.findScripByKey('scripReferenceKey', key).tradingSymbol;
+        ts = scripstore.findScripByKey('scripReferenceKey', key).tradingSymbol;
     }
     const new_order = mystate.oTemplate;
 
@@ -126,6 +127,18 @@ async function orderbook(appid, stockCode) {
     return { status: response.errMsg };
 }
 
+async function positions(appid, stockCode) {
+    const response = await get('positions');
+    if (response.ok) {
+        const positions = (await response.json()).data;
+
+        positions.forEach((p) => {
+            console.log('position record ' + JSON.stringify(p));
+        });
+    }
+    return { status: response.errMsg };
+}
+
 function exit(appid, sublist) {
     subscribe(appid, sublist, 'unsub');
 }
@@ -137,5 +150,6 @@ export default {
     orderbook,
     exit,
     init,
-    notifyme
+    notifyme,
+    positions
 };

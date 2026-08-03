@@ -105,40 +105,40 @@ function standardizekq(quote, min)
     }
 }
 
-function toScrip(quote)
+function toScrip(snapshot)
 {
-    const qt = state_qutils.quote_cache.get('k' + quote.tk);
+    const qt = state_qutils.quote_cache.get('k' + snapshot.tk);
     if (qt === undefined)
     {
-        const offset = Date.now() - parse(quote.fdtm, pattern, new Date()).getTime();
-        const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = quote;
+        const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
+        const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = snapshot;
         const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
 
-        qt.symbol = quote.ts.replaceAll('.00', '');
-        qt.exchange = quote.e === 'mcx_fo' ? 'MCX' : quote.e === 'nse_fo' ? 'NFO' : 'NSE';
-        qt.key = quote.ts.endsWith('FUT') ? 'futures' : quote.ts.endsWith('PE') || quote.ts.endsWith('CE') ? 'strikex' : 'index';
+        qt.symbol = snapshot.ts.replaceAll('.00', '');
+        qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
         qt.min = false;
-        state_qutils.quote_cache.set('k' + quote.tk, { ...qt, ...utils.expandSymbol(quote.ts) });
+        state_qutils.quote_cache.set('k' + snapshot.tk, { ...qt, ...utils.expandSymbol(snapshot.ts) });
     }
-    return state_qutils.quote_cache.get('k' + quote.tk);
+    return state_qutils.quote_cache.get('k' + snapshot.tk);
 }
 
-function toScripMin(quote) {
-    const qt = state_qutils.quote_cache.get('k_m' + quote.tk);
+function toScripMin(snapshot) {
+    const qt = state_qutils.quote_cache.get('k_m' + snapshot.tk);
     if (qt === undefined) {
-        const offset = Date.now() - parse(quote.fdtm, pattern, new Date()).getTime();
-        const { tk, e, ts, ltp: ltp_f, c, fdtm, ltt, ...rest } = quote;
+        const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
+        const { tk, e, ts, ltp: ltp_f, c, fdtm, ltt, ...rest } = snapshot;
         const qt = { tk, e, ts, ltp_f, c, fdtm, ltt };
 
-        qt.ts = quote.ts.replaceAll('.00', '');
-        qt.e = quote.e === 'mcx_fo' ? 'MCX' : quote.e === 'nse_fo' ? 'NFO' : 'NSE';
-        qt.key = quote.ts.endsWith('FUT') ? 'futures' : quote.ts.endsWith('PE') || quote.ts.endsWith('CE') ? 'strikex' : 'index';
+        qt.ts = snapshot.ts.replaceAll('.00', '');
+        qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
         qt.min = true;
-        state_qutils.quote_cache.set('k_m' + quote.tk, qt);
+        state_qutils.quote_cache.set('k_m' + snapshot.tk, qt);
     }
-    return state_qutils.quote_cache.get('k_m' + quote.tk);
+    return state_qutils.quote_cache.get('k_m' + snapshot.tk);
 }
 
 function sendQsToSim(view_mode, q)
@@ -163,5 +163,6 @@ export default {
     standardize,
     sendQsToSim,
     buildRequests,
-    toScrip
+    toScrip,
+    toScripMin
   };

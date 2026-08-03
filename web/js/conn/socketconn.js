@@ -96,6 +96,10 @@ function rh(socket)
       loadOrders(response);
     });
 
+    socket.on('positions', (response) => {
+      console.log('positions # ' + response.length);
+    });
+
     socket.on('order', (exorder) => {
       if(exorder.appid !== instrument.appid)
         return;

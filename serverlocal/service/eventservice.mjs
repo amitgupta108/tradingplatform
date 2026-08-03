@@ -1,3 +1,15 @@
 import EventEmitter from 'node:events';
 
-export const EventService = new EventEmitter();
+class EventService extends EventEmitter
+{
+    constructor() {
+        super();
+        this.initialized = false;
+    }
+
+    init(){
+        this.initialized = true;
+    }
+}
+
+export const eventservice = new EventService();

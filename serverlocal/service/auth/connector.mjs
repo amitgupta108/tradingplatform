@@ -1,10 +1,6 @@
-import FyersAPI from "fyers-api-v3/apiService/apiService.js";
-import { BreezeConnect } from 'breezeconnect';
-
 import { eventservice } from "../eventservice.mjs";
 import { Entry } from '@napi-rs/keyring';
 import webpage from 'open';
-import { access } from "node:fs";
 
 class Connector
 {
@@ -13,6 +9,21 @@ class Connector
         this.initialized = false;
         this.notify = true;
         this.authdata;
+    }
+
+    loadAuthdata()
+    {
+        let l_authdata = Connector.getEmptyAuthdata(this.provider);
+        l_authdata = Connector.authkeys(this.provider, l_authdata, 'os');
+        if(l_authdata?.date === new Date().toDateString())
+        {
+            this.authdata = l_authdata;
+            this.initialized = true;
+            if(this.notify)
+                setTimeout(() => {
+                    eventservice.emit(`${this.provider}_auth`, this.authdata);
+                }, 5000);
+        }
     }
 
     authenticate(notify)
@@ -69,11 +80,24 @@ class Connector
         }
 
         if(this.notify)
-            eventservice.emit('icici_auth', this.authdata);
+            eventservice.emit(`${this.provider}_auth`, this.authdata);
         
         Connector.authkeys(this.authdata.provider, this.authdata, 'os');
     }
 
+    static getEmptyAuthdata(provider)
+    {
+        if(provider === 'icici') {
+            return {
+                provider: undefined,
+                date: undefined,
+                appKey: undefined,
+                appSecret: undefined,
+                authcode: undefined
+            }
+        }
+    }
+    
     static authkeys(id, cred, mode = 'os') 
     {
         Object.entries(cred).forEach(async ([k, v]) => {

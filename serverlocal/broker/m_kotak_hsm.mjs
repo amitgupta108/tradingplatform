@@ -17,10 +17,10 @@ let my_subs;
 
 const config = {
     autoReconnect: true,
-    maxRetries: 3,
-    retryDelay: 3000,
+    maxRetries: 2,
+    retryDelay: 2000,
     heartbeatInterval: 10000,
-    throttleInterval: 45000,
+    throttleInterval: 120000,
     logEnabled: true,
 };
 
@@ -104,9 +104,9 @@ function snapshot(list) {
 
 function onSnapshot(response)
 {
-    console.log('snapshot response ' + JSON.stringify(response));
+    //console.log('snapshot response ' + JSON.stringify(response));
     const qt = quotesutils.toScrip(response);
-    const qt_m = quotesutils.toScripMin(response);
+    //const qt_m = quotesutils.toScripMin(response);
 }
 
 function onATMChange(uq) {
