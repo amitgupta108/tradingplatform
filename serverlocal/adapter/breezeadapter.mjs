@@ -9,10 +9,10 @@ function exit(appid)
 {
     return historyserver.clear(appid);
 }
-*/
+
 function getHistory(appid, requests) {
     const promises = [];
-    /*
+
     requests.forEach((r) => {
         if (r.exchange === 'MCX')
             return;
@@ -22,7 +22,7 @@ function getHistory(appid, requests) {
         r.expiry = r.fExpiry || r.oExpiry;
 
         promises.push(historyserver.getHistory(appid, r));
-    });*/
+    });
     return Promise.all(promises);
 }
 
@@ -64,3 +64,5 @@ function pause(appid, action)
 {
     return historyserver.pause(appid, action);
 }
+
+*/

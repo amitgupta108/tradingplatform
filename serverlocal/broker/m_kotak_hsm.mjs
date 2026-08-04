@@ -1,4 +1,5 @@
 import {scripstore} from '../service/scripstore.mjs';
+import { eventservice } from '../service/eventservice.mjs';
 import qutils from './quotesutils.mjs';
 import streamer from '../stream.mjs';
 import services from '../service/services.mjs';
@@ -24,7 +25,7 @@ const config = {
     logEnabled: true,
 };
 
-async function init(feature) 
+function init() 
 {
     if (!initialized) 
     {
@@ -33,20 +34,19 @@ async function init(feature)
 
         if (!client) {
             client = new HSMClient(config);
+            client.addListener('close', autoStart)
             client.addListener('quote', onQuotes);
             client.addListener('snapshot', onSnapshot);
         }
 
-        authData = await socketclient.getSavedCredentials();
-        if(authData !== undefined)
-        {
+        eventservice.addListener('kotak_auth', (authdata) => {
+            authData = authdata;
             client.initiateConnect(authData);
             initialized = true;
-            return { status: 'success' };
-        }
-        return { status: 'authData not found' };
+            console.log('HSM authdata available');
+        });
     }
-    return { status: 'already initialized' };
+    return { status: 'initialized' };
 }
 
 function startv2(appid, p)
@@ -87,6 +87,11 @@ function subscribe(appid, list, action)
         client.unsubscribeScrips(requests);
 }
 
+function autoStart()
+{
+    console.log('in hsm autostart');
+}
+
 function option_chain(appid, stockCode, expiry, action) {
     const stock_subs = my_subs.getSubscriptions(stockCode + view_mode);
     const response = stock_subs.optionChainAction(expiry, action);
@@ -104,8 +109,9 @@ function snapshot(list) {
 
 function onSnapshot(response)
 {
+    quotesutils.toScrip(response);
     //console.log('snapshot response ' + JSON.stringify(response));
-    const qt = quotesutils.toScrip(response);
+    //const qt = quotesutils.toScrip(response);
     //const qt_m = quotesutils.toScripMin(response);
 }
 
@@ -123,17 +129,17 @@ function onATMChange(uq) {
 function onQuotes(q)
 { 
     const qt = qutils.standardize(myviewname, q, false);
-    if (qt === undefined)
-        return;
-    
-    const l_appid = qt.stockCode + view_mode;
-    streamer.emitQs(l_appid, qt);
+    if (qt !== undefined)
+    {   
+        const l_appid = qt.stockCode + view_mode;
+        streamer.emitQs(l_appid, qt);
 
-    setImmediate(() => {
-        if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
-            my_subs.getSubscriptions(l_appid)?.getNotified('index', qt);
-        else if (qt.key === 'strikex')
-            qutils.sendQsToSim(view_mode, qt);
-    });
+        setImmediate(() => {
+            if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
+                my_subs.getSubscriptions(l_appid)?.getNotified('index', qt);
+            else if (qt.key === 'strikex')
+                qutils.sendQsToSim(view_mode, qt);
+        });
+    }
 }
 export default {init, subscribe, snapshot, startv2, option_chain, name}

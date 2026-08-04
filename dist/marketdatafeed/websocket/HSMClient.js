@@ -38,16 +38,11 @@ class HSMClient extends BaseClient
     handleBinaryMessage(message, responseType) 
     {
         if (responseType === BinRespTypes.DATA_TYPE)
-            this.handleQuote(message);
+            message.forEach((item) => {
+                this.emit(item.type === RespTypes.UPDATE ? 'quote' : 'snapshot', item.data);
+            });
         else
             this.handleConfirmations(message);
-    }
-
-    handleQuote(parsed)
-    {
-        parsed.forEach((item) => {
-            this.emit(item.type === RespTypes.UPDATE ? 'quote' : 'snapshot', item.data);
-        });
     }
 
     handleConfirmations(parsed)

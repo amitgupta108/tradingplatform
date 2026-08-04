@@ -1,11 +1,6 @@
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
-import {socketmap, uwsmap} from './session/appstate.mjs';
-import { Encoder} from '@msgpack/msgpack';
-
-const FixSizeEncoder = new Encoder({
-    maxSharedBufferSize: 32 * 1024
-});
+import {socketmap} from './session/appstate.mjs';
 
 function emitOrders(appid, type, order)
 {    
@@ -21,16 +16,6 @@ function emitHistQs(appid, key, qA) {
     const app_obj = socketmap.get(appid);
     if (app_obj !== undefined)
         emit(app_obj.socket, 'history', { time: Date.now(), key: key, qA: qA });
-}
-
-function sendHistQs(appid, key, qA)
-{
-    const uws = uwsmap.get(appid);
-    if (uws !== undefined) {
-        const payload = FixSizeEncoder.encodeSharedRef({ event: 'history', data: { time: Date.now(), key: key, qA: qA } });
-        //console.log('payload size : ' + payload.byteLength);
-        uws.send(payload, true);
-    }
 }
 
 function send(appid, type, msg)
