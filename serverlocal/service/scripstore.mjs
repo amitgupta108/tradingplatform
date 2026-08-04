@@ -98,6 +98,7 @@ class ScripStore
 {
 	constructor()
 	{
+		this.name = 'SCRIPSTORE';
 		this.initialized = false;
 		this._inMemoryStore = [];
 		this._isLoaded = false;    
@@ -107,6 +108,7 @@ class ScripStore
 	{
 		await this.load(incomingPayload, filters, true);
 		this.initialized = true;
+		return {status: 'initialized'};
 	}
 
 	async load(incomingPayload, filters, reload = false) 

@@ -1,6 +1,7 @@
 import {scripstore} from '../service/scripstore.mjs';
 import ordermanager from '../service/ordermanager.mjs';
 import socketclient from '../service/socketclient.mjs';
+import { eventservice } from '../service/eventservice.mjs';
 import { state_kotakneo as mystate } from '../session/appstate.mjs';
 
 import path from 'path';
@@ -8,8 +9,13 @@ import path from 'path';
 const name = path.parse(import.meta.filename).name;
 var initialized = false;
 
-async function init() {
-    if (!initialized) {
+async function init() 
+{
+    if (!initialized) 
+    {
+        eventservice.addListener('kotak_auth', (authdata) => {
+            mystate.authData = authdata;
+        });
         mystate.authData = await socketclient.getSavedCredentials();
         if (mystate.authData !== undefined) {
             initialized = true;

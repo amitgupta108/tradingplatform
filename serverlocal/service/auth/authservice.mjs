@@ -1,4 +1,4 @@
-import Connector from './connector.mjs';
+import {Connector, KotakConnector, ICICIConnector} from './connector.mjs';
 import { eventservice } from '../eventservice.mjs';
 
 class AuthService
@@ -8,29 +8,37 @@ class AuthService
         this.name = 'AUTHSERVICE';
         this.initialized = false;
         this.connectors = {
-            //fyers: new Connector('fyers'),
-            icici: new Connector('icici')
-        };
+            kotak: new KotakConnector('kotak', true),
+            icici: new ICICIConnector('icici', true)
+        }
     }
 
     init()
     {
         eventservice.addListener('ext_auth', (msg) => {
-            this.saveAuthCode(msg);
+            this.generateSession(msg);
         });
+
         Object.values(this.connectors).forEach((v) => {
-            v.loadAuthdata();
+            if(v.load_on_start)
+                v.loadAuthdata();
         });
 
         this.initialized = true;
+        return { status: 'initialized' };
     }
 
-    authenticate(provider, notify = true) 
+    authenticate(provider) 
     {
-        this.connectors[provider].authenticate(notify);
+        const tpt = provider;
+        if(tpt.length === 6)
+            provider = 'kotak';
+
+        return this.connectors[provider].authenticate(tpt);
     }
 
-    saveAuthCode(authdata) {
+    generateSession(authdata) 
+    {
         this.connectors[authdata.provider].saveAuthCode(authdata);
     }
 }
