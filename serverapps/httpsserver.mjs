@@ -58,7 +58,7 @@ function handleStaticReq(parsedUrl, res)
 
 function handleAuthReq(parsedUrl, res)
 {
-    const authdata = {date: new Date().toString()};
+    const authdata = {date: new Date().toDateString()};
     if(parsedUrl.pathname.endsWith('/fyers.html'))
     {    
         authdata.provider = 'fyers'

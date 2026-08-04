@@ -3,6 +3,7 @@ import ordermanager from './ordermanager.mjs';
 import kotak_service from '../broker/m_t_kotakneo.mjs';
 import services from './services.mjs';
 import connector from './kotak/connector.os.mjs';
+import { eventservice } from './eventservice.mjs';
 import path from 'path';
 
 const name = path.parse(import.meta.filename).name;
@@ -46,8 +47,17 @@ async function hsiconnect()
 
     ws_hsi.onclose = (event) => {
         console.log("connection closed hsi" + event.reason);
+        hsiReconnect();
     };
     return { status: 'hsi connect initiated' };
+}
+
+function hsiReconnect()
+{
+    console.log('Attempting reconnection ');
+    hsiconnect()
+    .then((response) => console.log('hsi reconnection attempt ' + response))
+    .catch((error) => console.log('reconnection error ' + error));
 }
 
 function wshb(type, action) 
@@ -59,17 +69,9 @@ function wshb(type, action)
         if (wsping !== undefined)
             clearInterval(wsping);
 
-        var recon_attempt = 0;
-        wsping = setInterval(async (rn) => {
+        wsping = setInterval(async () => {
             qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
-            if (ws_hsi?.readyState !== 1 && rn <= 5) {
-                console.log('Attempting reconnection ' + rn);
-                hsiconnect()
-                    .then(() => { })
-                    .catch((error) => console.log('reconnection error ' + rn));
-                rn++;
-            }
-        }, 120000, recon_attempt);
+        }, 120000);
     }
 }
 
@@ -91,6 +93,10 @@ function getSavedCredentials()
 async function init()
 {
     if(!authenticated) {
+        eventservice.addListener('kotak_auth', (authdata) => {
+            this.authdata = authdata;
+            //hsiconnect();
+        });
         let response = await getSavedCredentials();
         if(response !== undefined) {
             authenticated = true;

@@ -22,7 +22,7 @@ function registerDataRequests(s, appid,  mode)
     s.on('history', catchAsync(async (requests) => {
         console.log("history request " + requests.length);
         return util_service.history(appid, requests);
-    }, s, 'history'));
+    }, 'history'));
 
     s.on('speed', (msg) => {
         if(mode.startsWith('HISTORY'))
@@ -95,15 +95,14 @@ function registerAdminRequests(s, appid, mode)
                 return admin_service.authenticate(key);
             else if(action === 'close')
                 return admin_service.close(key);            
-        }, s, 'wsOps'));
+        }, 'wsOps'));
     }
 
     if (profile['admin'] === 'BROKER_AUTH')
     {    
-        s.on('authenticate', (provider, notify) => {
-            services.getService('admin', mode);
-            admin_service.authenticate(provider, notify);
-        });
+        s.on('authenticate', catchAsync((provider) => {
+            return admin_service.authenticate(provider);
+        }, 'authenticate'));
     }
 
     if (profile['admin'].startsWith('LIVE_STREAMING')) 
@@ -135,26 +134,16 @@ async function registerDisconnectionHandler(s, appid, mode)
     });
 }
 
-const catchAsync = (handler, socket, eventName) => {
+const catchAsync = (handler, eventName) => {
     return (...args) => {
         const rv = handler(...args);
-        if(rv instanceof Promise) {
-            rv.then((response) => {
-                toConsole(eventName + ' ' + 'successful');
-            })
-            .catch ((err) => {
-                console.error(eventName + ' ' + err);
-            });
-        }
-        else {
-            toConsole(eventName + ' ' + rv);
-        }
+        if(rv instanceof Promise)
+            rv.then((response) => console.log(eventName + ' ' + JSON.stringify(response)))
+                .catch ((error) => console.error(eventName + ' ' + JSON.stringify(error)));
+        else 
+            console.log(eventName + ' ' + JSON.stringify(rv));
     };
 };
-
-function toConsole(status){
-    console.log(status);
-}
 
 export default {
     registerDataRequests,
