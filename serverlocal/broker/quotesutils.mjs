@@ -45,14 +45,14 @@ function standardize(name, q, min = false)
 {
     q.app_entry = Date.now();
     switch (name) {
+        case 'KOTAKHSMVIEW':
+            return standardizekq(q, min) 
+        case 'OPENALGOVIEW':
+            return standardizeoq(q) 
         case 'ICICILIVEVIEW': 
             return standardizeiq(q) 
         case 'ICICIHISTVIEW':
             return standardizeiq(q) 
-        case 'OPENALGOVIEW':
-            return standardizeoq(q) 
-        case 'KOTAKHSMVIEW':
-            return standardizekq(q, min) 
     }
 }
 
@@ -93,21 +93,22 @@ function standardizeoq(quote)
 
 function standardizekq(quote, min)
 {
-    const qt = state_qutils.quote_cache.get('k' + quote.tk);
-    if(qt === undefined)
-        return {ltp: 0, ltt: 0};
-
-    if(quote.ltp !== undefined){
-        qt.ltp = Number(quote.ltp);
-        qt.ltt = quote.app_entry - qt.offset;
-        qt.m1 = quote.app_entry;
-        return qt;
+    if (quote.ltp !== undefined) {
+        const qt = state_qutils.quote_cache.get(quote.tk);
+        if(qt !== undefined)
+        {
+            qt.ltp = Number(quote.ltp);
+            qt.ltt = quote.app_entry - qt.offset;
+            qt.m1 = quote.app_entry;
+            
+            return qt;
+        }
     }
 }
 
 function toScrip(snapshot)
 {
-    const qt = state_qutils.quote_cache.get('k' + snapshot.tk);
+    const qt = state_qutils.quote_cache.get(snapshot.tk);
     if (qt === undefined)
     {
         const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
@@ -119,9 +120,9 @@ function toScrip(snapshot)
         qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
         qt.min = false;
-        state_qutils.quote_cache.set('k' + snapshot.tk, { ...qt, ...utils.expandSymbol(snapshot.ts) });
+        state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(snapshot.ts) });
     }
-    return state_qutils.quote_cache.get('k' + snapshot.tk);
+    //return state_qutils.quote_cache.get(snapshot.tk);
 }
 
 function toScripMin(snapshot) {

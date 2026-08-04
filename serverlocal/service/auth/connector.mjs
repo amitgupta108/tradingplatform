@@ -125,7 +125,7 @@ export class ICICIConnector extends Connector
 export class KotakConnector extends Connector
 {
     constructor(provider, notify){
-        super(provider, notify, false);
+        super(provider, notify, true);
     }
 
     apiLogin(num) 
