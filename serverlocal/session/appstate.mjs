@@ -12,7 +12,7 @@ export const state_kotakneo = {
         order: '/quick/order/rule/ms/place',
         orderbook: '/quick/user/orders',
         cancel: '/quick/order/cancel',
-        positions: 'quick/user/positions'
+        positions: '/quick/user/positions'
     },
     oTemplate: {
         am: 'NO',

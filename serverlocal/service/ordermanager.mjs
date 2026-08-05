@@ -1,7 +1,6 @@
 import qs from '../stream.mjs';
 const live_order_map = new Map();
 var counter = 10000;
-const trade_mode = ['T1', 'T2'];
 
 function neworders(appid, orders)
 {
@@ -19,13 +18,12 @@ function neworders(appid, orders)
 
 function notifyme(message, trade_mode)
 {    
+    if (['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
         liveOrderMatching(message, trade_mode);
 }
 
-function liveOrderMatching(message, mode) {
-    if (!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
-        return;
-
+function liveOrderMatching(message, mode) 
+{
     console.log('order notifcation ' + message.data.ordSt);
     const live_order = formatLiveOrder(message.data);
     let found = findMatch(live_order);

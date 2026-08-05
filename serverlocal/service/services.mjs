@@ -8,14 +8,13 @@ import live_breeze from '../broker/m_breeze_live.mjs';
 import live_openalgo from '../broker/m_t_openalgo.mjs';
 import live_kotak from '../broker/m_t_kotakneo.mjs';
 import live_kotak_hsm from '../broker/m_kotak_hsm.mjs';
-import trading_socket from './socketclient.mjs';
 
 const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATED'},
     LIVELIVE: { view: 'LIVE', trade: 'LIVE' },
     S1TSADMINS: { view: 'LIVE', trade: 'SIMULATED', admin: 'LIVE_STREAMING' },
     S2T0ADMINS: { view: 'LIVE_2', admin: 'BROKER_AUTH' },
-    S3T0ADMINT: { view: 'LIVE_3', admin: 'LIVE_TRADING'},
+    S3T1ADMINT: { view: 'LIVE_3', trade: 'LIVE', admin: 'BROKER_AUTH'},
     S4T0ADMINS: { view: 'LIVE_4', admin: 'LIVE_STREAMING_2' },
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
@@ -30,7 +29,6 @@ const services = {
     KOTAKHSMVIEW: live_kotak_hsm,
     ICICIHISTVIEW: history_breeze,
     ICICILIVEVIEW: live_breeze,
-    SOCKETTRADE: trading_socket,
     TPSIMTRADE: paper_trading,
     SCRIPSTORE: scripstore,
     EVENTSERVICE: eventservice,
@@ -40,13 +38,13 @@ const services = {
 const providers = {
     view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW', LIVE_3: 'KOTAKHSMVIEW', LIVE_4: 'FYERSVIEW'},
     trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
-    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING_1: 'OPENALGOVIEW', BROKER_AUTH: 'AUTHSERVICE'}
+    admin: { LIVE_STREAMING_1: 'OPENALGOVIEW', BROKER_AUTH: 'AUTHSERVICE'}
 };
 
 const access = {
     view: ['vix', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain', 'snapshot'],
-    trade: ['order', 'cancelorder', 'orderbook', 'positions'],
-    admin: ['live_trading', 'wsOps', 'unsubscribe', 'remove', 'reload', 'authenticate']
+    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'wsOps'],
+    admin: [ 'unsubscribe', 'remove', 'reload', 'authenticate']
 };
 
 function initialize(mode) {

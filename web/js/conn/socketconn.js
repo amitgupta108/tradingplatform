@@ -121,12 +121,6 @@ function rh(socket)
       else if(action === 'close' && resp.status === 'success')
         socn.style.backgroundColor = 'white';
     });
-
-    socket.on('live_trading', (locked) => {
-      if(!locked)
-        ws_start_btn.style.backgroundColor = '#4CAF50';
-    });
-
   } catch(error){
     console.log(error);
   }

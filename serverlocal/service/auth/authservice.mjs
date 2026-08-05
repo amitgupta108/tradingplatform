@@ -39,7 +39,7 @@ class AuthService
 
     generateSession(authdata) 
     {
-        this.connectors[authdata.provider].saveAuthCode(authdata);
+        this.connectors[authdata.provider].generateSession(authdata);
     }
 }
 

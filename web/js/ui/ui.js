@@ -27,15 +27,21 @@ function appendOrderRow(symbol, action, quantity = 1)
   tr.querySelector('select').value = quantity;
 
   const action_btn = tr.querySelector('#ow_action_btn');
+  const selectbox = tr.querySelector('select');
   action_btn.textContent = action;
 
   if(!basket.checked)
     tr.classList.remove('hover-row');
 
-  if(action === 'B')
+  if(action === 'B') {
     action_btn.classList.replace('sell', 'buy');
+    selectbox.classList.replace('sell', 'buy');
+  }
   else
+  {
     action_btn.classList.replace('buy', 'sell');
+    selectbox.classList.replace('buy', 'sell');
+  }
 
   order_rows_tbody.prepend(tr);
   submitOWinBtn.disabled = true;
@@ -70,12 +76,18 @@ function hideOWin()
 function flipAction(orderRowBtn, orderRow)
 {
   submitOWinBtn.disabled = true;
+  const selectbox = orderRow.querySelector('select');
+
   var action = orderRowBtn.innerText;
   orderRowBtn.innerText = action === 'B' ? 'S' : 'B';
-  if(action === 'B')
+  if(action === 'B') {
     orderRowBtn.classList.replace('buy', 'sell');
-  else
+    selectbox.classList.replace('buy', 'sell');
+  }
+  else {
     orderRowBtn.classList.replace('sell', 'buy');
+    selectbox.classList.replace('sell', 'buy');
+  }
   
   showOrderWindow();
 }
