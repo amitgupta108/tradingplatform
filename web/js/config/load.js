@@ -68,6 +68,7 @@ const pBox = new EventTarget();
 const qBox = new QuoteDispatcher();
 const pNL = new EventTarget();
 let lastq;
+/*
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
   if(lastq?.ltp !== q.ltp)
@@ -79,19 +80,20 @@ qBox.addEventListener('futures', (event) => {
     lastq = q;
   }
 });
-
+*/
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
   const ltp = Number(q.ltp).toFixed(2);
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
-  spot_label.textContent = ltp;
+  spot_label.textContent = fut_title + spot_title;
 });
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
   fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
+  spot_label.textContent = fut_title + spot_title;
 
   time_label.textContent = new Date().toLocaleTimeString();
 });

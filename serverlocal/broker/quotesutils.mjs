@@ -2,6 +2,7 @@ import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
 import { subs_store_all, Subscriptions, state_qutils } from '../session/appstate.mjs';
 import simulator from '../service/ordersimulator.mjs';
+import { scripstore } from '../service/scripstore.mjs';
 import { parse } from 'date-fns';
 
 const pattern = "dd/MM/yyyy HH:mm:ss";
@@ -43,7 +44,7 @@ function completeQ(q)
 
 function standardize(name, q, min = false)
 {
-    q.app_entry = Date.now();
+    q.m1 = Date.now();
     switch (name) {
         case 'KOTAKHSMVIEW':
             return standardizekq(q, min) 
@@ -98,8 +99,8 @@ function standardizekq(quote, min)
         if(qt !== undefined)
         {
             qt.ltp = Number(quote.ltp);
-            qt.ltt = quote.app_entry - qt.offset;
-            qt.m1 = quote.app_entry;
+            qt.ltt = quote.m1 - qt.offset;
+            qt.m1 = quote.m1;
             
             return qt;
         }
@@ -115,12 +116,12 @@ function toScrip(snapshot)
         const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = snapshot;
         const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
 
-        qt.symbol = snapshot.ts.replaceAll('.00', '');
         qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+        qt.symbol = sym.replaceAll('.00', '');
         qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
-        qt.min = false;
-        state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(snapshot.ts) });
+        state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
     }
     //return state_qutils.quote_cache.get(snapshot.tk);
 }
@@ -131,15 +132,16 @@ function toScripMin(snapshot) {
         const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
         const { tk, e, ts, ltp: ltp_f, c, fdtm, ltt, ...rest } = snapshot;
         const qt = { tk, e, ts, ltp_f, c, fdtm, ltt };
-
-        qt.ts = snapshot.ts.replaceAll('.00', '');
+        
         qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+        qt.ts = sym.replaceAll('.00', '');
         qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
         qt.min = true;
         state_qutils.quote_cache.set('k_m' + snapshot.tk, qt);
     }
-    return state_qutils.quote_cache.get('k_m' + snapshot.tk);
+    //return state_qutils.quote_cache.get('k_m' + snapshot.tk);
 }
 
 function sendQsToSim(view_mode, q)

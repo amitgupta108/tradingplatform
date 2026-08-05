@@ -43,15 +43,17 @@ function group_emit(appid, type, msg)
 function getReceivers(appid, type, msg)
 {
     const receivers = [];
-    if (type === 'order' && msg.receiver !== undefined) {
-        const mode_type = type === 'order' ? 'trade_mode' : 'view_mode';
-        socketmap.forEach((v, k) => {
+    if (type === 'order' && msg.receiver !== undefined) 
+    {
+        socketmap.forEach((v, k) => 
+        {
             if( v.stockCode === msg.receiver.stockCode &&
-                services.getFeatureMode(v.mode, 'trade') === msg.receiver[mode_type])
+                services.getFeatureMode(v.mode, 'trade') === msg.receiver['trade_mode'])
                 receivers.push(k);
         });
     }
-    else if(type === 'quote' && Session.sn(appid) !== undefined) {
+    else if(type === 'quote' && Session.sn(appid) !== undefined) 
+    {
         Session.sn(appid)?.shared_with.forEach((v, k) => {
             if (v.m_subs !== 'paused') 
                 receivers.push(k);

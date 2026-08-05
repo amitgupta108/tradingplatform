@@ -79,7 +79,7 @@ function registerTradeRequests(s, appid, mode) {
     });
 
     s.on('positions', async (stockCode) => {
-        s.emit('positions', await trading_service.orderbook(appid, stockCode));
+        s.emit('positions', await trading_service.positions(appid, stockCode));
     });
 }
 

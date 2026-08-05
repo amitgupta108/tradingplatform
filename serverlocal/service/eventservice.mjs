@@ -12,6 +12,13 @@ class EventService extends EventEmitter
         this.initialized = true;
         return { status: 'initialized' };
     }
+
+    addListeners(providers, listener){
+        events.forEach((e) => {
+            this.addListener();
+        })
+
+    }
 }
 
 export const eventservice = new EventService();
