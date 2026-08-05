@@ -24,12 +24,10 @@ function connect()
 
     ws_hsi.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if(message.type === 'order'){
+        if(message.type === 'order')
             ordermanager.notifyme(message, 'LIVE');
-        }
-        else if(message.type === 'cn' && message.msg === 'connected'){
+        else if(message.type === 'cn' && message.msg === 'connected')
             wshb('hsi', 'start');
-        }
     };
 
     ws_hsi.onerror = (event) => {
@@ -46,8 +44,8 @@ function connect()
 function hsiReconnect()
 {
     if(reconnect) {
+        console.log('hsi reconnection attempt');
         connect();
-        console.log('hsi reconnection attempt ' + response.status);
     }
 }
 

@@ -29,7 +29,7 @@ function cache_url() {
     mystate.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
     mystate.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
     mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
-    mystate.endpoints.positions = new URL('/quick/user/poistions', baseUrl).href;
+    mystate.endpoints.positions = new URL('/quick/user/positions', baseUrl).href;
 }
 
 function getHeaders() {
