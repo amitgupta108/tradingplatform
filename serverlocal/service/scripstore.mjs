@@ -60,7 +60,7 @@ function getTodayDateString() {
 
 function getCacheFilePath() {
 	const todayStr = getTodayDateString();
-	return path.join(__dirname, `${CACHE_PREFIX}${todayStr}${CACHE_EXTENSION}`);
+	return path.join(__dirname, '..', 'config', `${CACHE_PREFIX}${todayStr}${CACHE_EXTENSION}`);
 }
 
 function getUpdatedUrls(filePaths) {
@@ -208,100 +208,3 @@ class ScripStore
 }
 
 export const scripstore = new ScripStore();
-
-
-/*
-
-function matchesCriteria(cleanRow, criteria) {
-	for (const [cleanKey, allowedValues] of Object.entries(criteria)) {
-		if (allowedValues.length > 0 && !allowedValues.includes(cleanRow[cleanKey])) {
-			return false;
-		}
-	}
-	return true;
-}
-
-function translateRowToFriendlyNames(rawRow) {
-	const cleanRow = {};
-	for (const [rawKey, cleanKey] of Object.entries(FIELD_MAP)) {
-		cleanRow[cleanKey] = rawRow[rawKey];
-	}
-	return cleanRow;
-}
-
-function processSingleFile(url, userFilterCriteria) {
-	return new Promise((resolve) => {
-		axios({ method: 'get', url: url, responseType: 'stream' })
-			.then(response => {
-				response.data
-					.pipe(csv({
-						mapHeaders: ({ header }) => ALLOWED_ORIGINAL_KEYS.has(header) ? header : null
-					}))
-					.on('data', (rawRow) => {
-						const friendlyRow = translateRowToFriendlyNames(rawRow);
-						if (matchesCriteria(friendlyRow, userFilterCriteria)) {
-							_inMemoryStore.push(friendlyRow); 
-						}
-					})
-					.on('end', () => resolve())
-					.on('error', (err) => {
-						console.error(`Parsing error on URL ${url}:`, err.message);
-						resolve(); 
-					});
-			})
-			.catch(err => {
-				console.error(`Network download failure for URL ${url}:`, err.message);
-				resolve(); 
-			});
-	});
-}
-
-async function initStore(payload, userFilterCriteria, reload = false) {
-	const cachePath = getCacheFilePath();
-
-	// Trigger background garbage collection immediately on bootup
-	await clearStaleCacheFiles();
-	if(_isLoaded && !reload )
-		return 0;
-
-	try {
-		console.log('Checking for local persistent file cache...');
-		const rawData = await fs.readFile(cachePath, 'utf-8'); 
-		_inMemoryStore = JSON.parse(rawData);
-		_isLoaded = true;
-		console.log(`--- [CACHE HIT] Loaded ${_inMemoryStore.length} records directly from disk persistence. ---`);
-		return _inMemoryStore.length;
-	} catch (error) {
-		console.log('[CACHE MISS] No valid local file found for today. Streaming from internet...');
-		
-		_inMemoryStore = []; 
-		_isLoaded = false;
-		const freshUrls = getUpdatedUrls(payload.data.filesPaths);
-
-		for (const url of freshUrls) {
-			await processSingleFile(url, userFilterCriteria);
-		}
-
-		try {
-			await fs.writeFile(cachePath, JSON.stringify(_inMemoryStore, null, 2), 'utf-8'); 
-			console.log(`Persistent disk cache written to: ${cachePath}`);
-		} catch (writeError) {
-			console.error('Failed to write persistent cache file to disk:', writeError.message);
-		}
-
-		_isLoaded = true;
-		console.log(`--- Store Ready. ${_inMemoryStore.length} records cached in RAM. ---`);
-		return _inMemoryStore.length;
-	}
-}
-
-//function getAllScrips() { return _inMemoryStore; }
-//function findScripByKey(columnName, value) { return _inMemoryStore.find(row => row[columnName] === value) || null; }
-//function queryStore(filterFn) { return _inMemoryStore.filter(filterFn); }
-//function getStoreStatus() { return { loaded: _isLoaded, totalRecords: _inMemoryStore.length }; }
-
-async function load(expiryDates, reload = false) {
-	await initStore(incomingPayload, filters, reload);
-}
-*/
-/*---------------------------------------------------------------------------------------------------*/

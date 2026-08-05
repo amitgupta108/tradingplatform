@@ -50,6 +50,7 @@ export class ScripAppMap
 
     }
 }
+
 export class Subscriptions {
     constructor(provider) {
         this.provider = provider;
@@ -94,7 +95,7 @@ export class SubsTemplate extends EventEmitter
         super();
         this.stockCode = session.stockCode;
         this.exchange = session.exchange;
-        this.atm_check_counter = -1;
+        this.atm_check_counter = 0;
         this.atm = 0;
         this.st = [
             { key: 'index', stockCode: this.stockCode, toStream: true },
@@ -111,20 +112,13 @@ export class SubsTemplate extends EventEmitter
             if (i === 1)
                 this.st[i].expiry = this.fExpiry;
         }
-        this.addOptionChain(this.oExpiries);
-    }
 
-    addOptionChain(expiries)
-    {
-        expiries.forEach((expiry) => {
-            this.st.push({
-                key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry
-            });
+        this.oExpiries.forEach((expiry) => 
+        {
+            const idx = this.st.findIndex((s) => s.key === 'optionchain' && s.expiry === expiry);
+            if(idx === -1)
+                this.st.push({key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry});
         });
-    }
-
-    removeOptionChain(expiry) {
-
     }
 
     getSubsItems(keys)
@@ -161,21 +155,7 @@ export class SubsTemplate extends EventEmitter
             }
         }
     }
-/*
-    getPreviousATM(near)
-    {
-        const oc_config = OPT_CONFIG['SIX'];
-        const ost_first = this.getSubsItemByKey('ocfirst');
-        const strikes = ost_first.strikes;
-        if(strikes !== undefined){
-            const diff = oc_config.endIdx - oc_config.startIdx;
-            const min_put = strikes[diff];
-            const max_call = strikes[2 * diff + 1];
-            return (min_put.strike + max_call.strike) / 2;
-        }
-        return 0;
-    }
-*/
+
     buildOptionChain(uq, expiry)
     {
         const ost = this.getOptionChainByExpiry(expiry);
@@ -219,18 +199,19 @@ export class SubsTemplate extends EventEmitter
 
     getNotified(type, uq)
     {
-        this.atm_check_counter++;
-        if(this.atm_check_counter === 0)
+        const sz = STRIKE_SIZE[this.stockCode];
+        if(this.atm_check_counter === 0) {
             this.emit('ATMChange', uq);
-        else if(this.atm_check_counter === 10)
-        {
+            this.atm = Math.round(uq.ltp / sz) * sz;
+        }
+        else if(this.atm_check_counter === 10) {
             this.atm_check_counter = 1;
-            const sz = STRIKE_SIZE[this.stockCode];
             if (type === 'index' && Math.abs(this.atm - uq.ltp) > sz) {
-                this.atm = Math.round(uq.ltp / sz) * sz;
                 this.emit('ATMChange', uq);
+                this.atm = Math.round(uq.ltp / sz) * sz;
             }
         }
+        this.atm_check_counter++;
     }
 }
 
