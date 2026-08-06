@@ -9,7 +9,7 @@ function connect()
       stockCode: instrument.stockCode
     },
     reconnection: false,
-    timeout: 20000
+    timeout: 10000
   });
 
   rh(socket);

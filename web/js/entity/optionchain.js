@@ -106,7 +106,7 @@ class OptionChain
 
   markPosition(scrip, psize)
   {
-    const key = (scrip.strike_price / this.interval - this.atm_index) + scrip.right;
+    const key = ((scrip.strike_price - this.atm) / this.interval) + scrip.right;
     const r = this.row_map.get(key);
     
     if (r !== undefined) 

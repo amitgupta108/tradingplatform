@@ -19,18 +19,22 @@ function getSymbol(q) {
   }
 }
 
+const symbol_cache = new Map();
+const regex = /[0-9]/;
 function expandSymbol(symbol)
 {
-    const regex = /[0-9]/;
+  const s = symbol_cache.get(symbol);
+  if(s === undefined) {
     const idx = symbol.search(regex);
-    const s = {};
-    s.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
 
+    const s = { stockCode: idx === -1 ? symbol : symbol.slice(0, idx)};
     s.right = symbol.slice(-2);
     s.expiry_date = symbol.slice(idx, idx + 7);
     s.strike_price = symbol.slice(idx + 7, -2);
     s.name = s.expiry_date + ' ' + s.strike_price + ' ' + s.right;
-    return s;
+    symbol_cache.set(symbol, s);
+  }
+  return s;
 }
 
 function generateEvent(type, nv)
