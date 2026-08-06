@@ -74,5 +74,5 @@ function handleAuthReq(parsedUrl, res)
     eventservice.emit('ext_auth', authdata);
     const responseType = 'text/html';
     res.writeHead(200, { 'Content-Type': responseType });
-    res.end('<!DOCTYPE html><title>C</title><label onclick="window.close()">X</label>', 'utf-8');
+    res.end('<!DOCTYPE html><title>Redirect</title><label onclick="window.close()">X</label>', 'utf-8');
 }

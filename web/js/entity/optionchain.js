@@ -85,8 +85,9 @@ class OptionChain
       return;
    
     r.row.cells[1].textContent = q.ltp.toFixed(2);  
-    q = addIVNDelta(q, this.u_price);
-    r.row.cells[0].textContent = q.delta.toFixed(2);
+    q = addIVNDelta(q, futures_ltp);
+    if(q.delta !== undefined)
+      r.row.cells[0].textContent = q.delta.toFixed(2);
   }
 
   handleUnderlying(q)
