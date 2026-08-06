@@ -119,8 +119,8 @@ function toScrip(snapshot)
         qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
         const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
         qt.symbol = sym.replaceAll('.00', '');
-        qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
+        qt.min = false;
         state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
     }
     //return state_qutils.quote_cache.get(snapshot.tk);
@@ -136,7 +136,7 @@ function toScripMin(snapshot) {
         qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
         const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
         qt.ts = sym.replaceAll('.00', '');
-        qt.key = snapshot.ts.endsWith('FUT') ? 'futures' : snapshot.ts.endsWith('PE') || snapshot.ts.endsWith('CE') ? 'strikex' : 'index';
+        qt.key = sym.endsWith('FUT') ? 'futures' : sym.endsWith('PE') || sym.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
         qt.min = true;
         state_qutils.quote_cache.set('k_m' + snapshot.tk, qt);
