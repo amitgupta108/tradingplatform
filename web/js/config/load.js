@@ -1,3 +1,4 @@
+let futures_ltp;
 const positions = new Map();
 const pNL_all = {booked: 0.00, unbooked: 0.00}
 const decimal2 = ['bookedPL', 'averageP', 'LTP', 'unbookedPL', 'totalPL'];
@@ -91,6 +92,7 @@ qBox.addEventListener('index', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
+  futures_ltp = q;
   fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
   spot_label.textContent = fut_title + spot_title;

@@ -18,14 +18,16 @@ function neworders(appid, orders)
 
 function notifyme(message, trade_mode)
 {    
-    if (['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
-        liveOrderMatching(message, trade_mode);
+    const order = message.data;
+    if (['open', 'complete', 'rejected', 'cancelled'].includes(order.ordSt))
+    {
+        liveOrderMatching(order, trade_mode);
+        console.log('order notifcation ' + order.ordSt);
+    }
 }
 
-function liveOrderMatching(message, mode) 
+function liveOrderMatching(order, mode) 
 {
-    const order = message.data;
-    console.log('order notifcation ' + order.ordSt + ' : ' + order.ordDtTm + ' : ' + order.updRecvTm + ' : ' + order.boeSec + ' : ' + order.exCfmTm);
     const live_order = formatLiveOrder(order);
     let found = findMatch(live_order);
 
