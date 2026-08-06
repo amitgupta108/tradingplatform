@@ -23,14 +23,15 @@ const symbol_cache = new Map();
 const regex = /[0-9]/;
 function expandSymbol(symbol)
 {
-  const s = symbol_cache.get(symbol);
+  let s = symbol_cache.get(symbol);
   if(s === undefined) {
     const idx = symbol.search(regex);
 
-    const s = { stockCode: idx === -1 ? symbol : symbol.slice(0, idx)};
+    s = { stockCode: idx === -1 ? symbol : symbol.slice(0, idx)};
     s.right = symbol.slice(-2);
     s.expiry_date = symbol.slice(idx, idx + 7);
     s.strike_price = symbol.slice(idx + 7, -2);
+    s.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
     s.name = s.expiry_date + ' ' + s.strike_price + ' ' + s.right;
     symbol_cache.set(symbol, s);
   }
