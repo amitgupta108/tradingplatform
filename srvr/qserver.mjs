@@ -21,12 +21,6 @@ function getHistoryAsync(instrument, startTime, endTime, interval)
 function getHistory(appid, r) 
 {
     return sutils.getHistory(r, r.startTime, r.endTime, r.interval)
-    .then((response) => {
-        if (response?.Error === null)
-            QuotesEmitter.emit('history', response.Success, r.key, appid);
-        else
-            QuotesEmitter.emit('history', [response.Error], r.key, appid);
-    });
 }
 
 function addListener(eventName, callback)
