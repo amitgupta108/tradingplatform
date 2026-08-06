@@ -70,24 +70,27 @@ function streamOptionChain(event)
   emit('option_chain', {expiry: instrument.oExpiries[idx], action:'toggle'});
 }
 
-function wsOps(action){
-  const tpt = document.getElementById("tpt").value;
+function wsOps(action)
+{
   emit('wsOps', action, tpt);
-  document.getElementById("tpt").value = "";
 }
 
 function subs_vix()
 {
   //emit('vix', {action: 'subs'});
-  //emit('snapshot', 'mcx_fo|520702');
-  //const provider = document.getElementById("tpt").value;
-  //emit('authenticate', provider);
   emit('positions', instrument.stockCode);
 }
 
 function reload()
 {
   emit('reload', '');
+}
+
+function auth(action)
+{
+  const provider = document.getElementById("tpt").value;
+  emit('authenticate', provider);
+  document.getElementById("tpt").value = "";
 }
 
 function showChart() {

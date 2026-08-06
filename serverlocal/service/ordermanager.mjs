@@ -24,8 +24,9 @@ function notifyme(message, trade_mode)
 
 function liveOrderMatching(message, mode) 
 {
-    console.log('order notifcation ' + message.data.ordSt);
-    const live_order = formatLiveOrder(message.data);
+    const order = message.data;
+    console.log('order notifcation ' + order.ordSt + ' : ' + order.ordDtTm + ' : ' + order.updRecvTm + ' : ' + order.boeSec + ' : ' + order.exCfmTm);
+    const live_order = formatLiveOrder(order);
     let found = findMatch(live_order);
 
     if (found !== undefined) {
@@ -90,7 +91,7 @@ function formatLiveOrder(order)
     fOrder.action = fOrder.action === 'B' ? 'BUY' : 'SELL';
     fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
     fOrder.strike_price = fOrder.strike_price.replace('.00', '');
-    fOrder.symbol = fOrder.stockCode + fOrder.expiry_date +  fOrder.strike_price + fOrder.right;
+    fOrder.symbol = fOrder.stockCode + fOrder.expiry_date + fOrder.strike_price + fOrder.right;
     fOrder.mode = 'live';
 
     return fOrder;
