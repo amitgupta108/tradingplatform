@@ -1,3 +1,5 @@
+.vscode
+._vscode
 .DS_Store
 web/lib/js_vollib/
 node_modules
@@ -6,5 +8,4 @@ node_modules
 serverapps/config/
 serverlocal/config
 serverlocal/.env
-.vscode
 */.DS_Store
