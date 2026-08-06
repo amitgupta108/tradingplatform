@@ -78,12 +78,12 @@ async function clearStaleCacheFiles() {
 	const currentCacheFileName = `${CACHE_PREFIX}${todayStr}${CACHE_EXTENSION}`;
 
 	try {
-		const files = await fs.readdir(__dirname);
+		const files = await fs.readdir(path.join(__dirname, '..', 'config'));
 		
 		for (const file of files) {
 			// Target files that start with our prefix, end with .json, but do NOT match today
 			if (file.startsWith(CACHE_PREFIX) && file.endsWith(CACHE_EXTENSION) && file !== currentCacheFileName) {
-				const fullPathToPurge = path.join(__dirname, file);
+				const fullPathToPurge = path.join(__dirname, '..', 'config', file);
 				await fs.unlink(fullPathToPurge);
 				console.log(`[GC] Deleted stale cache file from disk: ${file}`);
 			}
