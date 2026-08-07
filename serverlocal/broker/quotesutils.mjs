@@ -95,13 +95,13 @@ function standardizeoq(quote)
 function standardizekq(quote, min)
 {
     if (quote.ltp !== undefined) {
-        const qt = state_qutils.quote_cache.get(quote.tk);
+        const key = min ? 'k_m' + quote.tk : quote.tk;
+        const qt = state_qutils.quote_cache.get(key);
         if(qt !== undefined)
         {
             qt.ltp = Number(quote.ltp);
             qt.ltt = quote.m1 - qt.offset;
             qt.m1 = quote.m1;
-            
             return qt;
         }
     }
@@ -130,10 +130,10 @@ function toScripMin(snapshot) {
     const qt = state_qutils.quote_cache.get('k_m' + snapshot.tk);
     if (qt === undefined) {
         const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
-        const { tk, e, ts, ltp: ltp_f, c, fdtm, ltt, ...rest } = snapshot;
-        const qt = { tk, e, ts, ltp_f, c, fdtm, ltt };
+        const { tk, e, ts, ...rest } = snapshot;
+        const qt = { tk, e};
         
-        qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        //qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
         const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
         qt.ts = sym.replaceAll('.00', '');
         qt.key = sym.endsWith('FUT') ? 'futures' : sym.endsWith('PE') || sym.endsWith('CE') ? 'strikex' : 'index';

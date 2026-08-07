@@ -16,16 +16,16 @@ function history(appid, requests) {
         r.stockCode = r.key === 'vix' ? 'INDVIX' : r.stockCode;
         r.expiry = r.fExpiry || r.oExpiry;
 
-        const p = qserver.getHistory(appid, r)
-        .then((response) => {
+        const p = qserver.getHistory(appid, r);
+        p.then((response) => {
             if (response?.Error === null)
                 streamer.emitHistQs(appid, r.key, response.Success);
             else
-                console.log('history fetch error ' + response.Error);
+                return { status: error, reason: 'history fetch error ' + response.Error };
         });
-        promises.push(q);
+        //promises.push(p);
     });
-    return Promise.all(promises);
+    //return Promise.all(promises);
 }
 
 function subscribe_vix(appid, mode, action) {
