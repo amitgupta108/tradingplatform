@@ -9,7 +9,7 @@ function connect()
       stockCode: instrument.stockCode
     },
     reconnection: false,
-    timeout: 20000
+    timeout: 10000
   });
 
   rh(socket);
@@ -56,21 +56,21 @@ function rh(socket)
     });
   
     socket.on('index', (q) => {
-      qBox.dispatchEvent(generateEvent('index', q));
+      qBox.dispatchEvent('index', q);
     });
     
     socket.on('vix', (q) => {
-      qBox.dispatchEvent(generateEvent('vix', q));
+      qBox.dispatchEvent('vix', q);
     });
 
     socket.on('futures', (q) => {    
-      qBox.dispatchEvent(generateEvent('futures', q));
+      qBox.dispatchEvent('futures', q);
       if(q.exchange === 'MCX')
-        qBox.dispatchEvent(generateEvent('index', q));      
+        qBox.dispatchEvent('index', q);      
     });
 
     socket.on('strikex', (q) => {
-        qBox.dispatchEvent(generateEvent('strikex', q));
+        qBox.dispatchEvent('strikex', q);
     });
 
     socket.on('stream', (response) => {
@@ -95,6 +95,10 @@ function rh(socket)
       loadOrders(response);
     });
 
+    socket.on('positions', (response) => {
+      console.log('positions # ' + response.length);
+    });
+
     socket.on('order', (exorder) => {
       if(exorder.appid !== instrument.appid)
         return;
@@ -116,12 +120,6 @@ function rh(socket)
       else if(action === 'close' && resp.status === 'success')
         socn.style.backgroundColor = 'white';
     });
-
-    socket.on('live_trading', (locked) => {
-      if(!locked)
-        ws_start_btn.style.backgroundColor = '#4CAF50';
-    });
-
   } catch(error){
     console.log(error);
   }

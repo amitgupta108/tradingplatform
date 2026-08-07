@@ -15,52 +15,69 @@ let client;
 let ws_direct;
 let my_subs;
 let reconn_count = 0; 
-let counter = 0;
 let view_mode;
+
+function init() {
+    if (!initialized) {
+        my_subs = new Subscriptions(logical_view_name);
+
+        if (view_mode === undefined)
+            view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
+
+        if (!client)
+            client = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
+
+        const p = client.connect();
+
+        return p.then(() => {
+            initialized = true;
+            ws_direct = client._wsClient.ws;
+            ws_direct.addEventListener('close', () => {
+                console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
+                autoStart();
+            });
+            return { status: 'success' }
+        })
+            .catch((error) => {
+                client._wsClient.shouldReconnect = false;
+                throw error;
+            });
+    }
+}
+
+function startv2(appid, p) {
+    const stock_subs = my_subs.addNewSubscriptions(p.stockCode + view_mode, p);
+    stock_subs.addListener('ATMChange', onATMChange);
+    const requests = stock_subs.getSubsItems(['index', 'futures']);
+    const st = requests.find((r) => r.key === 'index');
+    if (st !== undefined)
+        st.exchange = 'NSE_INDEX';
+
+    subscribe(appid, requests, 'subs');
+}
 
 function onQuotes(q)
 { 
-    const qt = qutils.standardizeoq(q);
+    const qt = qutils.standardize(logical_view_name, q);
     const l_appid = qt.stockCode + view_mode;
     streamer.emitQs(l_appid, qt);
     
-    const key = qt.exchange === 'MCX' ? 'futures' : 'index';
     if(qt.key === 'strikex')
         qutils.sendQsToSim(view_mode, qt);
-    else if (qt.key === key && (counter === 0 || counter++ === 6)) 
-    {
-        counter = 1;
-        const response = qutils.atmRefresh(logical_view_name, l_appid, qt);
-        if(response.rebuild) 
-        {
-            response.list.forEach((ost) => {
-                subscribe(l_appid, ost.strikes, 'subs');
-            });
-        }
+    
+    const key = qt.exchange === 'MCX' ? 'futures' : 'index';
+    if (qt.key === key) {
+        setTimeout(() => {
+            const stock_subs = my_subs.getSubscriptions(l_appid);
+            stock_subs.getNotified('index', qt);
+        }, 1000);
     }
 }
 
 function exit(appid, sublist)
 {
-    //subscribe(appid, sublist, 'unsub');
     if(client?._wsClient?.isConnected)
         client?._wsClient?.ws._sendMessage({action: unsubscribe_all});
-}
-
-function startv2(appid, p)
-{
-    const stock_subs = my_subs.addNewSubscriptions(p.stockCode + view_mode, p);
-    const requests = stock_subs.getSubsItemsByKey(['index', 'futures']);
-    const st = requests.find((r) => r.key === 'index');
-    if (st !== undefined)
-        st.exchange = 'NSE_INDEX';
-    
-    subscribe(appid, requests, 'subs');
-}
-
-function start(appid, sublist) 
-{
-    subscribe(appid, sublist, 'subs');
 }
 
 function autoStart() {
@@ -69,7 +86,7 @@ function autoStart() {
         const list = subs_store_all[logical_view_name].getFullSubsList();
         for(const [k, v] of list)
         {
-            const requests = v.getSubsItemsByKey(['index', 'futures']);
+            const requests = v.getSubsItems(['index', 'futures']);
             subscribe(k, requests, 'subs');
             const chains = v.getActiveOptionChains();
             chains.forEach((oc) => {
@@ -96,14 +113,12 @@ function subscribe(appid, list, action)
         client.unsubscribe_ltp(list, onQuotes);
 }
 
-function option_chain(appid, stockCode, key, action)
+function option_chain(appid, stockCode, expiry, action)
 {
-    const provider_subs = subs_store_all[logical_view_name];
-    const stock_subs = provider_subs.getSubscriptionsForStockCode(stockCode);
-    const ost = stock_subs.optionChainAction(key, action);
-    if(ost !== undefined) {
-        const subs_action = ost.toStream === true ? 'subs' : 'unsubs';
-        subscribe(appid, ost.strikes, subs_action);
+    const stock_subs = my_subs.getSubscriptions(stockCode + view_mode);
+    const response = stock_subs.optionChainAction(expiry, action);
+    if(response !== undefined) {
+        subscribe(appid, response.strikes, response.action);
     }
 }
 
@@ -160,34 +175,21 @@ function cancelorder(order)
     });
 }
 
-function init()
-{
-    if(!initialized)
-    {
-        my_subs = new Subscriptions(logical_view_name);
-          
-        if(view_mode === undefined)
-            view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
+function onATMChange(uq) {
+    const l_appid = uq.stockCode + view_mode;
 
-        if(!client)
-            client = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
-        
-        const p = client.connect();
+    const t = my_subs.getSubscriptions(l_appid);
+    const strikesset = t.reloadStrikes(uq);
 
-        return p.then(() => {
-            initialized = true;
-            ws_direct = client._wsClient.ws;
-            ws_direct.addEventListener('close', () => {
-                console.log('openalgo websocket state ' + client._wsClient.ws.readyState);
-                autoStart();
-            });
-            return {status: 'success'}
-        })
-        .catch((error) => {
-            client._wsClient.shouldReconnect = false;
-            throw error;
-        });
-    }
+    strikesset.forEach((s) => {
+        subscribe(l_appid, s, 'subs');
+    });
 }
 
-export default {subscribe, exit, init, start, startv2, neworders, orderbook, cancelorder, name};
+function onSubs(ost) 
+{
+    const l_appid = ost.stockCode + view_mode;
+    subscribe(l_appid, ost.strikes, 'subs');
+}
+
+export default {subscribe, exit, init, startv2, neworders, orderbook, cancelorder, option_chain, name};

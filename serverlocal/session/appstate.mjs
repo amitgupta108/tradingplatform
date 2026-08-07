@@ -1,6 +1,6 @@
 import {OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG} from '../../common/constants.mjs';
 import utils from '../../common/utils.mjs';
-
+import { eventservice } from '../service/eventservice.mjs';
 export const socketmap = new Map();
 export const uwsmap = new Map();
 export const us = new Map();
@@ -10,7 +10,8 @@ export const state_kotakneo = {
     endpoints: {
         order: '/quick/order/rule/ms/place',
         orderbook: '/quick/user/orders',
-        cancel: '/quick/order/cancel'
+        cancel: '/quick/order/cancel',
+        positions: '/quick/user/positions'
     },
     oTemplate: {
         am: 'NO',
@@ -24,6 +25,10 @@ export const state_kotakneo = {
 
 export const state_kotakhsm = {
 
+}
+
+export const state_qutils = {
+    quote_cache: new Map()
 }
 
 export class ScripAppMap
@@ -44,6 +49,7 @@ export class ScripAppMap
 
     }
 }
+
 export class Subscriptions {
     constructor(provider) {
         this.provider = provider;
@@ -52,11 +58,11 @@ export class Subscriptions {
     }
 
     addNewSubscriptions(appid, session) {
-        let subs = this.subs_map.get(appid);
+        let subs = this.getSubscriptions(appid);
         if(subs === undefined) {
-            subs = new SubsTemplate(session);
+            subs = new SubsTemplate(appid, session);
             this.subs_map.set(appid, subs);
-        }
+        }        
         return subs;
     }
 
@@ -80,105 +86,131 @@ export class Subscriptions {
 
 export class SubsTemplate
 {
-    constructor(session)
+    constructor(appid, session)
     {
+        this.appid = appid;
         this.stockCode = session.stockCode;
         this.exchange = session.exchange;
+        this.atm_check_counter = 0;
         this.atm = 0;
         this.st = [
             { key: 'index', stockCode: this.stockCode, toStream: true },
             { key: 'futures', stockCode: this.stockCode, toStream: true },
-            { key: 'ocfirst', stockCode: this.stockCode, toStream: true, near: 'FIRST'},
-            { key: 'ocsecond', stockCode: this.stockCode, toStream: false, near: 'SECOND' },
-
         ];
+
         this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
         this.oExpiries = session.oExpiries ?? [OPT_EXPIRIES[this.stockCode]['FIRST']];
 
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 2; i++) {
             this.st[i].exchange = this.st[i].key === 'index' && this.exchange === 'NFO' ? 'NSE' : this.exchange;
             this.st[i].symbol = i === 1 ? this.stockCode.concat(this.fExpiry).concat('FUT') : this.st[i].stockCode;
             this.st[i].toStream = i === 0 && this.st[i].exchange === 'MCX' ? false : true;
-            if (i != 0)
-                this.st[i].expiry = i === 1 ? this.fExpiry : this.oExpiries.at(0);
-            if(i === 3)
-                this.st[i].expiry = this.oExpiries[1] ?? [OPT_EXPIRIES[this.stockCode]['SECOND']];
+            if (i === 1)
+                this.st[i].expiry = this.fExpiry;
         }
+
+        this.oExpiries.forEach((expiry) => 
+        {
+            const idx = this.st.findIndex((s) => s.key === 'optionchain' && s.expiry === expiry);
+            if(idx === -1)
+                this.st.push({key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry});
+        });
     }
 
-    addOptionChain(){
-
-    }
-
-    removeOptionChain(expiry) {
-
-    }
-
-    getSubsItemsByKey(keys) {
+    getSubsItems(keys)
+    {
         return this.st.filter((s) => keys.includes(s.key));
     }
-
-    getRequestsByOptionsExpiry(expiry) {
-
+    
+    getSubsItemByKey(key) {
+        return this.st.find((s) => s.key === key);
     }
 
-    optionChainAction(key, action)
+    getOptionChainByExpiry(expiry) {
+        return this.st.find((s) => {
+            return s.key === 'optionchain' 
+            && s.expiry === expiry;
+        });
+    }
+
+    optionChainAction(expiry, action)
     {
-        const ost = stthis.getSubsItemsByKey(key);
-        if(ost !== undefined)
+        const ost = this.getOptionChainByExpiry(expiry);
+        if(ost !== -1)
         {
-            if(action === 'toggle'){
-                ost.toStream = ost.toStream === true ? false : true;
+            if(ost.toStream === false && ['start', 'toggle'].includes(action)){
+                ost.toStream = true;
+                if(this.atm !== 0) {
+                    const strikes = this.buildOptionChain({ ltp: this.atm }, expiry);
+                    return { action: 'subs', strikes: strikes };
+                    //eventservice.emit('subscription', this.appid, strikes, 'subs');
+                }
+            } 
+            else if (ost.toStream === true && action === 'toggle') {
+                ost.toStream = false;
+                return { action: 'unsub', strikes: ost.strikes }
+                //eventservice.emit('subscription', this.appid, ost.strikes, 'unsub');
             }
-            
-            if(ost.toStream === true)
-                this.buildOptionChain({ltp: this.atm}, ost);
         }
-        return ost;
     }
 
-    getPreviousATM(near)
+    buildOptionChain(uq, expiry)
     {
-        const oc_config = OPT_CONFIG['FIVE'];
-        const ost_first = this.getSubsItemsByKey('ocfirst')[0];
-        const strikes = ost_first.strikes;
-        if(strikes !== undefined){
-            const diff = oc_config.endIdx - oc_config.startIdx;
-            const min_put = strikes[diff];
-            const max_call = strikes[2 * diff + 1];
-            return (min_put.strike + max_call.strike) / 2;
-        }
-        return 0;
-    }
-
-    buildOptionChain(uq, ost)
-    {
-        const idx = ost.near === 'FIRST' ? 0 : 1;
-        const oc_config = OPT_CONFIG['FIVE'];
+        const ost = this.getOptionChainByExpiry(expiry);
+        const oc_config = OPT_CONFIG['SIX'];
         const st_prices = utils._strikes(uq.ltp, oc_config.startIdx, oc_config.endIdx, STRIKE_SIZE[this.stockCode]);
+        
         const strikes = st_prices.map((s) => {
             s.exchange = this.exchange;
-            s.expiry = this.oExpiries[idx];
+            s.expiry = expiry,
             s.key = 'strikex';
             s.stockCode = this.stockCode;
-            s.symbol = this.stockCode + this.oExpiries[idx] + s.strike + s.right;
+            s.symbol = this.stockCode + expiry + s.strike + s.right;
             return s;
         });
 
-        this.atm = Math.round(uq.ltp/50) * 50;
         ost.strikes = strikes;
         return strikes;
+    }
+
+    reloadStrikes(uq)
+    {
+        const strikesset = [];     
+        const osts = this.getActiveOptionChains();
+        osts.forEach((ost) => {
+            strikesset.push(this.buildOptionChain(uq, ost.expiry));
+        });
+
+        return strikesset;
     }
 
     getActiveOptionChains()
     {  
         return this.st.filter((s) => 
-            s.key.startsWith('oc')
+            s.key === 'optionchain'
             && s.toStream === true);
     }
 
     getRequestsByProperties(options) {
         //toStream
+    }
+
+    getNotified(uq)
+    {
+        const sz = STRIKE_SIZE[this.stockCode];
+        this.atm_check_counter++;
+        
+        if (this.atm_check_counter === 15) {
+            this.atm_check_counter = 1;
+            if (Math.abs(this.atm - uq.ltp) > sz) {
+                this.atm = Math.round(uq.ltp / sz) * sz;
+                return { load: true, uq: uq }
+            }
+        }
+        else if(this.atm_check_counter === 0) {
+            this.atm = Math.round(uq.ltp / sz) * sz;
+            return { load: true, uq: uq };
+        }
     }
 }
 

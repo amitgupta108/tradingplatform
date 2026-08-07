@@ -54,9 +54,9 @@
             <div id="timer">
                 <label id="timer_date_lb"></label>
                 <label id="timer_time_lb"></label>
-                <label> |   Spot:  </label>
+                <label> | </label>
                 <label id="timer_spot_lb"></label>
-                <label> |   Latency:  </label>
+                <label> | Latency: </label>
                 <label id="timer_latency_lb"></label>
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>    
@@ -95,13 +95,13 @@
             <div class="tabs">
                
                 <div id="tabButton1" class="tab">
-                    <button id="expiry_btn_1" class="barely-raised-btn" onclick="switchTabs(0)"></label>
+                    <button id="expiry_btn_1" class="barely-raised-btn" onclick="switchTabs(0)" disabled></button>
                     <button id="oc_action_btn" class="smallbutton order" onclick="streamOptionChain(event)">^</button>
-                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)"></label>
+                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)"></button>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
                     <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;height:15px;">
-                    <button id="ws_start" class="smallbutton order" onclick="wsOps('open')">></button>
+                    <button id="ws_start" class="smallbutton order" onclick="auth('open')">></button>
                     <button id="ws_stop" class="smallbutton order" onclick="wsOps('close')">||</button>
                     <button id="socn" class="smallbutton order" onclick="reload()">@</button>
                     <label class="switch">
@@ -281,6 +281,7 @@
     </template>
 <!------------------------------------------------------------------------------------------------------------------------------>    
     
+    <script src="../js/entity/quote.js"></script>    
     <script src="../js/config/data.js"></script>
     <script src="../js/config/load.js"></script>
     <script src="../js/ui/ui.js"></script>

@@ -11,18 +11,6 @@ function registerDataRequests(s, appid,  mode)
         util_service.subscribe_vix(appid, mode, msg.action);
     });
 
-    s.on('start', (msg) => {
-        if(['skeletal', 'stopped'].includes(s.sn.status)){
-            s.sn.ini(msg, (opSubs) => {
-                market_service.subscribe(s.sn.appid, opSubs, 'subs', mode);
-            });
-            if(mode.startsWith('HISTORY'))
-                market_service.clientConfigure(appid, msg.simStartTime, '1x');
-        }
-        market_service.start(appid, s.sn.inqsub(false), mode);
-        s.emit('stream', 'started');
-    });
-
     s.on('startv2', (msg) => {
         if (mode.startsWith('HISTORY'))
             market_service.clientConfigure(appid, msg.simStartTime, '1x');
@@ -34,7 +22,7 @@ function registerDataRequests(s, appid,  mode)
     s.on('history', catchAsync(async (requests) => {
         console.log("history request " + requests.length);
         return util_service.history(appid, requests);
-    }, s, 'history'));
+    }, 'history'));
 
     s.on('speed', (msg) => {
         if(mode.startsWith('HISTORY'))
@@ -61,7 +49,8 @@ function registerDataRequests(s, appid,  mode)
     });
     
     s.on('option_chain', (msg) => {
-       market_service.option_chain(appid, msg.key, msg.action);
+        const stockCode = socketmap.get(appid).stockCode;
+        market_service.option_chain(appid, stockCode, msg.expiry, msg.action);
     });
 
     s.on('snapshot', (msg) => {
@@ -85,8 +74,12 @@ function registerTradeRequests(s, appid, mode) {
         console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
     });
 
-    s.on('orderbook', async (msg) => {
-        s.emit('orderbook', await trading_service.orderbook(appid, msg));
+    s.on('orderbook', async (stockCode) => {
+        s.emit('orderbook', await trading_service.orderbook(appid, stockCode));
+    });
+
+    s.on('positions', async (stockCode) => {
+        s.emit('positions', await trading_service.positions(appid, stockCode));
     });
 }
 
@@ -96,21 +89,24 @@ function registerAdminRequests(s, appid, mode)
     const admin_service = services.getService('admin', mode);
 
     if(profile['admin'] === 'LIVE_TRADING'){
-        s.on('live_trading', (action, key) => {
-            const lock = unlockLiveOrders(action, key);
-
-            s.emit('live_trading', lock);
-        }, s);
 
         s.on('wsOps', catchAsync((action, key) => {
             if(action === 'open')
                 return admin_service.authenticate(key);
             else if(action === 'close')
                 return admin_service.close(key);            
-        }, s, 'wsOps'));
+        }, 'wsOps'));
     }
 
-    if (profile['admin'] === 'LIVE_STREAMING') {    
+    if (profile['admin'] === 'BROKER_AUTH')
+    {    
+        s.on('authenticate', catchAsync((provider) => {
+            return admin_service.authenticate(provider);
+        }, 'authenticate'));
+    }
+
+    if (profile['admin'].startsWith('LIVE_STREAMING')) 
+    {
         s.on('unsubscribe', (list) => {
             admin_service.subscribe(list, 'unsubs');
             s.sn.unqsub(list, 'unsubscribe')
@@ -138,26 +134,16 @@ async function registerDisconnectionHandler(s, appid, mode)
     });
 }
 
-const catchAsync = (handler, socket, eventName) => {
+const catchAsync = (handler, eventName) => {
     return (...args) => {
         const rv = handler(...args);
-        if(rv instanceof Promise) {
-            rv.then((response) => {
-                toConsole(eventName + ' ' + 'successful');
-            })
-            .catch ((err) => {
-                console.error(eventName + ' ' + err);
-            });
-        }
-        else {
-            toConsole(eventName + ' ' + rv);
-        }
+        if(rv instanceof Promise)
+            rv.then((response) => console.log(eventName + ' ' + JSON.stringify(response)))
+                .catch ((error) => console.error(eventName + ' ' + JSON.stringify(error)));
+        else 
+            console.log(eventName + ' ' + JSON.stringify(rv));
     };
 };
-
-function toConsole(status){
-    console.log(status);
-}
 
 export default {
     registerDataRequests,

@@ -1,7 +1,6 @@
 import qs from '../stream.mjs';
 const live_order_map = new Map();
 var counter = 10000;
-const trade_mode = ['T1', 'T2'];
 
 function neworders(appid, orders)
 {
@@ -19,15 +18,17 @@ function neworders(appid, orders)
 
 function notifyme(message, trade_mode)
 {    
-        liveOrderMatching(message, trade_mode);
+    const order = message.data;
+    if (['open', 'complete', 'rejected', 'cancelled'].includes(order.ordSt))
+    {
+        liveOrderMatching(order, trade_mode);
+        console.log('order notifcation ' + order.ordSt);
+    }
 }
 
-function liveOrderMatching(message, mode) {
-    if (!['open', 'complete', 'rejected', 'cancelled'].includes(message.data.ordSt))
-        return;
-
-    console.log('order notifcation ' + message.data.ordSt);
-    const live_order = formatLiveOrder(message.data);
+function liveOrderMatching(order, mode) 
+{
+    const live_order = formatLiveOrder(order);
     let found = findMatch(live_order);
 
     if (found !== undefined) {
@@ -76,10 +77,10 @@ function formatLiveOrder(order)
 {
     var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol, 
             expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
-            qty: quantity, prcTp: pricetype, strategyCode: _appid, ordSrc: source, ...rest} = order;
+        qty: quantity, prcTp: pricetype, ordSrc: source, ordDtTm, updRecvTm , boeSec, exCfmTm, ...rest} = order;
 
     var fOrder = {orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
-                        filled_q, unfilled_q, quantity, pricetype, _appid, source};
+        filled_q, unfilled_q, quantity, pricetype, source, ordDtTm, updRecvTm, boeSec, exCfmTm};
     
     if(fOrder.state === 'open') {
         fOrder.state = 'opened';
@@ -92,7 +93,7 @@ function formatLiveOrder(order)
     fOrder.action = fOrder.action === 'B' ? 'BUY' : 'SELL';
     fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
     fOrder.strike_price = fOrder.strike_price.replace('.00', '');
-    fOrder.symbol = fOrder.stockCode + fOrder.expiry_date +  fOrder.strike_price + fOrder.right;
+    fOrder.symbol = fOrder.stockCode + fOrder.expiry_date + fOrder.strike_price + fOrder.right;
     fOrder.mode = 'live';
 
     return fOrder;

@@ -108,14 +108,11 @@ function _strikes(price, startIdx = 2, endIdx = 7, sz)
 
 function expandSymbol(symbol) 
 {
-    const t = {} //template
+    const t = {symbol: symbol} //template
     const regex = /[0-9]/;
     const idx = symbol.search(regex);
-    const st_code = idx === -1 ? symbol : symbol.slice(0, idx);
-    t.stockCode = st_code;
-    t.symbol = symbol;
+    t.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
     t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
-
     if (idx !== -1) {
         t.expiry_date = symbol.slice(idx, idx + 7);
         if (!symbol.endsWith('FUT')) {

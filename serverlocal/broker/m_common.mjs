@@ -4,7 +4,6 @@ import streamer from '../stream.mjs';
 
 qserver.addListener('live-vix', onQuotes);
 qserver.addListener('hist-vix', onQuotes);
-qserver.addListener('history', onHistory);
 
 function history(appid, requests) {
 
@@ -17,9 +16,16 @@ function history(appid, requests) {
         r.stockCode = r.key === 'vix' ? 'INDVIX' : r.stockCode;
         r.expiry = r.fExpiry || r.oExpiry;
 
-        promises.push(qserver.getHistory(appid, r));
+        const p = qserver.getHistory(appid, r);
+        p.then((response) => {
+            if (response?.Error === null)
+                streamer.emitHistQs(appid, r.key, response.Success);
+            else
+                return { status: error, reason: 'history fetch error ' + response.Error };
+        });
+        //promises.push(p);
     });
-    return Promise.all(promises);
+    //return Promise.all(promises);
 }
 
 function subscribe_vix(appid, mode, action) {
@@ -39,11 +45,6 @@ function onQuotes(q, appid){
         streamer.broadcast('vix', qt, 'all_nse_live');
     else
         streamer.emitQs(appid, qt);
-}
-
-function onHistory(qA, key, appid)
-{
-    streamer.emitHistQs(appid, key, qA);
 }
 
 export default {

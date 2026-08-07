@@ -1,11 +1,14 @@
 import utils from '../../common/utils.mjs';
 import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
-import streamer from '../stream.mjs';
-import { subs_store_all, Subscriptions } from '../session/appstate.mjs';
+import { subs_store_all, Subscriptions, state_qutils } from '../session/appstate.mjs';
 import simulator from '../service/ordersimulator.mjs';
+import { scripstore } from '../service/scripstore.mjs';
+import { parse } from 'date-fns';
 
+const pattern = "dd/MM/yyyy HH:mm:ss";
 const symbol_cache = new Map();
 
+/*
 function atmRefresh(provider, appid, uq) 
 {    
     const provider_subs = subs_store_all[provider]; 
@@ -22,21 +25,39 @@ function atmRefresh(provider, appid, uq)
     }  
     return {rebuild: false, list: []};
 }
-
-function expandSymbol(symbol)
+*/
+function completeQ(q)
 {
-    let t = symbol_cache.get(symbol);
-    if(t !== undefined)
-        return t;
+    q.close = q.ltp;
+    if(q.ltt === undefined)
+        q.ltt = q.last_traded_time * 1000;
+    
+    let scrip = symbol_cache.get(q.symbol);
+    if(scrip !== undefined)
+        return { ...q, ...scrip};
 
-    t = utils.expandSymbol(symbol);
+    scrip = utils.expandSymbol(q.symbol);
 
-    symbol_cache.set(symbol, t);
-    return t;
+    symbol_cache.set(q.symbol, scrip);
+    return { ...q, ...scrip };
+}
+
+function standardize(name, q, min = false)
+{
+    q.m1 = Date.now();
+    switch (name) {
+        case 'KOTAKHSMVIEW':
+            return standardizekq(q, min) 
+        case 'OPENALGOVIEW':
+            return standardizeoq(q) 
+        case 'ICICILIVEVIEW': 
+            return standardizeiq(q) 
+        case 'ICICIHISTVIEW':
+            return standardizeiq(q) 
+    }
 }
 
 function standardizeiq(qt) {
-    const tStart = process.hrtime.bigint();
 
     const { exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume, high, low, ...rest } = qt;
     const q = { exchange, stockCode, ...rest };
@@ -63,20 +84,64 @@ function standardizeiq(qt) {
         q.key = q.stockCode.endsWith('VIX') ? 'vix' : 'index';
         q.symbol = q.stockCode;
     }
-    const tEnd = process.hrtime.bigint();
-    q.tDiff = Number(tEnd - tStart);
     return q;
 }
 
 function standardizeoq(quote) 
 {
-    const q = expandSymbol(quote.symbol); 
-    q.ltp = quote.ltp;
-    q.ltt = quote.ltt;
-    q.close = quote.ltp;
-    q.exchange = quote.exchange;
-    
-    return q;
+    return completeQ(quote); 
+}
+
+function standardizekq(quote, min)
+{
+    if (quote.ltp !== undefined) {
+        const key = min ? 'k_m' + quote.tk : quote.tk;
+        const qt = state_qutils.quote_cache.get(key);
+        if(qt !== undefined)
+        {
+            qt.ltp = Number(quote.ltp);
+            qt.ltt = quote.m1 - qt.offset;
+            qt.m1 = quote.m1;
+            return qt;
+        }
+    }
+}
+
+function toScrip(snapshot)
+{
+    const qt = state_qutils.quote_cache.get(snapshot.tk);
+    if (qt === undefined)
+    {
+        const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
+        const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = snapshot;
+        const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
+
+        qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+        qt.symbol = sym.replaceAll('.00', '');
+        qt.offset = offset;
+        qt.min = false;
+        state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
+    }
+    //return state_qutils.quote_cache.get(snapshot.tk);
+}
+
+function toScripMin(snapshot) {
+    const qt = state_qutils.quote_cache.get('k_m' + snapshot.tk);
+    if (qt === undefined) {
+        const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
+        const { tk, e, ts, ...rest } = snapshot;
+        const qt = { tk, e};
+        
+        //qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+        qt.ts = sym.replaceAll('.00', '');
+        qt.key = sym.endsWith('FUT') ? 'futures' : sym.endsWith('PE') || sym.endsWith('CE') ? 'strikex' : 'index';
+        qt.offset = offset;
+        qt.min = true;
+        state_qutils.quote_cache.set('k_m' + snapshot.tk, qt);
+    }
+    //return state_qutils.quote_cache.get('k_m' + snapshot.tk);
 }
 
 function sendQsToSim(view_mode, q)
@@ -85,20 +150,22 @@ function sendQsToSim(view_mode, q)
         simulator.orderExecutionSim(view_mode, q);
 }
 
-function buildRequests(appid, instruments) {
-    return instruments.map((inst) => {
-        return {
-            appid: appid,
-            symbol: inst.symbol,
-            instrument: inst
-        }
+function buildRequests(appid, instruments) 
+{
+    const requests = [];    
+    instruments.forEach((inst) => {
+        const mcx_index = inst.key === 'index' && inst.exchange === 'MCX'; 
+        if(!mcx_index)
+            requests.push({ appid: appid, symbol: inst.symbol, instrument: inst});
     });
+
+    return requests;
 }
 
 export default {
-    standardizeiq,
-    standardizeoq,
-    atmRefresh,
+    standardize,
     sendQsToSim,
-    buildRequests
+    buildRequests,
+    toScrip,
+    toScripMin
   };

@@ -1,6 +1,6 @@
 import {simstate} from '../session/simstate.mjs';
 import qserver from '../../srvr/qserver.mjs';
-import { EventService } from './eventservice.mjs';
+import { eventservice } from './eventservice.mjs';
 
 class SimManager
 {
@@ -145,7 +145,7 @@ class SimManager
             }
 
             if (idx >= 0)
-            EventService.emit('hist-quote', st.quotes[idx], appid);
+            eventservice.emit('hist-quote', st.quotes[idx], appid);
         }
         
         if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')
@@ -240,9 +240,9 @@ class SimManager
         return qserver.getHistory(appid, r)
         .then((response) => {
             if (response?.Error === null)
-                EventService.emit('history', response.Success, r.key, appid); 
+                eventservice.emit('history', response.Success, r.key, appid); 
             else
-                EventService.emit('history', [response.Error], r.key, appid);
+                eventservice.emit('history', [response.Error], r.key, appid);
         });
     }
 
@@ -265,9 +265,9 @@ class SimManager
 
      emit(q, appid) {
         if (q.stock_code === 'INDVIX')
-            EventService.emit('hist-vix', q, appid);
+            eventservice.emit('hist-vix', q, appid);
         else
-            EventService.emit('hist-quote', q, appid);
+            eventservice.emit('hist-quote', q, appid);
     }
 }
 
