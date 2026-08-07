@@ -8,7 +8,8 @@ function addIVNDelta(q, uq)
         if (expiryTime === undefined) {
             const [d, m, y] = [q.expiry_date.slice(0,2), q.expiry_date.slice(2,5), q.expiry_date.slice(5)];
             const e = `${d}-${m}-20${y}`;
-            expiryTime = (new Date((e).concat(', 15:30'))).getTime();
+            const time = q.exchange === 'MCX' ? ', 23:30' : ', 15:30';
+            expiryTime = (new Date((e).concat(time))).getTime();
             expiryTimestampCache.set(q.expiry_date, expiryTime);
         }
         
@@ -16,8 +17,8 @@ function addIVNDelta(q, uq)
         const flag = q.right === 'CE' ? 'c' : 'p';
 
         try{
-            var iv = js_vollib.black.implied_volatility.implied_volatility(q.ltp, uq, Number(q.strike_price), 0.05, yearsToExpiry, flag);
-            var delta = js_vollib.black.greeks.analytical.delta(flag, uq, Number(q.strike_price), 0.05, yearsToExpiry, iv);   
+            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.01, flag);
+            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.01, iv);   
         
             q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;

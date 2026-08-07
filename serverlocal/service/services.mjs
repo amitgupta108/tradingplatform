@@ -1,24 +1,24 @@
-import scripstore from './scripstore.mjs';
+import paper_trading from './ordersimulator.mjs';
+import {scripstore} from './scripstore.mjs';
+import { eventservice } from './eventservice.mjs';
+import { authservice } from './auth/authservice.mjs';
+
 import history_breeze from '../broker/m_breeze_hist.mjs';
 import live_breeze from '../broker/m_breeze_live.mjs';
 import live_openalgo from '../broker/m_t_openalgo.mjs';
 import live_kotak from '../broker/m_t_kotakneo.mjs';
 import live_kotak_hsm from '../broker/m_kotak_hsm.mjs';
-import trading_socket from './socketclient.mjs';
-import paper_trading from './ordersimulator.mjs';
 
 const modes = {
-    HISTORY: { view: 'HISTORY', trade: 'SIMULATED', admin: 'SIM_ADMIN' },
+    HISTORY: { view: 'HISTORY', trade: 'SIMULATED'},
     LIVELIVE: { view: 'LIVE', trade: 'LIVE' },
     S1TSADMINS: { view: 'LIVE', trade: 'SIMULATED', admin: 'LIVE_STREAMING' },
-    S3T0ADMINT: { view: 'LIVE_3', admin: 'LIVE_TRADING'},
+    S2T0ADMINS: { view: 'LIVE_2', admin: 'BROKER_AUTH' },
+    S3T1ADMINT: { view: 'LIVE_3', trade: 'LIVE', admin: 'BROKER_AUTH'},
+    S4T0ADMINS: { view: 'LIVE_4', admin: 'LIVE_STREAMING_2' },
     LIVELIVEOA: { view: 'LIVE', trade: 'LIVE_2' },
-    LIVELIVEIC: { view: 'LIVE_2', trade: 'LIVE_2' },
     S1T1ADMINT: { view: 'LIVE', trade: 'LIVE', admin: 'LIVE_TRADING' },
-    S2T1ADMINT: { view: 'LIVE_2', trade: 'LIVE', admin: 'LIVE_TRADING' },
-    S1T2ADMINT: { view: 'LIVE', trade: 'LIVE_2', admin: 'LIVE_TRADING' },
-    L1L0ADMINS: { view: 'LIVE', admin: 'LIVE_STREAMING' },
-    L2L2ADMINS: { view: 'LIVE_2', trade: 'LIVE_2', admin: 'LIVE_STREAMING' },
+    L1L0ADMINS: { view: 'LIVE', admin: 'LIVE_STREAMING_1' },
     ADMINALL: { admin: ['LIVE_STREAMING', 'LIVE_TRADING'] }
 };
 
@@ -29,20 +29,22 @@ const services = {
     KOTAKHSMVIEW: live_kotak_hsm,
     ICICIHISTVIEW: history_breeze,
     ICICILIVEVIEW: live_breeze,
-    SOCKETTRADE: trading_socket,
-    TPSIMTRADE: paper_trading
+    TPSIMTRADE: paper_trading,
+    SCRIPSTORE: scripstore,
+    EVENTSERVICE: eventservice,
+    AUTHSERVICE: authservice
 };
 
 const providers = {
-    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW', LIVE_3: 'KOTAKHSMVIEW' },
+    view: { HISTORY: 'ICICIHISTVIEW', LIVE: 'OPENALGOVIEW', LIVE_2: 'ICICILIVEVIEW', LIVE_3: 'KOTAKHSMVIEW', LIVE_4: 'FYERSVIEW'},
     trade: { LIVE: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'TPSIMTRADE' },
-    admin: { LIVE_TRADING: 'SOCKETTRADE', LIVE_STREAMING: 'OPENALGOVIEW', SIM_ADMIN: 'TPSIMTRADE' }
+    admin: { LIVE_STREAMING_1: 'OPENALGOVIEW', BROKER_AUTH: 'AUTHSERVICE'}
 };
 
 const access = {
-    view: ['vix', 'start', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain', 'snapshot'],
-    trade: ['order', 'cancelorder', 'orderbook'],
-    admin: ['live_trading', 'wsOps', 'unsubscribe', 'remove', 'reload']
+    view: ['vix', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain', 'snapshot'],
+    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'wsOps'],
+    admin: [ 'unsubscribe', 'remove', 'reload', 'authenticate']
 };
 
 function initialize(mode) {
@@ -90,12 +92,16 @@ function getProviderModeKey(name, mode){
     });
 }
 
-function initializeAll(skip_list) {
-    scripstore.load();
+function initializeAll() {
     const list = Object.entries(services);
-    [...new Set(list)].forEach(([k, v]) => {
-        //if(!skip_list.includes(s.name))
-        if(process.env[k] === 'Y')
+        
+    const active = list.filter(([k, v]) => {
+        return process.env[k] === 'Y';
+    });
+
+    const val = active.map(([k, v]) => v);
+    
+    [...new Set(val)].forEach((v) => {
             doInit(v);
     });
 }
@@ -115,6 +121,18 @@ function getFeatureMode(mode, feature){
     return modes[mode][feature];
 }
 
+function getModesForService(name, feature){
+    const serviceid = Object.entries(providers[feature]).filter(([k , v]) => {
+        return v === name;
+    });
+     
+    const fModes = Object.entries(modes).filter(([k , v]) => {
+        return Object.values(v) === serviceid[0];
+    });
+    const [keys, values] = fModes;
+    return keys;
+}
+
 function checkAccess(eventName, mode) {
     const usertype = getProfile(mode);
     if (Object.hasOwn(usertype, 'view') && access['view'].includes(eventName))
@@ -129,4 +147,4 @@ function checkAccess(eventName, mode) {
     return false;
 }
 
-export default { initialize, getService, getProfile, checkAccess, getProviderModeKey, getFeatureMode, initializeAll };
+export default { initialize, getService, getProfile, checkAccess, getProviderModeKey, getFeatureMode, initializeAll, getModesForService };

@@ -1,3 +1,24 @@
 import EventEmitter from 'node:events';
 
-export const EventService = new EventEmitter();
+class EventService extends EventEmitter
+{
+    constructor() {
+        super();
+        this.name = 'EVENTSERVICE';
+        this.initialized = false;
+    }
+
+    init(){
+        this.initialized = true;
+        return { status: 'initialized' };
+    }
+
+    addListeners(providers, listener){
+        events.forEach((e) => {
+            this.addListener();
+        })
+
+    }
+}
+
+export const eventservice = new EventService();

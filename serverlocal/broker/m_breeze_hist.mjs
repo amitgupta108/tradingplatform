@@ -1,6 +1,6 @@
 import qutils from './quotesutils.mjs';
 import {simmanager} from '../service/simmanager.mjs';
-import { EventService } from '../service/eventservice.mjs';
+import { eventservice } from '../service/eventservice.mjs';
 import Order_Service from '../service/ordersimulator.mjs';
 import services from '../service/services.mjs';
 import streamer from '../stream.mjs';
@@ -16,7 +16,7 @@ const logical_view_name = 'ICICIHISTVIEW';
 
 function onQuotes(q, appid) 
 {
-    const qt = qutils.standardizeiq(q);
+    const qt = qutils.standardize(logical_view_name, q);
     streamer.emitQs(appid, qt);
     
     if(qt.key === 'strikex')
@@ -79,7 +79,7 @@ function init()
         if(view_mode === undefined)
             view_mode = services.getProviderModeKey(logical_view_name, 'view')?.at(0);
 
-        EventService.addListener('hist-quote', onQuotes);
+        eventservice.addListener('hist-quote', onQuotes);
         
         initialized = true;
         return {status:'success'};

@@ -5,7 +5,7 @@ import { socketmap } from './session/appstate.mjs';
 
 function startServices(skip_list) 
 {
-    const list = services.initializeAll([]);
+    services.initializeAll([]);
 }
 
 function connect(s)

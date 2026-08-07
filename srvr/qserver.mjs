@@ -1,17 +1,17 @@
 import sutils from './breezeclient.mjs';
 import { QuotesEmitter, breeze } from './appstate.mjs';
+import { eventservice } from '../serverlocal/service/eventservice.mjs';
 
-connect();
-function connect() {
-    breeze.generateSession(process.env.breeze_secret, process.env.breeze_sid)
-        .then((resp) => {
-            breeze.wsConnect();
-            breeze.onTicks = wsemit;
-            console.log('breeze session started ');
-        }).catch((error) => {
-            console.error('breeze error ' + error);
-        });
-}
+eventservice.addListener('icici_auth', (authdata) => {
+    breeze.generateSession(authdata.apiSecret, authdata.authcode)
+    .then((resp) => {
+        breeze.wsConnect();
+        breeze.onTicks = wsemit;
+        console.log('breeze session started ');
+    }).catch((error) => {
+        console.error('breeze error ' + error);
+    });
+});
 
 function getHistoryAsync(instrument, startTime, endTime, interval)
 {
@@ -21,12 +21,6 @@ function getHistoryAsync(instrument, startTime, endTime, interval)
 function getHistory(appid, r) 
 {
     return sutils.getHistory(r, r.startTime, r.endTime, r.interval)
-    .then((response) => {
-        if (response?.Error === null)
-            QuotesEmitter.emit('history', response.Success, r.key, appid);
-        else
-            QuotesEmitter.emit('history', [response.Error], r.key, appid);
-    });
 }
 
 function addListener(eventName, callback)

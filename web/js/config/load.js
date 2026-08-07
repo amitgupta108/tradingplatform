@@ -1,3 +1,4 @@
+let futures_ltp;
 const positions = new Map();
 const pNL_all = {booked: 0.00, unbooked: 0.00}
 const decimal2 = ['bookedPL', 'averageP', 'LTP', 'unbookedPL', 'totalPL'];
@@ -48,7 +49,6 @@ let fut_title = 'F: ';
 let gtotal_booked =  document.getElementById("vBookedPL");
 let gtotal_unbooked =  document.getElementById("vUnbookedPL");
 let gtotal_pnl =  document.getElementById("vTotalPL");
-
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 
 class TradeButtons extends HTMLElement {
@@ -66,25 +66,38 @@ customElements.define('trade-buttons', TradeButtons);
 
 /*--Event Listeners--------------------------------------------------------------------------------------------------------------------------*/
 const pBox = new EventTarget();
-const qBox = new EventTarget();
+const qBox = new QuoteDispatcher();
 const pNL = new EventTarget();
-
+let lastq;
+/*
+qBox.addEventListener('futures', (event) => {
+  const q = event.detail;
+  if(lastq?.ltp !== q.ltp)
+  {
+    const app_entry = new Date(q.m1);
+    const app_exit = new Date(q.m2);
+    const client_entry = new Date(q.client_entry);
+    latency_label.textContent = q.ltp + ': ' + app_entry.getSeconds() + '.' + app_entry.getMilliseconds();
+    lastq = q;
+  }
+});
+*/
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
   const ltp = Number(q.ltp).toFixed(2);
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
-  spot_label.textContent = ltp;
-  
-  var lt = new Date(q.ltt);
-  time_label.textContent = lt.toLocaleTimeString();
+  spot_label.textContent = fut_title + spot_title;
 });
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  fut_title = 'F: ' + q.ltp.toFixed(2);
+  futures_ltp = q;
+  fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
-  latency_label.textContent = Date.now() - q.ltt;
+  spot_label.textContent = fut_title + spot_title;
+
+  time_label.textContent = new Date().toLocaleTimeString();
 });
 
 qBox.addEventListener('strikex', (event) => {
