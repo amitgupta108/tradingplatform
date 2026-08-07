@@ -28,6 +28,8 @@ function connect()
             ordermanager.notifyme(message, 'LIVE');
         else if(message.type === 'cn' && message.msg === 'connected')
             wshb('hsi', 'start');
+        else 
+            console.log('in hsi onmessage ' + JSON.stringify(message));
     };
 
     ws_hsi.onerror = (event) => {

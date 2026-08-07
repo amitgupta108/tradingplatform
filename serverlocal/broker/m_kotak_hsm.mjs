@@ -11,6 +11,7 @@ import quotesutils from './quotesutils.mjs';
 const myviewname = 'KOTAKHSMVIEW';
 const name = myviewname;
 let view_mode;
+let simpricefeed = false;
 let initialized = false;
 let client;
 let authData;
@@ -38,24 +39,31 @@ function init()
             client.addListener('quote', onQuotes);
             client.addListener('snapshot', onSnapshot);
         }
-
-        eventservice.addListener('kotak_auth', (authdata) => {
-            authData = authdata;
-            client.initiateConnect(authData);
-            initialized = true;
-            console.log('HSM authdata available');
-        });
+        eventservice.addListener('kotak_auth', onAuthdata);
     }
     return { status: 'initialized' };
+}
+
+function onAuthdata(authdata)
+{
+    authData = authdata;
+    client.initiateConnect(authData);
+    initialized = true;
+    console.log('HSM authdata available');
 }
 
 function startv2(appid, p)
 {
     const stock_subs = my_subs.addNewSubscriptions(p.stockCode + view_mode, p);
-    stock_subs.addListener('ATMChange', onATMChange);
     const requests = stock_subs.getSubsItems(['index', 'futures']);
     subscribe(appid, requests, 'subs');
-    //testSubs();
+    
+    if(stock_subs.atm !== 0) {
+        const strikesset = stock_subs.reloadStrikes({ ltp: this.atm });
+        strikesset.forEach((s) => {
+            subscribe(appid, s, 'subs');
+        });
+    }
 }
 
 function testSubs()
@@ -110,20 +118,22 @@ function snapshot(list) {
 function onSnapshot(response)
 {
     quotesutils.toScrip(response);
+    quotesutils.toScripMin(response);
     //console.log('snapshot response ' + JSON.stringify(response));
     //const qt = quotesutils.toScrip(response);
-    //const qt_m = quotesutils.toScripMin(response);
 }
 
-function onATMChange(uq) {
-    const l_appid = uq.stockCode + view_mode;
-
+function atmReview(qt) 
+{
+    const l_appid = qt.stockCode + view_mode;
     const t = my_subs.getSubscriptions(l_appid);
-    const strikesset = t.reloadStrikes(uq);
-
-    strikesset.forEach((s) => {
-        subscribe(l_appid, s, 'subs');
-    });
+    const response = t?.getNotified(qt);
+    if (response !== undefined && response.load === true) {
+        const strikesset = t.reloadStrikes(response.uq);
+        strikesset.forEach((s) => {
+            subscribe(l_appid, s, 'subs');
+        });
+    }
 }
 
 function onQuotes(q)
@@ -135,11 +145,15 @@ function onQuotes(q)
         streamer.emitQs(l_appid, qt);
 
         setImmediate(() => {
-            if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
-                my_subs.getSubscriptions(l_appid)?.getNotified('index', qt);
-            else if (qt.key === 'strikex')
+            if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures')) 
+                atmReview(qt);
+            else if (simpricefeed && qt.key === 'strikex')
                 qutils.sendQsToSim(view_mode, qt);
         });
     }
+
+    function registerPriceFeed(){
+        simpricefeed = true;
+    }
 }
-export default {init, subscribe, snapshot, startv2, option_chain, name}
+export default {init, subscribe, snapshot, startv2, option_chain, registerPriceFeed, name}

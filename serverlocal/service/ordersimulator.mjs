@@ -21,7 +21,8 @@ function init()
     if(!initialized) {
         const mymodes = services.getModesForService(logical_trade_name, 'trade');
         myviewbuddies = mymodes.map((m) => {
-            return services.getService('view', m);
+            const s = services.getService('view', m);
+            s.registerPriceFeed();
         });
         initialized = true;
         return {status:'success'}

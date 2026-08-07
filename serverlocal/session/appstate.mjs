@@ -1,7 +1,6 @@
-import { EventEmitter } from 'node:events';
 import {OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG} from '../../common/constants.mjs';
 import utils from '../../common/utils.mjs';
-
+import { eventservice } from '../service/eventservice.mjs';
 export const socketmap = new Map();
 export const uwsmap = new Map();
 export const us = new Map();
@@ -60,11 +59,8 @@ export class Subscriptions {
 
     addNewSubscriptions(appid, session) {
         let subs = this.getSubscriptions(appid);
-        if(subs !== undefined) {
-            subs.optionChainAction(session.oExpiries[0], 'start');
-        }
-        else {
-            subs = new SubsTemplate(session);
+        if(subs === undefined) {
+            subs = new SubsTemplate(appid, session);
             this.subs_map.set(appid, subs);
         }        
         return subs;
@@ -88,11 +84,11 @@ export class Subscriptions {
     }
 }
 
-export class SubsTemplate extends EventEmitter
+export class SubsTemplate
 {
-    constructor(session)
+    constructor(appid, session)
     {
-        super();
+        this.appid = appid;
         this.stockCode = session.stockCode;
         this.exchange = session.exchange;
         this.atm_check_counter = 0;
@@ -144,14 +140,16 @@ export class SubsTemplate extends EventEmitter
         {
             if(ost.toStream === false && ['start', 'toggle'].includes(action)){
                 ost.toStream = true;
-                const strikes = this.buildOptionChain({ ltp: this.atm }, expiry);
-                return {action: 'subs', strikes: strikes};
-                //this.emit('subs', strikes);
+                if(this.atm !== 0) {
+                    const strikes = this.buildOptionChain({ ltp: this.atm }, expiry);
+                    return { action: 'subs', strikes: strikes };
+                    //eventservice.emit('subscription', this.appid, strikes, 'subs');
+                }
             } 
             else if (ost.toStream === true && action === 'toggle') {
                 ost.toStream = false;
                 return { action: 'unsub', strikes: ost.strikes }
-                //this.emit('unsub', ost.strikes);
+                //eventservice.emit('subscription', this.appid, ost.strikes, 'unsub');
             }
         }
     }
@@ -197,21 +195,22 @@ export class SubsTemplate extends EventEmitter
         //toStream
     }
 
-    getNotified(type, uq)
+    getNotified(uq)
     {
         const sz = STRIKE_SIZE[this.stockCode];
-        if(this.atm_check_counter === 0) {
-            this.emit('ATMChange', uq);
-            this.atm = Math.round(uq.ltp / sz) * sz;
-        }
-        else if(this.atm_check_counter === 10) {
+        this.atm_check_counter++;
+        
+        if (this.atm_check_counter === 15) {
             this.atm_check_counter = 1;
-            if (type === 'index' && Math.abs(this.atm - uq.ltp) > sz) {
-                this.emit('ATMChange', uq);
+            if (Math.abs(this.atm - uq.ltp) > sz) {
                 this.atm = Math.round(uq.ltp / sz) * sz;
+                return { load: true, uq: uq }
             }
         }
-        this.atm_check_counter++;
+        else if(this.atm_check_counter === 0) {
+            this.atm = Math.round(uq.ltp / sz) * sz;
+            return { load: true, uq: uq };
+        }
     }
 }
 
