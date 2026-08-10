@@ -16,12 +16,18 @@
   "dependencies": {
     "@msgpack/msgpack": "^3.1.3",
     "@napi-rs/keyring": "^1.3.0",
+    "axios": "^1.19.0",
+    "breezeconnect": "^1.0.31",
+    "console-stamp": "^3.1.2",
+    "csv-parser": "^3.2.1",
     "date-fns": "^4.4.0",
-    "fyers-api-v3": "^2.0.0",
+    "fyers-api-v3": "^2.1.0",
     "open": "^11.0.0",
     "openalgo": "^1.1.0",
     "pako": "^3.0.1",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.69.0",
+    "ws": "^8.21.3"
   },
   "hotHook": {
     "boundaries": [
@@ -29,5 +35,15 @@
       "./srvr/breezeclient.mjs",
       "./serverlocal/session/appstate.mjs"
     ]
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amitgupta108/tradingplatform.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/amitgupta108/tradingplatform/issues"
+  },
+  "homepage": "https://github.com/amitgupta108/tradingplatform#readme"
 }
