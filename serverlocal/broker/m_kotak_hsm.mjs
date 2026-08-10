@@ -151,9 +151,10 @@ function onQuotes(q)
                 qutils.sendQsToSim(view_mode, qt);
         });
     }
-
-    function registerPriceFeed(){
-        simpricefeed = true;
-    }
 }
+
+function registerPriceFeed() {
+    simpricefeed = true;
+}
+
 export default {init, subscribe, snapshot, startv2, option_chain, registerPriceFeed, name}
