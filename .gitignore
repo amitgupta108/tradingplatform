@@ -6,6 +6,7 @@ node_modules
 *.txt
 *.log
 serverapps/config/
+serverapps/certs/
 serverlocal/config
 serverlocal/.env
 */.DS_Store
