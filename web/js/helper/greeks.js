@@ -17,8 +17,8 @@ function addIVNDelta(q, uq)
         const flag = q.right === 'CE' ? 'c' : 'p';
 
         try{
-            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.01, flag);
-            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.01, iv);   
+            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.07, flag);
+            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.07, iv);   
         
             q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;
