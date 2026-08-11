@@ -91,7 +91,7 @@ export class SubsTemplate
         this.appid = appid;
         this.stockCode = session.stockCode;
         this.exchange = session.exchange;
-        this.atm_check_counter = 0;
+        this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [
             { key: 'index', stockCode: this.stockCode, toStream: true },

@@ -1,5 +1,4 @@
-
-import http from 'node:http';
+import https from 'node:https';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path'; 
@@ -16,16 +15,17 @@ const mimeTypes = {
     '.json': 'application/json',
     '.png': 'image/png'
 };
-/*
 const options = {
-    key: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.key'), 'utf8'),
-    cert: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.crt'), 'utf8'),
+    key: fs.readFileSync(path.resolve(import.meta.dirname, process.env.ssl_key)),
+    cert: fs.readFileSync(path.resolve(import.meta.dirname, process.env.ssl_cert)),
+    minVersion: 'TLSv1.2',
+    maxVersion: 'TLSv1.3'
 };
-*/
-export const httpServer = http.createServer({}, (req, res) => {
+
+export const httpsServer = https.createServer(options, (req, res) => {
     
     // Prevent directory traversal attacks
-    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const parsedUrl = new URL(req.url, `https://${req.headers.host}`);
     let pathname = parsedUrl.pathname; 
 
     if(pathname.startsWith('/redirect'))
