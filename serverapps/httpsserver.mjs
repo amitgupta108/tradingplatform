@@ -1,4 +1,5 @@
 import https from 'node:https';
+import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path'; 
@@ -22,17 +23,20 @@ const options = {
     maxVersion: 'TLSv1.3'
 };
 
-export const httpsServer = https.createServer(options, (req, res) => {
-    
+export const httpServer = http.createServer({}, handleRequests);
+export const httpsServer = https.createServer(options, handleRequests);
+
+function handleRequests(req, res) {
+
     // Prevent directory traversal attacks
     const parsedUrl = new URL(req.url, `https://${req.headers.host}`);
-    let pathname = parsedUrl.pathname; 
+    let pathname = parsedUrl.pathname;
 
-    if(pathname.startsWith('/redirect'))
+    if (pathname.startsWith('/redirect'))
         handleAuthReq(parsedUrl, res)
-    else 
+    else
         handleStaticReq(parsedUrl, res);
-});
+}
 
 function handleStaticReq(parsedUrl, res)
 {
