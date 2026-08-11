@@ -95,7 +95,13 @@ function auth(action)
 
 function showChart() {
   switchCharts(1);
-  const rows = oc_container.querySelectorAll('tr.row_background');
+  let container;
+  if(c_oc_container.classList.contains('active'))
+    container = c_oc_container;
+  else
+    container = n_oc_container;
+
+  const rows = container.querySelectorAll('tr.row_background');
   if (rows.length === 0)
     return;
   const symbols = Array.from(rows).map((r) => r.title);

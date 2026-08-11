@@ -6,7 +6,7 @@ class OptionChain
   atm = 0;
   row_map = new Map();
   u_price = 0;
-  OTMRange = { high: 7, low: 1 };
+  OTMRange = { high: 6, low: 0 };
 
   constructor(expiry, v_oc_id)
   {
