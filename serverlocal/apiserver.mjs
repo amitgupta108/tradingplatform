@@ -16,7 +16,7 @@ function registerDataRequests(s, appid,  mode)
             market_service.clientConfigure(appid, msg.simStartTime, '1x');
         
         market_service.startv2(appid, msg);
-        util_service.subscribe_vix(appid, mode, 'subs');
+        //util_service.subscribe_vix(appid, mode, 'subs');
     });
 
     s.on('history', catchAsync(async (requests) => {

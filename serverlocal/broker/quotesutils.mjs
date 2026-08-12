@@ -8,24 +8,6 @@ import { parse } from 'date-fns';
 const pattern = "dd/MM/yyyy HH:mm:ss";
 const symbol_cache = new Map();
 
-/*
-function atmRefresh(provider, appid, uq) 
-{    
-    const provider_subs = subs_store_all[provider]; 
-    const t = provider_subs.getSubscriptions(appid);
-    const atm = t.getPreviousATM('FIRST');
-
-    if (Math.abs(atm - uq.ltp) > STRIKE_SIZE[uq.stockCode])
-    {
-        const osts = t.getActiveOptionChains();
-        osts.forEach((ost) => {
-            t.buildOptionChain(uq, ost);
-        });
-        return {rebuild: true, list: osts}
-    }  
-    return {rebuild: false, list: []};
-}
-*/
 function completeQ(q)
 {
     q.close = q.ltp;
@@ -94,12 +76,17 @@ function standardizeoq(quote)
 
 function standardizekq(quote, min)
 {
-    if (quote.ltp !== undefined) {
-        const key = min ? 'k_m' + quote.tk : quote.tk;
-        const qt = state_qutils.quote_cache.get(key);
-        if(qt !== undefined)
-        {
+    const key = min ? 'k_m' + quote.tk : quote.tk;
+    const qt = state_qutils.quote_cache.get(key);
+    if (qt !== undefined) {
+        if (quote.name === 'sf' && quote.ltp !== undefined) {
             qt.ltp = Number(quote.ltp);
+            qt.ltt = quote.m1 - qt.offset;
+            qt.m1 = quote.m1;
+            return qt;
+        }
+        else if(quote.name === 'if' && quote.iv !== undefined) {
+            qt.ltp = Number(quote.iv);
             qt.ltt = quote.m1 - qt.offset;
             qt.m1 = quote.m1;
             return qt;
@@ -112,16 +99,29 @@ function toScrip(snapshot)
     const qt = state_qutils.quote_cache.get(snapshot.tk);
     if (qt === undefined)
     {
-        const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
-        const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = snapshot;
-        const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
+        if(snapshot.name === 'sf') {
+            const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
+            const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = snapshot;
+            const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
 
-        qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
-        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
-        qt.symbol = sym.replaceAll('.00', '');
-        qt.offset = offset;
-        qt.min = false;
-        state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
+            qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+            const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+            qt.symbol = sym.replaceAll('.00', '');
+            qt.offset = offset;
+            qt.min = false;
+            state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
+        }
+        else if (snapshot.name === 'if') {
+            const offset = Date.now() - parse(snapshot.tvalue, pattern, new Date()).getTime();
+            const { tk: token, e: exchange, iv: ltp_feedstart, ic: close_ystrd, tvalue: ltt, ...rest } = snapshot;
+            const qt = { token, exchange, ltp_feedstart, close_ystrd, ltt };
+
+            qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
+            qt.symbol = snapshot.tk;
+            qt.offset = offset;
+            qt.min = false;
+            state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
+        }
     }
     //return state_qutils.quote_cache.get(snapshot.tk);
 }
