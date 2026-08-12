@@ -234,7 +234,7 @@ class Chart
     for(const s of symbols){
       const p = historyParams();
       const scrip = expandSymbol(s);
-      p.expiry = scrip.expiry_date;
+      p.oExpiry = scrip.expiry_date;
       p.strike = scrip.strike_price;
       p.right = scrip.right;
       p.key = 'strikex';
