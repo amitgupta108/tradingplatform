@@ -7,7 +7,8 @@ const optionChains = new Array(0);
 const sOrderSubmit =  new Audio('./ordersubmit.wav');
 let data_reload = false;
 
-const oc_container = document.getElementById('c_oc_div');
+const c_oc_container = document.getElementById('c_oc_div');
+const n_oc_container = document.getElementById('n_oc_div');
 const oWindow = document.getElementById('orderwindow');
 const orderlistDiv = document.getElementById('order-list');
 const order_list_tbody = document.getElementById('order-list-tbody');
@@ -84,6 +85,7 @@ qBox.addEventListener('futures', (event) => {
 */
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
+  futures_ltp = q;
   const ltp = Number(q.ltp).toFixed(2);
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
@@ -92,7 +94,6 @@ qBox.addEventListener('index', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
-  futures_ltp = q;
   fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
   spot_label.textContent = fut_title + spot_title;

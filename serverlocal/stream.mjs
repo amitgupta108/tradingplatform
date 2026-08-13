@@ -66,7 +66,7 @@ function broadcast(type, msg, group)
 {
     for (const appid of socketmap.keys()) {
         var app_obj = socketmap.get(appid);
-        if (app_obj && (type === 'hb' || (type === 'vix' && app_obj.mode.startsWith('S'))))
+        if (app_obj && (type === 'hb' || (type === 'vix' && app_obj.mode !== 'HISTORY')))
             emit(app_obj.socket, type, msg);
     }
 }

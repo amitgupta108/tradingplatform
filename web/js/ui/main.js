@@ -2,7 +2,7 @@ function emit(event, arg1, arg2) {
   socket.emit(event, arg1, arg2);
 }
 
-function historyParams(expiry)
+function historyParams()
 {
   const endTime = instrument.simStartTime ?? Date.now();
   const startTime = endTime - 3 * 24 * 60 * 60 * 1000; // 3 days back
@@ -14,7 +14,6 @@ function historyParams(expiry)
     endTime: endTime - 1000,
     interval: '5minute'
   }
-  p[expiry] = expiry === 'fExpiry'? instrument[expiry] : instrument['oExpiries'][0];
   return p;
 }
 
@@ -24,7 +23,9 @@ function loadPreData()
 
   const requests = new Array();
   keys.forEach((k) => {
-    const p = historyParams('fExpiry');
+    const p = historyParams();
+    if(k === 'futures')
+      p.fExpiry = instrument.fExpiry;
     p.key = k;
     requests.push(p);
   });
@@ -95,7 +96,13 @@ function auth(action)
 
 function showChart() {
   switchCharts(1);
-  const rows = oc_container.querySelectorAll('tr.row_background');
+  let container;
+  if(c_oc_container.classList.contains('active'))
+    container = c_oc_container;
+  else
+    container = n_oc_container;
+
+  const rows = container.querySelectorAll('tr.row_background');
   if (rows.length === 0)
     return;
   const symbols = Array.from(rows).map((r) => r.title);
