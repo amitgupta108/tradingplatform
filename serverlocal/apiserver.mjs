@@ -2,6 +2,7 @@ import util_service from './broker/m_common.mjs';
 import Session from './session/session.mjs';
 import services from './service/services.mjs';
 import { socketmap } from './session/appstate.mjs';
+import { eventservice } from './service/eventservice.mjs';
 
 function registerDataRequests(s, appid,  mode)
 {
@@ -100,8 +101,15 @@ function registerAdminRequests(s, appid, mode)
 
     if (profile['admin'] === 'BROKER_AUTH')
     {    
-        s.on('authenticate', catchAsync((provider) => {
-            return admin_service.authenticate(provider);
+        s.on('authenticate', catchAsync((text) => {
+            if(text.length === 8)
+                eventservice.emit('ext_auth', { 
+                    date: new Date().toDateString(),
+                    provider: 'icici',
+                    authcode: text
+                });
+            else 
+                admin_service.authenticate(text);
         }, 'authenticate'));
     }
 
