@@ -232,8 +232,9 @@ class Chart
   {
     const requests = new Array();
     for(const s of symbols){
-      const p = historyParams('oExpiry');
+      const p = historyParams();
       const scrip = expandSymbol(s);
+      p.oExpiry = scrip.expiry_date;
       p.strike = scrip.strike_price;
       p.right = scrip.right;
       p.key = 'strikex';

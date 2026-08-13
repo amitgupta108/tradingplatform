@@ -1,4 +1,4 @@
-
+import https from 'node:https';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
@@ -16,23 +16,27 @@ const mimeTypes = {
     '.json': 'application/json',
     '.png': 'image/png'
 };
-/*
 const options = {
-    key: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.key'), 'utf8'),
-    cert: fs.readFileSync(path.join(__dirname, '..', 'serverlocal', 'config', 'server.crt'), 'utf8'),
+    key: fs.readFileSync(path.resolve(import.meta.dirname, process.env.ssl_key)),
+    cert: fs.readFileSync(path.resolve(import.meta.dirname, process.env.ssl_cert)),
+    minVersion: 'TLSv1.2',
+    maxVersion: 'TLSv1.3'
 };
-*/
-export const httpServer = http.createServer({}, (req, res) => {
-    
-    // Prevent directory traversal attacks
-    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-    let pathname = parsedUrl.pathname; 
 
-    if(pathname.startsWith('/redirect'))
+export const httpServer = http.createServer({}, handleRequests);
+export const httpsServer = https.createServer(options, handleRequests);
+
+function handleRequests(req, res) {
+
+    // Prevent directory traversal attacks
+    const parsedUrl = new URL(req.url, `https://${req.headers.host}`);
+    let pathname = parsedUrl.pathname;
+
+    if (pathname.startsWith('/redirect'))
         handleAuthReq(parsedUrl, res)
-    else 
+    else
         handleStaticReq(parsedUrl, res);
-});
+}
 
 function handleStaticReq(parsedUrl, res)
 {

@@ -6,7 +6,6 @@ import services from '../service/services.mjs';
 import socketclient from '../service/socketclient.mjs';
 import { HSMClient } from '../../dist/marketdatafeed/websocket/HSMClient.js'
 import { Subscriptions } from '../session/appstate.mjs';
-import quotesutils from './quotesutils.mjs';
 
 const myviewname = 'KOTAKHSMVIEW';
 const name = myviewname;
@@ -59,11 +58,14 @@ function startv2(appid, p)
     subscribe(appid, requests, 'subs');
     
     if(stock_subs.atm !== 0) {
-        const strikesset = stock_subs.reloadStrikes({ ltp: this.atm });
+        const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });
         strikesset.forEach((s) => {
             subscribe(appid, s, 'subs');
         });
     }
+
+    if(p.exchange !== 'MCX')
+        client.subscribeIndicies('nse_cm|INDIA VIX');
 }
 
 function testSubs()
@@ -117,8 +119,8 @@ function snapshot(list) {
 
 function onSnapshot(response)
 {
-    quotesutils.toScrip(response);
-    quotesutils.toScripMin(response);
+    qutils.toScrip(response);
+    //qutils.toScripMin(response);
     //console.log('snapshot response ' + JSON.stringify(response));
     //const qt = quotesutils.toScrip(response);
 }
@@ -141,15 +143,21 @@ function onQuotes(q)
     const qt = qutils.standardize(myviewname, q, false);
     if (qt !== undefined)
     {   
-        const l_appid = qt.stockCode + view_mode;
-        streamer.emitQs(l_appid, qt);
+        if(qt.stockCode === 'INDIA VIX') {
+            qt.ltp = qt.ltp / 100;
+            streamer.broadcast('vix', qt, 'all_nse_live')
+        }
+        else {
+            const l_appid = qt.stockCode + view_mode;
+            streamer.emitQs(l_appid, qt);
 
-        setImmediate(() => {
-            if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures')) 
-                atmReview(qt);
-            else if (simpricefeed && qt.key === 'strikex')
-                qutils.sendQsToSim(view_mode, qt);
-        });
+            setImmediate(() => {
+                if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures')) 
+                    atmReview(qt);
+                else if (simpricefeed && qt.key === 'strikex')
+                    qutils.sendQsToSim(view_mode, qt);
+            });
+        }
     }
 }
 
