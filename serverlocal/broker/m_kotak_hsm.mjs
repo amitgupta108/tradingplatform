@@ -145,6 +145,7 @@ function onQuotes(q)
     {   
         if(qt.stockCode === 'INDIA VIX') {
             qt.ltp = qt.ltp / 100;
+            qt.key = 'vix';
             streamer.broadcast('vix', qt, 'all_nse_live')
         }
         else {
