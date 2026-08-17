@@ -52,7 +52,7 @@ class OptionChain
   {
     for(var i = 0; i < 2; i++) 
     {
-      var key = i === 0 ? ce_strike + 'CE' : pe_strike + 'PE';
+      const key = i === 0 ? ce_strike + 'CE' : pe_strike + 'PE';
       if(this.row_map.get(key) === undefined)
       {
         const tr = tRow(t_option_chain_row);
@@ -66,8 +66,7 @@ class OptionChain
         else
           tbl.prepend(tr);
 
-        if(this.row_map.get(key) === undefined)
-          this.row_map.set(key, {row: tr});
+        this.row_map.set(key, {row: tr});
       }
     }
   }
@@ -107,7 +106,7 @@ class OptionChain
 
   markPosition(scrip, psize)
   {
-    const key = ((scrip.strike_price - this.atm) / this.interval) + scrip.right;
+    const key = scrip.strike_price + scrip.right;
     const r = this.row_map.get(key);
     
     if (r !== undefined) 
