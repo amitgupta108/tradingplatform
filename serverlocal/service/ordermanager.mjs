@@ -77,10 +77,10 @@ function formatLiveOrder(order)
 {
     var {nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol, 
             expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
-        qty: quantity, prcTp: pricetype, ordSrc: source, ordDtTm, updRecvTm , boeSec, exCfmTm, ...rest} = order;
+        qty: quantity, prcTp: pricetype, ordSrc: source, ...rest} = order;
 
     var fOrder = {orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
-        filled_q, unfilled_q, quantity, pricetype, source, ordDtTm, updRecvTm, boeSec, exCfmTm};
+        filled_q, unfilled_q, quantity, pricetype, source};
     
     if(fOrder.state === 'open') {
         fOrder.state = 'opened';
@@ -99,4 +99,26 @@ function formatLiveOrder(order)
     return fOrder;
 }
 
-export default { notifyme, neworders, formatLiveOrder };
+function formatPositionRecords(positions, stockCode)
+{
+    return positions.filter((p) => 
+        (Number(p.cfBuyQty) > 0 || Number(p.cfSellQty) > 0) && stockCode === p.sym)
+        .map((fp) => {
+            fp.expiry_date = fp.expDt.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
+            fp.strike_price = fp.stkPrc.replace('.00', '');
+            fp.symbol = fp.sym + fp.expiry_date + fp.strike_price + fp.optTp;
+            fp.cfBuyAmt = Number(fp.cfBuyAmt); fp.cfSellAmt= Number(fp.cfSellAmt);
+            fp.cfBuyQty = Number(fp.cfBuyQty); fp.cfSellQty = Number(fp.cfSellQty);
+            fp.pricedAt = fp.cfBuyAmt !== 0 ? fp.cfBuyAmt / fp.cfBuyQty : fp.cfSellAmt / fp.cfSellQty;
+            fp.filled_q = fp.cfBuyQty !== 0 ? fp.cfBuyQty : fp.cfSellQty;
+            fp.action = fp.cfBuyQty > 0 ? 'BUY' : 'SELL';
+            fp.pricetype = 'MARKET';
+            fp.state = 'completed';
+            fp.orderid = -1;
+
+            const { tok: token, sym: stockCode, symbol, pricedAt, filled_q, pricetype, action, state, orderid, ...rest} = fp;
+            
+            return {token, stockCode, symbol, pricedAt, filled_q, pricetype, action, state, orderid};
+        });
+}
+export default { notifyme, neworders, formatLiveOrder, formatPositionRecords };

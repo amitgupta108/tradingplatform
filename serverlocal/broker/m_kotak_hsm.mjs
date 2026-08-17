@@ -119,10 +119,12 @@ function snapshot(list) {
 
 function onSnapshot(response)
 {
-    qutils.toScrip(response);
-    //qutils.toScripMin(response);
-    //console.log('snapshot response ' + JSON.stringify(response));
-    //const qt = quotesutils.toScrip(response);
+    const qt = qutils.toScrip(response);
+    const l_appid = qt.stockCode + view_mode;
+    streamer.emitQs(l_appid, qt);
+
+    if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
+        atmReview(qt);
 }
 
 function atmReview(qt) 

@@ -61,17 +61,6 @@ function submitOrder(clickedBtn)
   hideOWin();
 }
 
-function loadOrders(orders)
-{
-  orders.forEach((order) => {
-    if(expandSymbol(order.symbol).stockCode === instrument.stockCode)
-    {
-      var p = Position.findPosition(order.symbol, true);
-      p.orderupdate(order, true);
-    }
-  });
-}
-
 function displayOrderList(btn, parent)
 {
   const symbol = parent.title;
