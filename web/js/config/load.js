@@ -85,7 +85,6 @@ qBox.addEventListener('futures', (event) => {
 */
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
-  futures_ltp = q;
   const ltp = Number(q.ltp).toFixed(2);
   spot_title = ' | S: ' + ltp;
   document.title = fut_title + spot_title;
@@ -94,6 +93,7 @@ qBox.addEventListener('index', (event) => {
 
 qBox.addEventListener('futures', (event) => {
   const q = event.detail;
+  futures_ltp = q;
   fut_title = 'F: ' + Number(q.ltp).toFixed(2);
   document.title = fut_title + spot_title;
   spot_label.textContent = fut_title + spot_title;

@@ -100,30 +100,32 @@ function toScrip(snapshot)
     if (qt === undefined)
     {
         if(snapshot.name === 'sf') {
-            const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
-            const { tk: token, e: exchange, ts: symbol, ltp: ltp_feedstart, c: close_ystrd, fdtm, ltt, ...rest } = snapshot;
-            const qt = { token, exchange, symbol, ltp_feedstart, close_ystrd, fdtm, ltt};
+            const fdtm = parse(snapshot.fdtm, pattern, new Date()).getTime();
+            const { tk: token, e: exchange, ts: symbol, ltp: ltp, c: close_ystrd, ...rest } = snapshot;
+            const qt = { token, exchange, symbol, ltp, close_ystrd};
 
             qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
             qt.symbol = sym.replaceAll('.00', '');
-            qt.offset = offset;
+            qt.ltt = fdtm;
+            qt.offset = Date.now() - fdtm;
             qt.min = false;
             state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
         }
         else if (snapshot.name === 'if') {
-            const offset = Date.now() - parse(snapshot.tvalue, pattern, new Date()).getTime();
-            const { tk: token, e: exchange, iv: ltp_feedstart, ic: close_ystrd, tvalue: ltt, ...rest } = snapshot;
-            const qt = { token, exchange, ltp_feedstart, close_ystrd, ltt };
+            const tvalue = parse(snapshot.tvalue, pattern, new Date()).getTime();
+            const { tk: token, e: exchange, iv: ltp, ic: close_ystrd, ...rest } = snapshot;
+            const qt = { token, exchange, ltp, close_ystrd};
 
             qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             qt.symbol = snapshot.tk;
-            qt.offset = offset;
+            qt.ltt = tvalue;
+            qt.offset = Date.now() - tvalue;
             qt.min = false;
             state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
         }
     }
-    //return state_qutils.quote_cache.get(snapshot.tk);
+    return state_qutils.quote_cache.get(snapshot.tk);
 }
 
 function toScripMin(snapshot) {
@@ -133,7 +135,6 @@ function toScripMin(snapshot) {
         const { tk, e, ts, ...rest } = snapshot;
         const qt = { tk, e};
         
-        //qt.e = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
         const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
         qt.ts = sym.replaceAll('.00', '');
         qt.key = sym.endsWith('FUT') ? 'futures' : sym.endsWith('PE') || sym.endsWith('CE') ? 'strikex' : 'index';
@@ -141,7 +142,7 @@ function toScripMin(snapshot) {
         qt.min = true;
         state_qutils.quote_cache.set('k_m' + snapshot.tk, qt);
     }
-    //return state_qutils.quote_cache.get('k_m' + snapshot.tk);
+    return state_qutils.quote_cache.get('k_m' + snapshot.tk);
 }
 
 function sendQsToSim(view_mode, q)
