@@ -1,7 +1,7 @@
 .vscode
 ._vscode
 .DS_Store
-web/lib/js_vollib/
+web/lib/
 node_modules
 *.txt
 *.log
@@ -10,3 +10,5 @@ serverapps/certs/
 serverlocal/config
 serverlocal/.env
 */.DS_Store
+dist/*_*
+.github
