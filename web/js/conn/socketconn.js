@@ -3,13 +3,13 @@ let socket;
 function connect()
 {
   socket = io(`${window.location.origin}`, {
-    auth: {
-      token: instrument.appid,
-      mode: instrument.mode,
-      stockCode: instrument.stockCode
-    },
-    reconnection: false,
-    timeout: 10000
+	auth: {
+	  token: instrument.appid,
+	  mode: instrument.mode,
+	  stockCode: instrument.stockCode
+	},
+	reconnection: false,
+	timeout: 10000
   });
 
   rh(socket);
@@ -19,108 +19,125 @@ function connect()
 function rh(socket)
 {  
   try{
-    socket.on("connect", () => {
-      console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
-      data_reload = false;
-      bottom_btns[0].disabled = true;
-      bottom_btns[1].disabled = false;
-      bottom_btns[3].disabled = false;
-      bottom_btns[4].disabled = false;
-      bottom_btns[5].disabled = false;
+	socket.on("connect", () => {
+	  console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
+	  data_reload = false;
+	  bottom_btns[0].disabled = true;
+	  bottom_btns[1].disabled = false;
+	  bottom_btns[3].disabled = false;
+	  bottom_btns[4].disabled = false;
+	  bottom_btns[5].disabled = false;
 
-      if(instrument.mode === 'HISTORY')
-        document.getElementById('optionSpeed').disabled = false;
-    });
+	  if(instrument.mode === 'HISTORY')
+		document.getElementById('optionSpeed').disabled = false;
+	});
 
-    socket.on("connect_error", (error) => {
-      console.log('connection error for appid' + socket.id + '-' + instrument.appid + '-' + error.message);
-      if (socket.active) {
-        console.log('connection error reconnection to be tried ' + socket.id);
-      } else {
-        // the connection was denied by the server
-        // in that case, `socket.connect()` must be manually called in order to reconnect
-        console.log('No reconnection ' + error.message);
-      }
-    });
+	socket.on("connect_error", (error) => {
+	  console.log('connection error for appid' + socket.id + '-' + instrument.appid + '-' + error.message);
+	  if (socket.active) {
+		console.log('connection error reconnection to be tried ' + socket.id);
+	  } else {
+		// the connection was denied by the server
+		// in that case, `socket.connect()` must be manually called in order to reconnect
+		console.log('No reconnection ' + error.message);
+	  }
+	});
 
-    socket.on("disconnect", (reason) => {
-      bottom_btns[0].disabled = false;
-      console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
-    });
-    
-    socket.on('history', (data) => {
-      if(data.key === 'strikex')
-        options_chart.renderHistory(data.qA);
-      else 
-        setInitialChart(data.key, data.qA);
-    });
+	socket.on("disconnect", (reason) => {
+	  bottom_btns[0].disabled = false;
+	  console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
+	});
+	
+	socket.on('history', (data) => {
+	  if(data.key === 'strikex')
+		options_chart.renderHistory(data.qA);
+	  else 
+		setInitialChart(data.key, data.qA);
+	});
   
-    socket.on('index', (q) => {
-      qBox.dispatchEvent('index', q);
-    });
-    
-    socket.on('vix', (q) => {
-      qBox.dispatchEvent('vix', q);
-    });
+	socket.on('index', (q) => {
+	  qBox.dispatchEvent('index', q);
+	});
+	
+	socket.on('vix', (q) => {
+	  qBox.dispatchEvent('vix', q);
+	});
 
-    socket.on('futures', (q) => {    
-      qBox.dispatchEvent('futures', q);
-      if(q.exchange === 'MCX')
-        qBox.dispatchEvent('index', q);      
-    });
+	socket.on('futures', (q) => {    
+	  qBox.dispatchEvent('futures', q);
+	  if(q.exchange === 'MCX')
+		qBox.dispatchEvent('index', q);      
+	});
 
-    socket.on('strikex', (q) => {
-        qBox.dispatchEvent('strikex', q);
-    });
+	socket.on('strikex', (q) => {
+		qBox.dispatchEvent('strikex', q);
+	});
 
-    socket.on('stream', (response) => {
-      if(response === 'paused')
-        document.getElementById('btnStopSim').innerText = 'Resume';
-      else if(response === 'resumed')
-        document.getElementById('btnStopSim').innerText = 'Stop';
-      else if (response === 'started') {
-        bottom_btns[2].disabled = false;
-        bottom_btns[5].disabled = false;
-      }    
-    });
+	socket.on('stream', (response) => {
+	  if(response === 'paused')
+		document.getElementById('btnStopSim').innerText = 'Resume';
+	  else if(response === 'resumed')
+		document.getElementById('btnStopSim').innerText = 'Stop';
+	  else if (response === 'started') {
+		bottom_btns[2].disabled = false;
+		bottom_btns[5].disabled = false;
+	  }    
+	});
 
-    socket.on('exit', (response) => {
-      bottom_btns.forEach((btn, i) => {
-          btn.disabled = i === 0 ? false : true;
-      });
-      window.location.reload();
-    });
+	socket.on('exit', (response) => {
+	  bottom_btns.forEach((btn, i) => {
+		  btn.disabled = i === 0 ? false : true;
+	  });
+	  window.location.reload();
+	});
 
-    socket.on('orderbook', (response) => {
-      loadOrders(response);
-    });
+	socket.on('order', (exorder) => {
+	  	if (exorder.appid !== instrument.appid)
+			return;
 
-    socket.on('positions', (response) => {
-      console.log('positions # ' + response.length);
-    });
+	  	const p = Position.findPosition(exorder.symbol, true);
+	  	p.orders.set(exorder.orderid, exorder);
+		if(exorder.stated === 'opened')
+	  		p.openOrderUpdate(exorder);
+	});
 
-    socket.on('order', (exorder) => {
-      if(exorder.appid !== instrument.appid)
-        return;
-      
-      var p = Position.findPosition(exorder.symbol, true);
-      p.orderupdate(exorder, false);
-    });
+	socket.on('orderbook', (orders) => {
+	  	orders.forEach((order) => {
+			if (expandSymbol(order.symbol).stockCode === instrument.stockCode) 
+			{
+		  		const p = Position.findPosition(order.symbol, true);
+		  		p.orders.set(order.orderid, order);
+			}
+	  	});
 
-    socket.on('hb', (resp) => {
-      if(resp?.order_socket === 1)
-        socn.style.backgroundColor = '#4CAF50';
-      else
-        socn.style.backgroundColor = '#f44336';
-    });
+		positions.values().forEach((p) => {
+			p.positionUpdate();
+		});
+	});
 
-    socket.on('wsOps', (action, resp) => {
-      if(action === 'open' && resp.status === 'success')
-        socn.style.backgroundColor = '#4CAF50';
-      else if(action === 'close' && resp.status === 'success')
-        socn.style.backgroundColor = 'white';
-    });
+	socket.on('positions', (positions) => {
+	  
+		console.log('open positions: ' + JSON.stringify(positions));
+		positions.forEach((pos) => {
+			const p = Position.findPosition(pos.symbol, true);
+			p.openPosUpdate(pos);
+		});
+	});
+
+	socket.on('hb', (resp) => {
+	  if(resp?.order_socket === 1)
+		socn.style.backgroundColor = '#4CAF50';
+	  else
+		socn.style.backgroundColor = '#f44336';
+	});
+
+	socket.on('wsOps', (action, resp) => {
+	  if(action === 'open' && resp.status === 'success')
+		socn.style.backgroundColor = '#4CAF50';
+	  else if(action === 'close' && resp.status === 'success')
+		socn.style.backgroundColor = 'white';
+	});
   } catch(error){
-    console.log(error);
+	console.log(error);
   }
 }

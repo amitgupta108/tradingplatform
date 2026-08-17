@@ -19,10 +19,10 @@ class Position
   {
     this.symbol = symbol;
     positions.set(symbol, this);
-    this.ini(symbol, false);
+    this.ini(symbol);
   }
 
-  ini(symbol, recovery)
+  ini(symbol)
   {
     this.#pRow = tRow(t_position_table_row);
     this.#pRow.title = symbol;
@@ -42,23 +42,38 @@ class Position
     return Number(node.innerText);
   }
 
-  orderupdate(exorder, recovery)
+  openOrderUpdate(exorder)
   {
-    this.orders.set(exorder.orderid, exorder);
-    if(exorder.state !== 'opened')
-      this.positionUpdate(exorder);
-    
-    var opencount = Array.from(this.orders.values()).filter((o) => o.state === 'opened').length;
-    var label = this.#pRow.querySelector('#orderdisplay-btn');
-    label.innerText = (opencount === 0 ? 'N' : opencount);
-    label.style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');
+      var opencount = Array.from(this.orders.values()).filter((o) => o.state === 'opened').length;
+      var label = this.#pRow.querySelector('#orderdisplay-btn');
+      label.innerText = (opencount === 0 ? 'N' : opencount);
+      label.style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');
   }
   
-  positionUpdate(lastorder) 
+  openPosUpdate(p) {
+
+    const abp = (p.cfbq === 0 ? 0 : p.cfbv / p.cfbq);
+    const asp = (p.cfsq === 0 ? 0 : p.cfsv / p.cfsq);
+
+    const action = p.cfsq !== 0 ? 'S' : 'B';
+    const quantity = Math.abs(p.cfbq - p.cfsq);
+    const order = new Order(p.symbol, action, quantity);
+    order.orderid = -1;
+    order.filled_q = Math.abs(p.cfbq - p.cfsq);
+    order.pricetype = 'M';
+    order.pricedAt = asp !== 0 ? asp : abp;
+    order.state = 'completed';
+
+    this.orders.set(order.orderid, order);
+    this.psize = p.cfbq - p.cfsq;
+    this.pnlUpdate(abp, asp, order.pricedAt);
+  }
+
+  positionUpdate() 
   {  
-    var buyq = 0; var sellq = 0;
-    var buyv = 0; var sellv = 0;
-    
+    let buyq = 0; let sellq = 0;
+    let buyv = 0; let sellv = 0;
+    let ltp;
     for (const o of this.orders.values()) {
       if(['complete', 'completed'].includes(o.state))
       {
@@ -72,14 +87,14 @@ class Position
           sellq += Number(o.filled_q);
           sellv += Number(o.filled_q) * Number(o.pricedAt);
         }
+        ltp = Number(o.pricedAt);
       }
     }
 
-    var abp = (buyq === 0 ? 0 : buyv / buyq);
-    var asp = (sellq === 0 ? 0 : sellv / sellq);
+    const abp = (buyq === 0 ? 0 : buyv / buyq);
+    const asp = (sellq === 0 ? 0 : sellv / sellq);
     this.booked.qty = Math.min(buyq, sellq);
     this.psize = buyq - sellq;
-    var ltp = Number(lastorder.pricedAt);
 
     this.pnlUpdate(abp, asp, ltp)
 

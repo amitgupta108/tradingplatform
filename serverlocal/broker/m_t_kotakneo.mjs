@@ -112,36 +112,41 @@ async function cancelorder(appid, order) {
     return { stat: 'NOT_OK', emsg: response.errMsg };
 }
 
-async function orderbook(appid, stockCode) {
+async function orderbook(appid, stockCode) 
+{
     const response = await get('orderbook');
+    let orders;
     if (response.ok) {
         const order_json = (await response.json());
-        const orders = order_json.data;
 
-        if(orders.stat !== 'Not_Ok')
+        if (order_json.stat !== 'Not_Ok') {
+            orders = order_json.data;
             return orders.map((order) => ordermanager.formatLiveOrder(order, true))
-            .filter((order) => order.stockCode === stockCode)
-            .sort((a, b) => a.orderid - b.orderid);
+                .filter((order) => order.stockCode === stockCode)
+                .sort((a, b) => a.orderid - b.orderid);
+        }
+        console.log('error fetching positions ' + order_json.status + ' ' + order_json.statusText);
+        return [];
     }
-    return { status: positions.stat, emsg: positions.emsg };
+    console.log('error fetching positions ' + response.status + ' ' + response.statusText);
+    return [];
 }
 
 async function positions(appid, stockCode) {
     const response = await get('positions');
+    let positions;
     if (response.ok) {
         const position_json = (await response.json());
-        const positions = position_json.data;
 
-        if (positions.stat !== 'Not_Ok') {
-            return positions.map((p) => {
-                console.log('position record ' + JSON.stringify(p));
-                return p;
-            });
+        if (position_json.stat !== 'Not_Ok') {
+            positions = position_json.data;
+            return ordermanager.formatPositionRecords(positions, stockCode);
         }
-        console.log('internal error fetching positions ' + positions.emsg);
+        console.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
+        return [];
     } 
     console.log('error fetching positions ' + response.status + ' ' + response.statusText);
-    return { status: response.status, reason: response.statusText };
+    return [];
 }
 
 function exit(appid, sublist) {
