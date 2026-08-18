@@ -92,13 +92,11 @@ function rh(socket)
 	});
 
 	socket.on('order', (exorder) => {
-	  	if (exorder.appid !== instrument.appid)
+		if (exorder.appid !== instrument.appid)
 			return;
 
-	  	const p = Position.findPosition(exorder.symbol, true);
-	  	p.orders.set(exorder.orderid, exorder);
-		if(exorder.stated === 'opened')
-	  		p.openOrderUpdate(exorder);
+		var p = Position.findPosition(exorder.symbol, true);
+		p.orderupdate(exorder);
 	});
 
 	socket.on('orderbook', (orders) => {
@@ -112,15 +110,6 @@ function rh(socket)
 
 		positions.values().forEach((p) => {
 			p.positionUpdate();
-		});
-	});
-
-	socket.on('positions', (positions) => {
-	  
-		console.log('open positions: ' + JSON.stringify(positions));
-		positions.forEach((pos) => {
-			const p = Position.findPosition(pos.symbol, true);
-			p.openPosUpdate(pos);
 		});
 	});
 
