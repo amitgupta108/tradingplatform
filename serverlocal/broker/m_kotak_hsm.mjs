@@ -82,10 +82,8 @@ function subscribe(appid, list, action)
     const requests = [];
     list.forEach((e) => {
         const exchange = e.exchange === 'MCX' ? 'mcx_fo' : e.key === 'index' ? 'nse_cm' : 'nse_fo';    
-        const key = e.exchange === 'NFO' && e.key === 'strikex' ? e.symbol.slice(0, -2) + '.00' + e.symbol.slice(-2) : e.symbol;
-        const column = (e.exchange === 'NFO') ? 'scripReferenceKey' : 'tradingSymbol';
         const mcx_no_index = e.key === 'index' && e.exchange === 'MCX'; 
-        const token = e.key === 'index' && !mcx_no_index ? '26000' : scripstore.findScripByKey(column, key)?.symbol;
+        const token = e.key === 'index' && !mcx_no_index ? '26000' : scripstore.findScripByRefKey(e.symbol)?.token;
         
         if(exchange !== undefined && token !== undefined && !mcx_no_index)
             requests.push(exchange + '|' + token);
