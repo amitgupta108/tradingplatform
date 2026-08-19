@@ -71,7 +71,7 @@ class Position
 					sellq += Number(o.filled_q);
 					sellv += Number(o.filled_q) * Number(o.pricedAt);
 				}
-				ltp = Number(o.pricedAt);
+				ltp = Number(o.pricedAt) && 0;
 			}
 		}
 

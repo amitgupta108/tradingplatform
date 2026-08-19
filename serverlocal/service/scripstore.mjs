@@ -10,20 +10,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const FIELD_MAP = {
-	pSymbol:      'symbol',
-	pGroup:       'group',
+	pSymbol:      'token',
 	pExchSeg:     'exchangeSegment',
 	pInstType:    'instrumentType',
 	pSymbolName:  'underlying',
 	pTrdSymbol:   'tradingSymbol',
-	pOptionType:  'optionType',
 	pScripRefKey: 'scripReferenceKey',
-	pISIN:        'isin',
-	pAssetCode:   'assetCode',
-	lLotSize:     'lotSize',
-	dStrikePrice: 'strikePrice',
-	pExchange:    'exchange',
-	pInstName:    'instrumentName',
 	pExpiryDate:  'expiryDate'
 };
 
@@ -33,17 +25,16 @@ const incomingPayload = {
 	"data": {
 		"baseFolder": "https://kotaksecurities.com",
 		"filesPaths": [
-			"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-08-03/transformed/mcx_fo.csv",
-			"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-08-03/transformed/nse_fo.csv"
+			"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-08-18/transformed/nse_fo.csv",
+			"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-08-18/transformed/mcx_fo.csv",
 		]
 	}
 };
 
 const filters = {
-	exchangeSegment: ['nse_fo', 'mcx_fo'],
-	expiryDate: [], //1784246399
+	exchangeSegment: [],
+	expiryDate: ['1472135400', '1472740200', '1789689599'],
 	underlying: ['NIFTY', 'CRUDEOIL'],
-	exchange: [],
 	instrumentType: []
 };
 
@@ -100,7 +91,7 @@ class ScripStore
 	{
 		this.name = 'SCRIPSTORE';
 		this.initialized = false;
-		this._inMemoryStore = [];
+		this._inMemoryStore = new Map();
 		this._isLoaded = false;    
 	}
 
@@ -124,16 +115,19 @@ class ScripStore
 		{
 			console.log('Checking for local persistent file cache...');
 			const rawData = await fs.readFile(cachePath, 'utf-8');
-			this._inMemoryStore = JSON.parse(rawData);
+			const scrips = JSON.parse(rawData);
+			scrips.forEach((s) => {
+				this._inMemoryStore.set(s.scripReferenceKey, s);
+			});
 			this._isLoaded = true;
-			console.log(`--- [CACHE HIT] Loaded ${this._inMemoryStore.length} records directly from disk persistence. ---`);
-			return this._inMemoryStore.length;
+			console.log(`--- [CACHE HIT] Loaded ${this._inMemoryStore.size} records directly from disk persistence. ---`);
+			return this._inMemoryStore.size;
 		} 
 		catch (error) 
 		{
 			console.log('[CACHE MISS] No valid local file found for today. Streaming from internet...');
 
-			this._inMemoryStore = [];
+			this._inMemoryStore = new Map();
 			this._isLoaded = false;
 			const freshUrls = getUpdatedUrls(incomingPayload.data.filesPaths);
 
@@ -142,15 +136,15 @@ class ScripStore
 			}
 
 			try {
-				await fs.writeFile(cachePath, JSON.stringify(this._inMemoryStore, null, 2), 'utf-8');
+				await fs.writeFile(cachePath, JSON.stringify(Array.from(this._inMemoryStore.values()), null, 2), 'utf-8');
 				console.log(`Persistent disk cache written to: ${cachePath}`);
 			} catch (writeError) {
 				console.error('Failed to write persistent cache file to disk:', writeError.message);
 			}
 
 			this._isLoaded = true;
-			console.log(`--- Store Ready. ${this._inMemoryStore.length} records cached in RAM. ---`);
-			return this._inMemoryStore.length;
+			console.log(`--- Store Ready. ${this._inMemoryStore.size} records cached in RAM. ---`);
+			return this._inMemoryStore.size;
 		}
 	}
 
@@ -168,7 +162,10 @@ class ScripStore
 	{
 		const cleanRow = {};
 		for (const [rawKey, cleanKey] of Object.entries(FIELD_MAP)) {
-			cleanRow[cleanKey] = rawRow[rawKey];
+			if (rawKey === 'pScripRefKey')
+				cleanRow[cleanKey] = rawRow[rawKey] !== '' ? rawRow[rawKey].replaceAll('.00', '') : rawRow['pTrdSymbol'];
+			else
+				cleanRow[cleanKey] = rawRow[rawKey];
 		}
 		return cleanRow;
 	}
@@ -185,7 +182,7 @@ class ScripStore
 						.on('data', (rawRow) => {
 							const friendlyRow = this.translateRowToFriendlyNames(rawRow);
 							if (this.matchesCriteria(friendlyRow, userFilterCriteria)) {
-								this._inMemoryStore.push(friendlyRow);
+								this._inMemoryStore.set(friendlyRow.scripReferenceKey, friendlyRow);
 							}
 						})
 						.on('end', () => resolve())
@@ -201,10 +198,11 @@ class ScripStore
 		});
 	}
 
-	getAllScrips() { return this._inMemoryStore; }
-	findScripByKey(columnName, value) { return this._inMemoryStore.find(row => row[columnName] === value) || null; }
-	queryStore(filterFn) { return this._inMemoryStore.filter(filterFn); }
-	getStoreStatus() { return { loaded: this._isLoaded, totalRecords: this._inMemoryStore.length }; }
+	getAllScrips() { return Array.from(this._inMemoryStore.values()); }
+	findScripByKey(columnName, value) { return Array.from(this._inMemoryStore.values()).find(row => row[columnName] === value) || null; }
+	findScripByRefKey(key) { return this._inMemoryStore.get(key); }
+	queryStore(filterFn) { return Array.from(this._inMemoryStore.values()).filter(filterFn); }
+	getStoreStatus() { return { loaded: this._isLoaded, totalRecords: this._inMemoryStore.size }; }
 }
 
 export const scripstore = new ScripStore();
