@@ -106,6 +106,7 @@ function toScrip(snapshot)
 
             qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             qt.symbol = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+            qt.ltp = Number(qt.ltp);
             qt.ltt = fdtm;
             qt.m1 = Date.now();
             qt.offset = qt.m1 - fdtm;
@@ -119,6 +120,7 @@ function toScrip(snapshot)
 
             qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             qt.symbol = snapshot.tk;
+            qt.ltp = Number(qt.ltp);
             qt.ltt = tvalue;
             qt.m1 = Date.now();
             qt.offset = qt.m1 - tvalue;
