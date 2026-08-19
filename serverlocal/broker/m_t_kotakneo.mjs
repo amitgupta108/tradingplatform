@@ -88,8 +88,7 @@ async function placeOrder(appid, order) {
 function toKotakOrder(order) {
     let ts = order.symbol;
     if (order.exchange === 'NFO') {
-        const key = order.symbol.slice(0, -2) + '.00' + order.symbol.slice(-2);
-        ts = scripstore.findScripByKey('scripReferenceKey', key).tradingSymbol;
+        ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
     }
     const new_order = mystate.oTemplate;
 

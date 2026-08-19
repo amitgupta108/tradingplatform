@@ -100,27 +100,28 @@ function toScrip(snapshot)
     if (qt === undefined)
     {
         if(snapshot.name === 'sf') {
-            const fdtm = parse(snapshot.fdtm, pattern, new Date()).getTime();
-            const { tk: token, e: exchange, ts: symbol, ltp: ltp, c: close_ystrd, ...rest } = snapshot;
-            const qt = { token, exchange, symbol, ltp, close_ystrd};
+            const fdtm = snapshot.fdtm !== undefined ? parse(snapshot.fdtm, pattern, new Date()).getTime() : Date.now() ;
+            const { e: exchange, ts: tSymbol, ltp: ltp, c: close_ystrd, ...rest } = snapshot;
+            const qt = { exchange, tSymbol, ltp, close_ystrd};
 
             qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
-            const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
-            qt.symbol = sym.replaceAll('.00', '');
+            qt.symbol = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey : snapshot.ts;
             qt.ltt = fdtm;
-            qt.offset = Date.now() - fdtm;
+            qt.m1 = Date.now();
+            qt.offset = qt.m1 - fdtm;
             qt.min = false;
             state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
         }
         else if (snapshot.name === 'if') {
-            const tvalue = parse(snapshot.tvalue, pattern, new Date()).getTime();
+            const tvalue = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
             const { tk: token, e: exchange, iv: ltp, ic: close_ystrd, ...rest } = snapshot;
             const qt = { token, exchange, ltp, close_ystrd};
 
             qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             qt.symbol = snapshot.tk;
             qt.ltt = tvalue;
-            qt.offset = Date.now() - tvalue;
+            qt.m1 = Date.now();
+            qt.offset = qt.m1 - tvalue;
             qt.min = false;
             state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
         }
@@ -135,7 +136,7 @@ function toScripMin(snapshot) {
         const { tk, e, ts, ...rest } = snapshot;
         const qt = { tk, e};
         
-        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('symbol', snapshot.tk)?.scripReferenceKey : snapshot.ts;
+        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey : snapshot.ts;
         qt.ts = sym.replaceAll('.00', '');
         qt.key = sym.endsWith('FUT') ? 'futures' : sym.endsWith('PE') || sym.endsWith('CE') ? 'strikex' : 'index';
         qt.offset = offset;
