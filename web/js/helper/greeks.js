@@ -1,23 +1,16 @@
 const expiryTimestampCache = new Map();
 const ir = 0.065;
 
-function addIVNDelta(q, uq) {
-    if (q !== undefined && uq !== undefined) {
-        let expiryTime = expiryTimestampCache.get(q.expiry_date);
-        if (expiryTime === undefined) {
-            const [d, m, y] = [q.expiry_date.slice(0, 2), q.expiry_date.slice(2, 5), q.expiry_date.slice(5)];
-            const e = `${d}-${m}-20${y}`;
-            const time = q.exchange === 'MCX' ? ', 23:30' : ', 15:40';
-            expiryTime = (new Date((e).concat(time))).getTime();
-            expiryTimestampCache.set(q.expiry_date, expiryTime);
-        }
-
-        const yearsToExpiry = (expiryTime - q.ltt) / 31536000000; // 31536000000 = 1000*60*60*24*365
+function addIVNDelta(q, uq) 
+{
+    if (q !== undefined && uq !== undefined) 
+    {
+        const yearsToExpiry = getYearsToExpiry(q);
         const flag = q.right === 'CE' ? 'c' : 'p';
 
         try {
-            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.07, flag);
-            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, Number(q.strike_price), yearsToExpiry, 0.07, iv);
+            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, ir, flag);
+            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, Number(q.strike_price), yearsToExpiry, ir, iv);
 
             q.iv = Math.round(iv * 10000) / 100;
             q.delta = Math.round(delta * 10000) / 100;
@@ -34,26 +27,8 @@ function _addIVNDelta(q, uq)
 {
     if(q !== undefined && uq !== undefined)
     {    
-        let optionExpiryTime = expiryTimestampCache.get(q.expiry_date);
-        if (optionExpiryTime === undefined) {
-            const [d, m, y] = [q.expiry_date.slice(0,2), q.expiry_date.slice(2,5), q.expiry_date.slice(5)];
-            const e = `${d}-${m}-20${y}`;
-            const time = q.exchange === 'MCX' ? ', 23:30' : ', 15:40';
-            optionExpiryTime = (new Date((e).concat(time))).getTime();
-            expiryTimestampCache.set(q.expiry_date, optionExpiryTime);
-        }
-        
-        let futuresExpiryTime = expiryTimestampCache.get(uq.expiry_date);
-        if (futuresExpiryTime === undefined) {
-            const [d, m, y] = [uq.expiry_date.slice(0, 2), uq.expiry_date.slice(2, 5), uq.expiry_date.slice(5)];
-            const e = `${d}-${m}-20${y}`;
-            const time = uq.exchange === 'MCX' ? ', 23:30' : ', 15:40';
-            futuresExpiryTime = (new Date((e).concat(time))).getTime();
-            expiryTimestampCache.set(uq.expiry_date, futuresExpiryTime);
-        }
-        
-        const fdisprice = uq.ltp / 1 + ((futuresExpiryTime - uq.ltt) / 31536000000 * ir);
-        const yearsToExpiry = (optionExpiryTime - q.ltt)/31536000000; // 31536000000 = 1000*60*60*24*365
+        const yearsToExpiry = getYearsToExpiry(q);
+        const fdisprice = uq.ltp / 1 + (getYearsToExpiry(uq) * ir);
         const flag = q.right === 'CE' ? 'c' : 'p';
 
         try{
@@ -69,4 +44,17 @@ function _addIVNDelta(q, uq)
         }
     }
     return q;
+}
+
+function getYearsToExpiry(q)
+{
+    let expiryTime = expiryTimestampCache.get(q.expiry_date);
+    if (expiryTime === undefined) {
+        const [d, m, y] = [q.expiry_date.slice(0, 2), q.expiry_date.slice(2, 5), q.expiry_date.slice(5)];
+        const e = `${d}-${m}-20${y}`;
+        const time = q.exchange === 'mcx_fo' ? ', 23:30' : ', 15:40';
+        expiryTime = (new Date((e).concat(time))).getTime();
+        expiryTimestampCache.set(q.expiry_date, expiryTime);
+    }
+    return (expiryTime - q.ltt) / 31536000000; // 31536000000 = 1000*60*60*24*365;
 }

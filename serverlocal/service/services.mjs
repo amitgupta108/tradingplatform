@@ -147,4 +147,54 @@ function checkAccess(eventName, mode) {
     return false;
 }
 
-export default { initialize, getService, getProfile, checkAccess, getProviderModeKey, getFeatureMode, initializeAll, getModesForService };
+/**
+ * Fetches the precise atomic timestamp from your background API server
+ * and corrects for local network transit latency.
+ * @returns {Promise<number>} Precise Unix millisecond timestamp
+ */
+async function getSyncedTime() {
+    // 1. Record the exact local clock tick right before sending the query
+    const clientStartTime = Date.now();
+
+    try {
+        // 2. Fetch from your local API, bypassing all caches
+        const response = await fetch('http://localhost:5001/api/exact-time', {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // 3. Record the local clock tick the exact moment the payload lands
+        const clientEndTime = Date.now();
+
+        // 4. Calculate local round-trip transit time (RTT)
+        const roundTripTime = clientEndTime - clientStartTime;
+
+        // 5. Calculate one-way transit delay (RTT / 2)
+        const localTransitLatency = roundTripTime / 2;
+
+        // 6. Apply latency correction to the server's atomic timestamp
+        const flawlessTimestampMs = Math.round(data.independent_timestamp_ms + localTransitLatency);
+
+        // Optional Diagnostics: Log the sync metrics to your terminal console
+        console.log(`[Time API Sync] Success | Transit Latency: +${localTransitLatency}ms | RTT: ${roundTripTime}ms`);
+        console.log(`[Time API Sync] True ISO String: ${new Date(flawlessTimestampMs).toISOString()}`);
+
+        return flawlessTimestampMs;
+
+    } catch (error) {
+        console.error("[Time API Error] Failed to fetch time, falling back to local OS clock:", error.message);
+        // Fallback safety layer: returns the standard OS clock if the background service goes down
+        return Date.now();
+    }
+}
+
+export default { initialize, getService, getProfile, checkAccess, getProviderModeKey, getFeatureMode, initializeAll, getModesForService, getSyncedTime };

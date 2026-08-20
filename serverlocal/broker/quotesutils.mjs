@@ -24,12 +24,12 @@ function completeQ(q)
     return { ...q, ...scrip };
 }
 
-function standardize(name, q, min = false)
+function standardize(name, q)
 {
     q.m1 = Date.now();
     switch (name) {
         case 'KOTAKHSMVIEW':
-            return standardizekq(q, min) 
+            return standardizekq(q) 
         case 'OPENALGOVIEW':
             return standardizeoq(q) 
         case 'ICICILIVEVIEW': 
@@ -74,21 +74,18 @@ function standardizeoq(quote)
     return completeQ(quote); 
 }
 
-function standardizekq(quote, min)
+function standardizekq(quote)
 {
-    const key = min ? 'k_m' + quote.tk : quote.tk;
-    const qt = state_qutils.quote_cache.get(key);
+    const qt = state_qutils.quote_cache.get(quote.tk);
     if (qt !== undefined) {
         if (quote.name === 'sf' && quote.ltp !== undefined) {
             qt.ltp = Number(quote.ltp);
             qt.ltt = quote.m1 - qt.offset;
-            qt.m1 = quote.m1;
             return qt;
         }
         else if(quote.name === 'if' && quote.iv !== undefined) {
             qt.ltp = Number(quote.iv);
             qt.ltt = quote.m1 - qt.offset;
-            qt.m1 = quote.m1;
             return qt;
         }
     }
@@ -101,56 +98,33 @@ function toScrip(snapshot)
     {
         if(snapshot.name === 'sf') {
             const fdtm = snapshot.fdtm !== undefined ? parse(snapshot.fdtm, pattern, new Date()).getTime() : Date.now() ;
-            const { e: exchange, ts: tSymbol, ltp: ltp, c: close_ystrd, ...rest } = snapshot;
-            const qt = { exchange, tSymbol, ltp, close_ystrd};
+            const { e: exchange, ts: tSymbol, ltp: ltp, ...rest } = snapshot;
+            const qt = { exchange, tSymbol, ltp};
 
-            qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             qt.symbol = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey : snapshot.ts;
             qt.ltp = Number(qt.ltp);
             qt.ltt = fdtm;
-            qt.m1 = Date.now();
-            qt.offset = qt.m1 - fdtm;
-            qt.min = false;
+            qt.offset = Date.now() - fdtm;
             state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
         }
         else if (snapshot.name === 'if') {
             const tvalue = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
-            const { tk: token, e: exchange, iv: ltp, ic: close_ystrd, ...rest } = snapshot;
-            const qt = { token, exchange, ltp, close_ystrd};
+            const { tk: token, e: exchange, iv: ltp,  ...rest } = snapshot;
+            const qt = { token, exchange, ltp};
 
-            qt.exchange = snapshot.e === 'mcx_fo' ? 'MCX' : snapshot.e === 'nse_fo' ? 'NFO' : 'NSE';
             qt.symbol = snapshot.tk;
             qt.ltp = Number(qt.ltp);
             qt.ltt = tvalue;
-            qt.m1 = Date.now();
-            qt.offset = qt.m1 - tvalue;
-            qt.min = false;
+            qt.offset = Date.now() - tvalue;
             state_qutils.quote_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
         }
     }
     return state_qutils.quote_cache.get(snapshot.tk);
 }
 
-function toScripMin(snapshot) {
-    const qt = state_qutils.quote_cache.get('k_m' + snapshot.tk);
-    if (qt === undefined) {
-        const offset = Date.now() - parse(snapshot.fdtm, pattern, new Date()).getTime();
-        const { tk, e, ts, ...rest } = snapshot;
-        const qt = { tk, e};
-        
-        const sym = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey : snapshot.ts;
-        qt.ts = sym.replaceAll('.00', '');
-        qt.key = sym.endsWith('FUT') ? 'futures' : sym.endsWith('PE') || sym.endsWith('CE') ? 'strikex' : 'index';
-        qt.offset = offset;
-        qt.min = true;
-        state_qutils.quote_cache.set('k_m' + snapshot.tk, qt);
-    }
-    return state_qutils.quote_cache.get('k_m' + snapshot.tk);
-}
-
 function sendQsToSim(view_mode, q)
 {
-    if(simulator.open_orders[view_mode])
+    if(simulator.initialized === true && simulator.open_orders[view_mode])
         simulator.orderExecutionSim(view_mode, q);
 }
 
@@ -171,5 +145,4 @@ export default {
     sendQsToSim,
     buildRequests,
     toScrip,
-    toScripMin
   };
