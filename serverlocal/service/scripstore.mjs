@@ -33,7 +33,7 @@ const incomingPayload = {
 
 const filters = {
 	exchangeSegment: [],
-	expiryDate: ['1472135400', '1472740200', '1789689599'],
+	expiryDate: ['1472135400', '1472740200', '1789689599', '1790035199'],
 	underlying: ['NIFTY', 'CRUDEOIL'],
 	instrumentType: []
 };
