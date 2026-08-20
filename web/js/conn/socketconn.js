@@ -65,7 +65,7 @@ function rh(socket)
 
 	socket.on('futures', (q) => {    
 	  qBox.dispatchEvent('futures', q);
-	  if(q.exchange === 'MCX')
+	  if(q.exchange === 'mcx_fo')
 		qBox.dispatchEvent('index', q);      
 	});
 

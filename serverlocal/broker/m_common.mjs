@@ -21,7 +21,7 @@ function history(appid, requests) {
             if (response?.Error === null)
                 streamer.emitHistQs(appid, r.key, response.Success);
             else
-                return { status: error, reason: 'history fetch error ' + response.Error };
+                return { status: 'error', reason: 'history fetch error ' + response.Error };
         });
         //promises.push(p);
     });

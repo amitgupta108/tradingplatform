@@ -140,25 +140,25 @@ function atmReview(qt)
 
 function onQuotes(q)
 { 
-    const qt = qutils.standardize(myviewname, q, false);
+    const qt = qutils.standardize(myviewname, q);
     if (qt !== undefined)
     {   
-        if(qt.stockCode === 'INDIA VIX') {
-            qt.ltp = qt.ltp / 100;
-            qt.key = 'vix';
-            streamer.broadcast('vix', qt, 'all_nse_live')
-        }
-        else {
+        if(qt.stockCode !== 'INDIA VIX') 
+        {
             const l_appid = qt.stockCode + view_mode;
             streamer.emitQs(l_appid, qt);
 
-            setImmediate(() => {
-                if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures')) 
-                    atmReview(qt);
-                else if (simpricefeed && qt.key === 'strikex')
-                    qutils.sendQsToSim(view_mode, qt);
-            });
+            if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
+                atmReview(qt);
+            else if (simpricefeed && qt.key === 'strikex')
+                qutils.sendQsToSim(view_mode, qt);
         }
+        else 
+        {
+            qt.ltp = qt.ltp / 100;
+            qt.key = 'vix';
+            streamer.broadcast('vix', qt, 'all_nse_live');
+        }   
     }
 }
 
