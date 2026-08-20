@@ -13,7 +13,8 @@ let myviewbuddies;
 const open_orders = {
     HISTORY: false,
     LIVE: false,
-    LIVE_2: false
+    LIVE_2: false,
+    LIVE_3: false
 };
 
 function init()

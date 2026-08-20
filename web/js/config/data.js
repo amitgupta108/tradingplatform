@@ -44,7 +44,7 @@ instrumentMap.set('BL1', {
 
 instrumentMap.set('NL1', {
   fExpiry: "25AUG26",
-  oExpiries: ["25AUG26", "01SEP26"],
+  oExpiries: ["25AUG26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   mode: 'S3T1ADMINT',

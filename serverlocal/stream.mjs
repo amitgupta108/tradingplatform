@@ -73,7 +73,6 @@ function broadcast(type, msg, group)
 
 function emit(s, type, msg)
 {
-    msg.m2 = Date.now();
     const key = type === 'quote' ? msg.key : type;
     s.emit(key, msg);
 }
