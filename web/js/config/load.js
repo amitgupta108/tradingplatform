@@ -69,20 +69,7 @@ customElements.define('trade-buttons', TradeButtons);
 const pBox = new EventTarget();
 const qBox = new QuoteDispatcher();
 const pNL = new EventTarget();
-let lastq;
-/*
-qBox.addEventListener('futures', (event) => {
-  const q = event.detail;
-  if(lastq?.ltp !== q.ltp)
-  {
-    const app_entry = new Date(q.m1);
-    const app_exit = new Date(q.m2);
-    const client_entry = new Date(q.client_entry);
-    latency_label.textContent = q.ltp + ': ' + app_entry.getSeconds() + '.' + app_entry.getMilliseconds();
-    lastq = q;
-  }
-});
-*/
+
 qBox.addEventListener('index', (event) => {
   const q = event.detail;
   futures_ltp = q;

@@ -78,8 +78,7 @@ function wsOps(action)
 
 function subs_vix()
 {
-  //emit('vix', {action: 'subs'});
-  emit('positions', instrument.stockCode);
+  qBox.reset();
 }
 
 function reload()
