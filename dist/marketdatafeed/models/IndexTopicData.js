@@ -1,7 +1,7 @@
 import { TopicData } from './TopicData.js';
 import { INDEX_INDEX, INDEX_MAPPING } from '../constants/mappings.js';
-import { TopicTypes, FieldTypes } from '../types/types.js';
-import { buf2Float, buf2Long, buf2String, getFormatDate } from '../utils/binary.js';
+import { TopicTypes, FieldTypes } from '../constants/types.js';
+import { getFormatDate } from '../utils/binary.js';
 
 /**
  * Parses binary index topic data updates from the Kotak WebSocket protocol.

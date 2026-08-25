@@ -1,11 +1,11 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
-import { Keys } from '../types/types.js';
+import { Keys } from '../constants/types.js';
 import { encodeData } from '../utils/compression.js';
 import { PacketParser } from '../protocol/PacketParser.js';
 import { PacketBuilder } from '../protocol/PacketBuilder.js';
 import { buf2Long} from '../utils/binary.js';
-import { BinRespTypes } from '../types/types.js';
+import { BinRespTypes } from '../constants/types.js';
 
 /**
  * Base WebSocket client for Kotak Securities market data.
@@ -31,6 +31,7 @@ class BaseClient extends EventEmitter {
             heartbeatInterval: options.heartbeatInterval ?? 10000,
             throttleInterval: options.throttleInterval ?? 30000,
             logEnabled: options.logEnabled ?? true,
+            encoded: options.encoded ?? false
         };
         this.topicList = {};
     }
@@ -58,7 +59,10 @@ class BaseClient extends EventEmitter {
                     resolve();
                 };
                 this.ws.onmessage = (event) => {
-                    this.handleMessage(event.data);
+                    if(process.env.HSMENCODED === 'Y')
+                        this.emit('encoded', event.data);
+                    else
+                        this.handleMessage(event.data);
                 };
                 this.ws.onerror = (error) => {
                     this.log('WebSocket error:', error.message);
@@ -154,7 +158,7 @@ class BaseClient extends EventEmitter {
         let msgNum = 0;
         if (this.ackObj.ackNum > 0) {
             ++this.ackObj.counter;
-            msgNum = buf2Long(data.slice(resp.position, resp.position + 4));
+            msgNum = buf2Long(data, resp.position, 4);
             resp.position += 4;
             if (this.ackObj.counter === this.ackObj.ackNum) {
                 const req = PacketBuilder.buildAcknowledgementRequest(msgNum);

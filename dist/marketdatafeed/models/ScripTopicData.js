@@ -1,7 +1,7 @@
 import { TopicData } from './TopicData.js';
 import { SCRIP_INDEX, SCRIP_MAPPING } from '../constants/mappings.js';
-import { TopicTypes, FieldTypes } from '../types/types.js';
-import { buf2Float, buf2Long, buf2String, getFormatDate } from '../utils/binary.js';
+import { TopicTypes, FieldTypes } from '../constants/types.js';
+import { getFormatDate } from '../utils/binary.js';
 
 class ScripTopicData extends TopicData {
     constructor() {
