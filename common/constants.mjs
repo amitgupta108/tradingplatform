@@ -1,29 +1,28 @@
 export const OPT_EXPIRIES = {
     NIFTY: {
-        FIRST: '25AUG26',
-        SECOND: '01SEP26',
+        FIRST: '01SEP26',
+        SECOND: '08SEP26',
     },
     CRUDEOIL: {
         FIRST: '17SEP26',
     },
     BANKNIFTY: {
-        FIRST: '25AUG26',
+        FIRST: '30SEP26',
+    },
+};
+
+export const FUT_EXPIRIES = {
+    NIFTY: {
+        FIRST: '30SEP26',
+    },
+    CRUDEOIL: {
+        FIRST: '21SEP26',
     },
 };
 
 export const OPT_CONFIG = {
     FIVE: { startIdx: 0, endIdx: 5, toStream: true },
-    SIX: {startIdx: 0, endIdx: 6, toStream: true },
-};
-
-export const FUT_EXPIRIES = {
-    NIFTY: {
-        FIRST: '25AUG26',
-        SECOND: '30SEP26'
-    },
-    CRUDEOIL: {
-        FIRST: '21SEP26',
-    },
+    SIX: { startIdx: 0, endIdx: 6, toStream: true },
 };
 
 export const STRIKE_SIZE = {
