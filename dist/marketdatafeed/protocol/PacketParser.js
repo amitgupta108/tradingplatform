@@ -1,66 +1,96 @@
-import { ByteData } from './ByteData.js';
-import { BinRespTypes, BinRespStat, STAT, RespTypeValues, RespCodes, TopicTypes, RespTypes } from '../types/types.js';
+import { BinRespTypes, BinRespStat, STAT, RespTypeValues, RespCodes, TopicTypes, RespTypes } from '../constants/types.js';
 import { ScripTopicData } from '../models/ScripTopicData.js';
 import { IndexTopicData } from '../models/IndexTopicData.js';
 import { DepthTopicData } from '../models/DepthTopicData.js';
-import { PacketBuilder } from './PacketBuilder.js';
-import { buf2Long, buf2Float, buf2String, sendJsonArrResp } from '../utils/binary.js';
+import { sendJsonArrResp } from '../utils/binary.js';
 import { decodeData } from '../utils/compression.js';
-import * as utils from '../utils/utils.js';
+
+
+const textDecoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
+const DEBUG_PARSER = false;
+
 /**
  * Parses incoming binary packets from the Kotak WebSocket protocol.
  */
 class PacketParser {
 
+    static getDataView(data) {
+        if (data instanceof DataView) {
+            return data;
+        }
+        if (data instanceof ArrayBuffer) {
+            return new DataView(data);
+        }
+        if (ArrayBuffer.isView(data)) {
+            return new DataView(data.buffer, data.byteOffset, data.byteLength);
+        }
+        return new DataView(data);
+    }
+
+    static readUint8(view, pos) {
+        return view.getUint8(pos);
+    }
+
+    static readUint16(view, pos) {
+        return view.getUint16(pos, false);
+    }
+
+    static readUint32(view, pos) {
+        return view.getUint32(pos, false);
+    }
+
+    static readString(view, pos, len) {
+        const bytes = new Uint8Array(view.buffer, view.byteOffset + pos, len);
+        return textDecoder ? textDecoder.decode(bytes) : String.fromCharCode.apply(null, Array.from(bytes));
+    }
+
     static init(data)
     {
-        let pos = 0;
-        //const packetsCount = buf2Long(data.slice(pos, 2));
-        //console.log("packets.length: " + packetsCount);
-        pos += 2;
-        const respType = buf2Long(data.slice(pos, pos + 1));
+        const view = this.getDataView(data);
+        let pos = 2;
+        const respType = view.getUint8(pos);
         pos += 1;
-        //console.log("TYPE:: " + respType);
-        return {responseType: respType, position: pos};
+        return {responseType: respType, position: pos, view};
     }
 
     static parseData(data, resp, topicList)
     {   
         const respType = resp.responseType;
         const pos = resp.position;
+        const view = resp.view;
 
         if (respType == BinRespTypes.DATA_TYPE)
-            return this.parseDataMessage(pos, data, topicList);
+            return this.parseDataMessage(pos, view, topicList);
         else
-            return this.parseConfirmationMessge(pos, respType, data);
+            return this.parseConfirmationMessge(pos, respType, view, data);
     }
 
-    static parseConfirmationMessge(pos, respType, data)
+    static parseConfirmationMessge(pos, respType, view, data)
     {
         if (respType == BinRespTypes.CONNECTION_TYPE)
-            return this.parseConnectionMessge(pos, data);
+            return this.parseConnectionMessge(pos, view, data);
         else
-            return this.parseOtherMessage(pos, respType, data);
+            return this.parseOtherMessage(pos, respType, view, data);
     } 
   
-    static parseConnectionMessge(pos, data)
+    static parseConnectionMessge(pos, view, data)
     {
         let jsonRes = {};
         let ackCount;
-        let fCount = buf2Long(data.slice(pos, pos + 1));
+        let fCount = this.readUint8(view, pos);
         pos += 1;
         if (fCount >= 2) {
-            let fid1 = buf2Long(data.slice(pos, pos + 1));
+            let fid1 = this.readUint8(view, pos);
             pos += 1;
-            let valLen = buf2Long(data.slice(pos, pos + 2));
+            let valLen = this.readUint16(view, pos);
             pos += 2;
-            let status = buf2String(data.slice(pos, pos + valLen));
+            let status = this.readString(view, pos, valLen);
             pos += valLen;
-            fid1 = buf2Long(data.slice(pos, pos + 1));
+            fid1 = this.readUint8(view, pos);
             pos += 1;
-            valLen = buf2Long(data.slice(pos, pos + 2));
+            valLen = this.readUint16(view, pos);
             pos += 2;
-            ackCount = buf2Long(data.slice(pos, pos + valLen));
+            ackCount = this.readUint16(view, pos);
             switch (status) {
                 case BinRespStat.OK:
                     jsonRes.stat = STAT.OK;
@@ -77,11 +107,11 @@ class PacketParser {
             }
         } else {
             if (fCount == 1) {
-                let fid1 = buf2Long(data.slice(pos, pos + 1));
+                let fid1 = this.readUint8(view, pos);
                 pos += 1;
-                let valLen = buf2Long(data.slice(pos, pos + 2));
+                let valLen = this.readUint16(view, pos);
                 pos += 2;
-                let status = buf2String(data.slice(pos, pos + valLen));
+                let status = this.readString(view, pos, valLen);
                 pos += valLen;
                 switch (status) {
                     case BinRespStat.OK:
@@ -107,101 +137,90 @@ class PacketParser {
         return {resp: jsonRes, ackCount: ackCount};
     }
 
-    static parseDataMessage(pos, data, topicList)
+    static parseDataMessage(pos, view, topicList)
     {
         const h = [];
-        const g = buf2Long(data.slice(pos, pos + 2));
+        const g = this.readUint16(view, pos);
         pos += 2;
         for (let n = 0; n < g; n++) {
             pos += 2;
-            const c = buf2Long(data.slice(pos, pos + 1));
-            //console.log("ResponseType: " + c);
+            const c = this.readUint8(view, pos);
             pos++;
             if (c === RespTypes.SNAP) {
-                const returnval = this.parseSnapshot(pos, data, topicList);
+                const returnval = this.parseSnapshot(pos, view, topicList);
                 h.push({data: returnval.data, type: c});
                 pos = returnval.pos;
             }
             else if (c === RespTypes.UPDATE) {
-                const returnVal = this.parseTopic(pos, data, topicList);
+                const returnVal = this.parseTopic(pos, view, topicList);
                 h.push({ data: returnVal.data, type: c });
                 pos = returnVal.pos;
             }
-            else
+            else if (DEBUG_PARSER)
                 console.error("Invalid ResponseType: " + c);
         }
         return h;
     }
 
-    static parseSnapshot(pos, data, topicList)
+    static parseSnapshot(pos, view, topicList)
     {
-        const f = buf2Long(data.slice(pos, pos + 4));
+        const f = this.readUint32(view, pos);
         pos += 4;
-        //console.log("topic Id: " + f);
-        const nameLen = buf2Long(data.slice(pos, pos + 1));
+        const nameLen = this.readUint8(view, pos);
         pos++;
-        //console.log("nameLen:" + nameLen);
-        const topicName = buf2String(data.slice(pos, pos + nameLen));
+        const topicName = this.readString(view, pos, nameLen);
         pos += nameLen;
-        //console.log("topicName: " + topicName);
         const d = this.getNewTopicData(topicName);
         if (d) {
             topicList[f] = d;
-            let fcount = buf2Long(data.slice(pos, pos + 1));
+            let fcount = this.readUint8(view, pos);
             pos++;
-            //console.log("fcount1: " + fcount);
             for (let index = 0; index < fcount; index++) {
-                const fvalue = buf2Long(data.slice(pos, pos + 4));
+                const fvalue = this.readUint32(view, pos);
                 d.setLongValues(index, fvalue);
                 pos += 4;
-                //console.log(index + ":" + fvalue)
             }
             d.setMultiplierAndPrec();
-            fcount = buf2Long(data.slice(pos, pos + 1));
+            fcount = this.readUint8(view, pos);
             pos++;
-            //console.log("fcount2: " + fcount);
             for (let index = 0; index < fcount; index++) {
-                const fid = buf2Long(data.slice(pos, pos + 1));
+                const fid = this.readUint8(view, pos);
                 pos++;
-                const dataLen = buf2Long(data.slice(pos, pos + 1));
+                const dataLen = this.readUint8(view, pos);
                 pos++;
-                const strVal = buf2String(data.slice(pos, pos + dataLen));
+                const strVal = this.readString(view, pos, dataLen);
                 pos += dataLen;
                 d.setStringValues(fid, strVal);
-                //console.log(fid + ":" + strVal)
             }
             return {data: d.prepareData(), pos: pos};
-        } else
+        } else if (DEBUG_PARSER)
             console.log("Invalid topic feed type !");
     }
 
-    static parseTopic(pos, data, topicList)
+    static parseTopic(pos, view, topicList)
     {
-        const f = buf2Long(data.slice(pos, pos + 4));
-        //console.log("topic Id: " + f);
+        const f = this.readUint32(view, pos);
         pos += 4;
         const d = topicList[f];
         if (d) {
-            const fcount = buf2Long(data.slice(pos, pos + 1));
+            const fcount = this.readUint8(view, pos);
             pos++;
-            //console.log("fcount1: " + fcount);
             for (let index = 0; index < fcount; index++) {
-                const fvalue = buf2Long(data.slice(pos, pos + 4));
+                const fvalue = this.readUint32(view, pos);
                 d.setLongValues(index, fvalue);
-                //console.log("index:" + index + ", val:" + fvalue);
-                pos += 4
+                pos += 4;
             }            
             return { data: d.prepareData(), pos: pos };
-        } else
+        } else if (DEBUG_PARSER)
             console.error("Topic Not Available in TopicList!");
     }
 
-    static parseOtherMessage(pos, respType , data)
+    static parseOtherMessage(pos, respType, view, data)
     {
         if (respType  == BinRespTypes.SUBSCRIBE_TYPE || respType  == BinRespTypes.UNSUBSCRIBE_TYPE)
-            return this.parseSubsMessage(pos, respType , data);
+            return this.parseSubsMessage(pos, respType, view, data);
         else if (respType == BinRespTypes.SNAPSHOT)
-            return this.parseSnapshotMessage(pos, respType , data);
+            return this.parseSnapshotMessage(pos, respType, view, data);
 /*        else if ((respType == BinRespTypes.CHPAUSE_TYPE || respType == BinRespTypes.CHRESUME_TYPE))
             return parseChannelMessage(pos, respType, data);
         else if (respType == BinRespTypes.OPC_SUBSCRIBE)
@@ -210,9 +229,9 @@ class PacketParser {
             return {};
     }
 
-    static parseSubsMessage(pos, respType , data)
+    static parseSubsMessage(pos, respType, view, data)
     {
-        let status = this.getStatus(data, pos);
+        let status = this.getStatus(view, pos);
         let jsonRes = {};
         switch (status) {
             case BinRespStat.OK:
@@ -237,9 +256,9 @@ class PacketParser {
         return jsonRes;
     }
 
-    static parseSnapshotMessage(pos, respType , data)
+    static parseSnapshotMessage(pos, respType, view, data)
     {
-        let status = this.getStatus(data, pos);
+        let status = this.getStatus(view, pos);
         let jsonRes = {};
         switch (status) {
             case BinRespStat.OK:
@@ -258,9 +277,9 @@ class PacketParser {
         return jsonRes;
     }
     
-    static parseChannelMessage(pos, respType, data)
+    static parseChannelMessage(pos, respType, view, data)
     {
-        let status = this.getStatus(data, pos);
+        let status = this.getStatus(view, pos);
         let jsonRes = {};
         switch (status) {
             case BinRespStat.OK:
@@ -279,9 +298,9 @@ class PacketParser {
         return jsonRes;
     }
     
-    static parseOPCMessage(pos, respType, data)
+    static parseOPCMessage(pos, respType, view, data)
     {
-        let status = this.getStatus(data, pos);
+        let status = this.getStatus(view, pos);
         pos += 5;
         let jsonRes = {};
         switch (status) {
@@ -290,18 +309,18 @@ class PacketParser {
                 jsonRes.type = RespTypeValues.OPC;
                 jsonRes.msg = "successful";
                 jsonRes.stCode = RespCodes.SUCCESS;
-                let fld = buf2Long(data.slice(pos, ++pos));
-                let fieldlength = buf2Long(data.slice(pos, pos + 2));
+                let fld = this.readUint8(view, pos);
+                let fieldlength = this.readUint16(view, pos + 1);
                 pos += 2;
-                let opcKey = buf2String(data.slice(pos, pos + fieldlength));
+                let opcKey = this.readString(view, pos, fieldlength);
                 pos += fieldlength;
                 jsonRes.key = opcKey;
-                fld = buf2Long(data.slice(pos, ++pos));
-                fieldlength = buf2Long(data.slice(pos, pos + 2));
+                fld = this.readUint8(view, pos);
+                fieldlength = this.readUint16(view, pos + 1);
                 pos += 2;
-                let data = buf2String(data.slice(pos, pos + fieldlength));
+                let payload = this.readString(view, pos, fieldlength);
                 pos += fieldlength;
-                jsonRes.scrips = JSON.parse(data)["data"];
+                jsonRes.scrips = JSON.parse(payload)["data"];
                 break;
             case BinRespStat.NOT_OK:
                 jsonRes.stat = STAT.NOT_OK;
@@ -313,18 +332,20 @@ class PacketParser {
         return jsonRes;
     }
 
-    static getStatus(data, pos)
+    static getStatus(view, pos)
     {
         let status = BinRespStat.NOT_OK;
-        let fieldCount = buf2Long(data.slice(pos, ++pos));
+        let fieldCount = this.readUint8(view, pos);
+        pos += 1;
         if (fieldCount > 0) {
-            let fld = buf2Long(data.slice(pos, ++pos));
-            let fieldlength = buf2Long(data.slice(pos, pos + 2));
+            let fld = this.readUint8(view, pos);
+            pos += 1;
+            let fieldlength = this.readUint16(view, pos);
             pos += 2;
-            status = buf2String(data.slice(pos, pos + fieldlength));
-            pos += fieldlength
+            status = this.readString(view, pos, fieldlength);
+            pos += fieldlength;
         }
-        return status
+        return status;
     };
 
     static getNewTopicData(c) 

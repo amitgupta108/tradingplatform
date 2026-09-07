@@ -1,5 +1,5 @@
-import { TopicTypes, TRASH_VAL } from '../types/types.js';
-import {SCRIP_INDEX, INDEX_INDEX, DEPTH_INDEX, STRING_INDEX} from '../constants/mappings.js';
+import { TRASH_VAL } from '../constants/types.js';
+import {STRING_INDEX} from '../constants/mappings.js';
 
 /**
  * Factory for creating typed topic data instances from binary data.
@@ -16,6 +16,7 @@ class TopicData {
         this.jsonArray = null;
         this.fieldDataArray = [];
         this.updatedFieldsArray = [];
+        this._hasUpdates = false;
 
         this.fieldDataArray[STRING_INDEX.NAME] = feedType;
     }
@@ -26,15 +27,17 @@ class TopicData {
     }
 
     setLongValues(index, value) {
-        if (this.fieldDataArray[index] != value && value != TRASH_VAL) {
+        if (this.fieldDataArray[index] !== value && value !== TRASH_VAL) {
             this.fieldDataArray[index] = value;
             this.updatedFieldsArray[index] = true;
+            this._hasUpdates = true;
         }
     }
 
     clearFieldDataArray() {
         this.fieldDataArray.length = 0;
         this.updatedFieldsArray.length = 0;
+        this._hasUpdates = false;
     }
 
     setStringValues(index, value) {
@@ -51,6 +54,7 @@ class TopicData {
                 this.tSymbol = value;
                 this.fieldDataArray[STRING_INDEX.TSYMBOL] = value;
                 this.updatedFieldsArray[STRING_INDEX.TSYMBOL] = true;
+                this._hasUpdates = true;
                 break;
         }
     }
@@ -59,6 +63,7 @@ class TopicData {
         this.updatedFieldsArray[STRING_INDEX.NAME] = true;  //51
         this.updatedFieldsArray[STRING_INDEX.EXCHG] = true; //52
         this.updatedFieldsArray[STRING_INDEX.SYMBOL] = true;//53 
+        this._hasUpdates = true;
     }
 }
 

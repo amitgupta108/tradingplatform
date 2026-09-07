@@ -1,4 +1,4 @@
-import { DataType, FieldTypes } from '../types/types.js';
+import { DataType, FieldTypes } from './types.js';
 // ==================== SCRIP INDEX CONSTANTS ====================
 var SCRIP_INDEX;
 (function (SCRIP_INDEX) {

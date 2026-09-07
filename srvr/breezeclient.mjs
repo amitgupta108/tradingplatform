@@ -159,47 +159,4 @@ function convert(array, map) {
     }
     return array;
 }
-
-
-async function getHistoricalData(st, instrument, sTime) 
-{
-    var resp = await getHistoricalDatav2(instrument, sTime)
-    .catch((error) => {
-        console.warn("getHistoricalDatav2 failed, ", error.message);
-        return Promise.reject(error); 
-    });
-
-    var quotes = resp.Success;
-    if (Array.isArray(quotes)) {
-        
-        st.quotes = quotes;
-        st.trimIndex = 0;
-        st.state = 'ready to stream';
-        st.lastUpdated = sTime;
-        st.indexA = processResults(st.quotes, 50);
-    }
-    return st;
-}
-
-function processResults(quotes, index)
-{
-    index = Math.max(Math.round(quotes.length * 0.10), index);
-    const frontend = quotes.slice(0, index);
-    const backend = quotes.slice(index);
-    const indexA = new Array();
-    frontend.forEach((q) => {
-        const ltt = Date.parse(q.datetime);
-        q.ltt = ltt;
-        indexA.push(ltt);
-    });
-    setImmediate(() => {
-        backend.forEach((q) => {
-            const ltt = Date.parse(q.datetime);
-            q.ltt = ltt;
-            indexA.push(ltt);
-        }); 
-    });
-    return indexA;
-}
-
 */

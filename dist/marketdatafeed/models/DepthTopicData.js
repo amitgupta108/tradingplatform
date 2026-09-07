@@ -1,7 +1,7 @@
 import { TopicData} from './TopicData.js';
 import { DEPTH_INDEX, DEPTH_MAPPING } from '../constants/mappings.js';
-import { FieldTypes, TopicTypes } from '../types/types.js';
-import { buf2Float, buf2Long, buf2String, getFormatDate } from '../utils/binary.js';
+import { FieldTypes, TopicTypes } from '../constants/types.js';
+import { getFormatDate } from '../utils/binary.js';
 
 class DepthTopicData extends TopicData {
     constructor() {
