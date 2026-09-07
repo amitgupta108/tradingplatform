@@ -2,13 +2,16 @@ import {simstate} from '../session/simstate.mjs';
 import qserver from '../../srvr/qserver.mjs';
 import { eventservice } from './eventservice.mjs';
 
-class SimManager
+class Simulator
 {
-    constructor() {
+    constructor(name) 
+    {
+        this.name = name;
         this.simdata = simstate;
     }
 
-    clientInit(appid, simStartTime, speed = '1x') {
+    clientInit(appid, simStartTime, speed = '1x') 
+    {
         this.simdata.subs_reqs.set(appid, new Array(0));
         if(this.simdata.clocks.get(appid) === undefined) {
             this.simdata.qs_store.set(appid, new Array(0));
@@ -16,7 +19,8 @@ class SimManager
         }
     }
 
-     startStreamer(stmrkey){
+    startStreamer(stmrkey)
+    {
         const stmr = this.simdata.streamers.find((s) => s.key === stmrkey);
         
         if(stmr.state === 'stopped') 
@@ -32,7 +36,8 @@ class SimManager
         }
     }
 
-     stopStreamer(stmrkey){
+    stopStreamer(stmrkey)
+    {
         var stmr = this.simdata.streamers.find((x) => x.key === stmrkey);
         
         if(stmr?.state != 'stopped') {
@@ -42,7 +47,7 @@ class SimManager
         }
     }
 
-     dothings(stmrkey) 
+    dothings(stmrkey) 
     {
         try
         {
@@ -60,7 +65,7 @@ class SimManager
         }
     }
 
-     runclient_clocks(stmrkey) 
+    runclient_clocks(stmrkey) 
     {
         for (const c of this.simdata.clocks.values()) {
             if (c.key === stmrkey) {
@@ -73,8 +78,8 @@ class SimManager
         }
     }
 
-     start_sim(appid, requests) {
-
+    start_sim(appid, requests) 
+    {
         if(requests?.length > 0)
         {
             this.subscribe(appid, requests);
@@ -85,8 +90,8 @@ class SimManager
         }
     }
 
-     subscribe(appid, requests) {
-        
+    subscribe(appid, requests) 
+    {   
         const exReqs = this.simdata.subs_reqs.get(appid);
 
         requests.forEach((request) => {
@@ -99,7 +104,7 @@ class SimManager
         });
     }
 
-     addToClientStore(appid, instrument)
+    addToClientStore(appid, instrument)
     {
         const qArray = this.simdata.qs_store.get(appid);
         const c = this.simdata.clocks.get(appid);
@@ -117,7 +122,7 @@ class SimManager
         }
     }
 
-     unsubscribe(appid, requests) {
+    unsubscribe(appid, requests) {
         const i_reqs = this.simdata.subs_reqs.get(appid);
         requests.forEach((request) => {
             
@@ -157,7 +162,7 @@ class SimManager
         }
     }
 
-     qw(st, instrument, time) {
+    qw(st, instrument, time) {
         var qs = this.getHistoricalData(st, instrument, time);
 
         qs.catch((reason) => {
@@ -166,7 +171,7 @@ class SimManager
         });
     }
 
-     clear(appid) {
+    clear(appid) {
         this.simdata.clocks.delete(appid);
         this.simdata.qs_store.delete(appid);
         this.simdata.subs_reqs.delete(appid);
@@ -175,7 +180,7 @@ class SimManager
         return { status: 'success' };
     }
 
-     changeSpeed(appid, stmrkey) {
+    changeSpeed(appid, stmrkey) {
         var clock = this.simdata.clocks.get(appid);
         clock.key = stmrkey;
 
@@ -185,14 +190,15 @@ class SimManager
             this.startStreamer(stmrkey);
     }
 
-     pause(appid, action) {
+    pause(appid, action) 
+    {
         const c = this.simdata.clocks.get(appid);
         c.lastaction = action;
         c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
         return c.state;
     }
 
-    async  getHistoricalData(st, instrument, sTime) 
+    async getHistoricalData(st, instrument, sTime) 
     {
         var resp = await qserver.getHistoryAsync(instrument, sTime, sTime + ((16 * 60) * 1000), '1second')
             .catch((error) => {
@@ -207,32 +213,39 @@ class SimManager
             st.trimIndex = 0;
             st.state = 'ready to stream';
             st.lastUpdated = sTime;
-            st.indexA = this.processResults(st.quotes, 50);
+            st.indexA = this.processResults(st.quotes, instrument.symbol, 50);
         }
         return st;
     }
 
-     processResults(quotes, index) {
+     processResults(quotes, symbol, index) 
+     {
         index = Math.max(Math.round(quotes.length * 0.10), index);
-        const frontend = quotes.slice(0, index);
-        const backend = quotes.slice(index);
         const indexA = new Array();
-        frontend.forEach((q) => {
-            const ltt = Date.parse(q.datetime);
-            q.ltt = ltt;
-            indexA.push(ltt);
-        });
+        for(var i = 0; i < index; i++){
+            quotes[i] = this.standardize(quotes[i], symbol);
+            indexA.push(quotes[i].ltt);
+        }       
         setImmediate(() => {
-            backend.forEach((q) => {
-                const ltt = Date.parse(q.datetime);
-                q.ltt = ltt;
-                indexA.push(ltt);
-            });
+            for (var i = index; i < quotes.length; i++) {
+                quotes[i] = this.standardize(quotes[i], symbol);
+                indexA.push(quotes[i].ltt);
+            }
         });
         return indexA;
     }
 
-     getHistory(appid, r)
+    standardize(q, symbol)
+    {
+        const {exchange_code: exchange, stock_code: stockCode, close: ltp, datetime: ltt, ...rest} = q;
+        const qt = {exchange, stockCode, ltp, ltt};
+        qt.ltt = Date.parse(qt.ltt);
+        qt.symbol = symbol;
+
+        return qt;
+    }
+    
+    getHistory(appid, r)
     {
         const clock = st_q.clocks.get(appid);
         r.endTime = clock !== undefined ? clock.currentTime : r.endTime;
@@ -265,10 +278,10 @@ class SimManager
 
      emit(q, appid) {
         if (q.stock_code === 'INDVIX')
-            eventservice.emit('hist-vix', q, appid);
+            eventservice.emit('vix', q, appid);
         else
             eventservice.emit('hist-quote', q, appid);
     }
 }
 
-export const simmanager = new SimManager();
+export const simulator = new Simulator('SIMULATOR');

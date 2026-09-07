@@ -3,7 +3,6 @@ import { eventservice } from '../service/eventservice.mjs';
 import qutils from './quotesutils.mjs';
 import streamer from '../stream.mjs';
 import services from '../service/services.mjs';
-import socketclient from '../service/socketclient.mjs';
 import { HSMClient } from '../../dist/marketdatafeed/websocket/HSMClient.js'
 import { Subscriptions } from '../session/appstate.mjs';
 
@@ -137,6 +136,9 @@ function atmReview(qt)
 
 function onQuotes(q)
 { 
+    if (q.tk === '565899')
+        console.log(JSON.stringify(q));
+    
     const qt = qutils.standardize(myviewname, q);
     if (qt !== undefined)
     {   
@@ -145,7 +147,7 @@ function onQuotes(q)
             const l_appid = qt.stockCode + view_mode;
             streamer.emitQs(l_appid, qt);
 
-            if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
+            if (qt.key === 'index' || (qt.exchange === 'mcx_fo' && qt.key === 'futures'))
                 atmReview(qt);
             else if (simpricefeed && qt.key === 'strikex')
                 qutils.sendQsToSim(view_mode, qt);

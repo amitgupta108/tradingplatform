@@ -74,7 +74,7 @@ instrumentMap.set('NL4', {
   oExpiries: ["08SEP26", "15SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
-  mode: 'S3T1ADMINT',
+  mode: 'S1T1AB',
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
 });
 
@@ -83,7 +83,7 @@ instrumentMap.set('ML1',{
   oExpiries: ["17SEP26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
-  mode: 'S1TSAB',
+  mode: 'S1T1AB',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 

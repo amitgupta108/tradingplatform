@@ -1,20 +1,31 @@
-import qutils from './quotesutils.mjs';
 import streamer from '../stream.mjs';
 import { Subscriptions } from '../service/subscription/subservice.mjs';
+import { eventservice } from '../service/eventservice.mjs';
+import { ConfigService } from '../service/.config/configservice.mjs';
 
-export class BrokerMarketDataImpl
+class BrokerImpl 
+{
+    constructor(name, provider) {
+        this.name = name;
+        this.provider = provider;
+        this.initialized = false;
+        this.symbol_cache = new Map();
+    }
+
+    exit(appid, sublist) {
+
+    }
+}
+
+export class BrokerMarketDataImpl extends BrokerImpl
 {
     constructor(name, provider)
     {
+        super(name, provider);
         this.myviewname = name;
-        this.name = this.myviewname;
-        this.provider = provider;
-        this.view_mode;
         this.simpricefeed = false;
-        this.initialized = false;
         this.authData;
         this.my_subs;
-        this.symbol_cache = new Map();
     }
 
     init()
@@ -22,6 +33,7 @@ export class BrokerMarketDataImpl
         if (!this.initialized) 
         {
             this.my_subs = new Subscriptions();
+            this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
             this.addListeners();
             this.initialized = true;
             return {status: 'success'};
@@ -33,7 +45,7 @@ export class BrokerMarketDataImpl
     {
         const stock_subs = this.my_subs.addNewSubscriptions(appid, p);
         const requests = stock_subs.getSubsItems(['index', 'futures']);
-        this.providerStart(appid, requests);
+        this.subscribe(appid, requests, 'start');
 
         if (stock_subs.atm !== 0) {
             const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });
@@ -48,17 +60,9 @@ export class BrokerMarketDataImpl
         if (!list || list.length === 0)
             return;
     
+        this.my_subs.addRequests(appid, list);
         const requests = this.buildRequests(appid, list);
-        if (action === 'subs')
-        {
-            this.my_subs.addRequests(requests);
-            this.provider.subscribe(appid, requests);
-        }
-        else
-        {
-            this.my_subs.removeRequests(requests);
-            this.provider.unsubscribe(appid, requests);
-        }
+        this.providerSubscribe(appid, requests, action);
     }
 
     atmReview(qt) 
@@ -75,16 +79,27 @@ export class BrokerMarketDataImpl
         });
     }
     
+    option_chain(appid, expiry, action) 
+    {
+        const stock_subs = this.my_subs.getSubscriptions(appid);
+        const response = stock_subs.optionChainAction(expiry, action);
+        if (response !== undefined) {
+            this.subscribe(appid, response.strikes, response.action);
+        }
+    }
+    
     onQuotes(q, appid)
     { 
-        if (q !== undefined)
-        {   
-            const qt = this.standardize(q);
+        q.m1 = Date.now();
+        const qt = this.standardize(q);
+        if(qt !== undefined)
+        {
             this.emitQuotes(qt, appid);
+        
             if (qt.key === 'futures')
                 this.atmReview(qt);
             else if (this.simpricefeed && qt.key === 'strikex')
-                qutils.sendQsToSim(view_mode, qt);
+                eventservice.emit(this.view_mode, qt);
         }
     }
     
@@ -102,5 +117,29 @@ export class BrokerMarketDataImpl
 
     registerPriceFeed() {
         this.simpricefeed = true;
+        return this.view_mode;
+    }
+}
+
+export class BrokerTradeServiceImpl extends BrokerImpl
+{
+    constructor(name, provider) 
+    {
+        super(name, provider);
+        this.mytradename = name;
+        this.authData;
+    }
+
+    init() 
+    {
+        if (!this.initialized) 
+        {
+            this.trade_mode = ConfigService.getModesForService(this.name, 'trade');
+            this.addListeners();
+            this.initialized = true;
+            
+            return { status: 'success' };
+        }
+        return { status: 'already initialized' };
     }
 }

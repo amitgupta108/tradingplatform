@@ -130,7 +130,7 @@ function expandSymbol(symbol)
     return t;
 }
 
-function getWSfolder() {
+function getWSfolder(){
     return path.join(__dirname, '..');
 }
 
@@ -139,5 +139,5 @@ export default {
     strikes,
     _strikes,
     expandSymbol,
-    getWSfolder,
+    getWSfolder
 };

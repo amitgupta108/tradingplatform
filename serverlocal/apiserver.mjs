@@ -1,12 +1,11 @@
-import util_service from './broker/m_common.mjs';
-import Session from './session/session.mjs';
-import services from './service/services.mjs';
+import {m_common_service as util_service} from './broker/m_common.mjs';
+import { ConfigService } from './service/.config/configservice.mjs';
 import { socketmap } from './session/appstate.mjs';
 import { eventservice } from './service/eventservice.mjs';
 
 function registerDataRequests(s, appid,  mode)
 {
-    const market_service = services.getService('view', mode);
+    const market_service = ConfigService.getActiveServiceByMode('view', mode);
 
     s.on('vix', (msg) => {
         util_service.subscribe_vix(appid, mode, msg.action);
@@ -22,7 +21,9 @@ function registerDataRequests(s, appid,  mode)
 
     s.on('history', catchAsync(async (requests) => {
         console.log("history request " + requests.length);
-        return util_service.history(appid, requests);
+        for (const r of requests) {
+            const resp = util_service.history(appid, r);
+        }
     }, 'history'));
 
     s.on('speed', (msg) => {
@@ -50,8 +51,7 @@ function registerDataRequests(s, appid,  mode)
     });
     
     s.on('option_chain', (msg) => {
-        const stockCode = socketmap.get(appid).stockCode;
-        market_service.option_chain(appid, stockCode, msg.expiry, msg.action);
+        market_service.option_chain(appid, msg.expiry, msg.action);
     });
 
     s.on('snapshot', (msg) => {
@@ -60,18 +60,18 @@ function registerDataRequests(s, appid,  mode)
 }
 
 function registerTradeRequests(s, appid, mode) {
-    const trading_service = services.getService('trade', mode);
+    const trading_service = ConfigService.getActiveServiceByMode('trade', mode);
 
     s.on('order', (orders) => {
         console.log('order received at apiserver');
         orders.forEach(async (order) => {
-            const updated = await trading_service.placeOrder(appid, order);
+            const updated = await trading_service.placeOrder(appid, order, mode);
             console.log('order state ' + updated.state + ' ' + (updated.error ?? updated.orderid));
         });
     });
 
     s.on('cancelorder', async (msg) => {
-        const response = await trading_service.cancelorder(appid, msg);
+        const response = await trading_service.cancelOrder(appid, msg);
         console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
     });
 
@@ -89,15 +89,13 @@ function registerTradeRequests(s, appid, mode) {
 
 function registerAdminRequests(s, appid, mode)
 {
-    const profile = services.getProfile(mode);
-    const admin_service = services.getService('admin', mode);
+    const profile = ConfigService.getProfile(mode);
+    const admin_service = ConfigService.getActiveServiceByMode('admin', mode);
 
     if(profile['admin'] === 'LIVE_TRADING'){
 
         s.on('wsOps', catchAsync((action, key) => {
-            if(action === 'open')
-                return admin_service.authenticate(key);
-            else if(action === 'close')
+            if(action === 'close')
                 return admin_service.close(key);            
         }, 'wsOps'));
     }

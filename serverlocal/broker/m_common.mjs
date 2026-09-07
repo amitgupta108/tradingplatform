@@ -1,14 +1,29 @@
 import qserver from '../../srvr/qserver.mjs';
-import { simmanager } from '../service/simmanager.mjs';
+import { simulator } from '../service/simmanager.mjs';
 import streamer from '../stream.mjs';
 
-qserver.addListener('live-vix', onQuotes);
-qserver.addListener('hist-vix', onQuotes);
+class CommonService 
+{
+    constructor()
+    {
+        this.name = 'COMMONSERVICE';
+        this.initialized = false;
+    }
 
-function history(appid, requests) {
+    init()
+    {
+        if(!this.initialized) {
+            qserver.addListener('vix', (q, appid) => {
+                this,onQuotes(q, appid);
+            });
+            this.initialized = true;
+            return {status: 'success'};
+        }
+        return { status: 'already initialised' };
+    }
 
-    const promises = [];
-    requests.forEach((r) => {
+    history(appid, r) 
+    {
         if (r.exchange === 'MCX')
             return;
         
@@ -16,38 +31,35 @@ function history(appid, requests) {
         r.stockCode = r.key === 'vix' ? 'INDVIX' : r.stockCode;
         r.expiry = r.fExpiry || r.oExpiry;
 
-        const p = qserver.getHistory(appid, r);
-        p.then((response) => {
-            if (response?.Error === null)
+        return qserver.getHistory(appid, r)
+        .then((response) => {
+            if (response?.Error === null) {
                 streamer.emitHistQs(appid, r.key, response.Success);
-            else
-                return { status: 'error', reason: 'history fetch error ' + response.Error };
+                return {status: 'success'};
+            }
+            return { status: 'error', reason: 'history fetch error ' + response.Error };
         });
-        //promises.push(p);
-    });
-    //return Promise.all(promises);
+    }
+
+    subscribe_vix(appid, mode, action) {
+        
+        if(mode.startsWith('HISTORY'))
+            return simulator.subscribe_vix(appid, mode, action);
+        else
+            return qserver.subscribe_vix(appid, mode, action);
+    }
+
+    onQuotes(q, appid)
+    {
+        const ltt = (typeof q.datetime === 'string') ? Date.parse(q.datetime) : q.ltt;
+        const ltp = q.close ?? q.last;
+        const qt = { key: 'vix', stockCode: q.stock_code, ltp: ltp, ltt: ltt };
+        
+        if(appid === undefined)
+            streamer.broadcast('vix', qt, 'all_nse_live');
+        else
+            streamer.emitQs(appid, qt);
+    }
 }
 
-function subscribe_vix(appid, mode, action) {
-    
-    if(mode.startsWith('HISTORY'))
-        return simmanager.subscribe_vix(appid, mode, action);
-    else
-        return qserver.subscribe_vix(appid, mode, action);
-}
-
-function onQuotes(q, appid){
-
-    const ltt = (typeof q.datetime === 'string') ? Date.parse(q.datetime) : q.ltt;
-    const ltp = q.close ?? q.last;
-    const qt = { key: 'vix', stockCode: q.stock_code, exchange: q.exchange_code, ltp: ltp, ltt: ltt };
-    if(appid === undefined)
-        streamer.broadcast('vix', qt, 'all_nse_live');
-    else
-        streamer.emitQs(appid, qt);
-}
-
-export default {
-    history,
-    subscribe_vix
-}
+export const m_common_service = new CommonService();

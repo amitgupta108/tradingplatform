@@ -1,8 +1,6 @@
 import {OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG} from '../../common/constants.mjs';
 import utils from '../../common/utils.mjs';
-import { eventservice } from '../service/eventservice.mjs';
 export const socketmap = new Map();
-export const uwsmap = new Map();
 export const us = new Map();
 
 export const state_kotakneo = {
@@ -29,25 +27,6 @@ export const state_kotakhsm = {
 
 export const state_qutils = {
     quote_cache: new Map()
-}
-
-export class ScripAppMap
-{
-    constructor(){
-        this.mapping = new Map();
-    }
-
-    add(symbol, appid) {
-        const app_list = this.mapping.get(symbol);
-        if (app_list === undefined)
-            this.mapping.set(symbol, [appid]);
-        
-        app_list.push(appid);
-    }
-
-    remove (symbol, appid) {
-
-    }
 }
 
 export class Subscriptions {
