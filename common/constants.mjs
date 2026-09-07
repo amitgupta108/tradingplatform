@@ -11,11 +11,6 @@ export const OPT_EXPIRIES = {
     },
 };
 
-export const OPT_CONFIG = {
-    FIVE: { startIdx: 0, endIdx: 5, toStream: true },
-    SIX: {startIdx: 0, endIdx: 6, toStream: true },
-};
-
 export const FUT_EXPIRIES = {
     NIFTY: {
         FIRST: '29SEP26',
@@ -23,6 +18,11 @@ export const FUT_EXPIRIES = {
     CRUDEOIL: {
         FIRST: '21SEP26',
     },
+};
+
+export const OPT_CONFIG = {
+    FIVE: { startIdx: 0, endIdx: 5, toStream: true },
+    SIX: { startIdx: 0, endIdx: 6, toStream: true },
 };
 
 export const STRIKE_SIZE = {
