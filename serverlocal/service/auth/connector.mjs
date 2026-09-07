@@ -4,7 +4,7 @@ import webpage from 'open';
 
 export class Connector
 {
-    constructor(provider, notify = true, load_on_start){
+    constructor(provider, notify = true, load_on_start = true){
         this.provider = provider;
         this.initialized = false;
         this.notify = notify;

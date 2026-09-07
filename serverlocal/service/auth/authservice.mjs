@@ -8,8 +8,8 @@ class AuthService
         this.name = 'AUTHSERVICE';
         this.initialized = false;
         this.connectors = {
-            kotak: new KotakConnector('kotak', true),
-            icici: new ICICIConnector('icici', true)
+            kotak: new KotakConnector('kotak', true, true),
+            icici: new ICICIConnector('icici', true, true)
         }
     }
 

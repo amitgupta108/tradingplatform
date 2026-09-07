@@ -1,5 +1,5 @@
 import { BaseClient } from './BaseClient.js';
-import { RespTypeValues, STAT, BinRespTypes, SCRIP_PREFIX, INDEX_PREFIX, DEPTH_PREFIX, RespTypes } from '../types/types.js';
+import { RespTypeValues, STAT, BinRespTypes, SCRIP_PREFIX, INDEX_PREFIX, RespTypes } from '../constants/types.js';
 import { PacketBuilder } from '../protocol/PacketBuilder.js';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';

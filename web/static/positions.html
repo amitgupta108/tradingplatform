@@ -87,9 +87,6 @@
                     <table id="oc_put_table">
                     </table>
                 </div>
-                <button id="options-chart-btn" style="padding: 3px;width: 60px;" onclick="showChart()">
-                    Chart
-                </button>
             </div>
             <!------------------------------------------------------------------------------------------------------------------------------>    
             <div class="tabs">
@@ -100,6 +97,7 @@
                     <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)"></button>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
+                    <button id="sh_chart" class="smallbutton order" onclick="showChart('open')">C</button>
                     <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;height:15px;">
                     <button id="ws_start" class="smallbutton order" onclick="auth('open')">></button>
                     <button id="ws_stop" class="smallbutton order" onclick="wsOps('close')">||</button>

@@ -1,7 +1,7 @@
 export const OPT_EXPIRIES = {
     NIFTY: {
-        FIRST: '01SEP26',
-        SECOND: '08SEP26',
+        FIRST: '08SEP26',
+        SECOND: '15SEP26',
     },
     CRUDEOIL: {
         FIRST: '17SEP26',
