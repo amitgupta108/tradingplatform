@@ -34,7 +34,7 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
     autoStart() 
     {    
         setTimeout(() => {
-            const list = this.my_subs.getFullSubsList(true);
+            const list = this.my_subs.getFullSubsList();
             list.forEach(([k, v]) => 
             {
                 const requests = v.getSubsItems(['index', 'futures']);

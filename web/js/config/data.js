@@ -101,7 +101,7 @@ instrumentMap.set('ML3', {
   oExpiries: ["17SEP26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
-  mode: 'S2T1AB',
+  mode: 'S1T1AB',
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
 

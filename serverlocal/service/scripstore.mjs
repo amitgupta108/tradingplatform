@@ -88,6 +88,7 @@ class ScripStore
 	{
 		clearStaleCacheFiles();
 		console.log('Checking for local persistent file cache...');
+		this.addIndicesToStore(['NIFTY']);
 		if (fs.existsSync(cacheFilePath) || reload === true) 
 		{
 			const jsonfile = fs.createReadStream(cacheFilePath, { encoding: 'utf8' });
@@ -119,6 +120,22 @@ class ScripStore
 
 			this.isLoaded = true;
 			console.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
+		}
+	}
+
+	addIndicesToStore(indices)
+	{
+		for (const index of indices) 
+		{
+			if(index === 'NIFTY') 
+			{
+				this.inMemoryStore.set('NIFTY', {
+					token: '26000',
+					exchangeSegment: 'nse_cm',
+					instrumentType: 'index',
+					scripReferenceKey: 'NIFTY'
+				});
+			}
 		}
 	}
 

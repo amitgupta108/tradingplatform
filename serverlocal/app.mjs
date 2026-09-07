@@ -20,7 +20,8 @@ export function connect(s)
         return;
     }
     
-    session(s, appid, stockCode, mode);
+    //session(s, appid, stockCode, mode);
+    socketmap.set(appid, { socket: s, mode: mode, stockCode: stockCode });
     registerHandlers(s, appid, mode);
 
     s.on("error", (err) => {
@@ -38,7 +39,7 @@ function session(s, appid, stockCode, mode)
         sn = new Session(i_appid, mode, stockCode);
 
     sn.shared_with.set(appid, { m_subs: sn.status});
-    socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});        
+    //socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});
     s.sn = sn;
 }
 
