@@ -43,11 +43,11 @@ instrumentMap.set('BL1', {
 });
 
 instrumentMap.set('NL1', {
-  fExpiry: "25AUG26",
-  oExpiries: ["25AUG26"],
+  fExpiry: "29SEP26",
+  oExpiries: ["01SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
-  mode: 'S3T1ADMINT',
+  mode: 'S1T1AB',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
@@ -70,8 +70,8 @@ instrumentMap.set('NL3', {
 });
 
 instrumentMap.set('NL4', {
-  fExpiry: "25AUG26",
-  oExpiries: ["25AUG26", "01SEP26"],
+  fExpiry: "29SEP26",
+  oExpiries: ["08SEP26", "15SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   mode: 'S3T1ADMINT',
@@ -83,7 +83,7 @@ instrumentMap.set('ML1',{
   oExpiries: ["17SEP26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
-  mode: 'S2T0ADMINS',
+  mode: 'S1TSAB',
   appid: '886ee155-38d9-49c1-9e18-b17551e8a4be'
 });
 
@@ -92,7 +92,7 @@ instrumentMap.set('ML2',{
   oExpiries: ["17SEP26", "15OCT26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
-  mode: 'S3T1ADMINT',
+  mode: 'S2TSA0',
   appid: '531c0a81-0558-4ad7-8b4c-1ea5bf3775d3'
 });
 
@@ -101,7 +101,7 @@ instrumentMap.set('ML3', {
   oExpiries: ["17SEP26"],
   stockCode: 'CRUDEOIL',
   exchange: 'MCX',
-  mode: 'S3T1ADMINT',
+  mode: 'S2T1AB',
   appid: '431c0a81-0558-4ad7-8b4c-1ea5bf3775b4'
 });
 
