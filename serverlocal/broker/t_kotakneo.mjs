@@ -1,6 +1,6 @@
 import { scripstore } from '../service/scripstore.mjs';
 import { ordermanager } from '../service/ordermanager.mjs';
-import { kotak_hsi_socket } from '../service/HSIClient.mjs';
+import { KotakHSISocket } from '../service/HSIClient.mjs';
 import { eventservice } from '../service/eventservice.mjs';
 import { state_kotakneo as mystate } from '../session/appstate.mjs';
 import { BrokerTradeServiceImpl } from './m_broker_interface.mjs';
@@ -13,14 +13,15 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
     addListeners() {
         eventservice.addListener('kotak_auth', (data) => {
             mystate.authData = data;
+            const kotak_hsi_socket = new KotakHSISocket(this.name);
             kotak_hsi_socket.hsiconnect(data);
-            this.provider = new KotakTradeAPI();
+            this.api_wrapper = new KotakTradeAPI(this.name);
         });
     }
 
     async placeOrder(appid, order) {
         const korder = this.toKotakOrder(order);
-        const response = await this.provider.post('order', korder);
+        const response = await this.api_wrapper.post('order', korder);
         ordermanager.neworders(appid, [order]);
         if (response.ok) {
             const result = (await response.json());
@@ -57,7 +58,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
     }
 
     async cancelOrder(appid, order) {
-        const response = await this.provider.post('cancel', { on: order.orderid });
+        const response = await this.api_wrapper.post('cancel', { on: order.orderid });
         if (response.ok)
             return (await response.json());
 
@@ -65,7 +66,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
     }
 
     async orderbook(appid, stockCode) {
-        const response = await this.provider.get('orderbook');
+        const response = await this.api_wrapper.get('orderbook');
         let orders;
         if (response.ok) {
             const order_json = (await response.json());
@@ -84,7 +85,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
     }
 
     async positions(appid, stockCode) {
-        const response = await this.provider.get('positions');
+        const response = await this.api_wrapper.get('positions');
         let positions;
         if (response.ok) {
             const position_json = (await response.json());
@@ -102,7 +103,8 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 }
 
 class KotakTradeAPI {
-    constructor() {
+    constructor(provider) {
+        this.provider = provider;
         this.cache_url();
     }
 

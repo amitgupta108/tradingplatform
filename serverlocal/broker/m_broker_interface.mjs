@@ -67,7 +67,7 @@ export class BrokerMarketDataImpl extends BrokerImpl
 
     atmReview(qt) 
     {
-        const t = this.my_subs.getFullSubsList();
+        const t = this.my_subs.getSubscriptionsForStockCode(qt.stockCode);
         t.forEach((ss) => {
             const response = ss.getNotified(qt);
             if (response !== undefined && response.load === true) {
