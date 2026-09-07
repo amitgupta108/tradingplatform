@@ -1,6 +1,4 @@
 import qs from '../stream.mjs';
-const live_order_map = new Map();
-var counter = 10000;
 
 class OrderManager 
 {
@@ -23,17 +21,17 @@ class OrderManager
         });
     }
 
-    notifyme(message, trade_mode)
+    notifyme(message)
     {    
         const order = message.data;
         if (['open', 'complete', 'rejected', 'cancelled'].includes(order.ordSt))
         {
-            this.liveOrderMatching(order, trade_mode);
+            this.liveOrderMatching(order);
             console.log('order notifcation ' + order.ordSt);
         }
     }
 
-    liveOrderMatching(order, mode) 
+    liveOrderMatching(order) 
     {
         const live_order = this.formatLiveOrder(order);
         let found = this.findMatch(live_order);
@@ -42,10 +40,6 @@ class OrderManager
             live_order.appid = found.appid;
             this.live_order_map.delete(found.localid);
             this.live_order_map.set(live_order.orderid, live_order);
-        }
-        else {
-            live_order.receiver = { stockCode: live_order.stockCode, trade_mode: mode };
-            live_order.appid = live_order.stockCode + mode;
         }
         qs.emitOrders(live_order.appid, 'order', live_order);
     }

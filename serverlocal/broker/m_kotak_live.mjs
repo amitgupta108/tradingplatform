@@ -52,12 +52,12 @@ class KotakMarketDataLive extends BrokerMarketDataImpl
         list.forEach((e) => {
 
             const exchange = e.exchange === 'MCX' ? 'mcx_fo' : e.key === 'index' ? 'nse_cm' : 'nse_fo';    
-            const mcx_no_index = e.key === 'index' && e.exchange === 'MCX'; 
-            const token = e.key === 'index' && !mcx_no_index ? '26000' : scripstore.findScripByRefKey(e.symbol)?.token;
+            const mcx_index = e.key === 'index' && e.exchange === 'MCX'; 
+            const token = e.key === 'index' && !mcx_index ? '26000' : scripstore.findScripByRefKey(e.symbol)?.token;
             if (token === '26000' && this.symbol_cache.get(token) === undefined)
                 this.symbol_cache.set(token, utils.expandSymbol(e.symbol));
 
-            if(exchange !== undefined && token !== undefined && !mcx_no_index)
+            if(exchange !== undefined && token !== undefined && !mcx_index)
                 requests.push(exchange + '|' + token);
         });
         return requests;
