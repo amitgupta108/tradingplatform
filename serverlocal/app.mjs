@@ -1,14 +1,14 @@
 import Session from './session/session.mjs';
-import services from './service/services.mjs';
+import { ConfigService as services } from './service/.config/configservice.mjs';
 import apiserver from './apiserver.mjs'; 
 import { socketmap } from './session/appstate.mjs';
 
-function startServices(skip_list) 
+export function startServices() 
 {
-    services.initializeAll([]);
+    services.initializeAll();
 }
 
-function connect(s)
+export function connect(s)
 {        
     const appid = s.handshake.auth.token;
     const stockCode = s.handshake.auth.stockCode;
@@ -20,7 +20,6 @@ function connect(s)
         return;
     }
     
-    //services.initialize(mode);
     session(s, appid, stockCode, mode);
     registerHandlers(s, appid, mode);
 
@@ -74,5 +73,3 @@ function registerAuthorizer(s, mode)
         next();
     });
 }
-
-export default {connect, startServices}

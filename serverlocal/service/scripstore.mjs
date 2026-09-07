@@ -27,8 +27,8 @@ const filePaths = [{
 	}];
 
 const filters = {
-	expiryDate: ['1473345000', '1473949800', '1475159400'],
-	underlying: ['NIFTY']
+	expiryDate: ['1473345000', '1473949800', '1475159400', '1789689599', '1790035199'],
+	underlying: ['NIFTY', 'CRUDEOIL'],
 };
 
 const todayStr = new Date().toISOString().split('T')[0];
@@ -84,11 +84,11 @@ class ScripStore
 		});
 	}
 
-	async load(filters) 
+	async load(filters, reload = false) 
 	{
 		clearStaleCacheFiles();
 		console.log('Checking for local persistent file cache...');
-		if (fs.existsSync(cacheFilePath)) 
+		if (fs.existsSync(cacheFilePath) || reload === true) 
 		{
 			const jsonfile = fs.createReadStream(cacheFilePath, { encoding: 'utf8' });
 

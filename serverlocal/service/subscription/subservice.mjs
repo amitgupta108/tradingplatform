@@ -31,26 +31,29 @@ export class Subscriptions
             t.stockCode === stockCode);
     }
 
-    getFullSubsList(){
-        return this.subs_map.values();
+    getFullSubsList(withKeys = false){
+        if(withKeys)
+            return this.subs_map.entries();
+        else
+            return this.subs_map.values();
     }
 
-    addRequests(requests) {
+    addRequests(appid, requests) {
         requests.forEach((r) => {
             let subscribers = this.req_map.get(r.symbol);
             if (subscribers === undefined) {
                 subscribers = new Array();
                 this.req_map.set(r.symbol, subscribers);
             }
-
-            subscribers.push(r.appid);
+            if(!subscribers.includes(appid))
+                subscribers.push(appid);
         });
     }
 
     removeRequests(requests) {
         requests.forEach((r) => {
             const subscribers = this.req_map.get(r.symbol);
-            const idx = subscribers.find(r.appid);
+            const idx = subscribers.findIndex((v) => v === r.appid);
             subscribers.splice(idx, 1);
         });
     }
@@ -95,7 +98,12 @@ export class SubsTemplate
 
     getSubsItems(keys)
     {
-        return this.st.filter((s) => keys.includes(s.key));
+        return this.st.filter((st) => {
+            if(this.stockCode === 'CRUDEOIL' && st.key === 'index')    
+                return false;
+            else
+                return keys.includes(st.key);
+        });
     }
     
     getSubsItemByKey(key) {

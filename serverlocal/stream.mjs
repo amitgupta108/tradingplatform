@@ -1,5 +1,5 @@
 import Session from './session/session.mjs';
-import services from './service/services.mjs';
+import {ConfigService} from './service/.config/configservice.mjs';
 import {socketmap} from './session/appstate.mjs';
 
 function emitOrders(appid, type, order)
@@ -48,7 +48,7 @@ function getReceivers(appid, type, msg)
         socketmap.forEach((v, k) => 
         {
             if( v.stockCode === msg.receiver.stockCode &&
-                services.getFeatureMode(v.mode, 'trade') === msg.receiver['trade_mode'])
+                ConfigService.getFeatureMode(v.mode, 'trade') === msg.receiver['trade_mode'])
                 receivers.push(k);
         });
     }
