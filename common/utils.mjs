@@ -1,4 +1,11 @@
 //import vollib from '../../js_vollib/build/js_vollib.js';
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const expiryTimestampCache = new Map();
 
 function addIVNDelta(q, uq)
@@ -123,9 +130,14 @@ function expandSymbol(symbol)
     return t;
 }
 
+function getWSfolder(){
+    return path.join(__dirname, '..');
+}
+
 export default {
     filter,
     strikes,
     _strikes,
-    expandSymbol
+    expandSymbol,
+    getWSfolder
 };
