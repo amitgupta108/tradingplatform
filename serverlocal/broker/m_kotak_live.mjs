@@ -3,7 +3,9 @@ import { eventservice } from '../service/eventservice.mjs';
 import { HSMClient } from '../../dist/marketdatafeed/websocket/HSMClient.js'
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import utils from '../../common/utils.mjs';
+import { parse } from 'date-fns';
 
+const pattern = "dd/MM/yyyy HH:mm:ss";
 const options = {
     autoReconnect: true,
     maxRetries: 2,
@@ -18,16 +20,14 @@ class KotakMarketDataLive extends BrokerMarketDataImpl
     constructor(name, provider)
     {
         super(name, provider);
+        this.provider = new HSMClient(options);
     }
 
     addListeners()
     {
-        if (!this.provider)
-            this.provider = new HSMClient(options);
-
-        this.provider.addListener('quote', this.onQuotes);
-        this.provider.addListener('snapshot', this.onSnapshot);
-        eventservice.addListener('kotak_auth', this.onAuthdata);
+        this.provider.addListener('quote', (arg) => this.onQuotes(arg));
+        this.provider.addListener('snapshot', (arg) => this.onSnapshot(arg));
+        eventservice.addListener('kotak_auth', (arg) => this.onAuthdata(arg));
     }
 
     onAuthdata(authdata)
@@ -38,89 +38,68 @@ class KotakMarketDataLive extends BrokerMarketDataImpl
         console.log('HSM authdata available');
     }
 
-    providerStart(appid, requests)
+    providerSubscribe(appid, requests, action)
     {
-        this.buildRequests(appid, requests)
-        this.my_subs.addRequests(requests);
-        this.subscribe(appid, requests, 'subs');
+        if(action === 'subs' || action === 'start')
+            this.provider.subscribeScrips(requests);
+        else
+            this.provider.unsubscribeScrips(requests);
     }
 
     buildRequests(appid, list) 
     {
         const requests = [];
         list.forEach((e) => {
+
             const exchange = e.exchange === 'MCX' ? 'mcx_fo' : e.key === 'index' ? 'nse_cm' : 'nse_fo';    
             const mcx_no_index = e.key === 'index' && e.exchange === 'MCX'; 
             const token = e.key === 'index' && !mcx_no_index ? '26000' : scripstore.findScripByRefKey(e.symbol)?.token;
-            
+            if (token === '26000' && this.symbol_cache.get(token) === undefined)
+                this.symbol_cache.set(token, utils.expandSymbol(e.symbol));
+
             if(exchange !== undefined && token !== undefined && !mcx_no_index)
                 requests.push(exchange + '|' + token);
         });
         return requests;
     }
 
-    option_chain(appid, stockCode, expiry, action) {
-        const stock_subs = my_subs.getSubscriptions(stockCode + 'LIVE_1');
-        const response = stock_subs.optionChainAction(expiry, action);
-        if (response !== undefined) {
-            subscribe(appid, response.strikes, response.action);
-        }
-    }
-
-    onSnapshot(response)
+    onSnapshot(snapshot)
     {
-        const qt = this.toScrip(response);
+        const qt = this.toScrip(snapshot);
         this.emitQuotes(qt);
 
-        if (qt.key === 'index' || (qt.exchange === 'MCX' && qt.key === 'futures'))
+        if (qt.key === 'futures')
             this.atmReview(qt);
     }
 
     standardize(q)
     {
         const qt = this.symbol_cache.get(q.tk);
-        if (qt !== undefined) {
-            if (q.name === 'sf' && q.ltp !== undefined) {
-                qt.ltp = Number(q.ltp);
-                qt.ltt = q.m1 - qt.offset;
-                return qt;
-            }
-            else if(q.name === 'if' && q.iv !== undefined) {
-                qt.ltp = Number(q.iv);
-                qt.ltt = q.m1 - qt.offset;
-                return qt;
-            }
+        if (qt !== undefined && q.ltp !== undefined) {
+            qt.ltp = q.name === 'sf' ? Number(q.ltp) : Number(q.iv);
+            qt.ltt = q.m1;
+            return qt;
         }
     }
 
     toScrip(snapshot)
     {
-        const qt = this.symbol_cache.get(snapshot.tk);
-        if (qt === undefined)
-        {
-            if(snapshot.name === 'sf') {
-                const fdtm = snapshot.fdtm !== undefined ? parse(snapshot.fdtm, pattern, new Date()).getTime() : Date.now() ;
-                const { e: exchange, ts: tSymbol, ltp: ltp, ...rest } = snapshot;
-                const qt = { exchange, tSymbol, ltp};
-    
-                qt.symbol = snapshot.e === 'nse_fo' ? scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey : snapshot.ts;
-                qt.ltp = Number(qt.ltp);
-                qt.ltt = fdtm;
-                qt.offset = Date.now() - fdtm;
-                this.symbol_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
-            }
-            else if (snapshot.name === 'if') {
-                const tvalue = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
-                const { tk: token, e: exchange, iv: ltp,  ...rest } = snapshot;
-                const qt = { token, exchange, ltp};
-    
-                qt.symbol = snapshot.tk;
-                qt.ltp = Number(qt.ltp);
-                qt.ltt = tvalue;
-                qt.offset = Date.now() - tvalue;
-                this.symbol_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
-            }
+        let qt;
+        if(snapshot.name === 'sf') {
+            const { tk: token, e: exchange, ltp: ltp, ...rest } = snapshot;
+            qt = { token, exchange, ltp};    
+            qt.symbol = snapshot.e === 'mcx_fo' ? snapshot.ts : scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey;
+            qt.ltt = snapshot.fdtm !== undefined ? parse(snapshot.fdtm, pattern, new Date()).getTime() : Date.now();
         }
+        else if (snapshot.name === 'if') {
+            const { tk: token, e: exchange, iv: ltp,  ...rest } = snapshot;
+            qt = { token, exchange, ltp};
+            qt.symbol = scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey ?? snapshot.tk;
+            qt.ltt = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
+        }
+        qt.ltp = Number(qt.ltp);
+        this.symbol_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
+    
         return this.symbol_cache.get(snapshot.tk);
     }
 }

@@ -1,107 +1,104 @@
-import qServer from '../stream.mjs';
-import services from './services.mjs';
-import path from 'path';
+import {eventservice} from './eventservice.mjs'
+import streamer from '../stream.mjs';
+import { ConfigService as config } from './.config/configservice.mjs';
 
-const name = path.parse(import.meta.filename).name;
-const logical_trade_name = 'TPSIMTRADE';
-
-const sim_order_map = new Map();
-var counter = 50000;
-let initialized = false;
-let myviewbuddies;
-
-const open_orders = {
-    HISTORY: false,
-    LIVE: false,
-    LIVE_2: false,
-    LIVE_3: false
-};
-
-function init()
-{   
-    if(!initialized) {
-        const mymodes = services.getModesForService(logical_trade_name, 'trade');
-        myviewbuddies = mymodes.map((m) => {
-            const s = services.getService('view', m);
-            s.registerPriceFeed();
-        });
-        initialized = true;
-        return {status:'success'}
-    }
-}
-
-function neworders(appid, view_mode, orders)
+class OrderSimulator
 {
-    services.getProfile(view_mode);
-    orders.forEach((order) => {
+    constructor(name)
+    {
+        this.name = name;
+        this.mytradename = this.name;
+        this.initialized = false;
+        this.counter = 50000;
+        this.orders = new Map();
+    }
+
+    init() 
+    {
+        if (!this.initialized) {
+            const mymodes = config.getModesForService(this.name, 'trade');
+            mymodes.forEach((m) => {
+                const s = config.getActiveServiceByMode('view', m);
+                if(s !== undefined)
+                {
+                    const eventname = s.registerPriceFeed();
+                    eventservice.addListener(eventname, (q) => {
+                        this.orderExecutionSim(eventname, q);
+                    });
+                }
+            });
+            this.initialized = true;
+            return { status: 'success' }
+        }
+    }
+
+    placeOrder(appid, order, mode)
+    {
+        const provider_key = config.getFeatureMode(mode ,'view');
         order.filled_q = 0;
         order.pricedAt = 0;
-        order.orderid = ++counter;
+        order.orderid = ++this.counter;
         order.state = 'opened';
-        order.view_mode = view_mode;
-        sim_order_map.set(order.orderid, order);
+        order.view_mode = provider_key;
+        this.orders.set(order.orderid, order);
 
-        qServer.emitOrders(order.appid, 'order', order);
-        open_orders[view_mode] = true;
-    });
-    return {status: 'success'};
-}
+        streamer.emitOrders(appid, 'order', order);
+        return order;
+    }
 
-function orderExecutionSim(view_mode, q)
-{
-    const openorders = Array.from(sim_order_map.values()).filter((order) => {
-        return (order.state === 'opened'
-            && order.symbol === q.symbol
-            && order.view_mode === view_mode);
-    });
-    
-    if(openorders.length !== 0)
+    orderExecutionSim(view_mode, q) 
     {
-        openorders.forEach((order) => {
-            var executed = false;
-            if(order.pricetype === 'MARKET')
-                executed = true;
-            else if(order.pricetype === 'LIMIT')
-                if(order.action === 'BUY' && q.ltp <= order.price)
+        const openorders = Array.from(this.orders.values()).filter((order) => {
+            return (order.state === 'opened'
+                && order.symbol === q.symbol
+                && order.view_mode === view_mode);
+        });
+
+        if (openorders.length !== 0) {
+            openorders.forEach((order) => {
+                var executed = false;
+                if (order.pricetype === 'MARKET')
                     executed = true;
-                else if(order.action === 'SELL' && q.ltp >= order.price)
-                    executed = true;
-            
-            if(executed) {
-                order.state = 'completed';
-                order.pricedAt = q.ltp;
-                order.filled_q = order.quantity;
-                qServer.emitOrders(order.appid, 'order', order);
-            }
+                else if (order.pricetype === 'LIMIT')
+                    if (order.action === 'BUY' && q.ltp <= order.price)
+                        executed = true;
+                    else if (order.action === 'SELL' && q.ltp >= order.price)
+                        executed = true;
+
+                if (executed) {
+                    order.state = 'completed';
+                    order.pricedAt = q.ltp;
+                    order.filled_q = order.quantity;
+                    streamer.emitOrders(order.appid, 'order', order);
+                }
+            });
+        }
+    }
+
+    cancelOrder(appid, order) 
+    {
+        const found = this.orders.get(order.orderid);
+        if (found !== undefined && found.state === 'opened') {
+            found.state = 'cancelled';
+            streamer.emitOrders(appid, 'order', found);
+        }
+        else
+            console.error('cancellation failed - order not found or not open');
+        
+        return found;
+    }
+
+    orderbook(appid, stockCode) 
+    {
+        return Array.from(this.orders.values()).filter((order) => {
+            return order.appid === appid
+            && order.stockCode === stockCode;
         });
     }
-    open_orders[view_mode] = openorders.length > 0 ? true : false;
-}
 
-function cancelOrder(appid, sim_order)
-{
-    var found = sim_order_map.get(sim_order.orderid);
-    if(found !== undefined && found.state === 'opened') {
-        found.state = 'cancelled';
-        qServer.emitOrders(found.appid, 'order', found);
+    positions(appid, stockCode){
+        return [];
     }
-    else
-        console.error('requested order cancellation failed - order not found or not open');
 }
 
-function orderbook(appid, stockCode)
-{
-    return Array.from(sim_order_map.values()).filter((order) => {
-        return order.appid === appid;
-    });
-}
-
-export default {
-    name,
-    open_orders,
-    neworders,
-    cancelOrder,
-    orderbook,
-    orderExecutionSim,
-    init
-}
+export const ordersimulator = new OrderSimulator('ORDERSIMULATOR');

@@ -36,7 +36,7 @@ function wssub(list, action)
 
 function breeze_input(scrip)
 {       
-    var b = {interval: '1second'}
+    var b = {get_exchange_quotes: 'true'};
     b.exchangeCode = scrip.key === 'index' ? 'NSE' : scrip.exchange;
     b.productType = scrip.key === 'futures' ? 'futures' : 'options';
     b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;

@@ -1,41 +1,41 @@
-import { scripstore } from '../scripstore.mjs';
 import { eventservice } from '../eventservice.mjs';
 import { authservice } from '../auth/authservice.mjs';
+import { scripstore } from '../scripstore.mjs';
 import { ordersimulator } from '../ordersimulator.mjs';
 import { m_icici_live } from '../../broker/m_breeze_live.mjs';
 import { m_icici_hist } from '../../broker/m_breeze_hist.mjs';
 import { m_openalgo_live } from '../../broker/m_openalgo.mjs';
 import { m_kotak_live } from '../../broker/m_kotak_live.mjs';
-import live_openalgo from '../../broker/m_t_openalgo.mjs';
-import live_kotak from '../../broker/m_t_kotakneo.mjs';
+import { t_openalgo_trade } from '../../broker/t_openalgo.mjs';
+import { t_kotak_trade } from '../../broker/t_kotakneo.mjs';
 
 const modes = {
-    HISTORY: { view: 'HISTORY', trade: 'SIMULATED', admin: 'BROKER_AUTH' },
-    S1TSAB: { view: 'LIVE_1', trade: 'SIMULATED', admin: 'BROKER_AUTH' },
+    HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: 'BROKER_AUTH' },
+    S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: 'BROKER_AUTH' },
     S1T1AB: { view: 'LIVE_1', trade: 'LIVE_1', admin: 'BROKER_AUTH'},
     S2T1AB: { view: 'LIVE_2', trade: 'LIVE_1', admin: 'BROKER_AUTH' },
     S2T0A0: { view: 'LIVE_2'},
-    S2T2A0: { view: 'LIVE_2', trade: 'LIVE_2'},
+    S2TSA0: { view: 'LIVE_2', trade: 'SIMULATION'},
     S3T1AB: { view: 'LIVE_3', trade: 'LIVE_1', admin: 'BROKER_AUTH'},
     S3T0A0: { view: 'LIVE_3'},
 };
 
 const services = {
-    OPENALGOVIEW: m_openalgo_live,
-    OPENALGOTRADE: live_openalgo,
-    KOTAKNEOTRADE: live_kotak,
-    KOTAKLIVEVIEW: m_kotak_live,
-    ICICIHISTVIEW: m_icici_hist,
-    ICICILIVEVIEW: m_icici_live,
-    ORDERSIMULATOR: ordersimulator,
-    SCRIPSTORE: scripstore,
     EVENTSERVICE: eventservice,
     AUTHSERVICE: authservice,
+    SCRIPSTORE: scripstore,
+    ORDERSIMULATOR: ordersimulator,
+    KOTAKLIVEVIEW: m_kotak_live,
+    KOTAKNEOTRADE: t_kotak_trade,
+    ICICIHISTVIEW: m_icici_hist,
+    ICICILIVEVIEW: m_icici_live,
+    OPENALGOVIEW: m_openalgo_live,
+    OPENALGOTRADE: t_openalgo_trade
 };
 
 const providers = {
     view: { LIVE_1: 'KOTAKLIVEVIEW', LIVE_2: 'OPENALGOVIEW', LIVE_3: 'ICICILIVEVIEW', HISTORY: 'ICICIHISTVIEW'},
-    trade: { LIVE_1: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATED: 'ORDERSIMULATOR' },
+    trade: { LIVE_1: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATION: 'ORDERSIMULATOR' },
     admin: { BROKER_AUTH: 'AUTHSERVICE', SCRIPT_STORE: 'SCRIPSTORE'}
 };
 
@@ -77,19 +77,23 @@ export class ConfigService
         }
     }
 
-    static getProviderModeKey(name, mode) 
+    static getKeyByFeature(name, feature) 
     {
-        return Object.entries(providers[mode]).find(([k, v]) => {
+        const entry = Object.entries(providers[feature]).find(([k, v]) => {
             return v === name;
         });
+
+        if(entry !== undefined)
+            return entry[0];
     }
 
-    static getService(type, modename) 
+    static getActiveServiceByMode(feature, mode) 
     {
-        const modeobject = modes[modename];
-        const providerid = modeobject[type];
-        const providername = providers[type][providerid];
-        return services[providername];
+        const v = modes[mode];    
+        const provider_key = v[feature];
+        const provider_name = providers[feature][provider_key];
+        if (process.env[provider_name] === 'Y')
+            return services[provider_name];
     }
 
     static getProfile(mode) {
@@ -102,15 +106,17 @@ export class ConfigService
 
     static getModesForService(name, feature) 
     {
-        const serviceid = Object.values(providers[feature]).find((v) => {
-            return v === name;
+        const providerkey = this.getKeyByFeature(name, feature);
+        const partner_keys = [];
+        const fModes = Object.entries(modes).filter(([k, v]) => {
+            if (v[feature] === providerkey) {
+                partner_keys.push(k);
+                return true;
+            }
+            return false;
         });
 
-        const fModes = Object.values(modes).filter((v) => {
-            return v[feature] === serviceid;
-        });
-
-        return fModes;
+        return partner_keys;
     }
 
     static checkAccess(eventName, mode) 

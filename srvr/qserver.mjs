@@ -32,10 +32,19 @@ function addListener(eventName, callback)
     console.log('listener count on qserver ' + eventName + ' ' + QuotesEmitter.listeners(eventName).length);
 }
 
+function subscribe(appid, list)
+{
+    live_sub(list, 'subs')
+}
+
+function unsubscribe(appid, list) {
+    live_sub(list, 'unsub')
+}
+
 function live_sub(list, action)
 {
     sutils.wssub(list, action)
-    .then((responses) => { 
+    .then((responses) => {
         console.log('sub successful, count: ' + responses.length);
     })
     .catch((error) => {
@@ -60,8 +69,8 @@ function subscribe_vix(appid, mode, action)
 
 export function wsemit(q)
 {
-    if(q.stock_code === 'INDVIX')
-        QuotesEmitter.emit('live-vix', q);    
+    if (q.symbol?.includes('VIX') || q.stock_code?.includes('VIX'))
+        QuotesEmitter.emit('vix', q);
     else 
         QuotesEmitter.emit('live-quote', q);
 }
@@ -69,7 +78,8 @@ export function wsemit(q)
 export default {
     addListener,
     subscribe_vix,
-    live_sub,
+    subscribe,
+    unsubscribe,
     getHistory,
     getHistoryAsync
 };

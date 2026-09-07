@@ -1,8 +1,7 @@
 import utils from '../../common/utils.mjs';
-import { OPT_EXPIRIES, STRIKE_SIZE } from '../../common/constants.mjs';
-import { subs_store_all, Subscriptions, state_qutils } from '../session/appstate.mjs';
-import simulator from '../service/ordersimulator.mjs';
+import { state_qutils } from '../session/appstate.mjs';
 import { scripstore } from '../service/scripstore.mjs';
+import {ordersimulator} from '../service/ordersimulator.mjs'
 import { parse } from 'date-fns';
 
 const pattern = "dd/MM/yyyy HH:mm:ss";
@@ -39,34 +38,32 @@ function standardize(name, q)
     }
 }
 
-function standardizeiq(qt) {
+function standardizeiq(quote) {
 
-    const { exchange_code: exchange, stock_code: stockCode, product_type, open_interest, volume, high, low, ...rest } = qt;
-    const q = { exchange, stockCode, ...rest };
+    const { exchange_code: exchange, stock_code: stockCode, close: ltp, datetime, expiry_date, right, strike_price, ...rest } = quote;
+    const qt = { exchange, stockCode, ltp, datetime, expiry_date, right, right_type, strike_price};
 
-    q['ltp'] = qt['close'];
-    if (q.ltt === undefined)
-        q.ltt = Date.parse(qt.datetime);
+    qt.ltt = Date.parse(qt.datetime);
 
-    if (q.stockCode === 'CRUDE')
-        q.stockCode = 'CRUDEOIL';
+    if (qt.stockCode === 'CRUDE')
+        qt.stockCode = 'CRUDEOIL';
 
-    if (q.expiry_date !== undefined)
-        q.expiry_date = (q.expiry_date.replaceAll('-20', '').replaceAll('-', '')).toUpperCase();
+    if (qt.expiry_date !== undefined)
+        qt.expiry_date = (qt.expiry_date.replaceAll('-20', '').replaceAll('-', '')).toUpperCase();
 
-    if (q.exchange !== 'NSE' && q.strike_price !== undefined) {
-        q.key = 'strikex';
-        q.right = q.right_type !== undefined ? q.right_type : (q.right === 'Call' ? 'CE' : 'PE');
-        q.symbol = q.stockCode + q.expiry_date + q.strike_price + q.right;
-    } else if (q.expiry_date !== undefined) {
-        q.key = 'futures';
-        q.symbol = q.stockCode + q.expiry_date + 'FUT';
+    if (qt.exchange !== 'NSE' && qt.strike_price !== undefined) {
+        qt.key = 'strikex';
+        qt.right = qt.right_type !== undefined ? qt.right_type : (qt.right === 'Call' ? 'CE' : 'PE');
+        qt.symbol = qt.stockCode + qt.expiry_date + qt.strike_price + qt.right;
+    } else if (qt.expiry_date !== undefined) {
+        qt.key = 'futures';
+        qt.symbol = qt.stockCode + qt.expiry_date + 'FUT';
     }
     else {
-        q.key = q.stockCode.endsWith('VIX') ? 'vix' : 'index';
-        q.symbol = q.stockCode;
+        qt.key = qt.stockCode.endsWith('VIX') ? 'vix' : 'index';
+        qt.symbol = qt.stockCode;
     }
-    return q;
+    return qt;
 }
 
 function standardizeoq(quote) 
@@ -120,12 +117,6 @@ function toScrip(snapshot)
         }
     }
     return state_qutils.quote_cache.get(snapshot.tk);
-}
-
-function sendQsToSim(view_mode, q)
-{
-    if(simulator.initialized === true && simulator.open_orders[view_mode])
-        simulator.orderExecutionSim(view_mode, q);
 }
 
 function buildRequests(appid, instruments) 
