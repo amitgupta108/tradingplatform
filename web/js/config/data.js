@@ -34,7 +34,7 @@ instrumentMap.set('NH1', {
 });
 
 instrumentMap.set('BL1', {
-  fExpiry: "25AUG26",
+  fExpiry: "29SEP26",
   oExpiries: ["25AUG26", "30SEP26"],
   stockCode: 'BANKNIFTY',
   exchange: 'NFO',
@@ -52,8 +52,8 @@ instrumentMap.set('NL1', {
 });
 
 instrumentMap.set('NL2', {
-  fExpiry: "25AUG26",
-  oExpiries: ["25AUG26"],
+  fExpiry: "29SEP26",
+  oExpiries: ["01SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   mode: 'S2T0ADMINS',
@@ -61,8 +61,8 @@ instrumentMap.set('NL2', {
 });
 
 instrumentMap.set('NL3', {
-  fExpiry: "25AUG26",
-  oExpiries: ["25AUG26"],
+  fExpiry: "29SEP26",
+  oExpiries: ["01SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   mode: 'S1T1ADMINT',
