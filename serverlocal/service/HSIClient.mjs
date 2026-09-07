@@ -2,8 +2,10 @@ import WebSocket from 'ws';
 import qserver from '../stream.mjs';
 import { ordermanager } from './ordermanager.mjs';
 
-class KotakHSISocket {
-    constructor() {
+export class KotakHSISocket 
+{
+    constructor(parent) {
+        this.parent = parent;
         this.reconnect = true;
         this.authdata;
         this.wsping;
@@ -29,7 +31,7 @@ class KotakHSISocket {
         this.ws_hsi.on('message', (data) => {
             const message = JSON.parse(data.toString());
             if (message.type === 'order')
-                ordermanager.notifyme(message, 'LIVE');
+                ordermanager.notifyme(message);
             else if (message.type === 'cn' && message.msg === 'connected')
                 this.wshb('hsi', 'start');
         });
@@ -73,4 +75,3 @@ class KotakHSISocket {
         }
     }
 }
-export const kotak_hsi_socket = new KotakHSISocket();

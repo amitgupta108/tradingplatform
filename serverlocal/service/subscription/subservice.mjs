@@ -31,11 +31,8 @@ export class Subscriptions
             t.stockCode === stockCode);
     }
 
-    getFullSubsList(withKeys = false){
-        if(withKeys)
+    getFullSubsList() {
             return this.subs_map.entries();
-        else
-            return this.subs_map.values();
     }
 
     addRequests(appid, requests) {

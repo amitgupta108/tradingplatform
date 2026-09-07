@@ -1,5 +1,3 @@
-import Session from './session/session.mjs';
-import {ConfigService} from './service/.config/configservice.mjs';
 import {socketmap} from './session/appstate.mjs';
 
 function emitOrders(appid, type, order)
@@ -20,19 +18,16 @@ function emitHistQs(appid, key, qA) {
 
 function send(appid, type, msg)
 {
-    if (appid === undefined)
-        return;
-
     const app_obj = socketmap.get(appid);
     if (app_obj !== undefined)
         emit(app_obj.socket, type, msg);
     else
-        group_emit(appid, type, msg);
+        group_emit(type, msg);
 }
 
-function group_emit(appid, type, msg)
+function group_emit(type, msg)
 { 
-    const receivers = getReceivers(appid, type, msg);   
+    const receivers = getReceivers(type, msg);   
     receivers.forEach((appid) => {
         if (type === 'order')
             msg.appid = appid;
@@ -40,25 +35,24 @@ function group_emit(appid, type, msg)
     });
 }
 
-function getReceivers(appid, type, msg)
+function getReceivers(type, msg)
 {
     const receivers = [];
-    if (type === 'order' && msg.receiver !== undefined) 
+    if (type === 'order') 
     {
         socketmap.forEach((v, k) => 
         {
-            if( v.stockCode === msg.receiver.stockCode &&
-                ConfigService.getFeatureMode(v.mode, 'trade') === msg.receiver['trade_mode'])
+            if( v.stockCode === msg.stockCode)
                 receivers.push(k);
         });
     }
-    else if(type === 'quote' && Session.sn(appid) !== undefined) 
+/*    else if(type === 'quote' && Session.sn(appid) !== undefined) 
     {
         Session.sn(appid)?.shared_with.forEach((v, k) => {
             if (v.m_subs !== 'paused') 
                 receivers.push(k);
         });
-    }
+    } */
     return receivers;
 }
 
