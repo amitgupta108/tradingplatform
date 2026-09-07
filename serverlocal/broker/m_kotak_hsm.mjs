@@ -62,9 +62,6 @@ function startv2(appid, p)
             subscribe(appid, s, 'subs');
         });
     }
-
-    if(p.exchange !== 'MCX')
-        client.subscribeIndicies('nse_cm|INDIA VIX');
 }
 
 function testSubs()
