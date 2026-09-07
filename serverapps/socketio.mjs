@@ -2,7 +2,7 @@ import { httpsServer } from './httpsserver.mjs';
 import { httpServer } from './httpsserver.mjs';
 import { Server } from "socket.io";
 
-export const socketio = (host, port) => 
+export function socketServer(host, port) 
 {
     const hServer = process.env.HTTP === 'Y' ? httpServer : httpsServer;    
     const protocol = process.env.HTTP === 'Y' ? 'http' : 'https';

@@ -1,4 +1,5 @@
 import OpenAlgo from 'openalgo';
+import utils from '../../common/utils.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 
 class OpenAlgoMarketData extends BrokerMarketDataImpl 
@@ -33,8 +34,8 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
     autoStart() 
     {    
         setTimeout(() => {
-            const list = this.my_subs.getFullSubsList();
-            for(const [k, v] of list)
+            const list = this.my_subs.getFullSubsList(true);
+            list.forEach(([k, v]) => 
             {
                 const requests = v.getSubsItems(['index', 'futures']);
                 this.subscribe(k, requests, 'subs');
@@ -42,7 +43,7 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
                 chains.forEach((oc) => {
                     this.subscribe(k, oc.strikes, 'subs');
                 });
-            }
+            });
 
             this.ws_direct = this.provider._wsClient.ws;
             this.ws_direct.addEventListener('close', () => {
@@ -52,13 +53,13 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
         }, 5000);
     }
 
-    providerStart(appid, requests)
+    providerSubscribe(appid, requests, action) 
     {
-        this.buildRequests(appid, requests);
-        this.my_subs.addRequests(requests);
-        this.provider.subscribe_ltp(requests, (q) => {
-            this.onQuotes(q);
-        });
+        if (action === 'subs' || action === 'start')
+            this.provider.subscribe_ltp(requests, (q) => 
+                this.onQuotes(q));
+        else
+            this.provider.unsubscribe_ltp(requests);
     }
 
     standardize(qt) 
@@ -69,18 +70,19 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
     buildRequests(appid, requests) 
     {
         requests.forEach((r) => {
+            if (this.symbol_cache.get(r.symbol) === undefined)
+                this.symbol_cache.set(r.symbol, utils.expandSymbol(r.symbol));
+
             if (r.key === 'index')
                 r.exchange = 'NSE_INDEX';
         });
+
+        return requests;
     }
 
-    option_chain(appid, stockCode, expiry, action)
-    {
-        const stock_subs = my_subs.getSubscriptions(stockCode + 'LIVE_2');
-        const response = stock_subs.optionChainAction(expiry, action);
-        if(response !== undefined) {
-            this.subscribe(appid, response.strikes, response.action);
-        }
+    exit(appid, sublist) {
+        if (client?._wsClient?.isConnected)
+            client?._wsClient?.ws._sendMessage({ action: unsubscribe_all });
     }
 }
 

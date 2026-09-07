@@ -127,7 +127,7 @@ class KotakTradeAPI {
 
     post(endpt, body) {
         const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
-        const headers = getHeaders();
+        const headers = this.getHeaders();
         const api_url = mystate.endpoints[endpt];
         const options = {
             method: 'POST',
@@ -138,7 +138,7 @@ class KotakTradeAPI {
     }
 
     get(endpt) {
-        const headers = getHeaders();
+        const headers = this.getHeaders();
         const api_url = mystate.endpoints[endpt];
         const options = {
             method: 'GET',
