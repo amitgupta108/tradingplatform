@@ -17,7 +17,7 @@ class OptionChain
     optionChains.push(this);
     qBox.addEventListener('strikex', this);
 
-    qBox.addEventListener('index', (event) => {
+    qBox.addEventListener('futures', (event) => {
       this.setup(event.detail);
     }, { once: true });
   }
@@ -43,7 +43,7 @@ class OptionChain
       this.addRowCombo(ce_strike, pe_strike);
     }
 
-    qBox.addEventListener('index', (event) => {
+    qBox.addEventListener('futures', (event) => {
       this.handleUnderlying(event.detail);
     });
   }
