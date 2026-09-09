@@ -33,15 +33,15 @@ export class KotakHSISocket
             if (message.type === 'order')
                 ordermanager.notifyme(message);
             else if (message.type === 'cn' && message.msg === 'connected')
-                this.wshb('hsi', 'start');
+                this.starthb();
         });
 
-        this.ws_hsi.on('error', (data) => {
-            console.log("connection error hsi" + data.toString());
+        this.ws_hsi.on('error', (error) => {
+            console.log("connection error hsi " + error.code + " " + error.message);
         });
 
-        this.ws_hsi.on('close', () => {
-            console.log("connection closed hsi");
+        this.ws_hsi.on('close', (code, reason) => {
+            console.log("connection closed hsi " + code + " " + reason.toString());
             this.hsiReconnect();
         });
 
@@ -59,19 +59,14 @@ export class KotakHSISocket
         }
     }
 
-    wshb(type, action) {
-        console.log("websocket heartbeat: " + type + ' - ' + action);
+    starthb() {
         qserver.broadcast('hb', { order_socket: this.ws_hsi?.readyState });
 
-        if (action === 'start') {
-            if (this.wsping !== undefined)
-                clearInterval(this.wsping);
+        if (this.wsping !== undefined)
+            clearInterval(this.wsping);
 
-            this.wsping = setInterval(() => {
-                this.ws_hsi.ping();
-                //qserver.broadcast('hb', { order_socket: ws_hsi?.readyState });
-
-            }, 120000);
-        }
+        this.wsping = setInterval(() => {
+            this.ws_hsi.ping();
+        }, 60000);
     }
 }

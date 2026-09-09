@@ -1,7 +1,5 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
-import { Keys } from '../constants/types.js';
-import { encodeData } from '../utils/compression.js';
 import { PacketParser } from '../protocol/PacketParser.js';
 import { PacketBuilder } from '../protocol/PacketBuilder.js';
 import { buf2Long} from '../utils/binary.js';
@@ -59,10 +57,7 @@ class BaseClient extends EventEmitter {
                     resolve();
                 };
                 this.ws.onmessage = (event) => {
-                    if(process.env.HSMENCODED === 'Y')
-                        this.emit('encoded', event.data);
-                    else
-                        this.handleMessage(event.data);
+                    this.handleMessage(event.data);
                 };
                 this.ws.onerror = (error) => {
                     this.log('WebSocket error:', error.message);
@@ -102,18 +97,6 @@ class BaseClient extends EventEmitter {
         this.isConnected = false;
         this.isConnecting = false;
         this.emit('disconnected');
-    }
-    /**
-     * Send a JSON request to the server (compressed).
-     */
-    sendRequest(type, payload) {
-        if (!this.ws || !this.isConnected) {
-            this.log('Cannot send request: not connected');
-            return;
-        }
-        const request = { [Keys.TYPE]: type, ...payload };
-        const encoded = encodeData(JSON.stringify(request));
-        this.ws.send(encoded);
     }
 
     sendMessage(data) {
