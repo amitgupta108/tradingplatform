@@ -8,13 +8,14 @@ import { m_openalgo_live } from '../../broker/m_openalgo.mjs';
 import { m_kotak_live } from '../../broker/m_kotak_live.mjs';
 import { t_openalgo_trade } from '../../broker/t_openalgo.mjs';
 import { t_kotak_trade } from '../../broker/t_kotakneo.mjs';
+import { m_common_service } from '../../broker/m_common.mjs';
 
 const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: 'BROKER_AUTH' },
     S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: 'BROKER_AUTH' },
     S1T1AB: { view: 'LIVE_1', trade: 'LIVE_1', admin: 'BROKER_AUTH'},
     S2T1AB: { view: 'LIVE_2', trade: 'LIVE_1', admin: 'BROKER_AUTH' },
-    S2T0A0: { view: 'LIVE_2'},
+    S2T2A0: { view: 'LIVE_2', trade: 'LIVE_2'},
     S2TSA0: { view: 'LIVE_2', trade: 'SIMULATION'},
     S3T1AB: { view: 'LIVE_3', trade: 'LIVE_1', admin: 'BROKER_AUTH'},
     S3T0A0: { view: 'LIVE_3'},
@@ -25,6 +26,7 @@ const services = {
     AUTHSERVICE: authservice,
     SCRIPSTORE: scripstore,
     ORDERSIMULATOR: ordersimulator,
+    COMMONSERVICE: m_common_service,
     KOTAKLIVEVIEW: m_kotak_live,
     KOTAKNEOTRADE: t_kotak_trade,
     ICICIHISTVIEW: m_icici_hist,
@@ -75,6 +77,11 @@ export class ConfigService
         } catch (exception) {
             console.error('init sync error ' + service.name + ' ' + exception);
         }
+    }
+
+    static getServiceByName(name)
+    {
+        return services[name];
     }
 
     static getKeyByFeature(name, feature) 
