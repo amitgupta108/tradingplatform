@@ -8,11 +8,11 @@ class HSMClient extends BaseClient
 {
     constructor(config) {
         super(HSM_URL, {
-            autoReconnect: config.autoReconnect ?? true,
-            maxRetries: config.maxRetries ?? 5,
-            retryDelay: config.retryDelay ?? 3000,
-            heartbeatInterval: config.heartbeatInterval ?? 10000,
-            throttleInterval: config.throttleInterval ?? 30000,
+            autoReconnect: config.autoReconnect,
+            maxRetries: config.maxRetries,
+            retryDelay: config.retryDelay,
+            heartbeatInterval: config.heartbeatInterval,
+            throttleInterval: config.throttleInterval,
             logEnabled: true,
         });
         this.channel = '1';
