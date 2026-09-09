@@ -22,12 +22,12 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
     async placeOrder(appid, order) {
         const korder = this.toKotakOrder(order);
         const response = await this.api_wrapper.post('order', korder);
-        ordermanager.neworders(appid, [order]);
         if (response.ok) {
             const result = (await response.json());
             if (result.stat === 'Ok') {
                 order.state = 'submitted';
                 order.orderid = result.nOrdNo;
+                ordermanager.neworders(appid, [order]);
             }
             else {
                 order.state = 'failed';

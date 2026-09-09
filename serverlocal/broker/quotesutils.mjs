@@ -1,7 +1,6 @@
 import utils from '../../common/utils.mjs';
 import { state_qutils } from '../session/appstate.mjs';
 import { scripstore } from '../service/scripstore.mjs';
-import {ordersimulator} from '../service/ordersimulator.mjs'
 import { parse } from 'date-fns';
 
 const pattern = "dd/MM/yyyy HH:mm:ss";
@@ -133,7 +132,6 @@ function buildRequests(appid, instruments)
 
 export default {
     standardize,
-    sendQsToSim,
     buildRequests,
     toScrip,
   };

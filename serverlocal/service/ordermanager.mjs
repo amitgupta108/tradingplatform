@@ -11,12 +11,13 @@ class OrderManager
     {
         orders.forEach((order) => {
         
+            if(order.orderid === undefined) {
+                order.orderid = ++this.counter;
+                order.localid = order.orderid;
+            }
             order.filled_q = 0;
             order.pricedAt = 0;
-            order.orderid = ++this.counter;
-            order.localid = order.orderid;
             order.appid = appid;
-            order.state = 'created';
             this.live_order_map.set(order.orderid, order);
         });
     }
@@ -45,18 +46,13 @@ class OrderManager
     }
 
     findMatch(live_order) {
+        const found = this.live_order_map.get(live_order.orderid);
+        if (found !== undefined)
+            return found;
+        
         const local_orders = Array.from(this.live_order_map.values());
-        var found = local_orders.filter((order) => order.orderid === live_order.orderid);
-        if (found === 1)
-            return found[0];
-        else if (found > 1) {
-            console.error('inconsistent order map state ');
-            return;
-        }
-
         found = local_orders.filter((order) => {
-            return order.state === 'opened'
-                && order.symbol === live_order.symbol
+            return order.symbol === live_order.symbol
                 && order.action === live_order.action
                 && order.pricetype === live_order.pricetype
                 && order.price === live_order.price
@@ -66,11 +62,9 @@ class OrderManager
                     || (order.state === 'opened' && ['completed', 'cancelled'].includes(live_order.state)));
         });
 
-        if (found.length === 0)
-            return undefined;
-        else if (found.length === 1)
+        if (found.length === 1)
             return found[0];
-        else if (found.length > 1) //multiple open orders without kotak orderid, all with submitted status?
+        else
             return undefined;
     }
 
