@@ -8,6 +8,8 @@ class CommonService
     {
         this.name = 'COMMONSERVICE';
         this.initialized = false;
+        this.qt_vix = { key: 'vix', stockCode: 'INDIAVIX', ltp: 0, ltt: 0 };
+
     }
 
     init()
@@ -51,14 +53,10 @@ class CommonService
 
     onQuotes(q, appid)
     {
-        const ltt = (typeof q.datetime === 'string') ? Date.parse(q.datetime) : q.ltt;
-        const ltp = q.close ?? q.last;
-        const qt = { key: 'vix', stockCode: q.stock_code, ltp: ltp, ltt: ltt };
-        
-        if(appid === undefined)
-            streamer.broadcast('vix', qt, 'all_nse_live');
-        else
-            streamer.emitQs(appid, qt);
+        this.qt_vix.ltt = Date.parse(q.ltt);
+        this.qt_vix.ltp = q.last;
+       
+        streamer.broadcast('vix', this.qt_vix, 'all_nse_live');
     }
 }
 
