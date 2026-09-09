@@ -1,4 +1,3 @@
-import Session from './session/session.mjs';
 import { ConfigService as services } from './service/.config/configservice.mjs';
 import apiserver from './apiserver.mjs'; 
 import { socketmap } from './session/appstate.mjs';
@@ -28,7 +27,7 @@ export function connect(s)
         console.error(`[Global Error]  Socket ${s.id}:`, err.message);
     });
 }
-
+/*
 function session(s, appid, stockCode, mode)
 {
     const view_mode = services.getProfile(mode)['view']; 
@@ -42,7 +41,7 @@ function session(s, appid, stockCode, mode)
     //socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});
     s.sn = sn;
 }
-
+*/
 function registerHandlers(s, appid, mode)
 {
     const profile = services.getProfile(mode);

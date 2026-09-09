@@ -53,10 +53,12 @@ class CommonService
 
     onQuotes(q, appid)
     {
-        this.qt_vix.ltt = Date.parse(q.ltt);
-        this.qt_vix.ltp = q.last;
+        if (q.last !== this.qt_vix.ltp) {
+            this.qt_vix.ltt = Date.parse(q.ltt);
+            this.qt_vix.ltp = q.last;
        
-        streamer.broadcast('vix', this.qt_vix, 'all_nse_live');
+            streamer.broadcast('vix', this.qt_vix, 'all_nse_live');
+        }
     }
 }
 

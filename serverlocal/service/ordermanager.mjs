@@ -35,7 +35,7 @@ class OrderManager
     liveOrderMatching(order) 
     {
         const live_order = this.formatLiveOrder(order);
-        let found = this.findMatch(live_order);
+        const found = this.findMatch(live_order);
 
         if (found !== undefined) {
             live_order.appid = found.appid;
@@ -46,7 +46,7 @@ class OrderManager
     }
 
     findMatch(live_order) {
-        const found = this.live_order_map.get(live_order.orderid);
+        let found = this.live_order_map.get(live_order.orderid);
         if (found !== undefined)
             return found;
         
