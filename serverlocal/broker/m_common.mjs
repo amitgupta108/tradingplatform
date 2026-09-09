@@ -14,7 +14,7 @@ class CommonService
     {
         if(!this.initialized) {
             qserver.addListener('vix', (q, appid) => {
-                this,onQuotes(q, appid);
+                this.onQuotes(q, appid);
             });
             this.initialized = true;
             return {status: 'success'};

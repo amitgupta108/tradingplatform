@@ -44,7 +44,7 @@ instrumentMap.set('BL1', {
 
 instrumentMap.set('NL1', {
   fExpiry: "29SEP26",
-  oExpiries: ["01SEP26"],
+  oExpiries: ["15SEP26", "22SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   mode: 'S1T1AB',
@@ -53,25 +53,25 @@ instrumentMap.set('NL1', {
 
 instrumentMap.set('NL2', {
   fExpiry: "29SEP26",
-  oExpiries: ["01SEP26"],
+  oExpiries: ["15SEP26", "22SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
-  mode: 'S2T0ADMINS',
+  mode: 'S2TSA0',
   appid: '996ee155-48d9-49c1-0e18-b17551e8a4gh'
 });
 
 instrumentMap.set('NL3', {
   fExpiry: "29SEP26",
-  oExpiries: ["01SEP26"],
+  oExpiries: ["15SEP26", "22SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
-  mode: 'S1T1ADMINT',
+  mode: 'S2T1AB',
   appid: 'dN2wzV0S-x3Ca-SVQI-AAAH-940b886ee169'
 });
 
 instrumentMap.set('NL4', {
   fExpiry: "29SEP26",
-  oExpiries: ["08SEP26", "15SEP26"],
+  oExpiries: ["15SEP26"],
   stockCode: 'NIFTY',
   exchange: 'NFO',
   mode: 'S1T1AB',
