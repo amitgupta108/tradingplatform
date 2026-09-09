@@ -58,9 +58,8 @@ function getReceivers(type, msg)
 
 function broadcast(type, msg, group)
 {
-    for (const appid of socketmap.keys()) {
-        var app_obj = socketmap.get(appid);
-        if (app_obj && (type === 'hb' || (type === 'vix' && app_obj.mode !== 'HISTORY')))
+    for (const [appid, app_obj] of socketmap.entries()) {
+        if (app_obj && (type === 'hb' || (type === 'vix' && !app_obj.mode.startsWith('HISTORY'))))
             emit(app_obj.socket, type, msg);
     }
 }
