@@ -173,10 +173,12 @@ function handleClickEvent(e)
     removeOrderRow(cl_el, pn_el);
   else if(cl_el.id === 'orderdisplay-btn')
     displayOrderList(cl_el, pn_el);
+  else if (cl_el.id === 'conf_cancel_lb')
+    confirmCancel(cl_el, pn_el);
   else if(cl_el.id === 'cancel_order_btn')
     cancelOrder(cl_el, pn_el);
-  else if(cl_el.id === 'conf_cancel_lb')
-    confirmCancel(cl_el, pn_el);
+  else if (cl_el.id === 'modify_order_btn')
+    modifyOrder(cl_el, pn_el);
   else if(cl_el.id === 'drop_cancel_btn')
     dropCancelOrder(cl_el, pn_el);
   else if(cl_el.id === 'pos_exit_cb')
@@ -204,7 +206,13 @@ function removeOrderRow(c, p){
 
 function cancelOrder(c, p_row)
 {
-  emit('cancelorder', {orderid: p_row.title});
+  emit('updateorder', {orderid: p_row.title, action: 'cancel'});
+  sOrderSubmit.play();
+  orderlistDiv.style.display = 'none';
+}
+
+function modifyOrder(c, p_row) {
+  emit('updateorder', { orderid: p_row.title, action: 'modify' });
   sOrderSubmit.play();
   orderlistDiv.style.display = 'none';
 }

@@ -2,6 +2,7 @@ import streamer from '../stream.mjs';
 import { Subscriptions } from '../service/subscription/subservice.mjs';
 import { eventservice } from '../service/eventservice.mjs';
 import { ConfigService } from '../service/.config/configservice.mjs';
+import { ordermanager } from '../service/ordermanager.mjs';
 
 class BrokerImpl 
 {
@@ -134,12 +135,22 @@ export class BrokerTradeServiceImpl extends BrokerImpl
     {
         if (!this.initialized) 
         {
-            this.trade_mode = ConfigService.getModesForService(this.name, 'trade');
+            this.trade_mode = ConfigService.getKeyByFeature(this.name, 'trade');
             this.addListeners();
             this.initialized = true;
             
             return { status: 'success' };
         }
         return { status: 'already initialized' };
+    }
+
+    modifyOrder(appid, orderid)
+    {
+        const order = ordermanager.getOpenOrder(this.trade_mode, orderid);
+        if(order !== undefined)
+        {
+            return this.placeOrder(appid, order, true);
+        }
+        return { state: 'NOT_OK', emsg: 'order not found'};
     }
 }
