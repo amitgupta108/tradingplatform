@@ -9,7 +9,7 @@ class CommonService
         this.name = 'COMMONSERVICE';
         this.initialized = false;
         this.qt_vix = { key: 'vix', stockCode: 'INDIAVIX', ltp: 0, ltt: 0 };
-
+        this.vix_subscribed = false;
     }
 
     init()
@@ -45,10 +45,19 @@ class CommonService
 
     subscribe_vix(appid, mode, action) {
         
-        if(mode.startsWith('HISTORY'))
+        if(mode.startsWith('HISTORY')) 
+        {
             return simulator.subscribe_vix(appid, mode, action);
-        else
-            return qserver.subscribe_vix(appid, mode, action);
+        } 
+        else if(!this.vix_subscribed) 
+        {
+            return qserver.subscribe_vix(appid, mode, action)
+                .then((resp) => {
+                    this.vix_subscribed = true;
+                    console.log(resp);
+                })
+                .catch((error) => console.log(error));
+        }
     }
 
     onQuotes(q, appid)

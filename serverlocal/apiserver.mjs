@@ -65,14 +65,18 @@ function registerTradeRequests(s, appid, mode) {
     s.on('order', (orders) => {
         console.log('order received at apiserver');
         orders.forEach(async (order) => {
-            const updated = await trading_service.placeOrder(appid, order, mode);
+            const updated = await trading_service.placeOrder(appid, order);
             console.log('order state ' + updated.state + ' ' + (updated.error ?? updated.orderid));
         });
     });
 
-    s.on('cancelorder', async (msg) => {
-        const response = await trading_service.cancelOrder(appid, msg);
-        console.log('cancel order ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
+    s.on('updateorder', async (msg) => {
+        let response;
+        if (msg.action === 'modify')
+            response = await trading_service.modifyOrder(appid, msg.orderid);
+        else
+            response = await trading_service.cancelOrder(appid, msg.orderid);
+        console.log('update order ' + msg.action + ' ' + response.stat + ' ' + (response.emsg ?? response.oOrdNo))
     });
 
     s.on('orderbook', async (stockCode) => {
@@ -89,38 +93,28 @@ function registerTradeRequests(s, appid, mode) {
 
 function registerAdminRequests(s, appid, mode)
 {
-    const profile = ConfigService.getProfile(mode);
-    const admin_service = ConfigService.getActiveServiceByMode('admin', mode);
+    s.on('scrips', (filters) => {
+        const scripstore = ConfigService.getAdminService(mode, 'SCRIP_STORE');
+        const scrips = scripstore.getScrips(filters);
+        s.emit('scrips', scrips);
+    });
 
-    if(profile['admin'] === 'LIVE_TRADING'){
+    s.on('authenticate', catchAsync((text) => {
+        const service = ConfigService.getAdminService(mode, 'BROKER_AUTH');            
+        if(text.length === 8)
+            eventservice.emit('ext_auth', { 
+                date: new Date().toDateString(),
+                provider: 'icici',
+                authcode: text
+            });
+        else 
+            service.authenticate(text);
+    }, 'authenticate'));
 
-        s.on('wsOps', catchAsync((action, key) => {
-            if(action === 'close')
-                return admin_service.close(key);            
-        }, 'wsOps'));
-    }
-
-    if (profile['admin'] === 'BROKER_AUTH')
-    {    
-        s.on('authenticate', catchAsync((text) => {
-            if(text.length === 8)
-                eventservice.emit('ext_auth', { 
-                    date: new Date().toDateString(),
-                    provider: 'icici',
-                    authcode: text
-                });
-            else 
-                admin_service.authenticate(text);
-        }, 'authenticate'));
-    }
-
-    if (profile['admin'].startsWith('LIVE_STREAMING')) 
-    {
-        s.on('unsubscribe', (list) => {
-            admin_service.subscribe(list, 'unsubs');
-            s.sn.unqsub(list, 'unsubscribe')
-        });
-    }
+    s.on('unsubscribe', (list) => {
+        admin_service.subscribe(list, 'unsubs');
+        s.sn.unqsub(list, 'unsubscribe')
+    });
 
     s.on('remove', () => {
         admin_service.subscribe([], 'unsubsall');

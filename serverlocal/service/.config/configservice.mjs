@@ -11,13 +11,13 @@ import { t_kotak_trade } from '../../broker/t_kotakneo.mjs';
 import { m_common_service } from '../../broker/m_common.mjs';
 
 const modes = {
-    HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: 'BROKER_AUTH' },
-    S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: 'BROKER_AUTH' },
-    S1T1AB: { view: 'LIVE_1', trade: 'LIVE_1', admin: 'BROKER_AUTH'},
-    S2T1AB: { view: 'LIVE_2', trade: 'LIVE_1', admin: 'BROKER_AUTH' },
+    HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
+    S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
+    S1T1AB: { view: 'LIVE_1', trade: 'LIVE_1', admin: ['BROKER_AUTH', 'SCRIPSTORE']},
+    S2T1AB: { view: 'LIVE_2', trade: 'LIVE_1', admin: ['BROKER_AUTH'] },
     S2T2A0: { view: 'LIVE_2', trade: 'LIVE_2'},
     S2TSA0: { view: 'LIVE_2', trade: 'SIMULATION'},
-    S3T1AB: { view: 'LIVE_3', trade: 'LIVE_1', admin: 'BROKER_AUTH'},
+    S3T1AB: { view: 'LIVE_3', trade: 'LIVE_1', admin: ['BROKER_AUTH']},
     S3T0A0: { view: 'LIVE_3'},
 };
 
@@ -38,13 +38,13 @@ const services = {
 const providers = {
     view: { LIVE_1: 'KOTAKLIVEVIEW', LIVE_2: 'OPENALGOVIEW', LIVE_3: 'ICICILIVEVIEW', HISTORY: 'ICICIHISTVIEW'},
     trade: { LIVE_1: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATION: 'ORDERSIMULATOR' },
-    admin: { BROKER_AUTH: 'AUTHSERVICE', SCRIPT_STORE: 'SCRIPSTORE'}
+    admin: { BROKER_AUTH: 'AUTHSERVICE', SCRIPT_STORE: 'SCRIPSTORE' }
 };
 
 const access = {
     view: ['vix', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
-    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'wsOps'],
-    admin: [ 'unsubscribe', 'remove', 'reload', 'authenticate']
+    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'updateorder'],
+    admin: [ 'unsubscribe', 'remove', 'authenticate', 'scrips']
 };
 
 export class ConfigService
@@ -100,6 +100,14 @@ export class ConfigService
         const provider_key = v[feature];
         const provider_name = providers[feature][provider_key];
         if (process.env[provider_name] === 'Y')
+            return services[provider_name];
+    }
+
+    static getAdminService(mode, feature) {
+        const v = modes[mode];
+        const provider_keys = v['admin'];
+        const provider_name = providers['admin'][feature];
+        if (process.env[provider_name] === 'Y' && provider_keys.includes(feature))
             return services[provider_name];
     }
 
