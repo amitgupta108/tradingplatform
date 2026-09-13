@@ -1,4 +1,5 @@
 import {socketmap} from './session/appstate.mjs';
+import { ConfigService } from './service/.config/configservice.mjs';
 
 function emitOrders(appid, type, order)
 {    
@@ -40,19 +41,11 @@ function getReceivers(type, msg)
     const receivers = [];
     if (type === 'order') 
     {
-        socketmap.forEach((v, k) => 
-        {
-            if( v.stockCode === msg.stockCode)
+        socketmap.forEach((v, k) => {
+            if(ConfigService.getParentModes('trade', msg.trade_mode).includes(v.mode))
                 receivers.push(k);
         });
     }
-/*    else if(type === 'quote' && Session.sn(appid) !== undefined) 
-    {
-        Session.sn(appid)?.shared_with.forEach((v, k) => {
-            if (v.m_subs !== 'paused') 
-                receivers.push(k);
-        });
-    } */
     return receivers;
 }
 

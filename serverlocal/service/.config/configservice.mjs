@@ -134,6 +134,21 @@ export class ConfigService
         return partner_keys;
     }
 
+    getParentModes(feature, feature_mode)
+    {
+        const [modes, vals] = Object.entries(modes).flatMap(([k, v]) => {
+            
+            const match = Object.entries(v).filter(([f, service_key]) => {
+                return feature === f
+                    && feature_mode === service_key
+            });
+
+            return match > 0 ? [k] : [];
+        });
+
+
+    }
+
     static checkAccess(eventName, mode) 
     {
         const usertype = this.getProfile(mode);
