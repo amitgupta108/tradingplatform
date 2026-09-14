@@ -150,7 +150,7 @@ class Simulator
             }
 
             if (idx >= 0)
-            eventservice.emit('hist-quote', st.quotes[idx], appid);
+                eventservice.emit('hist-quote', st.quotes[idx], appid);
         }
         
         if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')
@@ -245,21 +245,7 @@ class Simulator
         return qt;
     }
     
-    getHistory(appid, r)
-    {
-        const clock = st_q.clocks.get(appid);
-        r.endTime = clock !== undefined ? clock.currentTime : r.endTime;
-
-        return qserver.getHistory(appid, r)
-        .then((response) => {
-            if (response?.Error === null)
-                eventservice.emit('history', response.Success, r.key, appid); 
-            else
-                eventservice.emit('history', [response.Error], r.key, appid);
-        });
-    }
-
-     subscribe_vix(appid, mode, action) {
+    subscribe_vix(appid, mode, action) {
         var instrument = { exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second' };
 
         const request = {
@@ -274,13 +260,6 @@ class Simulator
             else
                 this.unsubscribe(appid, [request]);
         }
-    }
-
-     emit(q, appid) {
-        if (q.stock_code === 'INDVIX')
-            eventservice.emit('vix', q, appid);
-        else
-            eventservice.emit('hist-quote', q, appid);
     }
 }
 
