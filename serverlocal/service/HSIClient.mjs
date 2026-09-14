@@ -4,8 +4,8 @@ import { ordermanager } from './ordermanager.mjs';
 
 export class KotakHSISocket 
 {
-    constructor(parent) {
-        this.parent = parent;
+    constructor(service_key) {
+        this.parent = service_key;
         this.reconnect = true;
         this.authdata;
         this.wsping;
@@ -30,9 +30,9 @@ export class KotakHSISocket
 
         this.ws_hsi.on('message', (data) => {
             const message = JSON.parse(data.toString());
-            if (message.type === 'order')
-                ordermanager.notifyme(message);
-            else if (message.type === 'cn' && message.msg === 'connected')
+            if(message.type !== 'cn')
+                ordermanager.notifyme(message.type, this.parent, message.data);
+            else if (message.msg === 'connected')
                 this.starthb();
         });
 

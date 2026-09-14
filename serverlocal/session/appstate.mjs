@@ -7,6 +7,7 @@ export const state_kotakneo = {
     authData: {},
     endpoints: {
         order: '/quick/order/rule/ms/place',
+        modify: '/quick/order/vr/modify',
         orderbook: '/quick/user/orders',
         cancel: '/quick/order/cancel',
         positions: '/quick/user/positions'
@@ -20,7 +21,7 @@ export const state_kotakneo = {
         tp: '0',
     }
 };
-
+/*
 export const state_kotakhsm = {
 
 }
@@ -199,3 +200,4 @@ export const subs_store_all = {
     KOTAKHSMVIEW: {},
     ICICILIVEVIEW: {},
 }
+*/

@@ -5,8 +5,10 @@ function addIVNDelta(q, uq)
 {
     if (q !== undefined && uq !== undefined) 
     {
-        const yearsToExpiry = getYearsToExpiry(q);
         const flag = q.right === 'CE' ? 'c' : 'p';
+        const yearsToExpiry = getYearsToExpiry(q);
+        if(yearsToExpiry < 0)
+            throw new Error('invalid input');
 
         try {
             var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, ir, flag);

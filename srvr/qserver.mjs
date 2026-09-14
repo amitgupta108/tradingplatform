@@ -62,9 +62,7 @@ function subscribe_vix(appid, mode, action)
         instrument: instrument
     };
         
-    sutils.wssub([request], action)
-    .then((resp) => console.log(resp))
-    .catch((error) => console.log(error));
+    return sutils.wssub([request], action);
 }
 
 export function wsemit(q)

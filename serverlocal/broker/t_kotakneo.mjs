@@ -13,20 +13,23 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
     addListeners() {
         eventservice.addListener('kotak_auth', (data) => {
             mystate.authData = data;
-            const kotak_hsi_socket = new KotakHSISocket(this.name);
+            const kotak_hsi_socket = new KotakHSISocket(this.trade_mode);
             kotak_hsi_socket.hsiconnect(data);
             this.api_wrapper = new KotakTradeAPI(this.name);
         });
     }
 
-    async placeOrder(appid, order) {
+    async placeOrder(appid, order, modify = false) {
         const korder = this.toKotakOrder(order);
-        const response = await this.api_wrapper.post('order', korder);
+        const action = modify ? 'modify' : 'order';
+        const response = await this.api_wrapper.post(action, korder);
+
         if (response.ok) {
             const result = (await response.json());
             if (result.stat === 'Ok') {
-                order.state = 'submitted';
                 order.orderid = result.nOrdNo;
+                order.state = 'submitted';
+                order.trade_mode = this.trade_mode;
                 ordermanager.neworders(appid, [order]);
             }
             else {
@@ -53,12 +56,14 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
         new_order.qt = String(order.quantity);
         new_order.tt = order.action === 'BUY' ? 'B' : 'S';
         new_order.ts = ts;
+        if(order.orderid !== undefined)
+            new_order.no = order.orderid;
 
         return new_order;
     }
 
-    async cancelOrder(appid, order) {
-        const response = await this.api_wrapper.post('cancel', { on: order.orderid });
+    async cancelOrder(appid, orderid) {
+        const response = await this.api_wrapper.post('cancel', { on: orderid });
         if (response.ok)
             return (await response.json());
 
@@ -73,18 +78,22 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 
             if (order_json.stat !== 'Not_Ok') {
                 orders = order_json.data;
-                return orders.map((order) => ordermanager.formatLiveOrder(order, true))
-                    .filter((order) => order.stockCode === stockCode)
-                    .sort((a, b) => a.orderid - b.orderid);
+                return orders.map((order) => {
+                    const odr = ordermanager.formatLiveOrder(order);
+                    ordermanager.addOrders(odr);
+                    return odr;
+                })
+                .filter((order) => order.stockCode === stockCode)
+                .sort((a, b) => a.orderid - b.orderid);
             }
-            console.log('error fetching positions ' + order_json.status + ' ' + order_json.statusText);
+            console.log('error fetching orders ' + order_json.status + ' ' + order_json.statusText);
             return [];
         }
-        console.log('error fetching positions ' + response.status + ' ' + response.statusText);
+        console.log('error fetching orders ' + response.status + ' ' + response.statusText);
         return [];
     }
 
-    async positions(appid, stockCode) {
+    async positions(appid, stockCode, cf = true) {
         const response = await this.api_wrapper.get('positions');
         let positions;
         if (response.ok) {
@@ -92,7 +101,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 
             if (position_json.stat !== 'Not_Ok') {
                 positions = position_json.data;
-                return ordermanager.formatPositionRecords(positions, stockCode);
+                return ordermanager.formatPositionRecords(positions, stockCode, cf);
             }
             console.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
             return [];
@@ -111,6 +120,7 @@ class KotakTradeAPI {
     cache_url() {
         const baseUrl = mystate.authData.baseUrl;
         mystate.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
+        mystate.endpoints.modify = new URL('/quick/order/vr/modify', baseUrl).href;
         mystate.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
         mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
         mystate.endpoints.positions = new URL('/quick/user/positions', baseUrl).href;
