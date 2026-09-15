@@ -1,7 +1,7 @@
-import utils from '../../common/utils.mjs'
-import {simulator} from '../service/simmanager.mjs';
-import { eventservice } from '../service/eventservice.mjs';
-import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
+import utils from '../../../common/utils.mjs'
+import {simulator} from '../../service/simmanager.mjs';
+import { eventservice } from '../../service/eventservice.mjs';
+import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
 class BreezeMarketDataHist extends BrokerMarketDataImpl 
 {
@@ -13,7 +13,8 @@ class BreezeMarketDataHist extends BrokerMarketDataImpl
     addListeners()
     {
         eventservice.addListener('hist-quote', (q, appid) => {
-            this.onQuotes(q, appid);
+            q.appid = appid;
+            this.onQuotes(q);
         });
     }
 
@@ -26,8 +27,11 @@ class BreezeMarketDataHist extends BrokerMarketDataImpl
         this.provider.changeSpeed(appid, speed);
     }
 
-    providerSubscribe(appid, requests, action) 
+    subscribe(appid, list, action) 
     {
+        this.my_subs.addRequests(appid, list);
+        const requests = this.buildRequests(appid, list);
+    
         if (action === 'subs')
             this.provider.subscribe(requests);
         else if( action === 'start')

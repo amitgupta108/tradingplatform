@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
-import qserver from '../stream.mjs';
-import { ordermanager } from './ordermanager.mjs';
+import qserver from '../../stream.mjs';
+import { ordermanager } from '../ordermanager.mjs';
 
 export class KotakHSISocket 
 {

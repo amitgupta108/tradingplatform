@@ -1,6 +1,6 @@
 import OpenAlgo from 'openalgo';
-import utils from '../../common/utils.mjs';
-import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
+import utils from '../../../common/utils.mjs';
+import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
 class OpenAlgoMarketData extends BrokerMarketDataImpl 
 {
@@ -53,8 +53,11 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
         }, 5000);
     }
 
-    providerSubscribe(appid, requests, action) 
+    subscribe(appid, list, action) 
     {
+        this.my_subs.addRequests(appid, list);
+        const requests = this.buildRequests(list);
+    
         if (action === 'subs' || action === 'start')
             this.provider.subscribe_ltp(requests, (q) => 
                 this.onQuotes(q));
@@ -67,7 +70,7 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
         return { ...qt, ...this.symbol_cache.get(qt.symbol) };
     }
     
-    buildRequests(appid, requests) 
+    buildRequests(requests) 
     {
         requests.forEach((r) => {
             if (this.symbol_cache.get(r.symbol) === undefined)

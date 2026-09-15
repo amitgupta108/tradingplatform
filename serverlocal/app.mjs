@@ -10,7 +10,6 @@ export function startServices()
 export function connect(s)
 {        
     const appid = s.handshake.auth.token;
-    const stockCode = s.handshake.auth.stockCode;
     const mode = s.handshake.auth.mode;
     
     const profile = services.getProfile(mode);
@@ -19,29 +18,15 @@ export function connect(s)
         return;
     }
     
-    //session(s, appid, stockCode, mode);
-    socketmap.set(appid, { socket: s, mode: mode, stockCode: stockCode });
+    socketmap.set(appid, { socket: s, mode: mode});
     registerHandlers(s, appid, mode);
 
     s.on("error", (err) => {
         console.error(`[Global Error]  Socket ${s.id}:`, err.message);
     });
 }
-/*
-function session(s, appid, stockCode, mode)
-{
-    const view_mode = services.getProfile(mode)['view']; 
-    const i_appid = view_mode === 'HISTORY' ? appid : stockCode + view_mode;
-    let sn = Session.sn(i_appid);
 
-    if(sn === undefined)
-        sn = new Session(i_appid, mode, stockCode);
 
-    sn.shared_with.set(appid, { m_subs: sn.status});
-    //socketmap.set(appid, {socket: s, mode: mode, stockCode: stockCode});
-    s.sn = sn;
-}
-*/
 function registerHandlers(s, appid, mode)
 {
     const profile = services.getProfile(mode);

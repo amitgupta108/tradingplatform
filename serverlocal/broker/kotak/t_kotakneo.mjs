@@ -1,9 +1,9 @@
-import { scripstore } from '../service/scripstore.mjs';
-import { ordermanager } from '../service/ordermanager.mjs';
-import { KotakHSISocket } from '../service/HSIClient.mjs';
-import { eventservice } from '../service/eventservice.mjs';
-import { state_kotakneo as mystate } from '../session/appstate.mjs';
-import { BrokerTradeServiceImpl } from './m_broker_interface.mjs';
+import { scripstore } from '../../service/scripstore.mjs';
+import { ordermanager } from '../../service/ordermanager.mjs';
+import { KotakHSISocket } from '../../service/clients/HSIClient.mjs';
+import { eventservice } from '../../service/eventservice.mjs';
+import { state_kotakneo as mystate } from '../../session/appstate.mjs';
+import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 
 class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name, provider) {

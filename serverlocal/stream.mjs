@@ -1,13 +1,13 @@
 import {socketmap} from './session/appstate.mjs';
 
-function emitOrders(appid, type, order)
+function emitOrders(order)
 {    
-    send(appid, type, order);
+    send('order', order);
 }
 
-function emitQs(appid, q)
+function emitQs(q)
 {
-    send(appid, 'quote', q);
+    send('quote', q);
 }
 
 function emitHistQs(appid, key, qA) {
@@ -16,21 +16,20 @@ function emitHistQs(appid, key, qA) {
         emit(app_obj.socket, 'history', { time: Date.now(), key: key, qA: qA });
 }
 
-function send(appid, type, msg)
+function send(type, msg)
 {
-    const app_obj = socketmap.get(appid);
+    const app_obj = socketmap.get(msg.appid);
     if (app_obj !== undefined)
         emit(app_obj.socket, type, msg);
     else
-        group_emit(type, msg);
+        group_emit(msg);
 }
 
 function group_emit(type, msg)
 { 
     const receivers = getReceivers(type, msg);   
     receivers.forEach((appid) => {
-        if (type === 'order')
-            msg.appid = appid;
+        msg.appid = appid;
         emit(socketmap.get(appid).socket, type, msg);
     });
 }
@@ -40,19 +39,11 @@ function getReceivers(type, msg)
     const receivers = [];
     if (type === 'order') 
     {
-        socketmap.forEach((v, k) => 
-        {
-            if( v.stockCode === msg.stockCode)
+        socketmap.forEach((v, k) => {
+            if(v.mode === msg.mode)
                 receivers.push(k);
         });
     }
-/*    else if(type === 'quote' && Session.sn(appid) !== undefined) 
-    {
-        Session.sn(appid)?.shared_with.forEach((v, k) => {
-            if (v.m_subs !== 'paused') 
-                receivers.push(k);
-        });
-    } */
     return receivers;
 }
 
@@ -66,8 +57,7 @@ function broadcast(type, msg, group)
 
 function emit(s, type, msg)
 {
-    const key = type === 'quote' ? msg.key : type;
-    s.emit(key, msg);
+    s.emit(type, msg);
 }
 
 export default {

@@ -1,32 +1,33 @@
-import qserver from '../../srvr/qserver.mjs';
-import { simulator } from '../service/simmanager.mjs';
-import streamer from '../stream.mjs';
+import qserver from '../../../srvr/qserver.mjs';
+import streamer from '../../stream.mjs';
+import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
+import { EXCHANGES } from '../../../common/constants.mjs';
 
-class CommonService 
+class CommonService extends BrokerMarketDataImpl 
 {
-    constructor()
+    constructor(name, provider)
     {
-        this.name = 'COMMONSERVICE';
-        this.initialized = false;
+        super(name, provider);
         this.qt_vix = { key: 'vix', stockCode: 'INDIAVIX', ltp: 0, ltt: 0 };
         this.vix_subscribed = false;
     }
 
-    init()
+    addListeners() 
     {
-        if(!this.initialized) {
-            qserver.addListener('vix', (q, appid) => {
-                this.onQuotes(q, appid);
-            });
-            this.initialized = true;
-            return {status: 'success'};
+        qserver.addListener('vix', (q) => {
+            this.onVix(q);
+        });
+
+        if(process.env.PASSTHROUGH === 'Y') {
+            this.provider = ConfigService.getSocketClient('TPCLIENT');
+            this.provider.addListener('quote', (arg) => this.onQuotes(arg));
         }
-        return { status: 'already initialised' };
     }
 
     history(appid, r) 
     {
-        if (r.exchange === 'MCX')
+        if (EXCHANGES[r.stockCode] === 'mcx_fo')
             return;
         
         r.exchange = ['index', 'vix'].includes(r.key) ? 'NSE' : 'NFO';
@@ -44,13 +45,11 @@ class CommonService
     }
 
     subscribe_vix(appid, mode, action) {
-        
-        if(mode.startsWith('HISTORY')) 
-        {
+
+        if (mode.startsWith('HISTORY')) {
             return simulator.subscribe_vix(appid, mode, action);
-        } 
-        else if(!this.vix_subscribed) 
-        {
+        }
+        else if (!this.vix_subscribed) {
             return qserver.subscribe_vix(appid, mode, action)
                 .then((resp) => {
                     this.vix_subscribed = true;
@@ -60,15 +59,28 @@ class CommonService
         }
     }
 
-    onQuotes(q, appid)
-    {
+    onVix(q) {
         if (q.last !== this.qt_vix.ltp) {
             this.qt_vix.ltt = Date.parse(q.ltt);
             this.qt_vix.ltp = q.last;
-       
+
             streamer.broadcast('vix', this.qt_vix, 'all_nse_live');
         }
     }
+
+    subscribe(appid, list, action) 
+    {
+        this.my_subs.addRequests(appid, list);
+        if(action === 'subs' || action === 'start')
+            this.provider.subscribe(list);
+        else
+            this.provider.unsubscribe(list);
+    }
+
+    standardize(q)
+    {
+        return q;
+    }
 }
 
-export const m_common_service = new CommonService();
+export const m_common_service = new CommonService('COMMONSERVICE', undefined);

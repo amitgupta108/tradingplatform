@@ -1,5 +1,6 @@
 import qs from '../stream.mjs';
 import { eventservice } from './eventservice.mjs';
+import { ConfigService } from './.config/configservice.mjs';
 
 class OrderManager 
 {
@@ -27,29 +28,29 @@ class OrderManager
     {    
         console.log('order/position notifcation ' + JSON.stringify(message));
         if (type === 'order' && ['open', 'complete', 'rejected', 'cancelled'].includes(message.ordSt))
-            this.liveOrderMatching(message);
+            this.liveOrderMatching(service_key, message);
         else if(type === 'position')
             this.emitPosition(service_key, message);
     }
 
-    liveOrderMatching(order) 
+    liveOrderMatching(service_key, order) 
     {
         const live_order = this.formatLiveOrder(order);
         
         if (live_order.source.includes('NEOTRADEAPI'))
         {
-            const found = this.findMatch(live_order);
+            const found = this.findMatch(service_key, live_order);
             if (found !== undefined) {
                 live_order.appid = found.appid;
-                live_order.trade_mode = found.trade_mode;
+                live_order.mode = ConfigService.getParentModes('trade', found.trade_mode);
                 this.live_order_map.delete(found.localid);
                 this.live_order_map.set(live_order.orderid, live_order);
             }
         }
-        qs.emitOrders(live_order.appid, 'order', live_order);
+        qs.emitOrders(live_order);
     }
 
-    findMatch(live_order) 
+    findMatch(service_key, live_order) 
     {
         let found = this.live_order_map.get(live_order.orderid);
         if (found !== undefined)
@@ -57,7 +58,8 @@ class OrderManager
         
         const local_orders = Array.from(this.live_order_map.values());
         return local_orders.find((order) => {
-            return order.symbol === live_order.symbol
+            return order.trade_mode === service_key
+                && order.symbol === live_order.symbol
                 && order.action === live_order.action
                 && order.pricetype === live_order.pricetype
                 && order.price === live_order.price

@@ -1,8 +1,9 @@
 import OpenAlgo from 'openalgo';
-import { ordermanager } from '../service/ordermanager.mjs';
-import { BrokerTradeServiceImpl } from './m_broker_interface.mjs';
+import { ordermanager } from '../../service/ordermanager.mjs';
+import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 
-class OpenAlgoTradeService extends BrokerTradeServiceImpl {
+class OpenAlgoTradeService extends BrokerTradeServiceImpl 
+{
     addListeners() {
         this.provider = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
 
