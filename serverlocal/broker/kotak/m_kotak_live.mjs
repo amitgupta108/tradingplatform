@@ -24,17 +24,6 @@ class KotakMarketDataLive extends KotakMarketData
         const requests = this.buildRequests(list);
         this.provider.snapshot(requests, 'Scrips', false);
     }
-    
-    subscribe(appid, list, action) 
-    {
-        this.my_subs.addRequests(appid, list);
-        const requests = this.buildRequests(list);
-
-        if(action === 'subs' || action === 'start')
-            this.provider.subscribe(requests, 'Scrips', false);
-        else
-            this.provider.unsubscribe(requests, 'Scrips', false);
-    }
 
     onSnapshot(snapshot)
     {
@@ -46,6 +35,7 @@ class KotakMarketDataLive extends KotakMarketData
     {
         const qt = this.symbol_cache.get(q.token);
         if (qt !== undefined && q.ltp !== undefined) {
+            qt.expiry_date = qt.expiry;
             qt.ltp = Number(q.ltp)
             qt.ltt = q.m1;
             return qt;

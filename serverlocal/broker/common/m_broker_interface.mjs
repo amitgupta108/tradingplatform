@@ -50,8 +50,9 @@ export class BrokerMarketDataImpl extends BrokerImpl
     startv2(appid, p) 
     {
         const stock_subs = this.my_subs.addNewSubscriptions(appid, p);
-        const requests = stock_subs.getSubsItems(['index', 'futures']);
-        this.subscribe(appid, requests, 'start');
+        const list = stock_subs.exchange === 'mcx_fo' ? ['futures'] : ['index', 'futures'];
+        const requests = stock_subs.getSubsItems(list);
+        this.subscribe(appid, requests, 'subs');
 
         if (stock_subs.atm !== 0) {
             const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });

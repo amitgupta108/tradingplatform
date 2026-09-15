@@ -1,5 +1,6 @@
 import qs from '../stream.mjs';
 import { eventservice } from './eventservice.mjs';
+import { ConfigService } from './.config/configservice.mjs';
 
 class OrderManager 
 {
@@ -41,12 +42,12 @@ class OrderManager
             const found = this.findMatch(service_key, live_order);
             if (found !== undefined) {
                 live_order.appid = found.appid;
-                live_order.trade_mode = found.trade_mode;
+                live_order.mode = ConfigService.getParentModes('trade', found.trade_mode);
                 this.live_order_map.delete(found.localid);
                 this.live_order_map.set(live_order.orderid, live_order);
             }
         }
-        qs.emitOrders(live_order.appid, 'order', live_order);
+        qs.emitOrders(live_order);
     }
 
     findMatch(service_key, live_order) 

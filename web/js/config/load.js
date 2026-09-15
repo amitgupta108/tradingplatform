@@ -42,8 +42,8 @@ const expiry_btn_2 = document.getElementById('expiry_btn_2');
 const simDate = new Date(instrument.simStartTime ?? Date.now());
 
 date_label.textContent = simDate.toDateString();
-expiry_btn_1.textContent = instrument.oExpiries[0];
-expiry_btn_2.textContent = instrument.oExpiries[1];
+expiry_btn_1.textContent = EXPIRIES[instrument.stockCode][instrument.oExpiries[0]];
+expiry_btn_2.textContent = EXPIRIES[instrument.stockCode][instrument.oExpiries[1]];
 
 let spot_title = ' | S: ';
 let fut_title = 'F: ';

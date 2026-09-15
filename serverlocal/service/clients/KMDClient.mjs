@@ -152,24 +152,15 @@ export class KMDClient extends EventEmitter
         this.sendMessage(JSON.stringify(request));
     }
 
-    subscribe(scrips, type = '', lite = false) {
+    subscribe(scrips, type = '', action, lite = false) {
         const scripStr = Array.isArray(scrips) ? scrips.join(',') : scrips;
-        this.log('Subscribe scrips:', scripStr);
+        const event = (action === 'subs' ? 'subscribe' : 'unsubscribe') + type + (lite ? 'Lite' : '');
+        this.log('Subscribe scrips:', event + ' ' + scripStr);
         const request = {
-            event: 'subscribe' + type + (lite ? 'Lite' : ''),
+            event: event,
             inputtoken: scripStr,
         }
         this.sendMessage(JSON.stringify(request));    
-    }
-
-    unsubscribe(scrips, type = '' , lite = false) {
-        const scripStr = Array.isArray(scrips) ? scrips.join(',') : scrips;
-        this.log('Unsubscribe scrips :', scripStr);
-        const request = {
-            event: 'unsubscribe' + type + (lite ? 'Lite' : ''),
-            inputtoken: scripStr,
-        }
-        this.sendMessage(JSON.stringify(request));
     }
 
     handleReconnect() {
