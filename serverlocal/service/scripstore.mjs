@@ -6,6 +6,12 @@ import csvParser from 'csv-parser';
 import utils from '../../common/utils.mjs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
+import { ConfigService } from './.config/configservice.mjs';
+import { eventservice } from './eventservice.mjs';
+import config from '../config/scrips_config.json' with { type: 'json' };
+
+
+const { filters, tp_filters, filePaths } = config;
 
 const FIELD_MAP = {
 	pSymbol:      'token',
@@ -16,21 +22,8 @@ const FIELD_MAP = {
 	pScripRefKey: 'scripReferenceKey',
 	pExpiryDate:  'expiryDate'
 };
+
 const keys_kept = new Set(Object.keys(FIELD_MAP));
-const filePaths = [{
-		segement: 'nse_fo', 
-		url: 'https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-09-03/transformed/nse_fo.csv',
-	},
-	{
-		segement: 'mcx_fo',
-		url: 'https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-09-03/transformed/mcx_fo.csv',
-	}];
-
-const filters = {
-	expiryDate: ['1473949800', '1474554600', '1475159400', '1789689599', '1790035199'],
-	underlying: ['NIFTY', 'CRUDEOIL'],
-};
-
 const todayStr = new Date().toISOString().split('T')[0];
 const wd = path.join(utils.getWSfolder(), 'serverlocal', 'config');
 const PREFIX = 'scrips_';
@@ -41,6 +34,16 @@ function getUpdatedUrl(url)
 {
 	const dateRegex = /\d{4}-\d{2}-\d{2}/; 
 	return url.replace(dateRegex, todayStr);
+}
+
+const filterfn = (record, filters) => {
+	let included = true;
+	for (const [cleanKey, allowedValues] of Object.entries(filters)) {
+		if (!allowedValues.includes(record[cleanKey]))
+			included = false;
+	}
+
+	return included;
 }
 
 async function clearStaleCacheFiles() 
@@ -74,13 +77,38 @@ class ScripStore
 
 	init() 
 	{		
-		return this.load(filters)
-		.then(() => {
-			this.initialized = true;
-			return { status: 'initialized' };
-		})
-		.catch ((error) => {
-			return {status: 'error', reason: error.message};
+		if(!this.initialized)
+		{			
+			let p;
+			if (process.env.PASSTHROUGH === 'Y')
+				p = this.remoteLoad(tp_filters);
+	
+			else
+				p = this.load(filters);
+
+			return p.then((response) => {
+				this.initialized = true;
+				return { status: response };
+			})
+			.catch ((error) => {
+				return {status: 'error', reason: error.message};
+			});
+		}
+	}
+
+	async remoteLoad(filters)
+	{
+		return await new Promise((resolve, reject) => {
+			eventservice.addListener('scrips', (scrips) => {
+				scrips.forEach((s) => {
+					this.inMemoryStore.set(s.scripReferenceKey, s);
+				});
+				console.log('scrips remote load, size ' + this.inMemoryStore.size);
+				resolve('initialized');
+			});
+
+			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
+			this.tpsocket.getScrips(filters);			
 		});
 	}
 
@@ -167,11 +195,7 @@ class ScripStore
 								rawRow[rawKey];
 						}
 
-						let included = true;
-						for (const [cleanKey, allowedValues] of Object.entries(filters)) {
-							if (!allowedValues.includes(cleanRow[cleanKey])) 
-								included = false;
-						}
+						let included = filterfn(cleanRow, filters);
 						if(included) {
 							store.set(cleanRow.scripReferenceKey, cleanRow);
 							yield (JSON.stringify(cleanRow) + '\n').toString();
@@ -189,6 +213,7 @@ class ScripStore
 	findScripByKey(columnName, value) { return Array.from(this.inMemoryStore.values()).find(row => row[columnName] === value) || null; }
 	findScripByRefKey(key) { return this.inMemoryStore.get(key); }
 	queryStore(filterFn) { return Array.from(this.inMemoryStore.values()).filter(filterFn); }
+	getScrips(filters) { return Array.from(this.inMemoryStore.values()).filter((r) => filterfn(r, filters)); }
 	getStoreStatus() { return { loaded: this.isLoaded, totalRecords: this.inMemoryStore.size }; }
 }
 

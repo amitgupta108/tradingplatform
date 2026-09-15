@@ -8,7 +8,6 @@ function historyParams()
   const startTime = endTime - 3 * 24 * 60 * 60 * 1000; // 3 days back
 
   const p = {
-    exchange: instrument.exchange,
     stockCode: instrument.stockCode,
     startTime: startTime,
     endTime: endTime - 1000,

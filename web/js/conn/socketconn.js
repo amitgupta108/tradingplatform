@@ -54,7 +54,11 @@ function rh(socket)
 	  else 
 		setInitialChart(data.key, data.qA);
 	});
-  
+
+	socket.on('quote', (q) => {
+		qBox.dispatchEvent('quote', q);
+	});
+
 	socket.on('index', (q) => {
 	  qBox.dispatchEvent('index', q);
 	});
@@ -66,7 +70,7 @@ function rh(socket)
 	socket.on('futures', (q) => {    
 	  qBox.dispatchEvent('futures', q);
 		if (q.exchange.toLowerCase().startsWith('mcx'))
-		qBox.dispatchEvent('index', q);      
+			qBox.dispatchEvent('index', q);      
 	});
 
 	socket.on('strikex', (q) => {

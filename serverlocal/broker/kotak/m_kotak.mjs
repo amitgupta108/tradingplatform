@@ -1,6 +1,5 @@
 import { eventservice } from '../../service/eventservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
-import utils from '../../../common/utils.mjs';
 import { scripstore } from '../../service/scripstore.mjs';
 
 export class KotakMarketData extends BrokerMarketDataImpl 
@@ -23,23 +22,31 @@ export class KotakMarketData extends BrokerMarketDataImpl
         console.log('Kotak authdata available');
     }
 
+    subscribe(appid, list, action) {
+        this.my_subs.addRequests(appid, list);
+        const requests = this.buildRequests(list);
+
+        if (requests.i_reqs.length > 0)
+            this.provider.subscribe(requests.i_reqs, 'Indices', action, false);
+
+        if (requests.s_reqs.length > 0)
+            this.provider.subscribe(requests.s_reqs, 'Scrips', action, false);
+    }
+
     buildRequests(list) 
     {
-        const requests = [];
+        const indices = [], scrips = [];
         list.forEach((e) => {
-
-            const exchange = e.exchange === 'MCX' ? 'mcx_fo' : e.key === 'index' ? 'nse_cm' : 'nse_fo';    
-            const mcx_index = e.key === 'index' && e.exchange === 'MCX'; 
-            const token = e.key === 'index' && !mcx_index ? '26000' : scripstore.findScripByRefKey(e.symbol)?.token;
+            let token = e.key !== 'index' ? scripstore.findScripByRefKey(e.symbol)?.token : e.symbol;
+            token = token === 'NIFTY' ? 'NIFTY 50' : token;
             if (this.symbol_cache.get(token) === undefined)
-            {
-                const t = utils.expandSymbol(e.symbol);
-                t.token = token; t.exchange = exchange;
-                this.symbol_cache.set(token, t);
-            }
-            if(exchange !== undefined && token !== undefined && !mcx_index)
-                requests.push(exchange + '|' + token);
+                this.symbol_cache.set(token, e);
+
+            if(e.key === 'index')
+                indices.push(e.exchange + '|' + token);
+            else 
+                scrips.push(e.exchange + '|' + token);
         });
-        return requests;
+        return {i_reqs: indices, s_reqs: scrips};
     }
 }

@@ -1,7 +1,4 @@
-import {OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG} from '../../common/constants.mjs';
-import utils from '../../common/utils.mjs';
 export const socketmap = new Map();
-export const us = new Map();
 
 export const state_kotakneo = {
     authData: {},

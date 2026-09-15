@@ -265,32 +265,13 @@ async connect() {
     }
 
     // ==================== PUBLIC API ====================
-    subscribeScrips(scrips) {
+    subscribe(scrips, type, action, notreq) {
         const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
-        const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.SUBSCRIBE_TYPE, SCRIP_PREFIX, this.channel);
+        action = action === 'subs' ? BinRespTypes.SUBSCRIBE_TYPE : BinRespTypes.UNSUBSCRIBE_TYPE;
+        type = type === 'Scrips' ? SCRIP_PREFIX : INDEX_PREFIX;
+        const request = PacketBuilder.buildSubsRequest(scripStr, action, type, this.channel);
         this.sendMessage(request);
         this.log('Subscribing to scrips:', scripStr);
-    }
-
-    unsubscribeScrips(scrips) {
-        const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
-        const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.UNSUBSCRIBE_TYPE, SCRIP_PREFIX, this.channel);
-        this.sendMessage(request);
-        this.log('Unsubscribing from scrips:', scripStr);
-    }
-
-    subscribeIndicies(scrips) {
-        const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
-        const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.SUBSCRIBE_TYPE, INDEX_PREFIX, this.channel);
-        this.sendMessage(request);
-        this.log('Subscribing to indicies:', scripStr);
-    }
-
-    unsubscribeIndicies(scrips) {
-        const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
-        const request = PacketBuilder.buildSubsRequest(scripStr, BinRespTypes.UNSUBSCRIBE_TYPE, INDEX_PREFIX, this.channel);
-        this.sendMessage(request);
-        this.log('Unsubscribing from indicies:', scripStr);
     }
 
     requestIndexSnapshot(scrips) {

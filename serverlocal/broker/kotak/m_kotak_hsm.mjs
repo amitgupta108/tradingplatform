@@ -22,17 +22,6 @@ class KotakMarketDataHSM extends KotakMarketData
         this.provider = new HSMClient(options);
     }
 
-    subscribe(appid, list, action) 
-    {
-        this.my_subs.addRequests(appid, list);
-        const requests = this.buildRequests(list);
-
-        if(action === 'subs' || action === 'start')
-            this.provider.subscribeScrips(requests);
-        else
-            this.provider.unsubscribeScrips(requests);
-    }
-
     onSnapshot(snapshot)
     {
         const qt = this.toScrip(snapshot);

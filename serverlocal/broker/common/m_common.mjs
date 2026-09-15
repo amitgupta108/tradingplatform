@@ -2,6 +2,7 @@ import qserver from '../../../srvr/qserver.mjs';
 import streamer from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
+import { EXCHANGES } from '../../../common/constants.mjs';
 
 class CommonService extends BrokerMarketDataImpl 
 {
@@ -26,7 +27,7 @@ class CommonService extends BrokerMarketDataImpl
 
     history(appid, r) 
     {
-        if (r.exchange === 'MCX')
+        if (EXCHANGES[r.stockCode] === 'mcx_fo')
             return;
         
         r.exchange = ['index', 'vix'].includes(r.key) ? 'NSE' : 'NFO';

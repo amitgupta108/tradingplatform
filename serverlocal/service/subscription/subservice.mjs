@@ -1,4 +1,4 @@
-import { OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../../common/constants.mjs';
+import { EXCHANGES, OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../../common/constants.mjs';
 import utils from '../../../common/utils.mjs';
 
 export class Subscriptions 
@@ -66,27 +66,20 @@ export class SubsTemplate
     {
         this.appid = appid;
         this.stockCode = session.stockCode;
-        this.exchange = session.exchange;
+        this.exchange = EXCHANGES[session.stockCode];
+        this.fExpiry = FUT_EXPIRIES[this.stockCode]['FIRST'];
         this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [
-            { key: 'index', stockCode: this.stockCode, toStream: true },
-            { key: 'futures', stockCode: this.stockCode, toStream: true },
+            { key: 'index', stockCode: this.stockCode, toStream: true, symbol: this.stockCode, exchange: 'nse_cm'},
+            { key: 'futures', stockCode: this.stockCode, toStream: true, expiry: this.fExpiry,
+                symbol: this.stockCode.concat(this.fExpiry).concat('FUT'), exchange: this.exchange
+            }
         ];
 
-        this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
-        this.oExpiries = session.oExpiries ?? [OPT_EXPIRIES[this.stockCode]['FIRST']];
-
-        for (var i = 0; i < 2; i++) {
-            this.st[i].exchange = this.st[i].key === 'index' && this.exchange === 'NFO' ? 'NSE' : this.exchange;
-            this.st[i].symbol = i === 1 ? this.stockCode.concat(this.fExpiry).concat('FUT') : this.st[i].stockCode;
-            this.st[i].toStream = i === 0 && this.st[i].exchange === 'MCX' ? false : true;
-            if (i === 1)
-                this.st[i].expiry = this.fExpiry;
-        }
-
-        this.oExpiries.forEach((expiry) => 
+        session.oExpiries.forEach((expiryid) => 
         {
+            const expiry = OPT_EXPIRIES[this.stockCode][expiryid];
             const idx = this.st.findIndex((s) => s.key === 'optionchain' && s.expiry === expiry);
             if(idx === -1)
                 this.st.push({key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry});
