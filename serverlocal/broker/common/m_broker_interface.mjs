@@ -1,8 +1,10 @@
-import streamer from '../stream.mjs';
-import { Subscriptions } from '../service/subscription/subservice.mjs';
-import { eventservice } from '../service/eventservice.mjs';
-import { ConfigService } from '../service/.config/configservice.mjs';
-import { ordermanager } from '../service/ordermanager.mjs';
+import streamer from '../../stream.mjs';
+import qserver from '../../../srvr/qserver.mjs';
+import { Subscriptions } from '../../service/subscription/subservice.mjs';
+import { eventservice } from '../../service/eventservice.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ordermanager } from '../../service/ordermanager.mjs';
+import { simulator } from '../../service/simmanager.mjs';
 
 class BrokerImpl 
 {
@@ -13,8 +15,9 @@ class BrokerImpl
         this.symbol_cache = new Map();
     }
 
-    exit(appid, sublist) {
-
+    exit(appid, sublist) 
+    {
+    
     }
 }
 
@@ -35,8 +38,10 @@ export class BrokerMarketDataImpl extends BrokerImpl
         {
             this.my_subs = new Subscriptions();
             this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
+            
             this.addListeners();
             this.initialized = true;
+            
             return {status: 'success'};
         }
         return { status: 'already initialized' };
@@ -45,8 +50,9 @@ export class BrokerMarketDataImpl extends BrokerImpl
     startv2(appid, p) 
     {
         const stock_subs = this.my_subs.addNewSubscriptions(appid, p);
-        const requests = stock_subs.getSubsItems(['index', 'futures']);
-        this.subscribe(appid, requests, 'start');
+        const list = stock_subs.exchange === 'mcx_fo' ? ['futures'] : ['index', 'futures'];
+        const requests = stock_subs.getSubsItems(list);
+        this.subscribe(appid, requests, 'subs');
 
         if (stock_subs.atm !== 0) {
             const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });
@@ -54,16 +60,6 @@ export class BrokerMarketDataImpl extends BrokerImpl
                 this.subscribe(appid, s, 'subs');
             });
         }
-    }
-
-    subscribe(appid, list, action) 
-    {
-        if (!list || list.length === 0)
-            return;
-    
-        this.my_subs.addRequests(appid, list);
-        const requests = this.buildRequests(appid, list);
-        this.providerSubscribe(appid, requests, action);
     }
 
     atmReview(qt) 
@@ -89,13 +85,13 @@ export class BrokerMarketDataImpl extends BrokerImpl
         }
     }
     
-    onQuotes(q, appid)
+    onQuotes(q)
     { 
         q.m1 = Date.now();
         const qt = this.standardize(q);
         if(qt !== undefined)
         {
-            this.emitQuotes(qt, appid);
+            this.emitQuotes(qt);
         
             if (qt.key === 'futures')
                 this.atmReview(qt);
@@ -104,14 +100,17 @@ export class BrokerMarketDataImpl extends BrokerImpl
         }
     }
     
-    emitQuotes(qt, appid)
+    emitQuotes(qt)
     {
-        if (this.myviewname === 'ICICIHISTVIEW')
-            streamer.emitQs(appid, qt);
+        qt.view_mode = this.view_mode;
+        if (this.myviewname === 'ICICIHISTVIEW'){
+            streamer.emitQs(qt);
+        }
         else {
             const appids = this.my_subs.getSubscribers(qt.symbol);
             appids.forEach((a) => {
-                streamer.emitQs(a, qt);
+                qt.appid = a;
+                streamer.emitQs(qt);
             });
         }
     }

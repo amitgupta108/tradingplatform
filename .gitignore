@@ -9,6 +9,7 @@ serverapps/config/
 serverapps/certs/
 serverlocal/config
 serverlocal/.env
+serverlocal/.env.p
 */.DS_Store
 dist/*_*
 .github

@@ -58,7 +58,7 @@ export class Connector
         });;
     }
 
-    static authkeys(id, cred, mode = 'os') 
+    static authkeys(id, cred) 
     {
         try
         {
@@ -177,6 +177,7 @@ export class KotakConnector extends Connector
                         hsm_sid: lr_result.sid,
                         hsm_token: lr_result.token,
                         baseUrl: vr_result.baseUrl,
+                        feedUrl: vr_result.feedUrl,
                         hsi_sid: vr_result.sid,
                         hsi_token: vr_result.token
                     }
@@ -201,6 +202,7 @@ export class KotakConnector extends Connector
             date: undefined,
             hsm_sid: undefined,
             hsm_token: undefined,
+            feedUrl: undefined,
             baseUrl: undefined,
             hsi_sid: undefined,
             hsi_token: undefined

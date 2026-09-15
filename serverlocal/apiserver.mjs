@@ -1,4 +1,4 @@
-import {m_common_service as util_service} from './broker/m_common.mjs';
+import {m_common_service as util_service} from './broker/common/m_common.mjs';
 import { ConfigService } from './service/.config/configservice.mjs';
 import { socketmap } from './session/appstate.mjs';
 import { eventservice } from './service/eventservice.mjs';
@@ -6,10 +6,6 @@ import { eventservice } from './service/eventservice.mjs';
 function registerDataRequests(s, appid,  mode)
 {
     const market_service = ConfigService.getActiveServiceByMode('view', mode);
-
-    s.on('vix', (msg) => {
-        util_service.subscribe_vix(appid, mode, msg.action);
-    });
 
     s.on('startv2', (msg) => {
         if (mode.startsWith('HISTORY'))
@@ -111,18 +107,14 @@ function registerAdminRequests(s, appid, mode)
             service.authenticate(text);
     }, 'authenticate'));
 
-    s.on('unsubscribe', (list) => {
-        admin_service.subscribe(list, 'unsubs');
-        s.sn.unqsub(list, 'unsubscribe')
+    s.on('subscribe', (list, provider) => {
+        const service = ConfigService.getAdminService(mode, 'LIVE_STREAMING');
+        service.subscribe(appid, list, provider);
     });
 
-    s.on('remove', () => {
-        admin_service.subscribe([], 'unsubsall');
-        s.sn.shared_with.forEach((item) => {
-            if (item.appid != appid)
-                socketmap.delete(item.appid);
-        })
-        s.sn.remove(s.sn);
+    s.on('unsubscribe', (list, provider) => {
+        const service = ConfigService.getAdminService(mode, 'LIVE_STREAMING');
+        service.subscribe(appid, list, provider);
     });
 }
 

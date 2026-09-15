@@ -1,6 +1,6 @@
-import utils from '../../common/utils.mjs';
-import data_interface from '../../srvr/qserver.mjs';
-import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
+import utils from '../../../common/utils.mjs';
+import data_interface from '../../../srvr/qserver.mjs';
+import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
 class BreezeMarketDataLive extends BrokerMarketDataImpl 
 {
@@ -15,7 +15,11 @@ class BreezeMarketDataLive extends BrokerMarketDataImpl
         });
     }
 
-    providerSubscribe(appid, requests, action) {
+    subscribe(appid, list, action) 
+    {
+        this.my_subs.addRequests(appid, list);
+        const requests = this.buildRequests(appid, list);
+
         if (action === 'subs' || action === 'start')
             this.provider.subscribe(requests);
         else
