@@ -36,6 +36,7 @@ class KotakMarketDataLive extends KotakMarketData
         const qt = this.symbol_cache.get(q.token);
         if (qt !== undefined && q.ltp !== undefined) {
             qt.expiry_date = qt.expiry;
+            qt.strike_price = qt.strike;
             qt.ltp = Number(q.ltp)
             qt.ltt = q.m1;
             return qt;
