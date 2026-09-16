@@ -1,4 +1,4 @@
-import qs from '../stream.mjs';
+import streamer from '../stream.mjs';
 import { eventservice } from './eventservice.mjs';
 import { ConfigService } from './.config/configservice.mjs';
 
@@ -26,7 +26,6 @@ class OrderManager
 
     notifyme(type, service_key, message)
     {    
-        console.log('order/position notifcation ' + JSON.stringify(message));
         if (type === 'order' && ['open', 'complete', 'rejected', 'cancelled'].includes(message.ordSt))
             this.liveOrderMatching(service_key, message);
         else if(type === 'position')
@@ -36,18 +35,17 @@ class OrderManager
     liveOrderMatching(service_key, order) 
     {
         const live_order = this.formatLiveOrder(order);
-        
-        if (live_order.source.includes('NEOTRADEAPI'))
-        {
-            const found = this.findMatch(service_key, live_order);
-            if (found !== undefined) {
-                live_order.appid = found.appid;
-                live_order.mode = ConfigService.getParentModes('trade', found.trade_mode);
-                this.live_order_map.delete(found.localid);
-                this.live_order_map.set(live_order.orderid, live_order);
-            }
+        const found = this.findMatch(service_key, live_order);
+        if (found !== undefined) {
+            live_order.appid = found.appid;
+            live_order.trade_mode = found.trade_mode;
+            live_order.localid = found.localid;
+            this.live_order_map.delete(found.localid);
         }
-        qs.emitOrders(live_order);
+        live_order.modes = ConfigService.getParentModes('trade', service_key);
+        this.live_order_map.set(live_order.orderid, live_order);
+        console.log('order notifcation ' + JSON.stringify(live_order) + ' ' + found?.orderid);
+        streamer.emitOrders(live_order);
     }
 
     findMatch(service_key, live_order) 
@@ -134,6 +132,7 @@ class OrderManager
 
     emitPosition(service_key, position)
     {
+        console.log('position notifcation ' + JSON.stringify(position));
         eventservice.emit(service_key, this.formatLivePosition(position));
     }
 
