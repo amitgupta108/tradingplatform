@@ -1,6 +1,5 @@
 import {m_common_service as util_service} from './broker/common/m_common.mjs';
 import { ConfigService } from './service/.config/configservice.mjs';
-import { socketmap } from './session/appstate.mjs';
 import { eventservice } from './service/eventservice.mjs';
 
 function registerDataRequests(s, appid,  mode)
@@ -40,7 +39,7 @@ function registerDataRequests(s, appid,  mode)
             market_service.exit(appid);
 
         s.sn.exit(appid, s.sn);
-        socketmap.delete(appid);
+        ConfigService.deleteFromUserMap(appid);
         s.disconnect();
 
         console.log('user exited:' + appid);

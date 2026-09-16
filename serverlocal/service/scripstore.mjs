@@ -8,10 +8,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { ConfigService } from './.config/configservice.mjs';
 import { eventservice } from './eventservice.mjs';
-import config from '../config/scrips_config.json' with { type: 'json' };
-
-
-const { filters, tp_filters, filePaths } = config;
+import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
 
 const FIELD_MAP = {
 	pSymbol:      'token',

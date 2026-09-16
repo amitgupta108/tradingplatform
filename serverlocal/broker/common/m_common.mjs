@@ -2,7 +2,7 @@ import qserver from '../../../srvr/qserver.mjs';
 import streamer from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { EXCHANGES } from '../../../common/constants.mjs';
+import { EXCHANGES, FUT_EXPIRIES, OPT_EXPIRIES } from '../../utils/constants.mjs'
 
 class CommonService extends BrokerMarketDataImpl 
 {
@@ -32,7 +32,8 @@ class CommonService extends BrokerMarketDataImpl
         
         r.exchange = ['index', 'vix'].includes(r.key) ? 'NSE' : 'NFO';
         r.stockCode = r.key === 'vix' ? 'INDVIX' : r.stockCode;
-        r.expiry = r.fExpiry || r.oExpiry;
+        r.expiry = r.key === 'futures' ? FUT_EXPIRIES[r.stockCode]['FIRST']
+             : r.key === 'strikex' ? r.oExpiry : null;
 
         return qserver.getHistory(appid, r)
         .then((response) => {

@@ -86,7 +86,7 @@ class OrderManager
         else if(fOrder.state === 'complete')
             fOrder.state = 'completed';
         
-        fOrder.pricetype = fOrder.pricetype === 'L' ? 'LIMIT' : 'MARKET';
+        fOrder.pricetype = fOrder.pricetype === 'MKT' ? 'MARKET' : 'LIMIT';
         fOrder.action = fOrder.action === 'B' ? 'BUY' : 'SELL';
         fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
         fOrder.strike_price = fOrder.strike_price.replace('.00', '');

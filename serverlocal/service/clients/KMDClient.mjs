@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { PacketParser } from '../../../common/PacketParser.mjs';
+import { PacketParser } from '../../utils/PacketParser.mjs';
 
 const KDM_URL = 'wss://sfeed.kotaksecurities.com';
 
@@ -128,7 +128,7 @@ export class KMDClient extends EventEmitter
 
     handleResponse(parsed)
     {
-        if (parsed?.type === 'scrip')
+        if (parsed?.type === 'scrip' || parsed?.type === 'index')
             this.emit('quote', parsed);
         else if (parsed.message_code === 1117 || parsed.message_code === 1119)
             this.dividers = parsed.exchanges;

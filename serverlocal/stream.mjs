@@ -1,4 +1,4 @@
-import {socketmap} from './session/appstate.mjs';
+import { ConfigService } from './service/.config/configservice.mjs'
 
 function emitOrders(order)
 {    
@@ -11,14 +11,14 @@ function emitQs(q)
 }
 
 function emitHistQs(appid, key, qA) {
-    const app_obj = socketmap.get(appid);
+    const app_obj = ConfigService.getFromUserMap(appid);
     if (app_obj !== undefined)
         emit(app_obj.socket, 'history', { time: Date.now(), key: key, qA: qA });
 }
 
 function send(type, msg)
 {
-    const app_obj = socketmap.get(msg.appid);
+    const app_obj = ConfigService.getFromUserMap(msg.appid);
     if (app_obj !== undefined)
         emit(app_obj.socket, type, msg);
     else
@@ -30,7 +30,7 @@ function group_emit(type, msg)
     const receivers = getReceivers(type, msg);   
     receivers.forEach((appid) => {
         msg.appid = appid;
-        emit(socketmap.get(appid).socket, type, msg);
+        emit(ConfigService.getFromUserMap(appid).socket, type, msg);
     });
 }
 
@@ -39,19 +39,19 @@ function getReceivers(type, msg)
     const receivers = [];
     if (type === 'order') 
     {
-        socketmap.forEach((v, k) => {
+        for (const [v, k] of ConfigService.usermapEntries()) {
             if(v.mode === msg.mode)
                 receivers.push(k);
-        });
+        }
     }
     return receivers;
 }
 
 function broadcast(type, msg, group)
 {
-    for (const [appid, app_obj] of socketmap.entries()) {
-        if (app_obj && (type === 'hb' || (type === 'vix' && !app_obj.mode.startsWith('HISTORY'))))
-            emit(app_obj.socket, type, msg);
+    for (const [v, k] of ConfigService.usermapEntries()) {
+        if (v && (type === 'hb' || (type === 'vix' && !v.mode.startsWith('HISTORY'))))
+            emit(v.socket, type, msg);
     }
 }
 

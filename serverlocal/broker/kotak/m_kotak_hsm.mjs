@@ -34,7 +34,7 @@ class KotakMarketDataHSM extends KotakMarketData
     standardize(q)
     {
         const qt = this.symbol_cache.get(q.tk);
-        if (qt !== undefined && q.ltp !== undefined) {
+        if (qt !== undefined && (q.ltp !== undefined || q.iv !== undefined)) {
             qt.ltp = q.name === 'sf' ? Number(q.ltp) : Number(q.iv);
             qt.ltt = q.m1;
             return qt;
@@ -54,6 +54,7 @@ class KotakMarketDataHSM extends KotakMarketData
             const { tk: token, e: exchange, iv: ltp,  ...rest } = snapshot;
             qt = { token, exchange, ltp};
             qt.symbol = scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey ?? snapshot.tk;
+            qt.symbol = snapshot.tk === 'Nifty 50' ? 'NIFTY' : qt.symbol;
             qt.ltt = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
         }
         qt.ltp = Number(qt.ltp);
