@@ -22,7 +22,7 @@ function send(type, msg)
     if (app_obj !== undefined)
         emit(app_obj.socket, type, msg);
     else
-        group_emit(msg);
+        group_emit(type, msg);
 }
 
 function group_emit(type, msg)
@@ -39,8 +39,8 @@ function getReceivers(type, msg)
     const receivers = [];
     if (type === 'order') 
     {
-        for (const [v, k] of ConfigService.usermapEntries()) {
-            if(v.mode === msg.mode)
+        for (const [k, v] of ConfigService.usermapEntries()) {
+            if(msg.modes.includes(v.mode))
                 receivers.push(k);
         }
     }
@@ -49,7 +49,7 @@ function getReceivers(type, msg)
 
 function broadcast(type, msg, group)
 {
-    for (const [v, k] of ConfigService.usermapEntries()) {
+    for (const [k, v] of ConfigService.usermapEntries()) {
         if (v && (type === 'hb' || (type === 'vix' && !v.mode.startsWith('HISTORY'))))
             emit(v.socket, type, msg);
     }

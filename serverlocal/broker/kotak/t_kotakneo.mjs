@@ -7,7 +7,6 @@ import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name, provider) {
         super(name, provider);
-        this.authData = {};
         this.oTemplate = {
             am: 'NO',
             dq: '0',
@@ -20,8 +19,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 
     addListeners() {
         eventservice.addListener('kotak_auth', (data) => {
-            this.authData = data;
-            this.api_wrapper = new KotakTradeAPI(this.name, this.authData.baseUrl);
+            this.api_wrapper = new KotakTradeAPI(this.name, data);
             const kotak_hsi_socket = new KotakHSISocket(this.trade_mode);
             kotak_hsi_socket.hsiconnect(data);
         });
@@ -52,7 +50,6 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 
     toKotakOrder(order) 
     {
-    
         const new_order = this.oTemplate;
 
         new_order.es = order.exchange;
@@ -119,15 +116,15 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 }
 
 class KotakTradeAPI {
-    constructor(provider, baseUrl) {
+    constructor(provider, authData) {
         this.provider = provider;
-        this.baseUrl = baseUrl;
+        this.authData = authData;
         this.endpoints = {};
         this.cache_url();
     }
 
     cache_url() {
-        const baseUrl = this.baseUrl;
+        const baseUrl = this.authData.baseUrl;
         this.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
         this.endpoints.modify = new URL('/quick/order/vr/modify', baseUrl).href;
         this.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
@@ -136,11 +133,10 @@ class KotakTradeAPI {
     }
 
     getHeaders() {
-        const auth_data = this.authData;
         return {
             'accept': 'application/json',
-            'Sid': auth_data.hsi_sid,
-            'Auth': auth_data.hsi_token,
+            'Sid': this.authData.hsi_sid,
+            'Auth': this.authData.hsi_token,
             'neo-fin-key': 'neotradeapi',
             'Content-Type': 'application/x-www-form-urlencoded'
         };
