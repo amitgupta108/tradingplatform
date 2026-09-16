@@ -114,19 +114,21 @@ export class PacketParser
         offset += 4;
         const yearlyLow = packet.readInt32LE(offset);
         offset += 4;
-        const percent = packet.readDoubleLE(offset);
-        offset += 8;
+        const percent = packet.readInt32LE(offset);
+        offset += 4;
+        const _market_cap = packet.readDoubleLE(offset);
         offset += 8;
         const precision = packet.readUInt8(offset);
         offset += 1;
         const multiplier = packet.readUInt32LE(offset);
         offset += 4;
-        
+        const name =  text(packet, offset, 21);
+
         return { 
             type: 'index',
             exchange: exchange,
-            token: String(token), 
-            name: text(packet, offset, 21), 
+            token: name,
+            name: String(token), 
             ltp: value / divider, 
             open: open / divider, 
             high: high / divider, 

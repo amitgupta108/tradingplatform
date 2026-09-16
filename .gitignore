@@ -4,6 +4,7 @@
 web/lib/
 node_modules
 *.txt
+b.json
 *.log
 serverapps/config/
 serverapps/certs/

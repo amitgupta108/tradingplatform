@@ -23,8 +23,6 @@ function loadPreData()
   const requests = new Array();
   keys.forEach((k) => {
     const p = historyParams();
-    if(k === 'futures')
-      p.fExpiry = instrument.fExpiry;
     p.key = k;
     requests.push(p);
   });
