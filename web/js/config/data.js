@@ -66,7 +66,7 @@ instrumentMap.set('NL3', {
 instrumentMap.set('NL4', {
   oExpiries: ['FIRST', 'SECOND'],
   stockCode: 'NIFTY',
-  mode: 'S1T1AB',
+  mode: 'S1T1ABS',
   appid: '0cd4a0ed-c4a1-4318-940b-b4d3841468d9'
 });
 

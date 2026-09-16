@@ -1,4 +1,4 @@
-import { EXCHANGES, OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../../common/constants.mjs';
+import { EXCHANGES, OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.mjs';
 import utils from '../../../common/utils.mjs';
 
 export class Subscriptions 

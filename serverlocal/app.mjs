@@ -1,6 +1,5 @@
 import { ConfigService as services } from './service/.config/configservice.mjs';
 import apiserver from './apiserver.mjs'; 
-import { socketmap } from './session/appstate.mjs';
 
 export function startServices() 
 {
@@ -18,7 +17,7 @@ export function connect(s)
         return;
     }
     
-    socketmap.set(appid, { socket: s, mode: mode});
+    services.addToUserMap(appid, { socket: s, mode: mode});
     registerHandlers(s, appid, mode);
 
     s.on("error", (err) => {
