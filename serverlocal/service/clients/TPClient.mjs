@@ -10,8 +10,7 @@ export class TPSocket extends EventEmitter
         this.mode = mode;
 
         this.reconnect = true;        
-        //this.ws = io("https://d326ndd7qg08xl.cloudfront.net/");
-        this.ws = io("http://localhost:1025/", {
+        this.ws = io(`${process.env.TP_HOST}:${process.env.TP_PORT}`, {
             auth: {
                 token: this.appid,
                 mode: this.mode,

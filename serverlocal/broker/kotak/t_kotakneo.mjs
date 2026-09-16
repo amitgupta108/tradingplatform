@@ -2,20 +2,28 @@ import { scripstore } from '../../service/scripstore.mjs';
 import { ordermanager } from '../../service/ordermanager.mjs';
 import { KotakHSISocket } from '../../service/clients/HSIClient.mjs';
 import { eventservice } from '../../service/eventservice.mjs';
-import { state_kotakneo as mystate } from '../../session/appstate.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 
 class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name, provider) {
         super(name, provider);
+        this.authData = {};
+        this.oTemplate = {
+            am: 'NO',
+            dq: '0',
+            mp: '6',
+            pf: 'N',
+            rt: 'DAY',
+            tp: '0',
+        }
     }
 
     addListeners() {
         eventservice.addListener('kotak_auth', (data) => {
-            mystate.authData = data;
+            this.authData = data;
+            this.api_wrapper = new KotakTradeAPI(this.name, this.authData.baseUrl);
             const kotak_hsi_socket = new KotakHSISocket(this.trade_mode);
             kotak_hsi_socket.hsiconnect(data);
-            this.api_wrapper = new KotakTradeAPI(this.name);
         });
     }
 
@@ -42,20 +50,18 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
         return { state: 'NOT_OK', emsg: response.errMsg };
     }
 
-    toKotakOrder(order) {
-        let ts = order.symbol;
-        if (order.exchange === 'NFO') {
-            ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
-        }
-        const new_order = mystate.oTemplate;
+    toKotakOrder(order) 
+    {
+    
+        const new_order = this.oTemplate;
 
-        new_order.es = order.exchange === 'NFO' ? 'nse_fo' : 'mcx_fo';
+        new_order.es = order.exchange;
         new_order.pc = order.product;
         new_order.pr = String(order.price);
         new_order.pt = order.pricetype === 'MARKET' ? 'MKT' : 'L';
         new_order.qt = String(order.quantity);
         new_order.tt = order.action === 'BUY' ? 'B' : 'S';
-        new_order.ts = ts;
+        new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
         if(order.orderid !== undefined)
             new_order.no = order.orderid;
 
@@ -80,6 +86,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
                 orders = order_json.data;
                 return orders.map((order) => {
                     const odr = ordermanager.formatLiveOrder(order);
+                    odr.trade_mode === this.trade_mode;
                     ordermanager.addOrders(odr);
                     return odr;
                 })
@@ -112,22 +119,24 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 }
 
 class KotakTradeAPI {
-    constructor(provider) {
+    constructor(provider, baseUrl) {
         this.provider = provider;
+        this.baseUrl = baseUrl;
+        this.endpoints = {};
         this.cache_url();
     }
 
     cache_url() {
-        const baseUrl = mystate.authData.baseUrl;
-        mystate.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
-        mystate.endpoints.modify = new URL('/quick/order/vr/modify', baseUrl).href;
-        mystate.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
-        mystate.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
-        mystate.endpoints.positions = new URL('/quick/user/positions', baseUrl).href;
+        const baseUrl = this.baseUrl;
+        this.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
+        this.endpoints.modify = new URL('/quick/order/vr/modify', baseUrl).href;
+        this.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
+        this.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
+        this.endpoints.positions = new URL('/quick/user/positions', baseUrl).href;
     }
 
     getHeaders() {
-        const auth_data = mystate.authData;
+        const auth_data = this.authData;
         return {
             'accept': 'application/json',
             'Sid': auth_data.hsi_sid,
@@ -140,7 +149,7 @@ class KotakTradeAPI {
     post(endpt, body) {
         const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
         const headers = this.getHeaders();
-        const api_url = mystate.endpoints[endpt];
+        const api_url = this.endpoints[endpt];
         const options = {
             method: 'POST',
             headers: headers,
@@ -151,7 +160,7 @@ class KotakTradeAPI {
 
     get(endpt) {
         const headers = this.getHeaders();
-        const api_url = mystate.endpoints[endpt];
+        const api_url = this.endpoints[endpt];
         const options = {
             method: 'GET',
             headers: headers

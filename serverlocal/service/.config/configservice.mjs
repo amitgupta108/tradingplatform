@@ -13,6 +13,7 @@ import { t_openalgo_trade } from '../../broker/openalgo/t_openalgo.mjs';
 import { t_kotak_trade } from '../../broker/kotak/t_kotakneo.mjs';
 import { m_common_service } from '../../broker/common/m_common.mjs';
 
+const usermap = new Map();
 const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
     S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
@@ -156,7 +157,7 @@ export class ConfigService
 
     static getParentModes(feature, feature_mode)
     {
-        const [modes, vals] = Object.entries(modes).flatMap(([k, v]) => {
+        return Object.entries(modes).flatMap(([k, v]) => {
             
             const match = Object.entries(v).filter(([f, service_key]) => {
                 return feature === f
@@ -167,7 +168,7 @@ export class ConfigService
         });
     }
 
-    static getSocketClient(key)
+    static getSocketClient(key, appid, mode)
     {
         return this.socket_clients?.get(key);
     }
@@ -185,5 +186,24 @@ export class ConfigService
             return true;
 
         return false;
+    }
+
+    static addToUserMap(s, appid, mode)
+    {
+        usermap.set(appid, { socket: s, mode: mode });
+    }
+
+    static getFromUserMap(appid)
+    {
+        return usermap.get(appid);
+    }
+
+    static deleteFromUserMap(appid){
+        usermap.delete(appid);
+    }
+
+    static usermapEntries()
+    {
+        return usermap.entries();
     }
 }
