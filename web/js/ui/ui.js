@@ -1,238 +1,256 @@
-function createOrder(btn, parent)
+function placeOrder(order)
 {
-  const symbol = parent.title;
-  const action = btn.innerText;
-  
-  const rows = order_rows_tbody.rows;
-  if(rows.length > 0)
-  {
-    var idx = Array.from(rows).findIndex((r) => {
-      return r.querySelector('#owsymbol').textContent === symbol;
-    });
-    const r_row = !basket.checked ? 0 : idx;
-    if(r_row !== -1)
-      rows[r_row].remove();
-  }    
-  appendOrderRow(symbol, action);
-  showOrderWindow();
+	const rows = order_rows_tbody.rows;
+	if(rows.length > 0)
+	{
+		if(!basket.checked)
+			var idx = 0
+		else
+			var idx = Array.from(rows).findIndex((r) => {
+				return r.querySelector('#owsymbol').textContent === order.symbol;
+			});
+
+		if(idx !== -1)
+			rows[idx].remove();
+	}
+	appendOrderRow(order);
+	showOrderWindow();
 }
 
-function appendOrderRow(symbol, action, quantity = 1)
+function appendOrderRow(order)
 {
-  const scripName = expandSymbol(symbol).name;
+	const scripName = expandSymbol(order.symbol).name;
 
-  var tr = tRow(t_order_window_row);
-  tr.querySelector('#owsymbol').textContent  = symbol;
-  tr.querySelector('#scripName').textContent  = scripName;
-  tr.querySelector('select').value = quantity;
+	var tr = tRow(t_order_window_row);
+	tr.querySelector('#owsymbol').textContent  = order.symbol;
+	tr.querySelector('#scripName').textContent  = scripName;
+	tr.querySelector('select').value = order.quantity;
 
-  const action_btn = tr.querySelector('#ow_action_btn');
-  const selectbox = tr.querySelector('select');
-  action_btn.textContent = action;
+	const action_btn = tr.querySelector('#ow_action_btn');
+	const selectbox = tr.querySelector('select');
+	action_btn.textContent = order.action;
 
-  if(!basket.checked)
-    tr.classList.remove('hover-row');
+	if(!basket.checked)
+		tr.classList.remove('hover-row');
 
-  if(action === 'B') {
-    action_btn.classList.replace('sell', 'buy');
-    selectbox.classList.replace('sell', 'buy');
-  }
-  else
-  {
-    action_btn.classList.replace('buy', 'sell');
-    selectbox.classList.replace('buy', 'sell');
-  }
+	if(order.action === 'B') {
+		action_btn.classList.replace('sell', 'buy');
+		selectbox.classList.replace('sell', 'buy');
+	}
+	else
+	{
+		action_btn.classList.replace('buy', 'sell');
+		selectbox.classList.replace('buy', 'sell');
+	}
 
-  order_rows_tbody.prepend(tr);
-  submitOWinBtn.disabled = true;
+	order_rows_tbody.prepend(tr);
+	submitOWinBtn.disabled = true;
 }
 
 function showOrderWindow()
-{  
-  basket.disabled = true;
-  const rows = order_rows_tbody.rows;
-  oWindow.classList.remove('buy', 'sell', 'multi');
-  if(rows.length === 1){
-    const action = rows[0].querySelector('#ow_action_btn').textContent;
-    const style = action === 'B' ? 'buy' : 'sell';
-    oWindow.classList.add(style);
-  }
-  else
-    oWindow.classList.add('multi');
-  
-  if(oWindow.style.display !== "block")
-    oWindow.style.display = "block";
+{
+	basket.disabled = true;
+	const rows = order_rows_tbody.rows;
+	
+	oWindow.classList.remove('buy', 'sell', 'multi');
+	if(rows.length === 1){
+		const action = rows[0].querySelector('#ow_action_btn').textContent;
+		const style = action === 'B' ? 'buy' : 'sell';
+		oWindow.classList.add(style);
+	}
+	else
+		oWindow.classList.add('multi');
+
+	if(oWindow.style.display !== "block")
+		oWindow.style.display = "block";
 }
 
 function hideOWin()
 {
-  oWindow.style.display = "none";
-  order_rows_tbody.innerHTML = "";
-  basket.disabled = false;
-  submitOWinBtn.disabled = true;
-  in_prep_orders.orders = {};
+	oWindow.style.display = "none";
+	order_rows_tbody.innerHTML = "";
+	basket.disabled = false;
+	submitOWinBtn.disabled = true;
+	in_prep_orders.orders = {};
 }
 
 function flipAction(orderRowBtn, orderRow)
 {
-  submitOWinBtn.disabled = true;
-  const selectbox = orderRow.querySelector('select');
+	submitOWinBtn.disabled = true;
+	const selectbox = orderRow.querySelector('select');
 
-  var action = orderRowBtn.innerText;
-  orderRowBtn.innerText = action === 'B' ? 'S' : 'B';
-  if(action === 'B') {
-    orderRowBtn.classList.replace('buy', 'sell');
-    selectbox.classList.replace('buy', 'sell');
-  }
-  else {
-    orderRowBtn.classList.replace('sell', 'buy');
-    selectbox.classList.replace('sell', 'buy');
-  }
-  
-  showOrderWindow();
+	var action = orderRowBtn.innerText;
+	orderRowBtn.innerText = action === 'B' ? 'S' : 'B';
+	if(action === 'B') {
+		orderRowBtn.classList.replace('buy', 'sell');
+		selectbox.classList.replace('buy', 'sell');
+	}
+	else {
+		orderRowBtn.classList.replace('sell', 'buy');
+		selectbox.classList.replace('sell', 'buy');
+	}
+
+	showOrderWindow();
 }
 
-function switchTabs(idx) 
-{  
-  document.getElementById('c_oc_div').classList.toggle('active');
-  document.getElementById('n_oc_div').classList.toggle('active');
+function switchTabs(idx)
+{
+	document.getElementById('c_oc_div').classList.toggle('active');
+	document.getElementById('n_oc_div').classList.toggle('active');
 
-  const active = idx === 1 ? 0 : 1;
-  const btns = [expiry_btn_1, expiry_btn_2];
-  btns[idx].disabled = true;
-  btns[active].disabled = false; 
+	const active = idx === 1 ? 0 : 1;
+	const btns = [expiry_btn_1, expiry_btn_2];
+	btns[idx].disabled = true;
+	btns[active].disabled = false;
 }
 
 function switchCharts(idx)
 {
-  const left = document.getElementById('leftContainer');
-  const tabs = left.querySelectorAll('div[id^="chart_tab_"]');
-  const panes = left.querySelectorAll('div[id^="leftContainer_"]');
-  for(var i = 0; i < 3; i++)
-  {
-    tabs[i].classList.remove('active-tab');
-    panes[i].style.display = 'none';
-  }
-  
-  tabs[idx].classList.add('active-tab');
-  panes[idx].style.display = 'block';
+	const left = document.getElementById('leftContainer');
+	const tabs = left.querySelectorAll('div[id^="chart_tab_"]');
+	const panes = left.querySelectorAll('div[id^="leftContainer_"]');
+	for(var i = 0; i < 3; i++)
+	{
+		tabs[i].classList.remove('active-tab');
+		panes[i].style.display = 'none';
+	}
+
+	tabs[idx].classList.add('active-tab');
+	panes[idx].style.display = 'block';
 }
 
 function tRow(template, withListener = true){
-  const new_row = document.importNode(template.content, true).querySelector('tr');
-  if(withListener){
-    new_row.addEventListener('click', (e) => {
-      e.stopPropagation();
+	const new_row = document.importNode(template.content, true).querySelector('tr');
+	if(withListener){
+	new_row.addEventListener('click', (e) => {
+		e.stopPropagation();
 
-      if(e.target !== new_row)
-        handleClickEvent(e);
-    }, true);
+		if(e.target !== new_row)
+			handleClickEvent(e);
+	}, true);
 
-    new_row.addEventListener('change', (e) => {
-      e.stopPropagation();
+	new_row.addEventListener('change', (e) => {
+		e.stopPropagation();
 
-      if(e.target !== new_row)
-        handleChangeEvent(e);
-    }, true);
+		if(e.target !== new_row)
+			handleChangeEvent(e);
+	}, true);
 
-    new_row.addEventListener('input', (e) => {
-      e.stopPropagation();
-      
-      if(e.target.id === 'lmtprice' && e.target !== new_row)
-      submitOWinBtn.disabled = true;
-    }, true);
-  }
-  return new_row;
+	new_row.addEventListener('input', (e) => {
+		e.stopPropagation();
+
+		if(e.target.id === 'lmtprice' && e.target !== new_row)
+			submitOWinBtn.disabled = true;
+		}, true);
+	}
+	return new_row;
 }
 
 function handleChangeEvent(e)
 {
-  const clicked = e.target;
-  const parent = e.currentTarget;
+	const clicked = e.target;
+	const parent = e.currentTarget;
 
-  if(parent.id === 'order-window-tr')
-    submitOWinBtn.disabled = true;
-  else if(clicked.id === 'pos_exit_cb')
-    position_cb_action();
+	if(parent.id === 'order-window-tr')
+		submitOWinBtn.disabled = true;
+	else if(clicked.id === 'pos_exit_cb')
+		position_cb_action();
 }
 
 function handleClickEvent(e)
 {
-  const cl_el = e.target;
-  const pn_el = e.currentTarget;
+	const cl_el = e.target;
+	const pn_el = e.currentTarget;
 
-  if(cl_el.id === 'ordertype')
-    flipOrderType(cl_el, pn_el);
-  else if(cl_el.id === 'div_trans_btn')
-    createOrder(cl_el, pn_el);
-  else if(cl_el.id === 'row_attn_btn')
-    hl_row(cl_el, pn_el);
-  else if(cl_el.id === 'ow_action_btn')
-    flipAction(cl_el, pn_el);
-  else if(cl_el.id === 'ow_row_rm_btn')
-    removeOrderRow(cl_el, pn_el);
-  else if(cl_el.id === 'orderdisplay-btn')
-    displayOrderList(cl_el, pn_el);
-  else if (cl_el.id === 'conf_cancel_lb')
-    confirmCancel(cl_el, pn_el);
-  else if(cl_el.id === 'cancel_order_btn')
-    cancelOrder(cl_el, pn_el);
-  else if (cl_el.id === 'modify_order_btn')
-    modifyOrder(cl_el, pn_el);
-  else if(cl_el.id === 'drop_cancel_btn')
-    dropCancelOrder(cl_el, pn_el);
-  else if(cl_el.id === 'pos_exit_cb')
-    return;
+	if(cl_el.id === 'ordertype')
+		flipOrderType(cl_el, pn_el);
+	else if(cl_el.id === 'div_trans_btn')
+		createOrder(cl_el, pn_el);
+	else if(cl_el.id === 'row_attn_btn')
+		hl_row(cl_el, pn_el);
+	else if(cl_el.id === 'ow_action_btn')
+		flipAction(cl_el, pn_el);
+	else if(cl_el.id === 'ow_row_rm_btn')
+		removeOrderRow(cl_el, pn_el);
+	else if(cl_el.id === 'orderdisplay-btn')
+		displayOrderList(cl_el, pn_el);
+	else if (cl_el.id === 'conf_cancel_lb')
+		confirmCancel(cl_el, pn_el);
+	else if(cl_el.id === 'cancel_order_btn')
+		cancelOrder(cl_el, pn_el);
+	else if (cl_el.id === 'modify_order_btn')
+		modifyOrder(cl_el, pn_el);
+	else if(cl_el.id === 'drop_cancel_btn')
+		dropCancelOrder(cl_el, pn_el);
+	else if(cl_el.id === 'pos_exit_cb')
+		return;
 }
 
 function flipOrderType(c, p)
 {
-  submitOWinBtn.disabled = true;
-  c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
-  const limitp = qSel(p, 'lmtprice', 'id');
-  limitp.disabled = c.textContent === 'MARKET' ? true: false;
-  if(c.textContent === 'MARKET') 
-    limitp.value = "";
+	submitOWinBtn.disabled = true;
+	c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
+	const limitp = qSel(p, 'lmtprice', 'id');
+	limitp.disabled = c.textContent === 'MARKET' ? true: false;
+	if(c.textContent === 'MARKET')
+		limitp.value = "";
 }
 
 function hl_row(c, p)
 {
-  p.classList.toggle('row_background');
+	p.classList.toggle('row_background');
 }
 
 function removeOrderRow(c, p){
-  p.remove();
+	p.remove();
 }
 
 function cancelOrder(c, p_row)
 {
-  emit('updateorder', {orderid: p_row.title, action: 'cancel'});
-  sOrderSubmit.play();
-  orderlistDiv.style.display = 'none';
+	emit('updateorder', {orderid: p_row.title, action: 'cancel'});
+	sOrderSubmit.play();
+	orderlistDiv.style.display = 'none';
 }
 
-function modifyOrder(c, p_row) {
-  emit('updateorder', { orderid: p_row.title, action: 'modify' });
-  sOrderSubmit.play();
-  orderlistDiv.style.display = 'none';
+function createOrder(c, p_row) {
+	
+	const symbol = p_row.title;
+	const action = c.innerText;
+
+	const order = new Order(symbol, action);
+	placeOrder(order);
+}
+
+function modifyOrder(c, p_row) 
+{
+	const list_head = order_list_thead.querySelector('td');
+	const symbol = list_head.title;
+	const action = p_row.childNodes[3].textContent;
+	const quantity = p_row.childNodes[9].textContent;
+	const orderid = parent.title;
+
+	const order = new Order(symbol, action, quantity, orderid);
+	placeOrder(order);
+	orderlistDiv.style.display = 'none';
 }
 
 function confirmCancel(c, p) {
-  var overlay = c.nextElementSibling;
-  overlay.style.display = 'flex';
+	var overlay = c.nextElementSibling;
+	overlay.style.display = 'flex';
 }
 
 function dropCancelOrder(c, p)
 {
-  c.parentElement.style.display = 'none';
+	c.parentElement.style.display = 'none';
 }
 
-function position_cb_action(){
-  const checkboxes = document.querySelectorAll('#pos_exit_cb');
-  const checkedIdx = Array.from(checkboxes)
-  .map((cb, i) => cb.checked ? i : null)
-  .filter(val => val !== null);
+function position_cb_action()
+{
+	const checkboxes = document.querySelectorAll('#pos_exit_cb');
+	const checkedIdx = Array.from(checkboxes)
+		.map((cb, i) => cb.checked ? i : null)
+		.filter(val => val !== null);
 
-  exit_pos_btn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
-  pos_all_cb.checked = checkedIdx.length === checkboxes.length;
+	exit_pos_btn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
+	pos_all_cb.checked = checkedIdx.length === checkboxes.length;
 }

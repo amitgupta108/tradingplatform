@@ -38,7 +38,7 @@ export class KotakMarketData extends BrokerMarketDataImpl
         const indices = [], scrips = [];
         list.forEach((e) => {
             if(e.key === 'index') {
-                e.token = e.symbol === 'NIFTY' ? 'Nifty 50' : e.symbol;
+                e.token = e.symbol === 'NIFTY' ? 'NIFTY 50' : e.symbol;
                 indices.push(e.exchange + '|' + e.token);
             } else {
                 e.token = scripstore.findScripByRefKey(e.symbol)?.token;

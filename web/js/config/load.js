@@ -53,15 +53,15 @@ let gtotal_pnl =  document.getElementById("vTotalPL");
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 
 class TradeButtons extends HTMLElement {
-  connectedCallback() {
-    this.innerHTML = `
-      <div class="hover-content">
-          <button  id="div_trans_btn" class="smallbutton buy">B</button>
-          <button  id="row_attn_btn" class="smallbutton order">!</button>
-          <button  id="div_trans_btn" class="smallbutton sell">S</button> 
-      </div>    
-    `;
-  }
+	connectedCallback() {
+	this.innerHTML = `
+		<div class="hover-content">
+			<button  id="div_trans_btn" class="smallbutton buy">B</button>
+			<button  id="row_attn_btn" class="smallbutton order">!</button>
+			<button  id="div_trans_btn" class="smallbutton sell">S</button> 
+		</div>    
+	`;
+	}
 }
 customElements.define('trade-buttons', TradeButtons);
 
@@ -71,93 +71,94 @@ const qBox = new QuoteDispatcher();
 const pNL = new EventTarget();
 
 qBox.addEventListener('index', (event) => {
-  const q = event.detail;
-  futures_ltp = q;
-  const ltp = Number(q.ltp).toFixed(2);
-  spot_title = ' | S: ' + ltp;
-  document.title = fut_title + spot_title;
-  spot_label.textContent = fut_title + spot_title;
+	const q = event.detail;
+	futures_ltp = q;
+	const ltp = Number(q.ltp).toFixed(2);
+	spot_title = ' | S: ' + ltp;
+	document.title = fut_title + spot_title;
+	spot_label.textContent = fut_title + spot_title;
 });
 
 qBox.addEventListener('futures', (event) => {
-  const q = event.detail;
-  //futures_ltp = q;
-  fut_title = 'F: ' + Number(q.ltp).toFixed(2);
-  document.title = fut_title + spot_title;
-  spot_label.textContent = fut_title + spot_title;
+	const q = event.detail;
+	//futures_ltp = q;
+	fut_title = 'F: ' + Number(q.ltp).toFixed(2);
+	document.title = fut_title + spot_title;
+	spot_label.textContent = fut_title + spot_title;
 
-  time_label.textContent = new Date().toLocaleTimeString();
+	time_label.textContent = new Date().toLocaleTimeString();
 });
 
 qBox.addEventListener('strikex', (event) => {
-  if(positions.size > 0 && positions.get(event.detail.symbol) !== undefined)
-  {
-    const pos = positions.get(event.detail.symbol);
+	if(positions.size > 0 && positions.get(event.detail.symbol) !== undefined)
+	{
+		const pos = positions.get(event.detail.symbol);
 
-    const unbookedPL = (event.detail.ltp - pos.booked.avgP) * pos.psize;
-    const pnlchange = {change_unb: unbookedPL - pos.value('unbookedPL'), change_b: 0};
-    pNL.dispatchEvent(generateEvent('change', pnlchange));
+		const unbookedPL = (event.detail.ltp - pos.booked.avgP) * pos.psize;
+		const pnlchange = {change_unb: unbookedPL - pos.value('unbookedPL'), change_b: 0};
+		pNL.dispatchEvent(generateEvent('change', pnlchange));
 
-    pos.value('LTP', event.detail.ltp);
-    pos.value('unbookedPL', unbookedPL);
-    pos.value('totalPL', pos.booked.pl + unbookedPL);
-  }
+		pos.value('LTP', event.detail.ltp);
+		pos.value('unbookedPL', unbookedPL);
+		pos.value('totalPL', pos.booked.pl + unbookedPL);
+	}
 });
 
 qBox.addEventListener('strikex', (event) => 
 {
-  const n_rows = order_rows_tbody.rows.length;
-  if(n_rows === 0)
-    return;
+	const n_rows = order_rows_tbody.rows.length;
+	if(n_rows === 0)
+		return;
 
-  var rows = Array.from(order_rows_tbody.rows);
-  rows.forEach((r) => {
-    if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
-      r.querySelector("#owprice").textContent = event.detail.ltp.toFixed(2);
-      
-      const lmt_price_tb = qSel(r, 'lmtprice', 'id');
-      const price_type_lb = qSel(r, 'ordertype', 'id');
-      if(lmt_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
-        lmt_price_tb.value = event.detail.ltp.toFixed(2);
-    }
-  });
+	var rows = Array.from(order_rows_tbody.rows);
+	rows.forEach((r) => {
+		if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
+			r.querySelector("#owprice").textContent = event.detail.ltp.toFixed(2);
+			
+			const lmt_price_tb = qSel(r, 'lmtprice', 'id');
+			const price_type_lb = qSel(r, 'ordertype', 'id');
+			if(lmt_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
+			lmt_price_tb.value = event.detail.ltp.toFixed(2);
+		}
+	});
 });
 
 pNL.addEventListener('change', (event) => {
-  pNL_all.booked += event.detail.change_b;
-  pNL_all.unbooked += event.detail.change_unb;
+	pNL_all.booked += event.detail.change_b;
+	pNL_all.unbooked += event.detail.change_unb;
 
-  gtotal_booked.textContent = pNL_all.booked.toFixed(2);
-  gtotal_unbooked.textContent = pNL_all.unbooked.toFixed(2);
-  gtotal_pnl.textContent = (pNL_all.booked + pNL_all.unbooked).toFixed(2);
+	gtotal_booked.textContent = pNL_all.booked.toFixed(2);
+	gtotal_unbooked.textContent = pNL_all.unbooked.toFixed(2);
+	gtotal_pnl.textContent = (pNL_all.booked + pNL_all.unbooked).toFixed(2);
 })
 
 pos_all_cb.addEventListener('change', (event) => {
 
-  var checkboxes = positions_tBody.querySelectorAll(`input[type="checkbox"]:not(:disabled)`);
-  checkboxes.forEach(cb => cb.checked = pos_all_cb.checked);
+	var checkboxes = positions_tBody.querySelectorAll(`input[type="checkbox"]:not(:disabled)`);
+	checkboxes.forEach(cb => cb.checked = pos_all_cb.checked);
 
-  exit_pos_btn.style.display = pos_all_cb.checked ? 'block' : 'none';
+	exit_pos_btn.style.display = pos_all_cb.checked ? 'block' : 'none';
 });
 
 exit_pos_btn.onclick = (event) => {
-  const checkboxes = 
-    Array.from(positions_tBody.querySelectorAll('input[type="checkbox"]:checked'));
-  
-  checkboxes.forEach((cb) => {
-    const symbol = cb.parentNode.parentNode.title;
-    const p = Position.findPosition(symbol, false);
-    const action = Math.sign(p.psize) === 1 ? 'S' : 'B';
-    
-    appendOrderRow(symbol, action, Math.abs(p.psize/LOT_SIZE[instrument.stockCode]));
-    cb.checked = false;
-  });
-  event.target.style.display = 'none';
-  pos_all_cb.checked = false;
-  showOrderWindow();
+	const checkboxes = Array.from(positions_tBody.querySelectorAll('input[type="checkbox"]:checked'));
+	
+	checkboxes.forEach((cb) => {
+		const symbol = cb.parentNode.parentNode.title;
+		const p = Position.findPosition(symbol, false);
+		const action = Math.sign(p.psize) === 1 ? 'S' : 'B';
+		const quantity = Math.abs(p.psize / LOT_SIZE[instrument.stockCode]);
+		
+		const order = new Order(symbol, action, quantity);
+
+		appendOrderRow(order);
+		cb.checked = false;
+	});
+	event.target.style.display = 'none';
+	pos_all_cb.checked = false;
+	showOrderWindow();
 }
 
 closeOWinBtn.onclick = () => {
-  hideOWin();
+	hideOWin();
 }
-/*--------------------------------------------------------------------------------------------------------------------------------*/
