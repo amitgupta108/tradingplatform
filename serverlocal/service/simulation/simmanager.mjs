@@ -1,6 +1,6 @@
-import {simstate} from '../session/simstate.mjs';
-import qserver from '../../srvr/qserver.mjs';
-import { eventservice } from './eventservice.mjs';
+import {simstate} from './simstate.mjs';
+import qserver from '../../../srvr/qserver.mjs';
+import { eventservice } from '../eventservice.mjs';
 
 class Simulator
 {

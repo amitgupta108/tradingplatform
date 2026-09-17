@@ -1,7 +1,7 @@
 import { eventservice } from '../eventservice.mjs';
 import { authservice } from '../auth/authservice.mjs';
 import { scripstore } from '../scripstore.mjs';
-import { ordersimulator } from '../ordersimulator.mjs';
+import { ordersimulator } from '../simulation/ordersimulator.mjs'
 import { serverstream } from '../serverstream.mjs';
 import { TPSocket } from '../clients/TPClient.mjs';
 import { m_icici_live } from '../../broker/icici/m_breeze_live.mjs';
@@ -164,7 +164,7 @@ export class ConfigService
                     && feature_mode === service_key
             });
 
-            return match > 0 ? [k] : [];
+            return match.length > 0 ? [k] : [];
         });
     }
 
@@ -188,9 +188,9 @@ export class ConfigService
         return false;
     }
 
-    static addToUserMap(s, appid, mode)
+    static addToUserMap(appid, app_obj)
     {
-        usermap.set(appid, { socket: s, mode: mode });
+        usermap.set(appid, app_obj);
     }
 
     static getFromUserMap(appid)

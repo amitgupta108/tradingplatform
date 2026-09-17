@@ -1,5 +1,5 @@
 import utils from '../../../common/utils.mjs'
-import {simulator} from '../../service/simmanager.mjs';
+import {simulator} from '../../service/simulation/simmanager.mjs';
 import { eventservice } from '../../service/eventservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
