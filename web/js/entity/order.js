@@ -1,18 +1,14 @@
 class Order
 {
-  	stockCode = instrument.stockCode;
-  	appid = instrument.appid;
-  	pricetype = 'MARKET';
-  	product = 'NRML';
-  	price = 0;
-  	orderid;
-  	symbol;
-  	action;
-  	quantity;
 	static ordermap = new Map();
 
 	constructor(symbol, action, quantity, orderid)
 	{
+		this.stockCode = instrument.stockCode;
+		this.appid = instrument.appid;
+		this.pricetype = 'MARKET';
+		this.product = 'NRML';
+		this.price = 0;
 		this.symbol = symbol;
 		this.action = action;
 		this.quantity = (quantity !== undefined) ? quantity : 1;
@@ -22,8 +18,15 @@ class Order
 		Order.ordermap.set(symbol, this);
 	}
 
-	static getOrder(symbol){
+	static getUIOrder(symbol){
 		return Order.ordermap.get(symbol);
+	}
+
+	static findOpenOrder(symbol, orderid){
+		const p = Position.findPosition(symbol);
+		const order = p?.orders.get(orderid);
+		if(order !== undefined && order.state === 'opened')
+			return order;
 	}
 }
 
@@ -35,14 +38,15 @@ function validate(clickedBtn)
   	const neworders = rows.map((r) => {
 		
 		const symbol = qSel(r, 'owsymbol', 'id').textContent;
-		const order = Order.getOrder(symbol);
-		if(order === undefined)
+		const order = Order.findOpenOrder(symbol, r.title) ?? Order.getUIOrder(symbol);
+		if(order !== undefined)
 		{		
-			order.action = r.querySelector('#ow_action_btn').innerText;
-			order.orderquantity = r.querySelector('select').value;
-			order.pricetype = r.querySelector('#ordertype').innerText;
+			const neworder = structuredClone(order);
+			neworder.action = r.querySelector('#ow_action_btn').innerText;
+			neworder.quantity = r.querySelector('select').value;
+			neworder.pricetype = r.querySelector('#ordertype').textContent;
 
-			if(pricetype === 'LIMIT')
+			if (neworder.pricetype === 'LIMIT')
 			{
 				const h_price = qSel(r, 'lmtprice', 'id');
 				if(h_price.value === "") {
@@ -50,9 +54,9 @@ function validate(clickedBtn)
 					isError = true;
 				}
 				else
-					order.price = Number(h_price.value);
+					neworder.price = Number(h_price.value);
 			}
-			return order;
+			return neworder;
 		}
 	});
 
@@ -94,15 +98,18 @@ function displayOrderList(btn, parent)
 			tqty = tqty + Number(qty * (o.action === 'B' ? 1 : -1));
 
 			newtr.childNodes[1].textContent = o.orderid;
-			newtr.childNodes[3].textContent = o.action.slice(0, 1);
-			newtr.childNodes[5].textContent = o.filled_q + ' / ' + o.quantity;
+			newtr.childNodes[3].textContent = o.action;
+			newtr.childNodes[5].textContent = o.filled_q + ' / ' + (o.quantity * LOT_SIZE[instrument.stockCode]);
 			newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
 			newtr.childNodes[9].textContent = tqty;
 			newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
 			newtr.childNodes[13].textContent = o.state;
 			newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
+			newtr.childNodes[15].childNodes[1].disabled = (o.state === 'opened' ? false : true);
 			if(o.state === 'opened')
 				newtr.childNodes[15].childNodes[1].classList.add('clickable');
+			else
+				newtr.childNodes[15].childNodes[1].classList.remove('clickable');
 
 			order_list_tbody.append(newtr);
 		});

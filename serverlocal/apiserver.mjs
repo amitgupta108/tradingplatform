@@ -61,10 +61,10 @@ function registerTradeRequests(s, appid, mode) {
         console.log('order received at apiserver');
         orders.forEach(async (order) => {
             let updated;
-            if(order.type === 'create')
-                updated = await trading_service.placeOrder(appid, order);
-            else
+            if(order.type === 'modify')
                 updated = await trading_service.modifyOrder(appid, order);
+            else
+                updated = await trading_service.placeOrder(appid, order);
             console.log('order state ' + updated.state + ' ' + (updated.error ?? updated.orderid));
         });
     });
