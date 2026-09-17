@@ -1,5 +1,5 @@
 class Order{
-  exchange = instrument.exchange;
+  stockCode = instrument.stockCode;
   appid = instrument.appid;
   pricetype = 'MARKET';
   product = 'NRML';
@@ -12,7 +12,7 @@ class Order{
   {
     this.symbol = symbol;
     this.action = action === 'B' ? 'BUY' : 'SELL';
-    this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[instrument.stockCode];
+    this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[this.stockCode];
   }
 }
 
