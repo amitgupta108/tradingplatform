@@ -141,13 +141,12 @@ export class BrokerTradeServiceImpl extends BrokerImpl
         return { status: 'already initialized' };
     }
 
-    modifyOrder(appid, orderid)
+    modifyOrder(appid, order)
     {
-        const order = ordermanager.getOpenOrder(this.trade_mode, orderid);
-        if(order !== undefined)
-        {
+        const open_order = ordermanager.getOpenOrder(this.trade_mode, order.orderid);
+        if(open_order !== undefined)
             return this.placeOrder(appid, order, true);
-        }
+
         return { state: 'NOT_OK', emsg: 'order not found'};
     }
 }

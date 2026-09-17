@@ -5,17 +5,10 @@ import { eventservice } from '../../service/eventservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 import { EXCHANGES, LOTSIZE } from '../../utils/constants.mjs';
 
-class KotakNeoTradeService extends BrokerTradeServiceImpl {
+class KotakNeoTradeService extends BrokerTradeServiceImpl 
+{
     constructor(name, provider) {
         super(name, provider);
-        this.oTemplate = {
-            am: 'NO',
-            dq: '0',
-            mp: '6',
-            pf: 'N',
-            rt: 'DAY',
-            tp: '0',
-        }
     }
 
     addListeners() {
@@ -51,8 +44,14 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
 
     toKotakOrder(order) 
     {
-        const new_order = this.oTemplate;
+        const new_order = {};
 
+        new_order.am = 'NO',
+        new_order.dq = '0',
+        new_order.mp = '6',
+        new_order.pf = 'N',
+        new_order.rt = 'DAY',
+        new_order.tp = '0',
         new_order.es = EXCHANGES[order.stockCode]
         new_order.pc = order.product;
         new_order.pr = String(order.price);

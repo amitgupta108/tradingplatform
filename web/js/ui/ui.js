@@ -1,4 +1,4 @@
-function placeOrder(order)
+function newOrder(order)
 {
 	const rows = order_rows_tbody.rows;
 	if(rows.length > 0)
@@ -24,12 +24,21 @@ function appendOrderRow(order)
 	var tr = tRow(t_order_window_row);
 	tr.querySelector('#owsymbol').textContent  = order.symbol;
 	tr.querySelector('#scripName').textContent  = scripName;
-	tr.querySelector('select').value = order.quantity;
 
+	const pricetype = tr.querySelector('#ordertype');
+	pricetype.textContent = order.pricetype;
+	if(pricetype.textContent === 'LIMIT'){
+		tr.querySelector('#lmtprice').disabled = false;
+		tr.querySelector('#lmtprice').value = order.price;
+	}
 	const action_btn = tr.querySelector('#ow_action_btn');
-	const selectbox = tr.querySelector('select');
 	action_btn.textContent = order.action;
+	const selectbox = tr.querySelector('select');
+	selectbox.value = order.quantity;
 
+	if(order.type === 'modify')
+		tr.title = order.orderid;
+	
 	if(!basket.checked)
 		tr.classList.remove('hover-row');
 
@@ -61,8 +70,7 @@ function showOrderWindow()
 	else
 		oWindow.classList.add('multi');
 
-	if(oWindow.style.display !== "block")
-		oWindow.style.display = "block";
+	oWindow.style.display = "block";
 }
 
 function hideOWin()
@@ -218,19 +226,17 @@ function createOrder(c, p_row) {
 	const action = c.innerText;
 
 	const order = new Order(symbol, action);
-	placeOrder(order);
+	newOrder(order);
 }
 
 function modifyOrder(c, p_row) 
 {
 	const list_head = order_list_thead.querySelector('td');
 	const symbol = list_head.title;
-	const action = p_row.childNodes[3].textContent;
-	const quantity = p_row.childNodes[9].textContent;
-	const orderid = parent.title;
 
-	const order = new Order(symbol, action, quantity, orderid);
-	placeOrder(order);
+	const order = Order.findOpenOrder(symbol, p_row.title);
+	order.type = 'modify';
+	newOrder(order);
 	orderlistDiv.style.display = 'none';
 }
 

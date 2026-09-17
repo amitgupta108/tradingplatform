@@ -6,6 +6,7 @@ export const {
     OPT_CONFIG,
     EXCHANGES,
     STRIKE_SIZE,
+    LOTSIZE,
     filePaths,
     filters,
     tp_filters
