@@ -269,9 +269,9 @@ async connect() {
         const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
         action = action === 'subs' ? BinRespTypes.SUBSCRIBE_TYPE : BinRespTypes.UNSUBSCRIBE_TYPE;
         type = type === 'Scrips' ? SCRIP_PREFIX : INDEX_PREFIX;
-        const request = PacketBuilder.buildSubsRequest(scripStr, action, type, this.channel);
+        const request = PacketBuilder.buildSubsRequest(scripStr.replaceAll('NIFTY', 'Nifty'), action, type, this.channel);
         this.sendMessage(request);
-        this.log('Subscribing to scrips:', scripStr);
+        this.log('Subscribing to scrips:', scripStr.replaceAll('NIFTY', 'Nifty'));
     }
 
     requestIndexSnapshot(scrips) {

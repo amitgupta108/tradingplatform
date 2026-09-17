@@ -3,7 +3,7 @@ import { ordermanager } from '../../service/ordermanager.mjs';
 import { KotakHSISocket } from '../../service/clients/HSIClient.mjs';
 import { eventservice } from '../../service/eventservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
-import { EXCHANGES } from '../../utils/constants.mjs';
+import { EXCHANGES, LOTSIZE } from '../../utils/constants.mjs';
 
 class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name, provider) {
@@ -57,8 +57,8 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
         new_order.pc = order.product;
         new_order.pr = String(order.price);
         new_order.pt = order.pricetype === 'MARKET' ? 'MKT' : 'L';
-        new_order.qt = String(order.quantity);
-        new_order.tt = order.action === 'BUY' ? 'B' : 'S';
+        new_order.qt = String(order.quantity * LOTSIZE[order.stockCode] );
+        new_order.tt = order.action;
         new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
         if(order.orderid !== undefined)
             new_order.no = order.orderid;

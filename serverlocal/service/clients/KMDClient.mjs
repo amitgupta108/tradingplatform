@@ -1,8 +1,6 @@
 import { EventEmitter } from 'events';
 import { PacketParser } from '../../utils/PacketParser.mjs';
 
-const KDM_URL = 'wss://sfeed.kotaksecurities.com';
-
 export class KMDClient extends EventEmitter 
 {
     constructor(options) {
@@ -136,11 +134,6 @@ export class KMDClient extends EventEmitter
             this.log('Parsed message:', JSON.stringify(parsed));
     }
 
-    handleConfirmations(parsed)
-    {
-        this.log(parsed);
-    }
-    
     // ==================== PUBLIC API ====================
     snapshot(scrips, type = '', lite = false) {
         const scripStr = Array.isArray(scrips) ? scrips.join(',') : scrips;
@@ -178,7 +171,7 @@ export class KMDClient extends EventEmitter
         this.reconnectTimer = setTimeout(() => {
             this.log(`Reconnection attempt ${this.reconnectAttempts}`);
             this.emit('reconnecting', this.reconnectAttempts);
-            this.connect().catch((err) => {
+            this.connect(this.authData.feedUrl).catch((err) => {
                 this.log('Reconnection failed:', err);
             });
         }, delay);

@@ -57,7 +57,7 @@ class Position
 	{  
 		let buyq = 0; let sellq = 0;
 		let buyv = 0; let sellv = 0;
-		let ltp;
+		let ltp = 0;
 		for (const o of this.orders.values()) {
 			if(['complete', 'completed'].includes(o.state))
 			{
@@ -71,7 +71,7 @@ class Position
 					sellq += Number(o.filled_q);
 					sellv += Number(o.filled_q) * Number(o.pricedAt);
 				}
-				ltp = Number(o.pricedAt) ?? 0;
+				ltp = Number(o.pricedAt);
 			}
 		}
 
