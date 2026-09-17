@@ -3,6 +3,7 @@ import { ordermanager } from '../../service/ordermanager.mjs';
 import { KotakHSISocket } from '../../service/clients/HSIClient.mjs';
 import { eventservice } from '../../service/eventservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
+import { EXCHANGES } from '../../utils/constants.mjs';
 
 class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name, provider) {
@@ -45,14 +46,14 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl {
             }
             return order;
         }
-        return { state: 'NOT_OK', emsg: response.errMsg };
+        return { state: 'NOT_OK', error: `${response.status}-${response.statusText}` };
     }
 
     toKotakOrder(order) 
     {
         const new_order = this.oTemplate;
 
-        new_order.es = order.exchange;
+        new_order.es = EXCHANGES[order.stockCode]
         new_order.pc = order.product;
         new_order.pr = String(order.price);
         new_order.pt = order.pricetype === 'MARKET' ? 'MKT' : 'L';
