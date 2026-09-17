@@ -1,6 +1,6 @@
-import {eventservice} from './eventservice.mjs'
-import streamer from '../stream.mjs';
-import { ConfigService as config } from './.config/configservice.mjs';
+import {eventservice} from '../eventservice.mjs'
+import streamer from '../../stream.mjs';
+import { ConfigService as config } from '../.config/configservice.mjs';
 
 class OrderSimulator
 {
