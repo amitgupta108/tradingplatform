@@ -41,7 +41,7 @@ export class KMDClient extends EventEmitter
                 };
                 
                 this.ws.onerror = (error) => {
-                    this.log('WebSocket error:', error.message);
+                    this.log('WebSocket error:', error);
                     this.emit('error', error);
                     if (!this.isConnected) {
                         this.isConnecting = false;
@@ -156,9 +156,11 @@ export class KMDClient extends EventEmitter
         this.sendMessage(JSON.stringify(request));    
     }
 
-    handleReconnect() {
+    handleReconnect() 
+    {
         if (!this.autoReconnect)
             return;
+    
         this.clearReconnectTimer();
         if (this.reconnectAttempts >= this.maxRetries) {
             this.log('Max reconnection attempts reached');

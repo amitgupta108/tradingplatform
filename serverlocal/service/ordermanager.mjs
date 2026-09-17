@@ -1,6 +1,7 @@
 import streamer from '../stream.mjs';
 import { eventservice } from './eventservice.mjs';
 import { ConfigService } from './.config/configservice.mjs';
+import { LOTSIZE } from '../utils/constants.mjs';
 
 class OrderManager 
 {
@@ -84,8 +85,8 @@ class OrderManager
         else if(fOrder.state === 'complete')
             fOrder.state = 'completed';
         
+        fOrder.quantity = fOrder.quantity / LOTSIZE[fOrder.stockCode];
         fOrder.pricetype = fOrder.pricetype === 'MKT' ? 'MARKET' : 'LIMIT';
-        fOrder.action = fOrder.action === 'B' ? 'BUY' : 'SELL';
         fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
         fOrder.strike_price = fOrder.strike_price.replace('.00', '');
         fOrder.symbol = fOrder.stockCode + fOrder.expiry_date + fOrder.strike_price + fOrder.right;
