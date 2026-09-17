@@ -44,7 +44,7 @@ class OrderManager
         }
         live_order.modes = ConfigService.getParentModes('trade', service_key);
         this.live_order_map.set(live_order.orderid, live_order);
-        console.log('order notifcation ' + JSON.stringify(live_order) + ' ' + found?.orderid);
+        console.log('order notifcation ' + live_order.state + ' ' + found?.orderid);
         streamer.emitOrders(live_order);
     }
 
