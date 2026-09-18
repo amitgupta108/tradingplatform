@@ -61,7 +61,7 @@ class Position
 		for (const o of this.orders.values()) {
 			if(['complete', 'completed'].includes(o.state))
 			{
-				if(o.action === 'BUY')
+				if(o.action === 'B')
 				{
 					buyq += Number(o.filled_q);
 					buyv += Number(o.filled_q) * Number(o.pricedAt);

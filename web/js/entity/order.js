@@ -14,12 +14,21 @@ class Order
 		this.quantity = (quantity !== undefined) ? quantity : 1;
 		this.orderid = orderid;
 		this.type = orderid === undefined ? 'create' : 'modify';
-
+		this.strategy = 'default';
+		
 		Order.ordermap.set(symbol, this);
 	}
 
 	static getUIOrder(symbol){
 		return Order.ordermap.get(symbol);
+	}
+
+	static removeUIOrder(symbol){
+		Order.ordermap.delete(symbol);
+	}
+	
+	static clearUIOrders(){
+		Order.ordermap.clear();
 	}
 
 	static findOpenOrder(symbol, orderid){
