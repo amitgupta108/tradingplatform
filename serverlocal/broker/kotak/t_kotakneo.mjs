@@ -59,9 +59,12 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl
         new_order.qt = String(order.quantity * LOTSIZE[order.stockCode] );
         new_order.tt = order.action;
         new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
-        if(order.orderid !== undefined)
+        if(order.type === 'modify')
+        {
             new_order.no = order.orderid;
-
+            new_order.vd = 'DAY';
+            new_order.tk = scripstore.findScripByRefKey(order.symbol).token;
+        }
         return new_order;
     }
 

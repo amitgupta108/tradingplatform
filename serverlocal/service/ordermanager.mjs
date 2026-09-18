@@ -35,17 +35,18 @@ class OrderManager
 
     liveOrderMatching(service_key, order) 
     {
+        console.log('order notifcation ' + order?.ordSt + ' ' + order?.nOrdNo);
         const live_order = this.formatLiveOrder(order);
         const found = this.findMatch(service_key, live_order);
         if (found !== undefined) {
             live_order.appid = found.appid;
             live_order.trade_mode = found.trade_mode;
+            live_order.strategy = found.strategy;
             live_order.localid = found.localid;
             this.live_order_map.delete(found.localid);
         }
         live_order.modes = ConfigService.getParentModes('trade', service_key);
         this.live_order_map.set(live_order.orderid, live_order);
-        console.log('order notifcation ' + live_order.state + ' ' + found?.orderid);
         streamer.emitOrders(live_order);
     }
 
@@ -133,8 +134,7 @@ class OrderManager
 
     emitPosition(service_key, position)
     {
-        console.log('position notifcation ' + JSON.stringify(position));
-        eventservice.emit(service_key, this.formatLivePosition(position));
+        //eventservice.emit(service_key, this.formatLivePosition(position));
     }
 
     formatLivePosition(position)
