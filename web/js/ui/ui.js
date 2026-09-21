@@ -80,6 +80,7 @@ function hideOWin()
 	basket.disabled = false;
 	submitOWinBtn.disabled = true;
 	in_prep_orders.orders = {};
+	Order.clearUIOrders();
 }
 
 function flipAction(orderRowBtn, orderRow)
