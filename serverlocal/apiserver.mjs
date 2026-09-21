@@ -38,7 +38,6 @@ function registerDataRequests(s, appid,  mode)
         if (mode.startsWith('HISTORY'))
             market_service.exit(appid);
 
-        s.sn.exit(appid, s.sn);
         ConfigService.deleteFromUserMap(appid);
         s.disconnect();
 
