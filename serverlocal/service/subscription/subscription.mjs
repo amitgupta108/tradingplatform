@@ -52,7 +52,6 @@ export class SubscribersMap
 {
     constructor() {
         this.req_map = new Map();
-
     }
 
     addRequests(appid, requests) {

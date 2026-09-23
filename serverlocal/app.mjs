@@ -71,7 +71,9 @@ export class ServerClientManager
 
     startServices()
     {
-
+        eventservice.addListener('quote', (appid, q) => {
+            this.sendQuote(appid, q);
+        });
     }
      
     connect(s)
