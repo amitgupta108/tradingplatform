@@ -1,4 +1,3 @@
-import os from 'os';
 import fs from 'fs';
 import fsp from 'fs/promises';
 import path from 'path';
@@ -22,8 +21,7 @@ const FIELD_MAP = {
 
 const keys_kept = new Set(Object.keys(FIELD_MAP));
 const todayStr = new Date().toISOString().split('T')[0];
-const homedir = os.homedir();
-const wd = path.join(homedir, process.env.workspace_location, process.env.static_data_location);
+const wd = path.join(process.env.workspace_location, process.env.static_data_location);
 const PREFIX = 'scrips_';
 const EXTENSION = '.ndjson';
 const cacheFilePath = path.join(wd, `${PREFIX}${todayStr}${EXTENSION}`);
