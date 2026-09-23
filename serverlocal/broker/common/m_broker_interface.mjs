@@ -1,5 +1,5 @@
 import streamer from '../../stream.mjs';
-import { Subscriptions } from '../../service/subscription/subsciption.mjs';
+import { Subscriptions } from '../../service/subscription/subscription.mjs';
 import { eventservice } from '../../service/eventservice.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
 import { ordermanager } from '../../service/ordermanager.mjs';
