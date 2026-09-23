@@ -3,15 +3,17 @@ import { authservice } from '../auth/authservice.mjs';
 import { scripstore } from '../scripstore.mjs';
 import { ordersimulator } from '../simulation/ordersimulator.mjs'
 import { serverstream } from '../serverstream.mjs';
-import { TPSocket } from '../clients/TPClient.mjs';
 import { m_icici_live } from '../../broker/icici/m_breeze_live.mjs';
 import { m_icici_hist } from '../../broker/icici/m_breeze_hist.mjs';
 import { m_openalgo_live } from '../../broker/openalgo/m_openalgo.mjs';
-import { m_kotak_live } from '../../broker/kotak/m_kotak_live.mjs';
 import { m_kotak_hsm } from '../../broker/kotak/m_kotak_hsm.mjs';
 import { t_openalgo_trade } from '../../broker/openalgo/t_openalgo.mjs';
 import { t_kotak_trade } from '../../broker/kotak/t_kotakneo.mjs';
 import { m_common_service } from '../../broker/common/m_common.mjs';
+
+import { SocketClientFactory } from './socketclientfactory.mjs';
+import { KotakMarketDataLive } from '../../broker/kotak/m_kotak_live.mjs';
+import { SubsManager } from '../subscription/subsservice.mjs';
 
 const usermap = new Map();
 const modes = {
@@ -36,13 +38,14 @@ const services = {
     ORDERSIMULATOR: ordersimulator,
     SERVERSTREAM: serverstream,
     COMMONSERVICE: m_common_service,
-    KOTAKLIVEVIEW: m_kotak_live,
+    KOTAKLIVEVIEW: undefined,
     KOTAKHSMVIEW: m_kotak_hsm,
     KOTAKNEOTRADE: t_kotak_trade,
     ICICIHISTVIEW: m_icici_hist,
     ICICILIVEVIEW: m_icici_live,
     OPENALGOVIEW: m_openalgo_live,
-    OPENALGOTRADE: t_openalgo_trade
+    OPENALGOTRADE: t_openalgo_trade,
+    SUBSMANAGER: undefined
 };
 
 const providers = {
@@ -61,11 +64,13 @@ export class ConfigService
 {
     static init()
     {
-        if(process.env.PASSTHROUGH === 'Y')
-        {
-            this.socket_clients = new Map();
-            this.socket_clients.set('TPCLIENT', new TPSocket('0ce8a0ed-c4a1-4938-940b-b4d3841468g5', 'TPMODE'));
-        }
+        services['SOCKETCLIENTS'] = new SocketClientFactory('SOCKETCLIENTS');
+        if(process.env.SUBSMANAGER === 'Y')
+            services['SUBSMANAGER'] = new SubsManager('SUBSMANAGER');
+        
+        if (process.env.KOTAKLIVEVIEW === 'Y')     
+            services['KOTAKLIVEVIEW'] = new KotakMarketDataLive('KOTAKLIVEVIEW', this.getSocketClient('KMDCLIENT'));
+        
         this.initialized = true;
     }
     
@@ -170,7 +175,7 @@ export class ConfigService
 
     static getSocketClient(key, appid, mode)
     {
-        return this.socket_clients?.get(key);
+        return services['SOCKETCLIENTS'].getSocketClient(key);
     }
 
     static checkAccess(eventName, mode) 
