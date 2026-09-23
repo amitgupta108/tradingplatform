@@ -1,7 +1,7 @@
 import { subscribe, unsubscribe } from "node:diagnostics_channel";
 import { ConfigService } from "../.config/configservice.mjs";
 import { eventservice } from "../eventservice.mjs";
-import { SubscribersMap } from "./subsciption.mjs";
+import { SubscribersMap } from "./subscription.mjs";
 
 export class SubsManager 
 {
@@ -35,7 +35,7 @@ export class SubsManager
             if (['subscribe', 'unsubscribe'].includes(event)) {
                 const requests = [];
                 for(const r of data) {
-                    requests.push(r.exchange + '|' + r.token);
+                    requests.push(r.exchange + '|' + r.symbol);
                 }   
 
                 this.kotakfeed.subscribe(requests, 'Scrips', event, false);
