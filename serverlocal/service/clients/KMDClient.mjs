@@ -147,7 +147,7 @@ export class KMDClient extends EventEmitter
 
     subscribe(scrips, type = '', action, lite = false) {
         const scripStr = Array.isArray(scrips) ? scrips.join(',') : scrips;
-        const event = (action === 'subs' ? 'subscribe' : 'unsubscribe') + type + (lite ? 'Lite' : '');
+        const event = (['subs', 'subscribe'].includes(action) ? 'subscribe' : 'unsubscribe') + type + (lite ? 'Lite' : '');
         this.log('Subscribe scrips:', event + ' ' + scripStr);
         const request = {
             event: event,
