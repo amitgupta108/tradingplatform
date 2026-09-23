@@ -6,7 +6,7 @@ export class Subscriptions
     constructor() 
     {
         this.subs_map = new Map();
-        this.req_map = new Map();
+        this.req_map = new SubscribersMap();
     }
 
     addNewSubscriptions(appid, session) {
@@ -36,13 +36,33 @@ export class Subscriptions
     }
 
     addRequests(appid, requests) {
+        this.req_map.addRequests(appid, requests);
+    }
+
+    removeRequests(requests) {
+        this.req_map.removeRequests(requests);
+    }
+
+    getSubscribers(symbol) {
+        return this.req_map.removeRequests(symbol);
+    }
+}
+
+export class SubscribersMap
+{
+    constructor() {
+        this.req_map = new Map();
+
+    }
+
+    addRequests(appid, requests) {
         requests.forEach((r) => {
             let subscribers = this.req_map.get(r.symbol);
             if (subscribers === undefined) {
                 subscribers = new Array();
                 this.req_map.set(r.symbol, subscribers);
             }
-            if(!subscribers.includes(appid))
+            if (!subscribers.includes(appid))
                 subscribers.push(appid);
         });
     }

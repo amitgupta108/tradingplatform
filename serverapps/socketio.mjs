@@ -1,28 +1,32 @@
-import { httpsServer } from './httpsserver.mjs';
-import { httpServer } from './httpsserver.mjs';
+import { hServer } from './httpsserver.mjs';
 import { Server } from "socket.io";
 
-export function socketServer(host, port) 
+export class SocketIO
 {
-    const hServer = process.env.HTTP === 'Y' ? httpServer : httpsServer;    
-    const protocol = process.env.HTTP === 'Y' ? 'http' : 'https';
-    if(port === undefined || port === 0 || port < 1025)
-        port = process.env.PORT1;
+    constructor()
+    {
+        this.sio = new Server(hServer, {
+            cors: {
+                origin: '*',
+                methods: ["GET", "POST"],
+            },
+            connectionStateRecovery: {
+                maxDisconnectionDuration: 3 * 60 * 1000,
+                skipMiddlewares: true,
+            },
+            pingInterval: 30000,
+            pingTimeout: 60000
+        });
+    }
 
-    hServer.listen(port, host, () => {
-        console.log(`Server running at ${protocol}://${host}:${port}/`);
-    });
+    async start()
+    {
+        const {AppClientManager} = await import('../serverlocal/app.mjs');
+        const app = new AppClientManager();
+        app.startServices();
 
-    return new Server(hServer, {
-        cors: {
-            origin: '*',
-            methods: ["GET", "POST"],
-        },
-        connectionStateRecovery: {
-            maxDisconnectionDuration: 3 * 60 * 1000,
-            skipMiddlewares: true,
-        },
-        pingInterval: 30000,
-        pingTimeout: 60000
-    });
+        this.sio.on('connection', (s) => {
+            app.connect(s);
+        });
+    }
 }
