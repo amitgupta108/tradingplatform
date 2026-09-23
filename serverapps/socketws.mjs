@@ -1,4 +1,3 @@
-import { eventservice } from '../serverlocal/service/eventservice.mjs';
 import { WebSocketServer } from 'ws';
 
 export class WSServer
@@ -6,9 +5,7 @@ export class WSServer
     constructor() {
         this.wss = new WebSocketServer({ port: 1030 });
         console.log('WebSocket server is running on ws://localhost:1030');
-        eventservice.addListener('quote', (appid, q) => {
-            this.sendQuote(appid, q);
-        });
+
         this.socketmap = new Map();
     }
 
