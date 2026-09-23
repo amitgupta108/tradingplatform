@@ -74,7 +74,7 @@ export class ServerClientManager
 
     }
      
-    connect()
+    connect(s)
     {
         console.log('Client connected');
         const appid = crypto.randomUUID();
