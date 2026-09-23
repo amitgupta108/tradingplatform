@@ -23,8 +23,21 @@ const options = {
     maxVersion: 'TLSv1.3'
 };
 
-export const httpServer = http.createServer({}, handleRequests);
-export const httpsServer = https.createServer(options, handleRequests);
+const args = process.argv;
+const port = args[2] === undefined ? 80 : Number(args[2]);
+const host = process.env.HOST;
+
+const httpServer = http.createServer({}, handleRequests);
+const httpsServer = https.createServer(options, handleRequests);
+
+export const hServer = process.env.HTTP === 'Y' ? httpServer : httpsServer;
+const protocol = process.env.HTTP === 'Y' ? 'http' : 'https';
+if (port === undefined || port === 0 || port < 1025)
+    port = process.env.PORT1;
+
+hServer.listen(port, host, () => {
+    console.log(`Server running at ${protocol}://${host}:${port}/`);
+});
 
 function handleRequests(req, res) {
 

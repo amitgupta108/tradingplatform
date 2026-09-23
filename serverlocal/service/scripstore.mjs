@@ -1,9 +1,9 @@
+import os from 'os';
 import fs from 'fs';
 import fsp from 'fs/promises';
 import path from 'path';
 import readline from 'node:readline';
 import csvParser from 'csv-parser';
-import utils from '../../common/utils.mjs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { ConfigService } from './.config/configservice.mjs';
@@ -22,7 +22,8 @@ const FIELD_MAP = {
 
 const keys_kept = new Set(Object.keys(FIELD_MAP));
 const todayStr = new Date().toISOString().split('T')[0];
-const wd = path.join(utils.getWSfolder(), 'serverlocal', 'config');
+const homedir = os.homedir();
+const wd = path.join(homedir, process.env.workspace_location, process.env.static_data_location);
 const PREFIX = 'scrips_';
 const EXTENSION = '.ndjson';
 const cacheFilePath = path.join(wd, `${PREFIX}${todayStr}${EXTENSION}`);

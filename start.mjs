@@ -13,27 +13,16 @@ process.on('unhandledRejection', (error) => {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-const args = process.argv;
-const port = args[2] === undefined ? 80 : Number(args[2]);
-const host = process.env.HOST;
+async function startServers() {
+    const { SocketIO } = await import('./serverapps/socketio.mjs');
+    (new SocketIO()).start();
 
-await startApp();
+    const { WSServer } = await import('./serverapps/socketws.mjs',);
+    (new WSServer()).start();
 
-async function startApp()
-{
-    const io = await startServers(host, port);
-    const app = await import('./serverlocal/app.mjs');
-
-    io.on('connection', (s) => {
-        app.connect(s);
-    });
-    app.startServices();
 }
 
-async function startServers(host, port) {
-    const { socketServer } = await import('./serverapps/socketio.mjs', );
-    return socketServer(host, port);
-}
+await startServers();
 
 function shutdown(signal) 
 {
