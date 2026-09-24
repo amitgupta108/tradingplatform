@@ -204,13 +204,13 @@ export class PacketParser
             token: String(token), 
             ltp: lastPrice / divider, 
             ltt: lastTradeTime, 
-            ltq: lastQty, 
-            close: close / divider, 
-            change: change / divider, 
-            change_percent: percent / 100, 
-            lot_size: lot, 
-            precision, 
-            multiplier 
+            //ltq: lastQty, 
+            //close: close / divider, 
+            //change: change / divider, 
+            //change_percent: percent / 100, 
+            //lot_size: lot, 
+            //precision, 
+            //multiplier 
         }; 
     }
 

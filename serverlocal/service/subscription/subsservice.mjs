@@ -38,7 +38,7 @@ export class SubsManager
                     requests.push(r.exchange + '|' + r.symbol);
                 }   
 
-                this.kotakfeed.subscribe(requests, 'Scrips', event, false);
+                this.kotakfeed.subscribe(requests, 'Scrips', event, true);
                 if(event === 'subscribe')
                     this.subscriber_map.addRequests(appid, data);
                 else if(event === 'unsubscribe')
