@@ -41,6 +41,13 @@ class AuthService
     {
         this.connectors[authdata.provider].generateSession(authdata);
     }
+
+    value(provider, key)
+    {
+        const wrapper = {};
+        wrapper[key] = undefined;
+        Connector.authkeys(provider, wrapper);
+    }
 }
 
 export const authservice = new AuthService();
