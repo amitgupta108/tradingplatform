@@ -44,7 +44,7 @@ export class Subscriptions
     }
 
     getSubscribers(symbol) {
-        return this.req_map.removeRequests(symbol);
+        return this.req_map.getSubscribers(symbol);
     }
 }
 
