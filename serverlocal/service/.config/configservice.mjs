@@ -3,6 +3,7 @@ import { authservice } from '../auth/authservice.mjs';
 import { scripstore } from '../scripstore.mjs';
 import { ordersimulator } from '../simulation/ordersimulator.mjs'
 import { serverstream } from '../serverstream.mjs';
+import { persistenceservice } from '../system/persistence.mjs'
 import { m_icici_live } from '../../broker/icici/m_breeze_live.mjs';
 import { m_icici_hist } from '../../broker/icici/m_breeze_hist.mjs';
 import { m_openalgo_live } from '../../broker/openalgo/m_openalgo.mjs';
@@ -33,6 +34,7 @@ const modes = {
 
 const services = {
     EVENTSERVICE: eventservice,
+    PERSISTSERVICE: persistenceservice,
     AUTHSERVICE: authservice,
     SCRIPSTORE: scripstore,
     ORDERSIMULATOR: ordersimulator,
