@@ -16,7 +16,7 @@ export class Connector
     loadAuthdata()
     {
         let l_authdata = this.getEmptyAuthdata(this.provider);
-        l_authdata = Connector.authkeys(this.provider, l_authdata, 'os');
+        l_authdata = Connector.authkeys(this.provider, l_authdata);
         if(l_authdata?.date === new Date().toDateString())
         {
             this.authdata = l_authdata;
@@ -124,7 +124,7 @@ export class ICICIConnector extends Connector
         if (this.notify)
             eventservice.emit(`${this.provider}_auth`, this.authdata);
 
-        Connector.authkeys(this.authdata.provider, this.authdata, 'os');
+        Connector.authkeys(this.authdata.provider, this.authdata);
     }
 
     getEmptyAuthdata() 
@@ -199,7 +199,7 @@ export class KotakConnector extends Connector
                         hsi_token: vr_result.token
                     }
                     eventservice.emit(`${this.provider}_auth`, this.authdata);
-                    Connector.authkeys(this.provider, this.authdata, 'os');
+                    Connector.authkeys(this.provider, this.authdata);
                     return { status: 'success'};
                 }
                 return { status: 'error', reason: 'kotak validate failed ' + vr.statusText};
