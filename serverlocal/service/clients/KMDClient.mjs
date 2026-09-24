@@ -128,6 +128,8 @@ export class KMDClient extends EventEmitter
     {
         if (parsed?.type === 'scrip' || parsed?.type === 'index')
             this.emit('quote', parsed);
+        else if (parsed?.type === 'scrip_lite')
+            this.emit('quote', parsed);
         else if (parsed.message_code === 1117 || parsed.message_code === 1119)
             this.dividers = parsed.exchanges;
         else

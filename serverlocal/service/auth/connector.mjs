@@ -1,5 +1,6 @@
 import { eventservice } from "../eventservice.mjs";
-import { Entry } from '@napi-rs/keyring';
+import { persistenceservice } from '../system/persistence.mjs';
+import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
 
 export class Connector
@@ -58,21 +59,37 @@ export class Connector
         });;
     }
 
-    static authkeys(id, cred) 
+    static authkeys(id, cred, store = 'keyring') 
     {
-        try
-        {
-            Object.entries(cred).forEach(([k, v]) => {
-                const entry = new Entry(id, k);
-                if (v === undefined)
-                    cred[k] = entry.getPassword();
-                else
-                    entry.setPassword(v);
-            });
-        }
-        catch (exception) {
+        try {
+            if(store === 'keyring')
+                return this.keyring(id, cred);
+            else 
+                return this.lmdb(id, cred);
+        } catch (exception) {
             console.error('error in authkeys operation: ' + id + ' ' + exception)
         }
+    }
+
+    static lmdb(id, cred) 
+    {
+        Object.entries(cred).forEach(async ([k, v]) => {
+            if (v === undefined)
+                cred[k] = persistenceservice.get(k);
+            else
+                await persistenceservice.set(k, v);
+        });
+        return cred;
+    }
+
+    static keyring(id, cred) 
+    {
+        Object.entries(cred).forEach(async ([k, v]) => {
+            if (v === undefined)
+                cred[k] = await getPassword(id, k);
+            else
+                await setPassword(id, k, v);
+        });
         return cred;
     }
 }

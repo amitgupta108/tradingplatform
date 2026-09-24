@@ -66,10 +66,10 @@ export class SubscribersMap
         });
     }
 
-    removeRequests(requests) {
+    removeRequests(appid, requests) {
         requests.forEach((r) => {
             const subscribers = this.req_map.get(r.symbol);
-            const idx = subscribers.findIndex((v) => v === r.appid);
+            const idx = subscribers.findIndex((v) => v === appid);
             subscribers.splice(idx, 1);
         });
     }
