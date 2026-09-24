@@ -13,19 +13,19 @@ class AuthService
         }
     }
 
-    init()
+    async init()
     {
         eventservice.addListener('ext_auth', (msg) => {
             this.generateSession(msg);
         });
 
-        Object.values(this.connectors).forEach((v) => {
+        const values = Array.from(Object.values(this.connectors));
+        let status = ' ';
+        for(const v of values){
             if(v.load_on_start)
-                v.loadAuthdata();
-        });
-
-        this.initialized = true;
-        return { status: 'initialized' };
+                status = await v.loadAuthdata() + status;
+        }
+        return { status: status};
     }
 
     authenticate(provider) 
