@@ -13,19 +13,19 @@ export class Connector
         this.authdata;
     }
 
-    loadAuthdata()
+    async loadAuthdata()
     {
         let l_authdata = this.getEmptyAuthdata(this.provider);
-        l_authdata = Connector.authkeys(this.provider, l_authdata);
+        l_authdata = await Connector.authkeys(this.provider, l_authdata);
         if(l_authdata?.date === new Date().toDateString())
         {
             this.authdata = l_authdata;
-            this.initialized = true;
             if(this.notify)
-                setTimeout(() => {
-                    eventservice.emit(`${this.provider}_auth`, this.authdata);
-                }, 2000);
+                eventservice.emit(`${this.provider}_auth`, this.authdata);
+
+            this.initialized = true;
         }
+        return this.initialized;
     }
 
     authenticate()
@@ -82,14 +82,16 @@ export class Connector
         return cred;
     }
 
-    static keyring(id, cred) 
+    static async keyring(id, cred) 
     {
-        Object.entries(cred).forEach(async ([k, v]) => {
+        const entries = Array.from(Object.entries(cred));
+        for (const [k, v] of entries)
+        {
             if (v === undefined)
                 cred[k] = await getPassword(id, k);
             else
                 await setPassword(id, k, v);
-        });
+        }
         return cred;
     }
 }
@@ -116,7 +118,7 @@ export class ICICIConnector extends Connector
         this.authdata = {
             provider: webreturned.provider,
             date: webreturned.date,
-            appKey: process.env.breeze_apiKey,
+            appKey: process.env.breeze_appKey,
             appSecret: process.env.breeze_secret,
             authcode: webreturned.authcode
         }
