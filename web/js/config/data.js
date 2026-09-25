@@ -15,12 +15,11 @@ const LOT_SIZE = {
 
 const EXPIRIES = {
   NIFTY: {
-    FIRST: '22SEP26', 
-    SECOND: '29SEP26'
+    FIRST: '29SEP26', 
+    SECOND: '06OCT26'
   },
   CRUDEOIL: {
-    FIRST: '17SEP26', 
-    SECOND: '15OCT26' 
+    FIRST: '15OCT26'
   }
 }
 

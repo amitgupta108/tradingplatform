@@ -1,4 +1,4 @@
-import {Connector, KotakConnector, ICICIConnector} from './connector.mjs';
+import { Connector, KotakConnector, ICICIConnector, TPAppConnector } from './connector.mjs';
 import { eventservice } from '../eventservice.mjs';
 
 class AuthService
@@ -9,7 +9,8 @@ class AuthService
         this.initialized = false;
         this.connectors = {
             kotak: new KotakConnector('kotak', true, true),
-            icici: new ICICIConnector('icici', true, true)
+            icici: new ICICIConnector('icici', true, true),
+            tpapp: new TPAppConnector('tpapp', true, false)
         }
     }
 
@@ -28,13 +29,29 @@ class AuthService
         return { status: status};
     }
 
-    authenticate(provider) 
+    authenticate(id_text) 
     {
-        const tpt = provider;
-        if(tpt.length === 6)
+        let params = {}; let provider;
+        if (id_text.length === 6) {
+            params = { arg1: id_text }
             provider = 'kotak';
+        } 
+        if (id_text === 'icici') {
+            provider = 'icici';
+        }
+        else if (id_text === 'tp-icici-p')
+        {
+            params = { arg1: 'icici', arg2: 'authcode' };
+            provider = 'tpapp';
+        }
+        else if (id_text === 'tp-kotak-p') {
+            params = { arg1: 'kotak', arg2: 'authcode' };
+            provider = 'tpapp';
+        }
+        else 
+            return;
 
-        return this.connectors[provider].authenticate(tpt);
+        return this.connectors[provider].authenticate(params);
     }
 
     generateSession(authdata) 
@@ -42,11 +59,11 @@ class AuthService
         this.connectors[authdata.provider].generateSession(authdata);
     }
 
-    value(provider, key)
+    async value(provider, key)
     {
         const wrapper = {};
         wrapper[key] = undefined;
-        Connector.authkeys(provider, wrapper);
+        return await Connector.authkeys(provider, wrapper);
     }
 }
 
