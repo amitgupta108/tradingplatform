@@ -107,8 +107,23 @@ async function handleAPIReq(req, res)
         const provider = body.provider;
         const key = body.key;
 
-        const wrapper = authservice.value(provider, key);
+        const wrapper = await authservice.value(provider, key);
         res.writeHead(200);
         res.end(JSON.stringify(wrapper));
     }
 }
+
+function getRequestBody(req)
+{
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                resolve(body ? JSON.parse(body) : {});
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
+};

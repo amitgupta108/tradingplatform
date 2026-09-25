@@ -98,8 +98,8 @@ export class Connector
 
 export class ICICIConnector extends Connector
 {
-    constructor(provider, notify) {
-        super(provider, notify, true);
+    constructor(provider, notify, load_on_start) {
+        super(provider, notify, load_on_start);
         this.authcodeurl = 'https://api.icicidirect.com/apiuser/home';
     }
 
@@ -124,7 +124,7 @@ export class ICICIConnector extends Connector
         }
 
         if (this.notify)
-            eventservice.emit(`${this.provider}_auth`, this.authdata);
+            eventservice.emit(`${webreturned.provider}_auth`, this.authdata);
 
         Connector.authkeys(this.authdata.provider, this.authdata);
     }
@@ -143,8 +143,8 @@ export class ICICIConnector extends Connector
 
 export class KotakConnector extends Connector
 {
-    constructor(provider, notify){
-        super(provider, notify, true);
+    constructor(provider, notify, load_on_start){
+        super(provider, notify, load_on_start);
     }
 
     apiLogin(num) 
@@ -183,9 +183,9 @@ export class KotakConnector extends Connector
         return fetch(process.env.kotak_valURL, options);
     }
 
-    async authenticate(tpt) {
+    async authenticate(params) {
         try {
-            const lr = await this.apiLogin(tpt);
+            const lr = await this.apiLogin(params.arg1);
             if (lr.ok) {
                 const lr_result = (await lr.json()).data;
                 const vr = await this.apiValidate(lr_result.sid, lr_result.token);
@@ -226,5 +226,37 @@ export class KotakConnector extends Connector
             hsi_sid: undefined,
             hsi_token: undefined
         }
+    }
+}
+
+export class TPAppConnector extends ICICIConnector
+{
+    constructor(provider, notify, load_on_start){
+        super(provider, notify, load_on_start);
+    }
+
+    async authenticate(params) 
+    {
+        const api_url = process.env.TP_SERVER + '/api/value';
+        const options = {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ provider: params.arg1, key: params.arg2 })
+        };
+        const response = await fetch(api_url, options);
+        if(response.ok){
+            const result = await response.json();
+            super.generateSession({
+                provider: 'icici', 
+                date: new Date().toDateString(),
+                authcode: result[params.arg2]
+            });
+            return { state: 'OK'};
+        }
+        return { state: 'NOT_OK', error: `${response.status}-${response.statusText}` };
+
     }
 }
