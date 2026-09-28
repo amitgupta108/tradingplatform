@@ -129,9 +129,3 @@ class OptionChain
 		});
 	}
 }
-
-if (optionChains.findIndex((oc) => oc.expiry === instrument.oExpiries[0]) === -1)
-  	var c_option_chain = new OptionChain(EXPIRIES[instrument.stockCode][instrument.oExpiries[0]], 'c_oc_div');
-
-if (optionChains.findIndex((oc) => oc.expiry === instrument.oExpiries[1]) === -1)
-  	var n_option_chain = new OptionChain(EXPIRIES[instrument.stockCode][instrument.oExpiries[1]], 'n_oc_div');

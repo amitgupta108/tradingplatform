@@ -40,18 +40,48 @@ hServer.listen(port, host, () => {
     console.log(`Server running at ${protocol}://${host}:${port}/`);
 });
 
-function handleRequests(req, res) {
+const allowedOrigins = [
+    'http://localhost:1025', // Your live production frontend domain  
+    'https://0.0.0.0:1030',               // Alternative local development port
+];
+
+function handleRequests(req, res) 
+{
+    const origin = req.headers.origin;
+
+    if (origin && allowedOrigins.includes(origin)) 
+    {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+
+        // CRITICAL: Set to true if you plan to transmit HTTP-Only session cookies or authorization tokens
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+        // Explicitly allow methods and headers required by your hybrid crypto mechanism
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+        // Cache the preflight response details in the browser for 10 minutes to save overhead
+        res.setHeader('Access-Control-Max-Age', '600');
+    }
 
     // Prevent directory traversal attacks
     const parsedUrl = new URL(req.url, `https://${req.headers.host}`);
     let pathname = parsedUrl.pathname;
 
-    if (pathname.startsWith('/redirect'))
+    if (req.method === 'OPTIONS') 
+        handleOptionsRequest(req, res)
+    else if(pathname.startsWith('/redirect'))
         handleAuthReq(parsedUrl, res);
     else if (pathname.startsWith('/api'))
         handleAPIReq(req, res);
     else
         handleStaticReq(parsedUrl, res);
+}
+
+function handleOptionsRequest(req, res)
+{
+    res.writeHead(204); // 204 No Content confirms parameters are accepted
+    res.end();
 }
 
 function handleStaticReq(parsedUrl, res)
@@ -107,8 +137,23 @@ async function handleAPIReq(req, res)
         const provider = body.provider;
         const key = body.key;
 
-        const wrapper = authservice.value(provider, key);
+        const wrapper = await authservice.value(provider, key);
         res.writeHead(200);
         res.end(JSON.stringify(wrapper));
     }
 }
+
+function getRequestBody(req)
+{
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                resolve(body ? JSON.parse(body) : {});
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
+};

@@ -1,4 +1,5 @@
-import config from '../config/scrips_config.json' with { type: 'json' };
+import scrips_config from '../config/scrips_config.json' with { type: 'json' };
+import services_config from '../config/services_config.json' with { type: 'json' };
 
 export const {
     OPT_EXPIRIES,
@@ -10,4 +11,8 @@ export const {
     filePaths,
     filters,
     tp_filters
-} = config;
+} = scrips_config;
+
+export const {
+    services
+} = services_config;

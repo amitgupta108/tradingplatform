@@ -1,72 +1,51 @@
-import WebSocket from 'ws';
 import qserver from '../../stream.mjs';
-import { ordermanager } from '../ordermanager.mjs';
+import { SocketClient } from './socketclient.mjs';
 
-export class KotakHSISocket 
+export class KotakHSISocket extends SocketClient
 {
-    constructor(service_key) {
-        this.parent = service_key;
-        this.reconnect = true;
-        this.authdata;
+    constructor(options) {
+        super('HSICLIENT', options);
         this.wsping;
-        this.ws_hsi;
     }
 
-    hsiconnect(auth_data) {
-        this.authdata = auth_data;
-        if (this.ws_hsi?.readyState === 1)
-            return;
-
-        this.connect();
+    initiateConnect(authData) {
+        this.authData = authData;
+        const url = `wss://${authData.baseUrl.substring(8)}/realtime`
+        return this.connect(url, 'ws');
     }
 
-    connect() {
-        this.ws_hsi = new WebSocket(`wss://${this.authdata.baseUrl.substring(8)}/realtime`);
-        this.ws_hsi.on('open', () => {
-            const payload = `{type:cn,Authorization:${this.authdata.hsi_token},Sid:${this.authdata.hsi_sid},src:WEB}`;
-            this.ws_hsi.send(payload);
-            console.log('On open hsi ');
+    onOpen() {
+        this.authenticate();
+        this.ws.on('pong', () => {
+            qserver.broadcast('hb', { order_socket: this.ws?.readyState });
         });
-
-        this.ws_hsi.on('message', (data) => {
-            const message = JSON.parse(data.toString());
-            if(message.type !== 'cn')
-                ordermanager.notifyme(message.type, this.parent, message.data);
-            else if (message.msg === 'connected')
-                this.starthb();
-        });
-
-        this.ws_hsi.on('error', (error) => {
-            console.log("connection error hsi " + error.code + " " + error.message);
-        });
-
-        this.ws_hsi.on('close', (code, reason) => {
-            console.log("connection closed hsi " + code + " " + reason.toString());
-            this.hsiReconnect();
-        });
-
-        this.ws_hsi.on('pong', () => {
-            qserver.broadcast('hb', { order_socket: this.ws_hsi?.readyState });
-        });
-
-        return { status: 'hsi connect initiated' };
     }
 
-    hsiReconnect() {
-        if (this.reconnect) {
-            console.log('hsi reconnection attempt');
-            this.connect();
-        }
+    authenticate() {
+        const payload = `{type:cn,Authorization:${this.authData.hsi_token},Sid:${this.authData.hsi_sid},src:WEB}`;
+        this.sendMessage(payload);
+        this.log('On open hsi ');
+    }
+    
+    handleMessage(event)
+    {
+        const data = event.data;
+        const message = JSON.parse(data.toString());
+        if (message.type !== 'cn')
+            this.emit(message.type, this.name, message.data);
+        else if (message.msg === 'connected')
+            this.starthb();
+
     }
 
     starthb() {
-        qserver.broadcast('hb', { order_socket: this.ws_hsi?.readyState });
+        qserver.broadcast('hb', { order_socket: this.ws?.readyState });
 
         if (this.wsping !== undefined)
             clearInterval(this.wsping);
 
         this.wsping = setInterval(() => {
-            this.ws_hsi.ping();
+            this.ws.ping();
         }, 60000);
     }
 }

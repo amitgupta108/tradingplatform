@@ -106,7 +106,7 @@ function registerAdminRequests(s, appid, mode)
                 authcode: text
             });
         else 
-            service.authenticate(text);
+            return service.authenticate(text);
     }, 'authenticate'));
 
     s.on('subscribe', (list, provider) => {
