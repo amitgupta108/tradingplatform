@@ -22,9 +22,10 @@ export class SubsManager
 
     onQuotes(q) {
         const subscribers = this.subscriber_map.getSubscribers(q.token);
-        subscribers.forEach((appid) => {
-            eventservice.emit('quote', appid, q);
-        });
+        if (subscribers !== undefined || subscribers.length !== 0)
+            subscribers.forEach((appid) => {
+                eventservice.emit('quote', appid, q);
+            });
     }
 
     handleMessage(event, appid, data) 

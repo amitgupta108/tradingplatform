@@ -12,7 +12,7 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
 
     addListeners() {
         eventservice.addListener('kotak_auth', (data) => {
-            this.ordermanager.register('HSICLIENT');
+            this.ordermanager.register(this.trade_mode, 'HSICLIENT');
             this.api_wrapper = new KotakTradeAPI(this.name, data);
         });
     }
@@ -57,6 +57,10 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
         new_order.qt = String(order.quantity * LOTSIZE[order.stockCode] );
         new_order.tt = order.action;
         new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
+        new_order.si = '1111111';
+        new_order.sy = 'category';
+        new_order.sn = '2222222';
+        new_order.sc = 'default';
         if(order.type === 'modify')
         {
             new_order.no = order.orderid;

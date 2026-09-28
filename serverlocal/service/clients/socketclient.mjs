@@ -19,6 +19,7 @@ export class SocketClient extends EventEmitter
         this.url;
         this.authData;
         this.ws;
+        this.type;
     }
 
     async connect(url, type) {
@@ -71,6 +72,8 @@ export class SocketClient extends EventEmitter
  
     newSocket(url, type)
     {
+        this.url = url;
+        this.type = type;
         if(type === 'node')
             return new WebSocket(url);
         else if( type === 'ws')
@@ -123,7 +126,7 @@ export class SocketClient extends EventEmitter
         this.reconnectTimer = setTimeout(() => {
             this.log(`Reconnection attempt ${this.reconnectAttempts}`);
             this.emit('reconnecting', this.reconnectAttempts);
-            this.connect(this.url).catch((err) => {
+            this.connect(this.url, this.type).catch((err) => {
                 this.log('Reconnection failed:', err);
             });
         }, delay);

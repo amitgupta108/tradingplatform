@@ -1,6 +1,6 @@
 import { Connector, KotakConnector, ICICIConnector, TPAppConnector } from './connector.mjs';
 import { eventservice } from '../eventservice.mjs';
-import { apps } from '../../config/app_config.json' with {type: 'json'};
+import apps from '../../config/app_config.json' with {type: 'json'};
 
 class AuthService
 {
