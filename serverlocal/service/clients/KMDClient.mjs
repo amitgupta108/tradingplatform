@@ -1,77 +1,22 @@
-import { EventEmitter } from 'events';
-import { PacketParser } from '../../utils/PacketParser.mjs';
 
-export class KMDClient extends EventEmitter 
+import { PacketParser } from '../../utils/PacketParser.mjs';
+import { SocketClient } from './socketclient.mjs';
+
+export class KMDClient extends SocketClient 
 {
     constructor(options) {
-        super();
-        this.autoReconnect = options.autoReconnect ?? false;
-        this.maxRetries = options.maxRetries ?? 2;
-        this.retryDelay = options.retryDelay ?? 3000;
-        this.logEnabled = options.logEnabled ?? true;
-        this.isConnecting = false;
-        this.isConnected = false;
-        this.ws = null;
-        this.authData = null;
+        super('KMDCLIENT', options);
         this.dividers = null;
-    }
-
-    async connect(url) {
-        if (this.isConnected || this.isConnecting) {
-            this.log('Already connected or connecting');
-            return;
-        }
-        this.isConnecting = true;
-        return new Promise((resolve, reject) => {
-            try {
-                this.ws = new WebSocket(url);
-                this.ws.binaryType = 'arraybuffer';
-                this.ws.onopen = () => {
-                    this.isConnecting = false;
-                    this.isConnected = true;
-                    this.reconnectAttempts = 0;
-                    this.log('WebSocket connected');
-                    this.onOpen();
-                    this.emit('open');
-                    resolve();
-                };
-
-                this.ws.onmessage = (event) => {
-                    this.handleMessage(event.data);
-                };
-                
-                this.ws.onerror = (error) => {
-                    this.log('WebSocket error:', error);
-                    this.emit('error', error);
-                    if (!this.isConnected) {
-                        this.isConnecting = false;
-                        reject(error);
-                    }
-                };
-
-                this.ws.onclose = (event) => {
-                    this.log('WebSocket closed:', event.code, event.reason);
-                    this.isConnected = false;
-                    this.isConnecting = false;
-                    this.emit('close', event.code);
-                    this.handleReconnect();
-                };
-            }
-            catch (error) {
-                this.isConnecting = false;
-                this.log('WebSocket creation failed:', error.code + " " + error.message);
-                reject(error.code + " " + error.message);
-            }
-        });
     }
 
     initiateConnect(authData) {
         this.authData = authData;
-        return this.connect(this.authData.feedUrl);
+        return this.connect(this.authData.feedUrl, 'node');
     }
 
     onOpen() {
         this.authenticate();
+        this.ws.binaryType = 'arraybuffer';
     }
 
     authenticate() {
@@ -85,28 +30,11 @@ export class KMDClient extends EventEmitter
         this.log('Authentication request sent');
     }
 
-    disconnect() {
-        this.clearReconnectTimer();
-        if (this.ws) {
-            this.ws.close(1000, 'Client disconnecting');
-            this.ws = null;
-        }
-        this.shouldReconnect = false;
-        this.isConnected = false;
-        this.isConnecting = false;
-        this.emit('disconnected');
-    }
-
-    sendMessage(data) {
-        if (!this.ws || !this.isConnected) {
-            this.log('Cannot send message: not connected');
-            return;
-        }
-        this.ws.send(data);
-    }
-
-    handleMessage(data) {
-        try {
+    handleMessage(event) 
+    {
+        try 
+        {
+            const data = event.data;
             if (typeof data !== 'string' && data instanceof ArrayBuffer) {
                 const packets = PacketParser.splitBatch(Buffer.from(data));
                 for (const packet of packets) {
@@ -156,41 +84,5 @@ export class KMDClient extends EventEmitter
             inputtoken: scripStr,
         }
         this.sendMessage(JSON.stringify(request));    
-    }
-
-    handleReconnect() 
-    {
-        if (!this.autoReconnect)
-            return;
-    
-        this.clearReconnectTimer();
-        if (this.reconnectAttempts >= this.maxRetries) {
-            this.log('Max reconnection attempts reached');
-            this.emit('reconnect_failed');
-            return;
-        }
-        this.reconnectAttempts++;
-        const delay = this.retryDelay * Math.pow(2, this.reconnectAttempts - 1);
-        this.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxRetries})`);
-        this.reconnectTimer = setTimeout(() => {
-            this.log(`Reconnection attempt ${this.reconnectAttempts}`);
-            this.emit('reconnecting', this.reconnectAttempts);
-            this.connect(this.authData.feedUrl).catch((err) => {
-                this.log('Reconnection failed:', err);
-            });
-        }, delay);
-    }
-
-    clearReconnectTimer() {
-        if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-        }
-    }
-
-    log(...args) {
-        if (this.logEnabled) {
-            console.log(`[KMD]`, ...args);
-        }
     }
 }

@@ -7,16 +7,19 @@ import { persistenceservice } from '../system/persistence.mjs'
 import { m_icici_live } from '../../broker/icici/m_breeze_live.mjs';
 import { m_icici_hist } from '../../broker/icici/m_breeze_hist.mjs';
 import { m_openalgo_live } from '../../broker/openalgo/m_openalgo.mjs';
-import { m_kotak_hsm } from '../../broker/kotak/m_kotak_hsm.mjs';
-import { t_openalgo_trade } from '../../broker/openalgo/t_openalgo.mjs';
-import { t_kotak_trade } from '../../broker/kotak/t_kotakneo.mjs';
 import { m_common_service } from '../../broker/common/m_common.mjs';
 
+import { CryptoService } from '../auth/cryptoservice.mjs';
+import { OpenAlgoTradeService } from '../../broker/openalgo/t_openalgo.mjs';
+import { KotakNeoTradeService } from '../../broker/kotak/t_kotakneo.mjs';
 import { SocketClientFactory } from './socketclientfactory.mjs';
+import { OrderManager } from '../ordermanager.mjs';
 import { KotakMarketDataLive } from '../../broker/kotak/m_kotak_live.mjs';
+import { KotakMarketDataHSM } from '../../broker/kotak/m_kotak_hsm.mjs';
 import { SubsManager } from '../subscription/subsservice.mjs';
 
 const usermap = new Map();
+
 const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
     S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
@@ -40,14 +43,15 @@ const services = {
     ORDERSIMULATOR: ordersimulator,
     SERVERSTREAM: serverstream,
     COMMONSERVICE: m_common_service,
-    KOTAKLIVEVIEW: undefined,
-    KOTAKHSMVIEW: m_kotak_hsm,
-    KOTAKNEOTRADE: t_kotak_trade,
     ICICIHISTVIEW: m_icici_hist,
     ICICILIVEVIEW: m_icici_live,
     OPENALGOVIEW: m_openalgo_live,
-    OPENALGOTRADE: t_openalgo_trade,
-    SUBSMANAGER: undefined
+    OPENALGOTRADE: undefined,
+    KOTAKLIVEVIEW: undefined,
+    KOTAKHSMVIEW: undefined,
+    KOTAKNEOTRADE: undefined,
+    SUBSMANAGER: undefined,
+    CRYPTOSERVICE: undefined
 };
 
 const providers = {
@@ -67,12 +71,24 @@ export class ConfigService
     static init()
     {
         services['SOCKETCLIENTS'] = new SocketClientFactory('SOCKETCLIENTS');
+        services['ORDERMANAGER'] = new OrderManager('ORDERMANAGER');
+        services['CRYPTOSERVICE'] = new CryptoService('CRYPTOSERVICE');
+
         if(process.env.SUBSMANAGER === 'Y')
             services['SUBSMANAGER'] = new SubsManager('SUBSMANAGER');
         
         if (process.env.KOTAKLIVEVIEW === 'Y')     
             services['KOTAKLIVEVIEW'] = new KotakMarketDataLive('KOTAKLIVEVIEW', this.getSocketClient('KMDCLIENT'));
         
+        if (process.env.KOTAKHSMVIEW === 'Y')
+            services['KOTAKHSMVIEW'] = new KotakMarketDataHSM('KOTAKHSMVIEW', this.getSocketClient('HSMCLIENT'));
+
+        if (process.env.KOTAKNEOTRADE === 'Y')
+            services['KOTAKNEOTRADE'] = new KotakNeoTradeService('KOTAKNEOTRADE', undefined);
+
+        if (process.env.OPENALGOTRADE === 'Y')
+            services['OPENALGOTRADE'] = new OpenAlgoTradeService('OPENALGOTRADE', undefined);
+
         this.initialized = true;
     }
     
@@ -162,13 +178,13 @@ export class ConfigService
         return partner_keys;
     }
 
-    static getParentModes(feature, feature_mode)
+    static getParentModes(feature, feature_modes)
     {
         return Object.entries(modes).flatMap(([k, v]) => {
             
             const match = Object.entries(v).filter(([f, service_key]) => {
                 return feature === f
-                    && feature_mode === service_key
+                    && feature_modes.includes(service_key);
             });
 
             return match.length > 0 ? [k] : [];

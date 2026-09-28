@@ -59,10 +59,10 @@ export class Connector
         });;
     }
 
-    static authkeys(id, cred, store = 'keyring') 
+    static authkeys(id, cred) 
     {
         try {
-            if(store === 'keyring')
+            if(process.env.KEYCHAIN === 'Y')
                 return this.keyring(id, cred);
             else 
                 return this.lmdb(id, cred);
@@ -157,8 +157,8 @@ export class KotakConnector extends Connector
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                mobileNumber: "+919871394231",
-                ucc: "V1Z9A",
+                mobileNumber: process.env.kotak_mobile,
+                ucc: process.env.kotak_ucc,
                 totp: num
             })
         };
@@ -192,6 +192,7 @@ export class KotakConnector extends Connector
                 if (vr.ok) {
                     const vr_result = (await vr.json()).data;
                     this.authdata = {
+                        provider: this.provider,
                         date: new Date().toDateString(),
                         hsm_sid: lr_result.sid,
                         hsm_token: lr_result.token,

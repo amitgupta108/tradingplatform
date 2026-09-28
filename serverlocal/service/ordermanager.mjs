@@ -1,13 +1,35 @@
 import streamer from '../stream.mjs';
-import { eventservice } from './eventservice.mjs';
 import { ConfigService } from './.config/configservice.mjs';
+import { eventservice } from './eventservice.mjs';
 import { LOTSIZE } from '../utils/constants.mjs';
 
-class OrderManager 
+export class OrderManager 
 {
-    constructor(){
+    constructor()
+    {
+        eventservice.addListener('kotak_auth', (data) => {
+            this.kotak_hsi_socket = ConfigService.getSocketClient('HSICLIENT');
+            this.kotak_hsi_socket.initiateConnect(data);
+        });
+
+        this.order_generators = new Map(); 
         this.live_order_map = new Map();
         this.counter = 10000;
+    }
+
+    register(service_key, notifier){
+        const order_notifier = ConfigService.getSocketClient(notifier);
+        order_notifier.addListener('order', (notifier_name, order) => {
+
+            const services = Array.from(this.order_generators.entries());
+            const tobenotified = services.filter((k, v) => {
+                if(v === notifier_name)
+                    return k;
+            })
+            this.notify('order', tobenotified, order)
+        });
+        
+        this.order_generators.set(service_key, notifier);
     }
 
     neworders(appid, orders)
@@ -25,19 +47,18 @@ class OrderManager
         });
     }
 
-    notifyme(type, service_key, message)
+    notify(type, service_keys, message)
     {    
         if (type === 'order' && ['open', 'complete', 'rejected', 'cancelled'].includes(message.ordSt))
-            this.liveOrderMatching(service_key, message);
+            this.liveOrderMatching(service_keys, message);
         else if(type === 'position')
-            this.emitPosition(service_key, message);
+            this.emitPosition(service_keys, message);
     }
 
-    liveOrderMatching(service_key, order) 
+    liveOrderMatching(service_keys, order) 
     {
-        console.log('order notifcation ' + order?.ordSt + ' ' + order?.nOrdNo);
         const live_order = this.formatLiveOrder(order);
-        const found = this.findMatch(service_key, live_order);
+        const found = this.findMatch(service_keys, live_order);
         if (found !== undefined) {
             live_order.appid = found.appid;
             live_order.trade_mode = found.trade_mode;
@@ -45,20 +66,22 @@ class OrderManager
             live_order.localid = found.localid;
             this.live_order_map.delete(found.localid);
         }
-        live_order.modes = ConfigService.getParentModes('trade', service_key);
+        console.log('order notifcation ' + order?.ordSt + ' ' + order?.nOrdNo + ' found : ' + found?.orderid);
+
+        live_order.modes = ConfigService.getParentModes('trade', service_keys);
         this.live_order_map.set(live_order.orderid, live_order);
         streamer.emitOrders(live_order);
     }
 
-    findMatch(service_key, live_order) 
+    findMatch(service_keys, live_order) 
     {
         let found = this.live_order_map.get(live_order.orderid);
         if (found !== undefined)
             return found;
-        
+                
         const local_orders = Array.from(this.live_order_map.values());
         return local_orders.find((order) => {
-            return order.trade_mode === service_key
+            return service_keys.includes(order.trade_mode)
                 && order.symbol === live_order.symbol
                 && order.action === live_order.action
                 && order.pricetype === live_order.pricetype
@@ -145,5 +168,3 @@ class OrderManager
     }
 
 }
-
-export const ordermanager = new OrderManager();

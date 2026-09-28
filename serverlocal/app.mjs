@@ -1,4 +1,4 @@
-import { ConfigService as services } from './service/.config/configservice.mjs';
+import { ConfigService, ConfigService as services } from './service/.config/configservice.mjs';
 import apiserver from './apiserver.mjs'; 
 
 export class AppClientManager
@@ -13,9 +13,10 @@ export class AppClientManager
         const appid = s.handshake.auth.token;
         const mode = s.handshake.auth.mode;
         
-        const profile = services.getProfile(mode);
-        if(profile === undefined) {
-            console.log('profile not found');
+        const as = ConfigService.getServiceByName('AUTHSERVICE');
+        const matches = as.validate(appid, mode)
+        if(matches.length !== 1) {
+            console.log('app not authenticated');
             return;
         }
         
@@ -82,7 +83,9 @@ export class ServerClientManager
         const appid = crypto.randomUUID();
         this.socketmap.set(appid, s);
 
-        s.send(JSON.stringify({ type: 'handshake', key: appid }));
+        const publickeys = ConfigService.getServiceByName('CRYPTOSERVICE').getServerPublicKeys();
+        
+        s.send(JSON.stringify({ type: 'handshake', appid: appid,  keys: publickeys}));
 
         s.on('message', (input, isBinary) => {
             const payload = isBinary ? input : input.toString();

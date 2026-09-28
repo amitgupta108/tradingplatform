@@ -1,12 +1,13 @@
 //import { open } from 'lmdb';
 
-class PersistenceService 
+import { SystemService } from "../service.mjs";
+
+class PersistenceService extends SystemService
 {
     constructor(name)
     {
-        this.name = name;
+        super(name);
         this.store;
-        this.initialized = false;
     }
 
     init()
