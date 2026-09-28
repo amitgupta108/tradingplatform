@@ -1,16 +1,9 @@
-import EventEmitter from 'node:events';
+import { SystemService } from './service.mjs';
 
-class EventService extends EventEmitter
+class EventService extends SystemService
 {
     constructor() {
-        super();
-        this.name = 'EVENTSERVICE';
-        this.initialized = false;
-    }
-
-    init(){
-        this.initialized = true;
-        return { status: 'initialized' };
+        super('EVENTSERVICE');
     }
 }
 

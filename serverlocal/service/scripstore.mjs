@@ -8,6 +8,7 @@ import { Readable } from 'node:stream';
 import { ConfigService } from './.config/configservice.mjs';
 import { eventservice } from './eventservice.mjs';
 import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
+import { SystemService } from './service.mjs';
 
 const FIELD_MAP = {
 	pSymbol:      'token',
@@ -61,12 +62,11 @@ async function clearStaleCacheFiles()
 	}
 }
 
-class ScripStore 
+class ScripStore extends SystemService
 {
-	constructor()
+	constructor(name)
 	{
-		this.name = 'SCRIPSTORE';
-		this.initialized = false;
+		super('SCRIPSTORE');
 		this.isLoaded = false;    
 		this.inMemoryStore = new Map();
 	}

@@ -1,25 +1,15 @@
 import {scripstore} from '../../service/scripstore.mjs';
-import { HSMClient } from '../../service/clients/HSMClient.mjs'
 import { KotakMarketData } from './m_kotak.mjs';
 import utils from '../../../common/utils.mjs';
 import { parse } from 'date-fns';
 
 const pattern = "dd/MM/yyyy HH:mm:ss";
-const options = {
-    autoReconnect: true,
-    maxRetries: 2,
-    retryDelay: 2000,
-    heartbeatInterval: 10000,
-    throttleInterval: 120000,
-    logEnabled: true,
-};
 
-class KotakMarketDataHSM extends KotakMarketData 
+export class KotakMarketDataHSM extends KotakMarketData 
 {
     constructor(name, provider)
     {
         super(name, provider);
-        this.provider = new HSMClient(options);
     }
 
     onSnapshot(snapshot)
@@ -63,5 +53,3 @@ class KotakMarketDataHSM extends KotakMarketData
         return this.symbol_cache.get(snapshot.tk);
     }
 }
-
-export const m_kotak_hsm = new KotakMarketDataHSM('KOTAKHSMVIEW', undefined);

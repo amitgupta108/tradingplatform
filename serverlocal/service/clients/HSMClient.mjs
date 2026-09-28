@@ -1,113 +1,48 @@
-import { EventEmitter } from 'events';
-import WebSocket from 'ws';
-
 import { BinRespTypes, RespTypeValues, STAT, SCRIP_PREFIX, INDEX_PREFIX, RespTypes } from '../../../dist/marketdatafeed/constants/types.js';
 import { PacketBuilder } from '../../../dist/marketdatafeed/protocol/PacketBuilder.js';
 import { PacketParser } from '../../../dist/marketdatafeed/protocol/PacketParser.js';
 import { buf2Long } from '../../../dist/marketdatafeed/utils/binary.js';
+import { SocketClient } from './socketclient.mjs';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';
 
-export class HSMClient extends EventEmitter
+export class HSMClient extends SocketClient
 {
     constructor(options) {
-        super();
-        this.ws = null;
-        this.ackObj = { ackNum: 0, counter: 0};
-        this.shouldReconnect = true;
-        this.reconnectAttempts = 0;
-        this.reconnectTimer = null;
-        this.heartbeatTimer = null;
-        this.isConnecting = false;
-        this.isConnected = false;
+        super('HSMCLIENT', options);
+        
+        this.throttleIntId;
+        this.throttleInterval;
         this.url = HSM_URL;
-        this.options = {
-            ...options,
-            autoReconnect: options.autoReconnect ?? true,
-            maxRetries: options.maxRetries ?? 5,
-            retryDelay: options.retryDelay ?? 3000,
-            heartbeatInterval: options.heartbeatInterval ?? 10000,
-            throttleInterval: options.throttleInterval ?? 30000,
-            logEnabled: options.logEnabled ?? true,
-            encoded: options.encoded ?? false
-        };
         this.topicList = {};
         this.channel = '1';
-        this.authData = null;
-        this.throttleIntId;
+        this.ackObj = { ackNum: 0, counter: 0 };
     }
 
-async connect() {
-    if (this.isConnected || this.isConnecting) {
-        this.log('Already connected or connecting');
-        return;
-    }
-    this.isConnecting = true;
-    return new Promise((resolve, reject) => {
-        try {
-            this.ws = new WebSocket(this.url);
-            this.ws.binaryType = 'arraybuffer';
-            this.ws.onopen = () => {
-                this.isConnecting = false;
-                this.isConnected = true;
-                this.reconnectAttempts = 0;
-                this.log('WebSocket connected');
-                this.onOpen();
-                this.startHeartbeat();
-                this.emit('open');
-                resolve();
-            };
-            this.ws.onmessage = (event) => {
-                this.handleMessage(event.data);
-            };
-            this.ws.onerror = (error) => {
-                this.log('WebSocket error:', error.message);
-                this.emit('error', error);
-                if (!this.isConnected) {
-                    this.isConnecting = false;
-                    reject(error);
-                }
-            };
-            this.ws.onclose = (event) => {
-                this.log('WebSocket closed:', event.code, event.reason);
-                this.isConnected = false;
-                this.isConnecting = false;
-                this.stopHeartbeat();
-                this.emit('close', event);
-                this.handleReconnect();
-            };
-        }
-        catch (error) {
-            this.isConnecting = false;
-            this.log('WebSocket creation failed:', error);
-            reject(error);
-        }
-    });
-}
-
-    disconnect() {
-        this.stopHeartbeat();
-        this.clearReconnectTimer();
-        if (this.ws) {
-            this.ws.close(1000, 'Client disconnecting');
-            this.ws = null;
-        }
-        this.shouldReconnect = false;
-        this.isConnected = false;
-        this.isConnecting = false;
-        this.emit('disconnected');
+    initiateConnect(authData) {
+        this.authData = authData;
+        return this.connect(HSM_URL, 'ws');
     }
 
-    sendMessage(data) {
-        if (!this.ws || !this.isConnected) {
-            this.log('Cannot send message: not connected');
-            return;
-        }
-        this.ws.send(data);
+    onOpen() {
+        this.ws.binaryType = 'arraybuffer';
+        this.authenticate();
+        this.ws.addEventListener('pong', () => {
+            this.log('Heart Beat')
+        });
     }
 
-    handleMessage(data) {
-        try {
+    authenticate() {
+        const authPayload = PacketBuilder.buildConnection(this.authData.hsm_token, this.authData.hsm_sid);
+        this.sendMessage(authPayload);
+        this.log('Authentication request sent');
+    }
+
+    handleMessage(event) 
+    {
+        try 
+        {
+            const data = event.data;
             if (data instanceof ArrayBuffer) {
                 const resp = PacketParser.init(data); 
                 if (resp.responseType === BinRespTypes.DATA_TYPE)
@@ -150,22 +85,6 @@ async connect() {
         }
     }
 
-    initiateConnect(authData)
-    {
-        this.authData = authData;
-        this.connect();
-    }
-
-    onOpen() {
-        this.authenticate();
-    }
-    
-    authenticate() {
-        const authPayload = PacketBuilder.buildConnection(this.authData.hsm_token, this.authData.hsm_sid);
-        this.sendMessage(authPayload);
-        this.log('Authentication request sent');
-    }
-
     handleBinaryMessage(message, responseType) 
     {
         if (responseType === BinRespTypes.DATA_TYPE)
@@ -183,7 +102,7 @@ async connect() {
             if (parsed.stat === STAT.OK)
                 this.throttleIntId = setInterval(() => {
                     this.requestThrottling('');
-                }, this.options.throttleInterval);
+                }, this.throttleInterval);
             else
                 this.log('HSM authentication failed:', parsed.msg);
         }
@@ -213,57 +132,6 @@ async connect() {
             this.emit('info', parsed.message);
         }
     }
-    
-    startHeartbeat() {
-        this.stopHeartbeat();
-        if (this.options.heartbeatInterval > 0) {
-            this.heartbeatTimer = setInterval(() => {
-                this.sendHeartbeat();
-            }, this.options.heartbeatInterval);
-        }
-    }
-
-    stopHeartbeat() {
-        if (this.heartbeatTimer) {
-            clearInterval(this.heartbeatTimer);
-            this.heartbeatTimer = null;
-        }
-    }
-
-    handleReconnect() {
-        if (!this.options.autoReconnect)
-            return;
-        this.clearReconnectTimer();
-        if (this.reconnectAttempts >= this.options.maxRetries) {
-            this.log('Max reconnection attempts reached');
-            this.emit('reconnect_failed');
-            return;
-        }
-        this.reconnectAttempts++;
-        const delay = this.options.retryDelay * Math.pow(2, this.reconnectAttempts - 1);
-        this.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.options.maxRetries})`);
-        this.reconnectTimer = setTimeout(() => {
-            this.log(`Reconnection attempt ${this.reconnectAttempts}`);
-            this.emit('reconnecting', this.reconnectAttempts);
-            this.connect().catch((err) => {
-                this.log('Reconnection failed:', err);
-            });
-        }, delay);
-    }
-
-    clearReconnectTimer() {
-        if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-        }
-    }
-
-    log(...args) {
-        if (this.options.logEnabled) {
-            console.log(`[KotakHSM]`, ...args);
-        }
-    }
-
     // ==================== PUBLIC API ====================
     subscribe(scrips, type, action, notreq) {
         const scripStr = Array.isArray(scrips) ? scrips.join('&') : scrips;
@@ -292,14 +160,4 @@ async connect() {
         const request = PacketBuilder.buildThrottlingRequest(scrips);
         this.sendMessage(request);
     }
-
-    sendHeartbeat() {
-        if (this.ws && this.isConnected) {
-            this.ws.ping();
-        }
-    }
-
-
-
-
 }
