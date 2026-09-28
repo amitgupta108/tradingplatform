@@ -1,5 +1,6 @@
 import { Connector, KotakConnector, ICICIConnector, TPAppConnector } from './connector.mjs';
 import { eventservice } from '../eventservice.mjs';
+import { apps } from '../../config/app_config.json' with {type: 'json'};
 
 class AuthService
 {
@@ -16,15 +17,16 @@ class AuthService
 
     async init()
     {
+        this.appids = apps.appids;
         eventservice.addListener('ext_auth', (msg) => {
             this.generateSession(msg);
         });
 
         const values = Array.from(Object.values(this.connectors));
-        let status = ' ';
+        let status = '';
         for(const v of values){
             if(v.load_on_start)
-                status = await v.loadAuthdata() + status;
+                status = status + (await v.loadAuthdata()) + ' ';
         }
         return { status: status};
     }
@@ -36,7 +38,7 @@ class AuthService
             params = { arg1: id_text }
             provider = 'kotak';
         } 
-        if (id_text === 'icici') {
+        else if (id_text === 'icici') {
             provider = 'icici';
         }
         else if (id_text === 'tp-icici-p')
@@ -64,6 +66,14 @@ class AuthService
         const wrapper = {};
         wrapper[key] = undefined;
         return await Connector.authkeys(provider, wrapper);
+    }
+
+    validate(appid, mode)
+    {
+        return this.appids.filter((app) => { 
+            return app.appid === appid
+                && app.mode === mode
+        });
     }
 }
 

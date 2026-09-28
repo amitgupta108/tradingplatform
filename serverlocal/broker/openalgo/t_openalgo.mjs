@@ -1,8 +1,7 @@
 import OpenAlgo from 'openalgo';
-import { ordermanager } from '../../service/ordermanager.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 
-class OpenAlgoTradeService extends BrokerTradeServiceImpl 
+export class OpenAlgoTradeService extends BrokerTradeServiceImpl 
 {
     addListeners() {
         this.provider = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
@@ -37,7 +36,7 @@ class OpenAlgoTradeService extends BrokerTradeServiceImpl
 
     async placeOrder(appid, order) {
         const clone = this.formatInOrder(order);
-        ordermanager.neworders(appid, [order]);
+        this.ordermanager.neworders(appid, [order]);
 
         let response = await this.provider.placeOrder(clone);
         if (order.state === 'created') {
@@ -61,5 +60,3 @@ class OpenAlgoTradeService extends BrokerTradeServiceImpl
             });
     }
 }
-
-export const t_openalgo_trade = new OpenAlgoTradeService('OPENALGOTRADE', undefined);

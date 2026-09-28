@@ -1,11 +1,10 @@
 import { scripstore } from '../../service/scripstore.mjs';
-import { ordermanager } from '../../service/ordermanager.mjs';
-import { KotakHSISocket } from '../../service/clients/HSIClient.mjs';
 import { eventservice } from '../../service/eventservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 import { EXCHANGES, LOTSIZE } from '../../utils/constants.mjs';
 
-class KotakNeoTradeService extends BrokerTradeServiceImpl 
+export class KotakNeoTradeService extends BrokerTradeServiceImpl 
 {
     constructor(name, provider) {
         super(name, provider);
@@ -13,9 +12,8 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl
 
     addListeners() {
         eventservice.addListener('kotak_auth', (data) => {
+            this.ordermanager.register('HSICLIENT');
             this.api_wrapper = new KotakTradeAPI(this.name, data);
-            const kotak_hsi_socket = new KotakHSISocket(this.trade_mode);
-            kotak_hsi_socket.hsiconnect(data);
         });
     }
 
@@ -30,7 +28,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl
                 order.orderid = result.nOrdNo;
                 order.state = 'submitted';
                 order.trade_mode = this.trade_mode;
-                ordermanager.neworders(appid, [order]);
+                this.ordermanager.neworders(appid, [order]);
             }
             else {
                 order.state = 'failed';
@@ -85,9 +83,9 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl
             if (order_json.stat !== 'Not_Ok') {
                 orders = order_json.data;
                 return orders.map((order) => {
-                    const odr = ordermanager.formatLiveOrder(order);
+                    const odr = this.ordermanager.formatLiveOrder(order);
                     odr.trade_mode === this.trade_mode;
-                    ordermanager.addOrders(odr);
+                    this.ordermanager.addOrders(odr);
                     return odr;
                 })
                 .filter((order) => order.stockCode === stockCode)
@@ -108,7 +106,7 @@ class KotakNeoTradeService extends BrokerTradeServiceImpl
 
             if (position_json.stat !== 'Not_Ok') {
                 positions = position_json.data;
-                return ordermanager.formatPositionRecords(positions, stockCode, cf);
+                return this.ordermanager.formatPositionRecords(positions, stockCode, cf);
             }
             console.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
             return [];
@@ -167,5 +165,3 @@ class KotakTradeAPI {
         return fetch(api_url, options);
     }
 }
-
-export const t_kotak_trade = new KotakNeoTradeService('KOTAKNEOTRADE', undefined);

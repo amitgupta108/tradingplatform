@@ -1,33 +1,26 @@
 import { TPSocket } from '../clients/TPClient.mjs';
 import { KMDClient } from '../clients/KMDClient.mjs';
+import { HSMClient } from '../clients/HSMClient.mjs';
+import { KotakHSISocket } from '../clients/HSIClient.mjs';
+import { SystemService } from '../service.mjs';
 
 const options = {
     autoReconnect: true,
     maxRetries: 2,
     retryDelay: 2000,
-    heartbeatInterval: 10000,
+    heartbeatInterval: 30000,
     throttleInterval: 120000,
     logEnabled: true,
 };
 
-export class SocketClientFactory 
+export class SocketClientFactory extends SystemService
 {
     constructor(name){
-        this.name = name;
+        super(name);
         this.socket_clients = new Map();
-        this.initialized = false
     }
 
-    init()
-    {
-        if (process.env.PASSTHROUGH === 'Y') 
-            this.socket_clients.set('TPCLIENT', new TPSocket('0ce8a0ed-c4a1-4938-940b-b4d3841468g5', 'TPMODE'));
-
-        this.initialized = true;
-        return {status: 'success'};
-    }
-
-    getSocketClient(key, appid, mode) 
+    getSocketClient(key) 
     {
         let c = this.socket_clients.get(key);
         if(c === undefined) {
@@ -40,8 +33,12 @@ export class SocketClientFactory
     liveSocketClient(key)
     {
         if (key === 'TPCLIENT')
-            return new TPSocket('0ce8a0ed-c4a1-4938-940b-b4d3841468g5', 'TPMODE');
+            return new TPSocket(options);
         else if (key === 'KMDCLIENT')
-            return new KMDClient(options);       
+            return new KMDClient(options);
+        else if (key === 'HSMCLIENT')
+            return new HSMClient(options);
+        else if (key === 'HSICLIENT')
+            return new KotakHSISocket(options);
     }
 }
