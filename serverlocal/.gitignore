@@ -16,3 +16,5 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+*.ndjson
+*.mdb

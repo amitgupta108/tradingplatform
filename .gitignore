@@ -14,3 +14,4 @@ serverlocal/.env.p
 */.DS_Store
 dist/*_*
 .github
+*.ndjson
