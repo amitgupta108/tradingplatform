@@ -1,28 +1,27 @@
-import { eventservice } from '../eventservice.mjs';
-import { authservice } from '../auth/authservice.mjs';
+import { eventservice } from '../system/eventservice.mjs';
 import { scripstore } from '../scripstore.mjs';
-import { ordersimulator } from '../simulation/ordersimulator.mjs'
-import { serverstream } from '../serverstream.mjs';
+import { ordersimulator } from '../../broker/common/ordersimulator.mjs'
+import { serverstream } from '../subscription/serverstream.mjs';
 import { persistenceservice } from '../system/persistence.mjs'
 import { m_icici_live } from '../../broker/icici/m_breeze_live.mjs';
 import { m_icici_hist } from '../../broker/icici/m_breeze_hist.mjs';
 import { m_openalgo_live } from '../../broker/openalgo/m_openalgo.mjs';
 import { m_common_service } from '../../broker/common/m_common.mjs';
 
+import { AuthService } from '../auth/authservice.mjs';
 import { CryptoService } from '../auth/cryptoservice.mjs';
 import { OpenAlgoTradeService } from '../../broker/openalgo/t_openalgo.mjs';
 import { KotakNeoTradeService } from '../../broker/kotak/t_kotakneo.mjs';
 import { SocketClientFactory } from './socketclientfactory.mjs';
-import { OrderManager } from '../ordermanager.mjs';
+import { OrderManager } from '../../broker/common/ordermanager.mjs';
 import { KotakMarketDataLive } from '../../broker/kotak/m_kotak_live.mjs';
 import { KotakMarketDataHSM } from '../../broker/kotak/m_kotak_hsm.mjs';
 import { SubsManager } from '../subscription/subsservice.mjs';
 
 const usermap = new Map();
 
-const modes = {
+export const modes = {
     HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
-    S1TSAB: { view: 'LIVE_1', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
     S1T1ABS: { view: 'LIVE_1', trade: 'LIVE_1', admin: ['BROKER_AUTH', 'SCRIP_STORE']},
     S1T0AS: { view: 'LIVE_1', admin: ['SCRIP_STORE'] },
     S2T1AB: { view: 'LIVE_2', trade: 'LIVE_1', admin: ['BROKER_AUTH'] },
@@ -30,6 +29,7 @@ const modes = {
     S2TSA0: { view: 'LIVE_2', trade: 'SIMULATION'},
     S3T1AB: { view: 'LIVE_3', trade: 'LIVE_1', admin: ['BROKER_AUTH']},
     S3T0A0: { view: 'LIVE_3'},
+    S5TSABS: { view: 'LIVE_5', trade: 'SIMULATION', admin: ['BROKER_AUTH', 'SCRIP_STORE'] },
     S5T1ABS: { view: 'LIVE_5', trade: 'LIVE_1', admin: ['BROKER_AUTH','SCRIP_STORE'] },
     S6T0A0: { view: 'LIVE_6' },
     TPMODE: { admin: ['SCRIP_STORE', 'LIVE_STREAMING'] },
@@ -38,20 +38,20 @@ const modes = {
 const services = {
     EVENTSERVICE: eventservice,
     PERSISTSERVICE: persistenceservice,
-    AUTHSERVICE: authservice,
     SCRIPSTORE: scripstore,
-    ORDERSIMULATOR: ordersimulator,
     SERVERSTREAM: serverstream,
     COMMONSERVICE: m_common_service,
     ICICIHISTVIEW: m_icici_hist,
     ICICILIVEVIEW: m_icici_live,
     OPENALGOVIEW: m_openalgo_live,
+    AUTHSERVICE: undefined,
     OPENALGOTRADE: undefined,
     KOTAKLIVEVIEW: undefined,
     KOTAKHSMVIEW: undefined,
     KOTAKNEOTRADE: undefined,
     SUBSMANAGER: undefined,
-    CRYPTOSERVICE: undefined
+    CRYPTOSERVICE: undefined,
+    ORDERSIMULATOR: ordersimulator
 };
 
 const providers = {
@@ -60,19 +60,14 @@ const providers = {
     admin: { BROKER_AUTH: 'AUTHSERVICE', SCRIP_STORE: 'SCRIPSTORE', LIVE_STREAMING: 'SERVERSTREAM' }
 };
 
-const access = {
-    view: ['vix', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
-    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'updateorder'],
-    admin: [ 'authenticate', 'scrips', 'subscribe', 'unsubscribe']
-};
-
 export class ConfigService
 {
     static init()
     {
-        services['SOCKETCLIENTS'] = new SocketClientFactory('SOCKETCLIENTS');
+        services['AUTHSERVICE'] = new AuthService('AUTHSERVICE');
         services['ORDERMANAGER'] = new OrderManager('ORDERMANAGER');
         services['CRYPTOSERVICE'] = new CryptoService('CRYPTOSERVICE');
+        services['SOCKETCLIENTS'] = new SocketClientFactory('SOCKETCLIENTS');
 
         if(process.env.SUBSMANAGER === 'Y')
             services['SUBSMANAGER'] = new SubsManager('SUBSMANAGER');
@@ -194,21 +189,6 @@ export class ConfigService
     static getSocketClient(key, appid, mode)
     {
         return services['SOCKETCLIENTS'].getSocketClient(key);
-    }
-
-    static checkAccess(eventName, mode) 
-    {
-        const usertype = this.getProfile(mode);
-        if (Object.hasOwn(usertype, 'view') && access['view'].includes(eventName))
-            return true;
-
-        if (Object.hasOwn(usertype, 'trade') && access['trade'].includes(eventName))
-            return true;
-
-        if (Object.hasOwn(usertype, 'admin') && access['admin'].includes(eventName))
-            return true;
-
-        return false;
     }
 
     static addToUserMap(appid, app_obj)

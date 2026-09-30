@@ -1,6 +1,6 @@
 import {m_common_service as util_service} from './broker/common/m_common.mjs';
 import { ConfigService } from './service/.config/configservice.mjs';
-import { eventservice } from './service/eventservice.mjs';
+import { eventservice } from './service/system/eventservice.mjs';
 
 function registerDataRequests(s, appid,  mode)
 {

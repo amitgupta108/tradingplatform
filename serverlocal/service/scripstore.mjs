@@ -6,9 +6,9 @@ import csvParser from 'csv-parser';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { ConfigService } from './.config/configservice.mjs';
-import { eventservice } from './eventservice.mjs';
+import { eventservice } from './system/eventservice.mjs';
 import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
-import { SystemService } from './service.mjs';
+import { SystemService } from './system/service.mjs';
 
 const FIELD_MAP = {
 	pSymbol:      'token',

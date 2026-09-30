@@ -1,6 +1,6 @@
 import streamer from '../../stream.mjs';
 import { Subscriptions } from '../../service/subscription/subscription.mjs';
-import { eventservice } from '../../service/eventservice.mjs';
+import { eventservice } from '../../service/system/eventservice.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
 
 class BrokerImpl 
@@ -23,7 +23,6 @@ export class BrokerMarketDataImpl extends BrokerImpl
     constructor(name, provider)
     {
         super(name, provider);
-        this.myviewname = name;
         this.simpricefeed = false;
         this.authData;
         this.my_subs;
@@ -100,7 +99,7 @@ export class BrokerMarketDataImpl extends BrokerImpl
     emitQuotes(qt)
     {
         qt.view_mode = this.view_mode;
-        if (this.myviewname === 'ICICIHISTVIEW'){
+        if (this.name === 'ICICIHISTVIEW'){
             streamer.emitQs(qt);
         }
         else {

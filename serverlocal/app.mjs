@@ -1,11 +1,11 @@
-import { ConfigService, ConfigService as services } from './service/.config/configservice.mjs';
+import { ConfigService } from './service/.config/configservice.mjs';
 import apiserver from './apiserver.mjs'; 
 
 export class AppClientManager
 {
     startServices() 
     {
-        services.initializeAll();
+        ConfigService.initializeAll();
     }
 
     connect(s)
@@ -20,7 +20,7 @@ export class AppClientManager
             return;
         }
         
-        services.addToUserMap(appid, { socket: s, mode: mode});
+        ConfigService.addToUserMap(appid, { socket: s, mode: mode});
         this.registerHandlers(s, appid, mode);
 
         s.on("error", (err) => {
@@ -28,10 +28,9 @@ export class AppClientManager
         });
     }
 
-
     registerHandlers(s, appid, mode)
     {
-        const profile = services.getProfile(mode);
+        const profile = ConfigService.getProfile(mode);
 
         if (Object.hasOwn(profile, 'view'));
             apiserver.registerDataRequests(s, appid, mode);
@@ -54,7 +53,8 @@ export class AppClientManager
             if (!implementedEvents.includes(eventName))
                 return next(new Error(`Unsupported event: ${eventName}`));
 
-            if (!services.checkAccess(eventName, mode))
+            const auth = ConfigService.getServiceByName('AUTHSERVICE');
+            if (!auth.checkAccess(eventName, mode))
                 return next(new Error("Unauthorized access to admin resource"));
 
             next();
@@ -62,7 +62,7 @@ export class AppClientManager
     }
 }
 
-import { eventservice } from './service/eventservice.mjs';
+import { eventservice } from './service/system/eventservice.mjs';
 export class ServerClientManager
 {
     constructor() 
@@ -75,6 +75,9 @@ export class ServerClientManager
         eventservice.addListener('quote', (appid, q) => {
             this.sendQuote(appid, q);
         });
+        eventservice.addListener('order', (appid, order) => {
+            this.sendQuote(appid, order);
+        });
     }
      
     connect(s)
@@ -82,10 +85,8 @@ export class ServerClientManager
         console.log('Client connected');
         const appid = crypto.randomUUID();
         this.socketmap.set(appid, s);
-
-        const publickeys = ConfigService.getServiceByName('CRYPTOSERVICE').getServerPublicKeys();
         
-        s.send(JSON.stringify({ type: 'handshake', appid: appid,  keys: publickeys}));
+        s.send(JSON.stringify({ type: 'handshake', appid: appid}));
 
         s.on('message', (input, isBinary) => {
             const payload = isBinary ? input : input.toString();

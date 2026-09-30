@@ -2,7 +2,7 @@ import { TPSocket } from '../clients/TPClient.mjs';
 import { KMDClient } from '../clients/KMDClient.mjs';
 import { HSMClient } from '../clients/HSMClient.mjs';
 import { KotakHSISocket } from '../clients/HSIClient.mjs';
-import { SystemService } from '../service.mjs';
+import { SystemService } from '../system/service.mjs';
 
 const options = {
     autoReconnect: true,

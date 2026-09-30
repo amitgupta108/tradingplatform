@@ -1,6 +1,6 @@
 import { open } from 'lmdb';
 
-import { SystemService } from "../service.mjs";
+import { SystemService } from "./service.mjs";
 
 class PersistenceService extends SystemService
 {

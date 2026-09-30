@@ -1,6 +1,6 @@
 import sutils from './breezeclient.mjs';
 import { QuotesEmitter, breeze } from './appstate.mjs';
-import { eventservice } from '../serverlocal/service/eventservice.mjs';
+import { eventservice } from '../serverlocal/service/system/eventservice.mjs';
 
 eventservice.addListener('icici_auth', (authdata) => {
     breeze.generateSession(authdata.apiSecret, authdata.authcode)

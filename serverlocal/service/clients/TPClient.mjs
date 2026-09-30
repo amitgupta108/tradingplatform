@@ -1,4 +1,3 @@
-import { eventservice } from '../eventservice.mjs';
 import { SocketClient } from './socketclient.mjs';
 
 export class TPSocket extends SocketClient
@@ -21,7 +20,7 @@ export class TPSocket extends SocketClient
         });
 
         this.ws.on('scrips', (data) => {
-            eventservice.emit('scrips', data);
+            this.emit('scrips', data);
         });
 
         this.ws.on('quote', (data) => {

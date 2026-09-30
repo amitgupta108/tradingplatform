@@ -1,6 +1,6 @@
-import {eventservice} from '../eventservice.mjs'
+import { eventservice } from '../../service/system/eventservice.mjs'
 import streamer from '../../stream.mjs';
-import { ConfigService as config } from '../.config/configservice.mjs';
+import { ConfigService} from '../../service/.config/configservice.mjs';
 
 class OrderSimulator
 {
@@ -16,9 +16,9 @@ class OrderSimulator
     init() 
     {
         if (!this.initialized) {
-            const mymodes = config.getModesForService(this.name, 'trade');
+            const mymodes = ConfigService.getModesForService(this.name, 'trade');
             mymodes.forEach((m) => {
-                const s = config.getActiveServiceByMode('view', m);
+                const s = ConfigService.getActiveServiceByMode('view', m);
                 if(s !== undefined)
                 {
                     const eventname = s.registerPriceFeed();
@@ -32,9 +32,10 @@ class OrderSimulator
         }
     }
 
-    placeOrder(appid, order, mode)
+    placeOrder(appid, order)
     {
-        const provider_key = config.getFeatureMode(mode ,'view');
+        const as = ConfigService.getServiceByName('AUTHSERVICE');
+        const provider_key = as.getFeatureModeforApp(appid ,'view');
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++this.counter;
@@ -42,7 +43,7 @@ class OrderSimulator
         order.view_mode = provider_key;
         this.orders.set(order.orderid, order);
 
-        streamer.emitOrders(appid, 'order', order);
+        streamer.emitOrders(order);
         return order;
     }
 
@@ -60,16 +61,16 @@ class OrderSimulator
                 if (order.pricetype === 'MARKET')
                     executed = true;
                 else if (order.pricetype === 'LIMIT')
-                    if (order.action === 'BUY' && q.ltp <= order.price)
+                    if (order.action === 'B' && q.ltp <= order.price)
                         executed = true;
-                    else if (order.action === 'SELL' && q.ltp >= order.price)
+                    else if (order.action === 'S' && q.ltp >= order.price)
                         executed = true;
 
                 if (executed) {
                     order.state = 'completed';
                     order.pricedAt = q.ltp;
                     order.filled_q = order.quantity;
-                    streamer.emitOrders(order.appid, 'order', order);
+                    streamer.emitOrders(order);
                 }
             });
         }
@@ -80,7 +81,7 @@ class OrderSimulator
         const found = this.orders.get(order.orderid);
         if (found !== undefined && found.state === 'opened') {
             found.state = 'cancelled';
-            streamer.emitOrders(appid, 'order', found);
+            streamer.emitOrders(found);
         }
         else
             console.error('cancellation failed - order not found or not open');

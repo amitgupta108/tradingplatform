@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path'; 
 
-import { eventservice } from '../serverlocal/service/eventservice.mjs';
-import { authservice } from '../serverlocal/service/auth/authservice.mjs';
+import { eventservice } from '../serverlocal/service/system/eventservice.mjs';
+import { ConfigService } from '../serverlocal/service/.config/configservice.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -137,7 +137,8 @@ async function handleAPIReq(req, res)
         const provider = body.provider;
         const key = body.key;
 
-        const wrapper = await authservice.value(provider, key);
+        const as = ConfigService.getServiceByName('AUTHSERVICE');
+        const wrapper = await as.value(provider, key);
         res.writeHead(200);
         res.end(JSON.stringify(wrapper));
     }
