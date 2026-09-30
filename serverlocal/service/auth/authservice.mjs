@@ -86,7 +86,7 @@ export class AuthService extends SystemService
     getFeatureModeforApp(appid, feature)
     {
         const mode = this.appids.find((e) => e.appid === appid)?.mode;
-        return mode[feature];
+        return modes[mode][feature];
     }
 
     checkAccess(eventName, mode) 

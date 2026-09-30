@@ -1,7 +1,7 @@
 import { eventservice } from '../../service/system/eventservice.mjs'
 import streamer from '../../stream.mjs';
 import { ConfigService} from '../../service/.config/configservice.mjs';
-
+import { LOTSIZE } from '../../utils/constants.mjs';
 class OrderSimulator
 {
     constructor(name)
@@ -35,12 +35,12 @@ class OrderSimulator
     placeOrder(appid, order)
     {
         const as = ConfigService.getServiceByName('AUTHSERVICE');
-        const provider_key = as.getFeatureModeforApp(appid ,'view');
+        order.view_mode = as.getFeatureModeforApp(appid ,'view');
+        order.quantity = order.quantity * LOTSIZE[order.stockCode];
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++this.counter;
         order.state = 'opened';
-        order.view_mode = provider_key;
         this.orders.set(order.orderid, order);
 
         streamer.emitOrders(order);
