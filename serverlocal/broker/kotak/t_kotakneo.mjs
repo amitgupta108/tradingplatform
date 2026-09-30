@@ -1,7 +1,6 @@
 import { scripstore } from '../../service/scripstore.mjs';
-import { eventservice } from '../../service/eventservice.mjs';
+import { eventservice } from '../../service/system/eventservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
-import { ConfigService } from '../../service/.config/configservice.mjs';
 import { EXCHANGES, LOTSIZE } from '../../utils/constants.mjs';
 
 export class KotakNeoTradeService extends BrokerTradeServiceImpl 

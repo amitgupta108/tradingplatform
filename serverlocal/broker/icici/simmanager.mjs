@@ -1,6 +1,6 @@
 import {simstate} from './simstate.mjs';
 import qserver from '../../../srvr/qserver.mjs';
-import { eventservice } from '../eventservice.mjs';
+import { eventservice } from '../../service/system/eventservice.mjs';
 
 class Simulator
 {

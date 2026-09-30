@@ -1,4 +1,4 @@
-import { eventservice } from '../../service/eventservice.mjs';
+import { eventservice } from '../../service/system/eventservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 import { scripstore } from '../../service/scripstore.mjs';
 

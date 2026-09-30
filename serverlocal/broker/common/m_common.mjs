@@ -2,7 +2,7 @@ import qserver from '../../../srvr/qserver.mjs';
 import streamer from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { EXCHANGES, FUT_EXPIRIES, OPT_EXPIRIES } from '../../utils/constants.mjs'
+import { EXCHANGES, FUT_EXPIRIES} from '../../utils/constants.mjs'
 
 class CommonService extends BrokerMarketDataImpl 
 {

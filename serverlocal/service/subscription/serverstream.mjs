@@ -1,4 +1,4 @@
-import { ConfigService } from "./.config/configservice.mjs"
+import { ConfigService } from "../.config/configservice.mjs"
 
 class ServerStreamManager 
 {

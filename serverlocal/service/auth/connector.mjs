@@ -1,4 +1,4 @@
-import { eventservice } from "../eventservice.mjs";
+import { eventservice } from "../system/eventservice.mjs";
 import { persistenceservice } from '../system/persistence.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
@@ -238,7 +238,7 @@ export class TPAppConnector extends ICICIConnector
 
     async authenticate(params) 
     {
-        const api_url = process.env.TP_SERVER + '/api/value';
+        const api_url = `${process.env.TP_SERVER}:${process.env.TP_PORT}` + '/api/value';
         const options = {
             method: 'POST',
             headers: {

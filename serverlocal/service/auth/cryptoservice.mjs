@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { SystemService } from '../service.mjs';
+import { SystemService } from '../system/service.mjs';
 
 export class CryptoService extends SystemService
 {

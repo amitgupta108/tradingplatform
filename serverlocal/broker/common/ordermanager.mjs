@@ -1,7 +1,7 @@
-import streamer from '../stream.mjs';
-import { ConfigService } from './.config/configservice.mjs';
-import { eventservice } from './eventservice.mjs';
-import { LOTSIZE } from '../utils/constants.mjs';
+import streamer from '../../stream.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
+import { eventservice } from '../../service/system/eventservice.mjs';
+import { LOTSIZE } from '../../utils/constants.mjs';
 
 export class OrderManager 
 {

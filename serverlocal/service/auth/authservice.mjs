@@ -1,13 +1,20 @@
+import { SystemService } from '../system/service.mjs';
 import { Connector, KotakConnector, ICICIConnector, TPAppConnector } from './connector.mjs';
-import { eventservice } from '../eventservice.mjs';
+import { eventservice } from '../system/eventservice.mjs';
+import { ConfigService, modes } from '../.config/configservice.mjs';
 import apps from '../../config/app_config.json' with {type: 'json'};
 
-class AuthService
+const access = {
+    view: ['vix', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
+    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'updateorder'],
+    admin: [ 'authenticate', 'scrips', 'subscribe', 'unsubscribe']
+};
+
+export class AuthService extends SystemService
 {
-    constructor()
+    constructor(name)
     {
-        this.name = 'AUTHSERVICE';
-        this.initialized = false;
+        super(name);
         this.connectors = {
             kotak: new KotakConnector('kotak', true, true),
             icici: new ICICIConnector('icici', true, true),
@@ -75,6 +82,26 @@ class AuthService
                 && app.mode === mode
         });
     }
-}
 
-export const authservice = new AuthService();
+    getFeatureModeforApp(appid, feature)
+    {
+        const mode = this.appids.find((e) => e.appid === appid)?.mode;
+        return mode[feature];
+    }
+
+    checkAccess(eventName, mode) 
+    {
+        const usertype = ConfigService.getProfile(mode);
+        if (Object.hasOwn(usertype, 'view') && access['view'].includes(eventName))
+            return true;
+
+        if (Object.hasOwn(usertype, 'trade') && access['trade'].includes(eventName))
+            return true;
+
+        if (Object.hasOwn(usertype, 'admin') && access['admin'].includes(eventName))
+            return true;
+
+        return false;
+    }
+
+}
