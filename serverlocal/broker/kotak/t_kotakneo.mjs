@@ -1,25 +1,34 @@
-import { scripstore } from '../../service/scripstore.mjs';
-import { eventservice } from '../../service/system/eventservice.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 import { EXCHANGES, LOTSIZE } from '../../utils/constants.mjs';
 
 export class KotakNeoTradeService extends BrokerTradeServiceImpl 
 {
-    constructor(name, provider) {
-        super(name, provider);
+    constructor(name) {
+        super(name);
     }
 
     addListeners() {
-        eventservice.addListener('kotak_auth', (data) => {
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('kotak_auth', (data) => {
+            this.onAuthData(data);
             this.ordermanager.register(this.trade_mode, 'HSICLIENT');
-            this.api_wrapper = new KotakTradeAPI(this.name, data);
         });
+        
+        this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
+        this.adapter = this.af.getAdapter('KOTAKADAPTER');
+    }
+
+    onAuthData(authData){
+        this.authData = authData;
+        this.adapter.initiateConnect(this.authData);
+        this.initialized = true;
     }
 
     async placeOrder(appid, order, modify = false) {
         const korder = this.toKotakOrder(order);
         const action = modify ? 'modify' : 'order';
-        const response = await this.api_wrapper.post(action, korder);
+        const response = await this.adapter.post(action, korder);
 
         if (response.ok) {
             const result = (await response.json());
@@ -41,8 +50,9 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
 
     toKotakOrder(order) 
     {
-        const new_order = {};
+        const scripstore = ConfigService.getServiceByName('SCRIPSTORE');
 
+        const new_order = {};
         new_order.am = 'NO',
         new_order.dq = '0',
         new_order.mp = '6',
@@ -70,7 +80,7 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
     }
 
     async cancelOrder(appid, orderid) {
-        const response = await this.api_wrapper.post('cancel', { on: orderid });
+        const response = await this.adapter.post('cancel', { on: orderid });
         if (response.ok)
             return (await response.json());
 
@@ -78,7 +88,7 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
     }
 
     async orderbook(appid, stockCode) {
-        const response = await this.api_wrapper.get('orderbook');
+        const response = await this.adapter.get('orderbook');
         let orders;
         if (response.ok) {
             const order_json = (await response.json());
@@ -102,7 +112,7 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
     }
 
     async positions(appid, stockCode, cf = true) {
-        const response = await this.api_wrapper.get('positions');
+        const response = await this.adapter.get('positions');
         let positions;
         if (response.ok) {
             const position_json = (await response.json());
@@ -116,55 +126,5 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
         }
         console.log('error fetching positions ' + response.status + ' ' + response.statusText);
         return [];
-    }
-}
-
-class KotakTradeAPI {
-    constructor(provider, authData) {
-        this.provider = provider;
-        this.authData = authData;
-        this.endpoints = {};
-        this.cache_url();
-    }
-
-    cache_url() {
-        const baseUrl = this.authData.baseUrl;
-        this.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
-        this.endpoints.modify = new URL('/quick/order/vr/modify', baseUrl).href;
-        this.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
-        this.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
-        this.endpoints.positions = new URL('/quick/user/positions', baseUrl).href;
-    }
-
-    getHeaders() {
-        return {
-            'accept': 'application/json',
-            'Sid': this.authData.hsi_sid,
-            'Auth': this.authData.hsi_token,
-            'neo-fin-key': 'neotradeapi',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        };
-    }
-
-    post(endpt, body) {
-        const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
-        const headers = this.getHeaders();
-        const api_url = this.endpoints[endpt];
-        const options = {
-            method: 'POST',
-            headers: headers,
-            body: requestBody.toString()
-        };
-        return fetch(api_url, options);
-    }
-
-    get(endpt) {
-        const headers = this.getHeaders();
-        const api_url = this.endpoints[endpt];
-        const options = {
-            method: 'GET',
-            headers: headers
-        }
-        return fetch(api_url, options);
     }
 }

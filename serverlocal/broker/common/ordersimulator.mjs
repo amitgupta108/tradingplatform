@@ -1,14 +1,13 @@
-import { eventservice } from '../../service/system/eventservice.mjs'
-import streamer from '../../stream.mjs';
 import { ConfigService} from '../../service/.config/configservice.mjs';
 import { LOTSIZE } from '../../utils/constants.mjs';
-class OrderSimulator
+import { UserService } from '../../service/system/service.mjs';
+
+export class OrderSimulator extends UserService
 {
     constructor(name)
     {
-        this.name = name;
+        super(name);
         this.mytradename = this.name;
-        this.initialized = false;
         this.counter = 50000;
         this.orders = new Map();
     }
@@ -16,13 +15,15 @@ class OrderSimulator
     init() 
     {
         if (!this.initialized) {
+            this.es = ConfigService.getServiceByName('EVENTSERVICE');
+
             const mymodes = ConfigService.getModesForService(this.name, 'trade');
             mymodes.forEach((m) => {
                 const s = ConfigService.getActiveServiceByMode('view', m);
                 if(s !== undefined)
                 {
                     const eventname = s.registerPriceFeed();
-                    eventservice.addListener(eventname, (q) => {
+                    this.es.addListener(eventname, (q) => {
                         this.orderExecutionSim(eventname, q);
                     });
                 }
@@ -43,7 +44,7 @@ class OrderSimulator
         order.state = 'opened';
         this.orders.set(order.orderid, order);
 
-        streamer.emitOrders(order);
+        this.es.emit('ordersim', order);
         return order;
     }
 
@@ -70,7 +71,7 @@ class OrderSimulator
                     order.state = 'completed';
                     order.pricedAt = q.ltp;
                     order.filled_q = order.quantity;
-                    streamer.emitOrders(order);
+                    this.es.emit('ordersim', order);
                 }
             });
         }
@@ -81,7 +82,7 @@ class OrderSimulator
         const found = this.orders.get(order.orderid);
         if (found !== undefined && found.state === 'opened') {
             found.state = 'cancelled';
-            streamer.emitOrders(found);
+            this.es.emit('ordersim', found);
         }
         else
             console.error('cancellation failed - order not found or not open');
@@ -101,5 +102,3 @@ class OrderSimulator
         return [];
     }
 }
-
-export const ordersimulator = new OrderSimulator('ORDERSIMULATOR');

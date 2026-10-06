@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path'; 
 
-import { eventservice } from '../serverlocal/service/system/eventservice.mjs';
 import { ConfigService } from '../serverlocal/service/.config/configservice.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -121,7 +120,8 @@ function handleAuthReq(parsedUrl, res)
         authdata.provider = 'icici';
         authdata.authcode = parsedUrl.searchParams.get('apisession');        
     }        
-    eventservice.emit('ext_auth', authdata);
+    const es = ConfigService.getServiceByName('EVENTSERVICE');
+    es.emit('ext_auth', authdata);
     const responseType = 'text/html';
     res.writeHead(200, { 'Content-Type': responseType });
     res.end('<!DOCTYPE html><title>Redirect</title><label onclick="window.close()">X</label>', 'utf-8');
@@ -135,10 +135,9 @@ async function handleAPIReq(req, res)
     {
         const body = await getRequestBody(req);
         const provider = body.provider;
-        const key = body.key;
-
+        
         const as = ConfigService.getServiceByName('AUTHSERVICE');
-        const wrapper = await as.value(provider, key);
+        const wrapper = await as.authdata(provider);
         res.writeHead(200);
         res.end(JSON.stringify(wrapper));
     }

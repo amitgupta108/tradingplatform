@@ -1,9 +1,9 @@
-import {m_common_service as util_service} from './broker/common/m_common.mjs';
 import { ConfigService } from './service/.config/configservice.mjs';
-import { eventservice } from './service/system/eventservice.mjs';
+import { streamer } from './stream.mjs';
 
 function registerDataRequests(s, appid,  mode)
 {
+    const util_service = ConfigService.getServiceByName('COMMONSERVICE');
     const market_service = ConfigService.getActiveServiceByMode('view', mode);
 
     s.on('startv2', (msg) => {
@@ -38,7 +38,7 @@ function registerDataRequests(s, appid,  mode)
         if (mode.startsWith('HISTORY'))
             market_service.exit(appid);
 
-        ConfigService.deleteFromUserMap(appid);
+        streamer.deleteFromUserMap(appid);
         s.disconnect();
 
         console.log('user exited:' + appid);
@@ -99,12 +99,14 @@ function registerAdminRequests(s, appid, mode)
 
     s.on('authenticate', catchAsync((text) => {
         const service = ConfigService.getAdminService(mode, 'BROKER_AUTH');            
-        if(text.length === 8)
-            eventservice.emit('ext_auth', { 
+        if(text.length === 8) {
+            const es = ConfigService.getServiceByName('EVENTSERVICE');
+            es.emit('ext_auth', { 
                 date: new Date().toDateString(),
                 provider: 'icici',
                 authcode: text
             });
+        }
         else 
             return service.authenticate(text);
     }, 'authenticate'));

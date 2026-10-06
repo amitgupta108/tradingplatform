@@ -1,11 +1,12 @@
-import qserver from '../../stream.mjs';
-import { SocketClient } from './socketclient.mjs';
+import { streamer } from '../../stream.mjs';
+import { KotakAdapter } from './KotakAdapter.mjs';
 
-export class KotakHSISocket extends SocketClient
+export class KotakHSISocket extends KotakAdapter
 {
     constructor(options) {
         super('HSICLIENT', options);
-        this.wsping;
+        this.wsping = undefined;
+        this.lasthb = undefined;
     }
 
     initiateConnect(authData) {
@@ -17,7 +18,7 @@ export class KotakHSISocket extends SocketClient
     onOpen() {
         this.authenticate();
         this.ws.on('pong', () => {
-            qserver.broadcast('hb', { order_socket: this.ws?.readyState });
+            streamer.broadcast('hb', { order_socket: this.ws?.readyState });
         });
     }
 
@@ -39,13 +40,20 @@ export class KotakHSISocket extends SocketClient
     }
 
     starthb() {
-        qserver.broadcast('hb', { order_socket: this.ws?.readyState });
+
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
 
         if (this.wsping !== undefined)
             clearInterval(this.wsping);
 
         this.wsping = setInterval(() => {
+            if(this.lasthb !== undefined && Date.now() - this.lasthb > this.heartbeatInterval + 5000) {
+                streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+                this.log('Heartbeat timeout, closing socket');
+                this.ws.close();
+                return;
+            }
             this.ws.ping();
-        }, 60000);
+        }, this.heartbeatInterval);
     }
 }

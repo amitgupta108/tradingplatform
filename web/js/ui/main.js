@@ -5,10 +5,11 @@ function emit(event, arg1, arg2) {
 function historyParams()
 {
 	const endTime = instrument.simStartTime ?? Date.now();
-	const startTime = endTime - 3 * 24 * 60 * 60 * 1000; // 3 days back
+	const startTime = endTime - 4 * 24 * 60 * 60 * 1000; // 4 days back
 
 	const p = {
 		stockCode: instrument.stockCode,
+		fExpiry: instrument.fExpiry,
 		startTime: startTime,
 		endTime: endTime - 1000,
 		interval: '5minute'
@@ -16,14 +17,12 @@ function historyParams()
 	return p;
 }
 
-function loadPreData()
+function getHistory(symbols)
 {
-	const keys = ['futures', 'index', 'vix'];
-
 	const requests = new Array();
-	keys.forEach((k) => {
+	symbols.forEach((s) => {
 		const p = historyParams();
-		p.key = k;
+		p.symbol = s;
 		requests.push(p);
 	});
 	emit('history', requests);
@@ -37,7 +36,8 @@ function changeSpeed()
 
 function start()
 {
-	loadPreData();
+	const futures = instrument.stockCode + instrument.fExpiry + 'FUT';
+	getHistory([futures, instrument.stockCode, 'INDVIX']);
 	emit('startv2', instrument); 
 }
 
@@ -99,9 +99,9 @@ function showChart() {
 		container = n_oc_container;
 
 	const rows = container.querySelectorAll('tr.row_background');
-	if (rows.length === 0)
-		return;
-	const symbols = Array.from(rows).map((r) => r.title);
-	ChartEventer.run(symbols);
-	options_chart.show(symbols, true);
+	if (rows.length !== 0)
+	{
+		const symbols = Array.from(rows).map((r) => r.title);
+		options_chart.show(symbols, true);
+	}
 }

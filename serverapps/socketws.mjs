@@ -13,7 +13,7 @@ export class WSServer
     {
         const { ServerClientManager } = await import('../serverlocal/app.mjs');
         const app = new ServerClientManager();
-        app.startServices();
+        await app.startServices();
 
         this.wss.on('connection', (s) => {
             app.connect(s);

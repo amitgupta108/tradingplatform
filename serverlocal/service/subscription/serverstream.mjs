@@ -1,17 +1,11 @@
+import { InfraService } from "../system/service.mjs"
 import { ConfigService } from "../.config/configservice.mjs"
 
-class ServerStreamManager 
+export class ServerStreamManager extends InfraService
 {
     constructor(name)
     {
-        this.name = name;
-        this.initialized = false;
-    }
-
-    init()
-    {
-        this.initialized = true;
-        return {status: 'initialized'};
+        super(name);
     }
 
     subscribe(serverid, list, provider){
@@ -24,5 +18,3 @@ class ServerStreamManager
         marketservice.subscribe(serverid, list, 'unsub');
     }
 }
-
-export const serverstream = new ServerStreamManager('SERVERSTREAM');

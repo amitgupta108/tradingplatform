@@ -1,103 +1,35 @@
-import { eventservice } from '../system/eventservice.mjs';
-import { scripstore } from '../scripstore.mjs';
-import { ordersimulator } from '../../broker/common/ordersimulator.mjs'
-import { serverstream } from '../subscription/serverstream.mjs';
-import { persistenceservice } from '../system/persistence.mjs'
-import { m_icici_live } from '../../broker/icici/m_breeze_live.mjs';
-import { m_icici_hist } from '../../broker/icici/m_breeze_hist.mjs';
-import { m_openalgo_live } from '../../broker/openalgo/m_openalgo.mjs';
-import { m_common_service } from '../../broker/common/m_common.mjs';
+import  { services, modes, providers} from '../../utils/constants.mjs';
+import { SystemService } from '../system/service.mjs'
 
-import { AuthService } from '../auth/authservice.mjs';
-import { CryptoService } from '../auth/cryptoservice.mjs';
-import { OpenAlgoTradeService } from '../../broker/openalgo/t_openalgo.mjs';
-import { KotakNeoTradeService } from '../../broker/kotak/t_kotakneo.mjs';
-import { SocketClientFactory } from './socketclientfactory.mjs';
-import { OrderManager } from '../../broker/common/ordermanager.mjs';
-import { KotakMarketDataLive } from '../../broker/kotak/m_kotak_live.mjs';
-import { KotakMarketDataHSM } from '../../broker/kotak/m_kotak_hsm.mjs';
-import { SubsManager } from '../subscription/subsservice.mjs';
-
-const usermap = new Map();
-
-export const modes = {
-    HISTORY: { view: 'HISTORY', trade: 'SIMULATION', admin: ['BROKER_AUTH'] },
-    S1T1ABS: { view: 'LIVE_1', trade: 'LIVE_1', admin: ['BROKER_AUTH', 'SCRIP_STORE']},
-    S1T0AS: { view: 'LIVE_1', admin: ['SCRIP_STORE'] },
-    S2T1AB: { view: 'LIVE_2', trade: 'LIVE_1', admin: ['BROKER_AUTH'] },
-    S2T2A0: { view: 'LIVE_2', trade: 'LIVE_2'},
-    S2TSA0: { view: 'LIVE_2', trade: 'SIMULATION'},
-    S3T1AB: { view: 'LIVE_3', trade: 'LIVE_1', admin: ['BROKER_AUTH']},
-    S3T0A0: { view: 'LIVE_3'},
-    S5TSABS: { view: 'LIVE_5', trade: 'SIMULATION', admin: ['BROKER_AUTH', 'SCRIP_STORE'] },
-    S5T1ABS: { view: 'LIVE_5', trade: 'LIVE_1', admin: ['BROKER_AUTH','SCRIP_STORE'] },
-    S6T0A0: { view: 'LIVE_6' },
-    TPMODE: { admin: ['SCRIP_STORE', 'LIVE_STREAMING'] },
-};
-
-const services = {
-    EVENTSERVICE: eventservice,
-    PERSISTSERVICE: persistenceservice,
-    SCRIPSTORE: scripstore,
-    SERVERSTREAM: serverstream,
-    COMMONSERVICE: m_common_service,
-    ICICIHISTVIEW: m_icici_hist,
-    ICICILIVEVIEW: m_icici_live,
-    OPENALGOVIEW: m_openalgo_live,
-    AUTHSERVICE: undefined,
-    OPENALGOTRADE: undefined,
-    KOTAKLIVEVIEW: undefined,
-    KOTAKHSMVIEW: undefined,
-    KOTAKNEOTRADE: undefined,
-    SUBSMANAGER: undefined,
-    CRYPTOSERVICE: undefined,
-    ORDERSIMULATOR: ordersimulator
-};
-
-const providers = {
-    view: { LIVE_1: 'KOTAKHSMVIEW', LIVE_2: 'OPENALGOVIEW', LIVE_3: 'ICICILIVEVIEW', HISTORY: 'ICICIHISTVIEW', LIVE_5: 'KOTAKLIVEVIEW', LIVE_6: 'COMMONSERVICE'},
-    trade: { LIVE_1: 'KOTAKNEOTRADE', LIVE_2: 'OPENALGOTRADE', SIMULATION: 'ORDERSIMULATOR' },
-    admin: { BROKER_AUTH: 'AUTHSERVICE', SCRIP_STORE: 'SCRIPSTORE', LIVE_STREAMING: 'SERVERSTREAM' }
-};
-
-export class ConfigService
+export class ConfigService extends SystemService
 {
-    static init()
+    constructor(name)
     {
-        services['AUTHSERVICE'] = new AuthService('AUTHSERVICE');
-        services['ORDERMANAGER'] = new OrderManager('ORDERMANAGER');
-        services['CRYPTOSERVICE'] = new CryptoService('CRYPTOSERVICE');
-        services['SOCKETCLIENTS'] = new SocketClientFactory('SOCKETCLIENTS');
+        super(name);
+    }
+    
+    static async init()
+    {
+        this.services = services;
+        this.modes = modes;
+        this.providers = providers;
 
-        if(process.env.SUBSMANAGER === 'Y')
-            services['SUBSMANAGER'] = new SubsManager('SUBSMANAGER');
-        
-        if (process.env.KOTAKLIVEVIEW === 'Y')     
-            services['KOTAKLIVEVIEW'] = new KotakMarketDataLive('KOTAKLIVEVIEW', this.getSocketClient('KMDCLIENT'));
-        
-        if (process.env.KOTAKHSMVIEW === 'Y')
-            services['KOTAKHSMVIEW'] = new KotakMarketDataHSM('KOTAKHSMVIEW', this.getSocketClient('HSMCLIENT'));
-
-        if (process.env.KOTAKNEOTRADE === 'Y')
-            services['KOTAKNEOTRADE'] = new KotakNeoTradeService('KOTAKNEOTRADE', undefined);
-
-        if (process.env.OPENALGOTRADE === 'Y')
-            services['OPENALGOTRADE'] = new OpenAlgoTradeService('OPENALGOTRADE', undefined);
-
+        for(const [k, v] of Object.entries(this.services)) {
+            if (v.init === 'Y') {
+                const module  = await import(v.filepath);
+                this.services[k].ref = new module[v.classdef](k);
+            }
+        }
         this.initialized = true;
     }
     
-    static initializeAll() 
+    static async initializeAll() 
     {
-        this.init();
-        const list = Object.entries(services);
-        const active = list.filter(([k, v]) => {
-            return process.env[k] === 'Y';
-        });
-
-        const val = active.map(([k, v]) => v);
-        [...new Set(val)].forEach((v) => {
-            this.doInit(v);
+        await this.init();
+        const list = Object.entries(this.services);
+        list.forEach(([k, v]) => {
+            if (v.init === 'Y' && k !== 'CONFIGSERVICE')
+                this.doInit(v.ref);
         });
     }
 
@@ -120,12 +52,12 @@ export class ConfigService
 
     static getServiceByName(name)
     {
-        return services[name];
+        return this.services[name].ref;
     }
 
     static getKeyByFeature(name, feature) 
     {
-        const entry = Object.entries(providers[feature]).find(([k, v]) => {
+        const entry = Object.entries(this.providers[feature]).find(([k, v]) => {
             return v === name;
         });
 
@@ -135,34 +67,34 @@ export class ConfigService
 
     static getActiveServiceByMode(feature, mode) 
     {
-        const v = modes[mode];    
+        const v = this.modes[mode];    
         const provider_key = v[feature];
-        const provider_name = providers[feature][provider_key];
-        if (process.env[provider_name] === 'Y')
-            return services[provider_name];
+        const provider_name = this.providers[feature][provider_key];
+        if (this.services[provider_name]?.init === 'Y')
+            return this.services[provider_name].ref;
     }
 
     static getAdminService(mode, feature) {
-        const v = modes[mode];
+        const v = this.modes[mode];
         const provider_keys = v['admin'];
-        const provider_name = providers['admin'][feature];
-        if (process.env[provider_name] === 'Y' && provider_keys.includes(feature))
-            return services[provider_name];
+        const provider_name = this.providers['admin'][feature];
+        if (this.services[provider_name]?.init === 'Y' && provider_keys.includes(feature))
+            return this.services[provider_name].ref;
     }
 
     static getProfile(mode) {
-        return modes[mode];
+        return this.modes[mode];
     }
 
     static getFeatureMode(mode, feature) {
-        return modes[mode][feature];
+        return this.modes[mode][feature];
     }
 
     static getModesForService(name, feature) 
     {
         const providerkey = this.getKeyByFeature(name, feature);
         const partner_keys = [];
-        const fModes = Object.entries(modes).filter(([k, v]) => {
+        const fModes = Object.entries(this.modes).filter(([k, v]) => {
             if (v[feature] === providerkey) {
                 partner_keys.push(k);
                 return true;
@@ -175,7 +107,7 @@ export class ConfigService
 
     static getParentModes(feature, feature_modes)
     {
-        return Object.entries(modes).flatMap(([k, v]) => {
+        return Object.entries(this.modes).flatMap(([k, v]) => {
             
             const match = Object.entries(v).filter(([f, service_key]) => {
                 return feature === f
@@ -184,29 +116,5 @@ export class ConfigService
 
             return match.length > 0 ? [k] : [];
         });
-    }
-
-    static getSocketClient(key, appid, mode)
-    {
-        return services['SOCKETCLIENTS'].getSocketClient(key);
-    }
-
-    static addToUserMap(appid, app_obj)
-    {
-        usermap.set(appid, app_obj);
-    }
-
-    static getFromUserMap(appid)
-    {
-        return usermap.get(appid);
-    }
-
-    static deleteFromUserMap(appid){
-        usermap.delete(appid);
-    }
-
-    static usermapEntries()
-    {
-        return usermap.entries();
     }
 }

@@ -1,10 +1,8 @@
 import { SystemService } from './service.mjs';
 
-class EventService extends SystemService
+export class EventService extends SystemService
 {
-    constructor() {
-        super('EVENTSERVICE');
+    constructor(name) {
+        super(name);
     }
 }
-
-export const eventservice = new EventService();

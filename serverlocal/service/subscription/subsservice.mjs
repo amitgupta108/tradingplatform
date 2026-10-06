@@ -1,15 +1,12 @@
 import { ConfigService } from "../.config/configservice.mjs";
-import { eventservice } from "../system/eventservice.mjs";
 import { SubscribersMap } from "./subscription.mjs";
+import { UserService } from "../system/service.mjs";
 
-export class SubsManager 
+export class SubsManager extends UserService
 {
     constructor(name) 
     {
-        this.name = name;
-        eventservice.addListener('SERVERAPP', (event, appid, data) => {
-            this.handleMessage(event, appid, data)
-        });
+        super(name);
         this.data_subscribers = new SubscribersMap();
         this.order_subscribers = new SubscribersMap();
         this.initialized = false;
@@ -17,11 +14,26 @@ export class SubsManager
     
     init()
     {
-        this.kotak_data = ConfigService.getSocketClient('KMDCLIENT');
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('SERVERAPP', (message) => {
+            if(message.profile.mode === 'history')
+                this.historyClient(message);
+            else
+                this.handleMessage(message)
+        });
+        this.es.addListener('ordersim', (order) => {
+            this.onOrder('ORDERSIMULATOR', order);
+        });
+
+        this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
+        this.kotak_data = this.sf.getAdapter('KMDCLIENT');
         this.kotak_data.addListener('quote', (arg) => this.onQuotes(arg));
 
-        this.kotak_trade = ConfigService.getSocketClient('HSICLIENT');
+        this.kotak_trade = this.sf.getAdapter('HSICLIENT');
         this.kotak_trade.addListener('order', (notifier, order) => this.onOrder(notifier, order));
+
+        this.order_simulator = ConfigService.getServiceByName('ORDERSIMULATOR');
+        this.history_simulator = ConfigService.getServiceByName('SIMULATOR');
 
         this.initialized = true;
         return {status: 'success'};
@@ -31,22 +43,22 @@ export class SubsManager
         const subscribers = this.data_subscribers.getSubscribers(q.token);
         if (subscribers !== undefined && subscribers.length >= 0)
             subscribers.forEach((appid) => {
-                eventservice.emit('quote', appid, q);
+                this.es.emit('quote_subsmanager_serverclient', appid, q);
             });
     }
 
     onOrder(notifier, order) {
-        const subscribers = this.order_subscribers.getSubscribers(order.symbol);
-        if (subscribers !== undefined || subscribers.length !== 0)
-            subscribers.forEach((appid) => {
-                eventservice.emit('order', appid, order);
-            });    
+        
+        this.es.emit('order_subsmanager_serverclient', order.appid, order);
+        
     }
 
-    handleMessage(event, appid, data) 
+    handleMessage(message) 
     {
         try 
         {
+            const { event, profile, data } = message;
+            const appid = message.appid;
             if (['subscribe', 'unsubscribe'].includes(event)) {
                 const requests = [];
                 for(const r of data) {
@@ -62,6 +74,14 @@ export class SubsManager
             else if (event === 'order') {
                 this.order_subscribers.addRequests(appid, data); 
             }
+            else if (event === 'place_order') {
+                const order = this.order_simulator.placeOrder(appid, data);
+                return { status: 'success', order: order };
+            }
+            else if (event === 'history')
+            {
+                this.history_simulator.clientConfigure(appid, data.startTime, '1x');
+            }
             else {
                 return { status: 'error', message: 'Unknown event type' };
             }
@@ -70,4 +90,13 @@ export class SubsManager
             return { status: 'error', message: error.message };
         }
     }
-}
+
+    placeOrder(appid, order) {
+        return this.order_simulator.placeOrder(appid, order);
+    }
+
+    historyClient(message) {
+        const { appid, data } = message;
+        this.history_simulator.clientConfigure(appid, data.startTime, '1x');
+    }
+};

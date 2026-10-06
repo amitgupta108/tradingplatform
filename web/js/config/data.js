@@ -12,16 +12,6 @@ const LOT_SIZE = {
   BANKNIFTY: 25 
 };
 
-const EXPIRIES = {
-  NIFTY: {
-    FIRST: '06OCT26', 
-    SECOND: '13OCT26'
-  },
-  CRUDEOIL: {
-    FIRST: '15OCT26'
-  }
-}
-
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id');
 let instrument;

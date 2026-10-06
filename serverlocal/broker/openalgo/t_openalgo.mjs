@@ -1,17 +1,24 @@
-import OpenAlgo from 'openalgo';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 
 export class OpenAlgoTradeService extends BrokerTradeServiceImpl 
 {
+    constructor(name)
+    {
+        super(name);
+    }
+    
     addListeners() {
-        this.provider = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
+        this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
+        this.provider = this.sf.getAdapter('OPENALGOCLIENT');
 
-        return this.provider.connect()
+        if (this.provider._wsClient && !(this.provider._wsClient.isConnecting || this.provider._wsClient.isConnected))
+            return this.provider.connect()
             .then(() => {
                 return { status: 'success' }
             });
     }
-
+    
     async orderbook(appid, stockCode) {
         var response = await this.provider.orderbook();
         if (response.status === 'success')
