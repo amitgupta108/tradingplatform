@@ -1,36 +1,43 @@
-import { eventservice } from '../../service/system/eventservice.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
-import { scripstore } from '../../service/scripstore.mjs';
 
 export class KotakMarketData extends BrokerMarketDataImpl 
 {
-    constructor(name, provider)
+    constructor(name)
     {
-        super(name, provider);
+        super(name);
+        this.scrips = ConfigService.getServiceByName('SCRIPSTORE');
     }
 
     addListeners() {
-        this.provider.addListener('quote', (arg) => this.onQuotes(arg));
-        this.provider.addListener('snapshot', (arg) => this.onSnapshot(arg));
-        eventservice.addListener('kotak_auth', (arg) => this.onAuthdata(arg));
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('kotak_auth', (arg) => this.onAuthdata(arg));
+
+        const adapter = this.name === 'KOTAKLIVEVIEW' ? 'KMDCLIENT' : 'HSMCLIENT';
+        this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
+        this.adapter = this.sf.getAdapter(adapter);
+        this.adapter.addListener('quote', (arg) => this.onQuotes(arg));
+        this.adapter.addListener('snapshot', (arg) => this.onSnapshot(arg));
     }
 
     onAuthdata(authdata) {
         this.authData = authdata;
-        this.provider.initiateConnect(this.authData);
+        this.adapter.initiateConnect(this.authData);
         this.initialized = true;
         console.log('Kotak authdata available');
     }
 
-    subscribe(appid, list, action) {
+    subscribe(appid, list, action) 
+    {
+        action = action === 'start' ? 'subs' : action;
         this.my_subs.addRequests(appid, list);
         const requests = this.buildRequests(list);
 
         if (requests.i_reqs.length > 0)
-            this.provider.subscribe(requests.i_reqs, 'Indices', action, false);
+            this.adapter.subscribe(requests.i_reqs, 'Indices', action, false);
 
         if (requests.s_reqs.length > 0)
-            this.provider.subscribe(requests.s_reqs, 'Scrips', action, false);
+            this.adapter.subscribe(requests.s_reqs, 'Scrips', action, false);
     }
 
     buildRequests(list) 
@@ -41,7 +48,7 @@ export class KotakMarketData extends BrokerMarketDataImpl
                 e.token = e.symbol === 'NIFTY' ? 'NIFTY 50' : e.symbol;
                 indices.push(e.exchange + '|' + e.token);
             } else {
-                e.token = scripstore.findScripByRefKey(e.symbol)?.token;
+                e.token = this.scrips.findScripByRefKey(e.symbol)?.token;
                 scrips.push(e.exchange + '|' + e.token);
             }
 

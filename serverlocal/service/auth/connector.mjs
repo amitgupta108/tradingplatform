@@ -1,8 +1,26 @@
-import { eventservice } from "../system/eventservice.mjs";
-import { persistenceservice } from '../system/persistence.mjs';
+import { ConfigService } from '../.config/configservice.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
 
+const authdatatemplate = {
+    icici: {
+        provider: undefined,
+        date: undefined,
+        appKey: undefined,
+        appSecret: undefined,
+        authcode: undefined
+    },
+    kotak: {
+        provider: undefined,
+        date: undefined,
+        hsm_sid: undefined,
+        hsm_token: undefined,
+        feedUrl: undefined,
+        baseUrl: undefined,
+        hsi_sid: undefined,
+        hsi_token: undefined
+    }
+};
 export class Connector
 {
     constructor(provider, notify = true, load_on_start = true){
@@ -15,14 +33,10 @@ export class Connector
 
     async loadAuthdata()
     {
-        let l_authdata = this.getEmptyAuthdata(this.provider);
-        l_authdata = await Connector.authkeys(this.provider, l_authdata);
+        const l_authdata = await Connector.authkeys(this.provider, undefined);
         if(l_authdata?.date === new Date().toDateString())
         {
-            this.authdata = l_authdata;
-            if(this.notify)
-                eventservice.emit(`${this.provider}_auth`, this.authdata);
-
+            await this.saveAndNotify(l_authdata);
             this.initialized = true;
         }
         return this.initialized;
@@ -59,6 +73,20 @@ export class Connector
         });;
     }
 
+    getAuthdataTemplate(provider)
+    {
+        return authdatatemplate[provider];
+    }
+
+    async saveAndNotify(authdata)
+    {
+        this.authdata = authdata;
+        const es = ConfigService.getServiceByName('EVENTSERVICE');
+        if (this.notify)
+            es.emit(`${authdata.provider}_auth`, this.authdata);
+        await Connector.authkeys(authdata.provider, this.authdata);
+    }
+
     static authkeys(id, cred) 
     {
         try {
@@ -71,26 +99,27 @@ export class Connector
         }
     }
 
-    static lmdb(id, cred) 
+    static lmdb(provider, cred) 
     {
-        Object.entries(cred).forEach(async ([k, v]) => {
-            if (v === undefined)
-                cred[k] = persistenceservice.get(k);
-            else
-                await persistenceservice.set(k, v);
-        });
+        const ps = ConfigService.getServiceByName('PERSISTENCESERVICE');
+        if(cred === undefined)
+            cred = ps.get(`authkeys_${provider}`);
+        else
+            ps.set(`authkeys_${provider}`, cred);
+
         return cred;
     }
 
-    static async keyring(id, cred) 
+    static async keyring(provider, cred) 
     {
+        cred = cred ?? authdatatemplate[provider];
         const entries = Array.from(Object.entries(cred));
         for (const [k, v] of entries)
         {
             if (v === undefined)
-                cred[k] = await getPassword(id, k);
+                cred[k] = await getPassword(provider, k);
             else
-                await setPassword(id, k, v);
+                await setPassword(provider, k, v);
         }
         return cred;
     }
@@ -122,22 +151,7 @@ export class ICICIConnector extends Connector
             appSecret: process.env.breeze_secret,
             authcode: webreturned.authcode
         }
-
-        if (this.notify)
-            eventservice.emit(`${webreturned.provider}_auth`, this.authdata);
-
-        Connector.authkeys(this.authdata.provider, this.authdata);
-    }
-
-    getEmptyAuthdata() 
-    {
-        return {
-            provider: undefined,
-            date: undefined,
-            appKey: undefined,
-            appSecret: undefined,
-            authcode: undefined
-        };
+        this.saveAndNotify(this.authdata);
     }
 }
 
@@ -201,8 +215,7 @@ export class KotakConnector extends Connector
                         hsi_sid: vr_result.sid,
                         hsi_token: vr_result.token
                     }
-                    eventservice.emit(`${this.provider}_auth`, this.authdata);
-                    Connector.authkeys(this.provider, this.authdata);
+                    this.saveAndNotify(this.authdata);
                     return { status: 'success'};
                 }
                 return { status: 'error', reason: 'kotak validate failed ' + vr.statusText};
@@ -212,20 +225,6 @@ export class KotakConnector extends Connector
         catch (exception) {
             console.error('kotak auth error ' + exception);
             return { status: 'error', reason: 'kotak auth error ' + exception };
-        }
-    }
-
-    getEmptyAuthdata() 
-    {
-        return {
-            provider: undefined,
-            date: undefined,
-            hsm_sid: undefined,
-            hsm_token: undefined,
-            feedUrl: undefined,
-            baseUrl: undefined,
-            hsi_sid: undefined,
-            hsi_token: undefined
         }
     }
 }
@@ -238,26 +237,19 @@ export class TPAppConnector extends ICICIConnector
 
     async authenticate(params) 
     {
-        const api_url = `${process.env.TP_SERVER}:${process.env.TP_PORT}` + '/api/value';
+        const api_url = `${process.env.TP_SERVER}` + '/api/value';
         const options = {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ provider: params.arg1, key: params.arg2 })
+            body: JSON.stringify({ provider: params.arg1})
         };
         const response = await fetch(api_url, options);
-        if(response.ok){
-            const result = await response.json();
-            super.generateSession({
-                provider: 'icici', 
-                date: new Date().toDateString(),
-                authcode: result[params.arg2]
-            });
-            return { state: 'OK'};
-        }
-        return { state: 'NOT_OK', error: `${response.status}-${response.statusText}` };
-
+        if(response.ok)
+            return await response.json();
+        else
+            console.log('TPCoonector' + JSON.stringify({state: 'NOT_OK', error: `${response.status}-${response.statusText}` }));
     }
 }

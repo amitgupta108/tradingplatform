@@ -1,12 +1,15 @@
-import { EXCHANGES, OPT_EXPIRIES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.mjs';
+import { EXCHANGES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.mjs';
 import utils from '../../../common/utils.mjs';
+import { ConfigService } from '../.config/configservice.mjs';
 
 export class Subscriptions 
 {
-    constructor() 
+    constructor(owner) 
     {
+        this.owner = owner;
         this.subs_map = new Map();
         this.req_map = new SubscribersMap();
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
     }
 
     addNewSubscriptions(appid, session) {
@@ -43,9 +46,23 @@ export class Subscriptions
         this.req_map.removeRequests(requests);
     }
 
-    getSubscribers(symbol) {
-        return this.req_map.getSubscribers(symbol);
+    getSubscribers(symbol, active) 
+    {
+        const subscribers = this.req_map.getSubscribers(symbol);
+        return (!active) ? subscribers :
+            subscribers.filter((appid) => {
+                return this.getSubscriptions(appid)?.toStream;
+        })
     }
+
+    pauseStream(appid){
+        this.getSubscriptions(appid).pause();
+    }
+
+    resumeStream(appid) {
+        this.getSubscriptions(appid).toStream = true;
+    }
+
 }
 
 export class SubscribersMap
@@ -66,12 +83,19 @@ export class SubscribersMap
         });
     }
 
-    removeRequests(appid, requests) {
+    removeRequests(appid, requests) 
+    {
+        const unsub_list = [];
         requests.forEach((r) => {
             const subscribers = this.req_map.get(r.symbol);
             const idx = subscribers.findIndex((v) => v === appid);
-            subscribers.splice(idx, 1);
+            if(idx !== -1) {
+                subscribers.splice(idx, 1);
+                if(subscribers.length === 0)
+                    this.es.emit(`${this.owner}_unsub`, appid, requests);
+            }
         });
+        return unsub_list;
     }
 
     getSubscribers(symbol) {
@@ -84,9 +108,10 @@ export class SubsTemplate
     constructor(appid, session)
     {
         this.appid = appid;
+        this.toStream = true;
         this.stockCode = session.stockCode;
         this.exchange = EXCHANGES[session.stockCode];
-        this.fExpiry = FUT_EXPIRIES[this.stockCode]['FIRST'];
+        this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
         this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [
@@ -96,13 +121,17 @@ export class SubsTemplate
             }
         ];
 
-        session.oExpiries.forEach((expiryid) => 
+        session.oExpiries.forEach((expiry) => 
         {
-            const expiry = OPT_EXPIRIES[this.stockCode][expiryid];
             const idx = this.st.findIndex((s) => s.key === 'optionchain' && s.expiry === expiry);
             if(idx === -1)
                 this.st.push({key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry});
         });
+    }
+
+    pause()
+    {
+        this.toStream = false;
     }
 
     getSubsItems(keys)

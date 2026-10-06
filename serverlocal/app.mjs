@@ -1,11 +1,33 @@
 import { ConfigService } from './service/.config/configservice.mjs';
+import { streamer } from './stream.mjs';
 import apiserver from './apiserver.mjs'; 
 
-export class AppClientManager
+class ClientManager
 {
-    startServices() 
+    constructor(name)
     {
-        ConfigService.initializeAll();
+        this.name = name;
+        this.logEnabled = true;
+    }
+
+    log(...args) {
+        if (this.logEnabled) {
+            console.log(`[${this.name}]`, ...args);
+        }
+    }
+}
+
+export class AppClientManager extends ClientManager
+{
+    constructor()
+    {
+        super('APPCLIENTMANAGER');
+    }
+
+    async startServices() 
+    {
+        await ConfigService.initializeAll();
+        streamer.init();
     }
 
     connect(s)
@@ -20,7 +42,7 @@ export class AppClientManager
             return;
         }
         
-        ConfigService.addToUserMap(appid, { socket: s, mode: mode});
+        streamer.addToUserMap(appid, { socket: s, mode: mode});
         this.registerHandlers(s, appid, mode);
 
         s.on("error", (err) => {
@@ -62,56 +84,63 @@ export class AppClientManager
     }
 }
 
-import { eventservice } from './service/system/eventservice.mjs';
-export class ServerClientManager
+export class ServerClientManager extends ClientManager
 {
     constructor() 
     {
+        super('SERVERCLIENTMANAGER');
         this.socketmap = new Map();
     }
 
     startServices()
     {
-        eventservice.addListener('quote', (appid, q) => {
-            this.sendQuote(appid, q);
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('quote_subsmanager_serverclient', (appid, q) => {
+            this.send(appid, 'quote', q);
         });
-        eventservice.addListener('order', (appid, order) => {
-            this.sendQuote(appid, order);
+        this.es.addListener('order_subsmanager_serverclient', (appid, order) => {
+            this.send(appid, 'order', order);
         });
     }
      
     connect(s)
     {
-        console.log('Client connected');
+        this.log('Client connected');
         const appid = crypto.randomUUID();
-        this.socketmap.set(appid, s);
         
         s.send(JSON.stringify({ type: 'handshake', appid: appid}));
+        const profile = { socket: s, mode: 'S5TSABS' };
+        this.socketmap.set(appid, profile);
 
         s.on('message', (input, isBinary) => {
             const payload = isBinary ? input : input.toString();
-            console.log('Received from client: ' + payload);
+            this.log('Received from client: ' + payload);
 
             const message = JSON.parse(payload);
-
-            if (message.appid !== undefined)
-                eventservice.emit('SERVERAPP', message.event, message.appid, message.data);
+            if (message.appid !== undefined && this.socketmap.has(message.appid))
+            {
+                const profile = this.socketmap.get(message.appid);
+                if(message.event === 'history')    
+                    profile.mode = 'history';
+                
+                this.es.emit('SERVERAPP', message);
+            }
             else
                 s.close();
         });
 
         s.on('close', () => {
-            console.log('Client disconnected');
+            this.log('Client disconnected');
         });
 
         s.on('error', (error) => {
-            console.error('Socket error:', error);
+            this.error('Socket error:', error);
         });
     }
 
-    sendQuote(appid, q) 
+    send(appid, type, data) 
     {
         const s = this.socketmap.get(appid);
-        s?.send(JSON.stringify({ type: 'quote', data: q }));
+        s?.send(JSON.stringify({ type: type, data: data }));
     }
 }

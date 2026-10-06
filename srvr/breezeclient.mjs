@@ -2,26 +2,30 @@ import { breeze } from "./appstate.mjs";
 
 async function getHistory(instrument, sTime, endTime, interval) 
 {
-    var b = { exchangeCode: instrument.exchange };
+    var b = { exchangeCode: instrument.exchange.toLowerCase().includes('fo') ? 'NFO' : 'NSE' };
     b.interval = interval != undefined ? interval : '1second';
     b.stockCode = instrument.stockCode;
     b.strikePrice = instrument.strike;
     b.right = instrument.right === 'CE' ? 'Call' : 'Put';
     b.productType = instrument.right !== undefined ? 'options' : 'futures';
-    b.expiryDate = instrument.exchange !== 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
+    b.expiryDate = instrument.expiry ? formatExpiry(instrument.expiry, 'datetime') : undefined;
     b.fromDate = ISODate(sTime);
     b.toDate = ISODate(endTime); 
         
     return breeze.getHistoricalDatav2(b);
 }
 
-function ISODate(datetime) {
+function ISODate(datetime) 
+{
     return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
 }
 
-function formatExpiry(expiry, type) {
-    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 3)).concat(expiry.slice(3, 5).toLowerCase()).concat('-20').concat(expiry.slice(5));
-    return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
+function formatExpiry(expiry, type) 
+{
+    if(expiry) {
+        var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 3)).concat(expiry.slice(3, 5).toLowerCase()).concat('-20').concat(expiry.slice(5));
+        return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
+    }
 }
 
 function wssub(list, action)

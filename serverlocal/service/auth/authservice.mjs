@@ -1,20 +1,16 @@
 import { SystemService } from '../system/service.mjs';
 import { Connector, KotakConnector, ICICIConnector, TPAppConnector } from './connector.mjs';
-import { eventservice } from '../system/eventservice.mjs';
-import { ConfigService, modes } from '../.config/configservice.mjs';
-import apps from '../../config/app_config.json' with {type: 'json'};
-
-const access = {
-    view: ['vix', 'startv2', 'history', 'speed', 'exit', 'stream', 'option_chain'],
-    trade: ['order', 'cancelorder', 'orderbook', 'positions', 'updateorder'],
-    admin: [ 'authenticate', 'scrips', 'subscribe', 'unsubscribe']
-};
+import { ConfigService } from '../.config/configservice.mjs';
+import { appids, modes, access } from '../../utils/constants.mjs';
 
 export class AuthService extends SystemService
 {
     constructor(name)
     {
         super(name);
+        this.appids = appids;
+        this.modes = modes;
+        this.access = access;
         this.connectors = {
             kotak: new KotakConnector('kotak', true, true),
             icici: new ICICIConnector('icici', true, true),
@@ -24,8 +20,8 @@ export class AuthService extends SystemService
 
     async init()
     {
-        this.appids = apps.appids;
-        eventservice.addListener('ext_auth', (msg) => {
+        this.eventservice = ConfigService.getServiceByName('EVENTSERVICE');
+        this.eventservice.addListener('ext_auth', (msg) => {
             this.generateSession(msg);
         });
 
@@ -38,7 +34,7 @@ export class AuthService extends SystemService
         return { status: status};
     }
 
-    authenticate(id_text) 
+    async authenticate(id_text) 
     {
         let params = {}; let provider;
         if (id_text.length === 6) {
@@ -50,17 +46,19 @@ export class AuthService extends SystemService
         }
         else if (id_text === 'tp-icici-p')
         {
-            params = { arg1: 'icici', arg2: 'authcode' };
+            params = { arg1: 'icici' };
             provider = 'tpapp';
         }
         else if (id_text === 'tp-kotak-p') {
-            params = { arg1: 'kotak', arg2: 'authcode' };
+            params = { arg1: 'kotak' };
             provider = 'tpapp';
         }
         else 
             return;
 
-        return this.connectors[provider].authenticate(params);
+        const authdata = await this.connectors[provider].authenticate(params);
+        if(provider === 'tpapp')
+            this.connectors[params['arg1']].saveAndNotify(authdata);
     }
 
     generateSession(authdata) 
@@ -68,11 +66,9 @@ export class AuthService extends SystemService
         this.connectors[authdata.provider].generateSession(authdata);
     }
 
-    async value(provider, key)
+    async authdata(provider)
     {
-        const wrapper = {};
-        wrapper[key] = undefined;
-        return await Connector.authkeys(provider, wrapper);
+        return await Connector.authkeys(provider, undefined);
     }
 
     validate(appid, mode)
@@ -86,19 +82,19 @@ export class AuthService extends SystemService
     getFeatureModeforApp(appid, feature)
     {
         const mode = this.appids.find((e) => e.appid === appid)?.mode;
-        return modes[mode][feature];
+        return this.modes[mode][feature];
     }
 
     checkAccess(eventName, mode) 
     {
         const usertype = ConfigService.getProfile(mode);
-        if (Object.hasOwn(usertype, 'view') && access['view'].includes(eventName))
+        if (Object.hasOwn(usertype, 'view') && this.access['view'].includes(eventName))
             return true;
 
-        if (Object.hasOwn(usertype, 'trade') && access['trade'].includes(eventName))
+        if (Object.hasOwn(usertype, 'trade') && this.access['trade'].includes(eventName))
             return true;
 
-        if (Object.hasOwn(usertype, 'admin') && access['admin'].includes(eventName))
+        if (Object.hasOwn(usertype, 'admin') && this.access['admin'].includes(eventName))
             return true;
 
         return false;

@@ -1,32 +1,42 @@
-import streamer from '../../stream.mjs';
+import { streamer } from '../../stream.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { eventservice } from '../../service/system/eventservice.mjs';
 import { LOTSIZE } from '../../utils/constants.mjs';
+import { UserService } from '../../service/system/service.mjs';
 
-export class OrderManager 
+export class OrderManager extends UserService
 {
-    constructor()
+    constructor(name)
     {
-        eventservice.addListener('kotak_auth', (data) => {
-            this.kotak_hsi_socket = ConfigService.getSocketClient('HSICLIENT');
-            this.kotak_hsi_socket.initiateConnect(data);
-        });
-
+        super(name);
         this.order_generators = new Map(); 
         this.live_order_map = new Map();
         this.counter = 10000;
     }
 
-    register(service_key, notifier){
-        const order_notifier = ConfigService.getSocketClient(notifier);
+    init()
+    {        
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('kotak_auth', (kotakauth) => {
+            this.kotakauth = kotakauth;
+        });
+        this.initialized = true;
+        return {status: 'success'};
+    }
+
+    register(service_key, notifier)
+    {
+        this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
+        const order_notifier = this.af.getAdapter(notifier); //e.g HSIClient
+        order_notifier.initiateConnect(this.kotakauth);
+
         order_notifier.addListener('order', (notifier_name, order) => {
 
             const services = Array.from(this.order_generators.entries());
-            const tobenotified = services.filter((k, v) => {
+            const service_keys = services.filter(([k, v]) => {
                 if(v === notifier_name)
                     return k;
             })
-            this.notify('order', tobenotified, order)
+            this.notify('order', service_keys, order)
         });
         
         this.order_generators.set(service_key, notifier);

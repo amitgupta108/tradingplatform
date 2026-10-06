@@ -122,8 +122,10 @@ function expandSymbol(symbol)
     t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
     if (idx !== -1) {
         t.expiry_date = symbol.slice(idx, idx + 7);
+        t.expiry = t.expiry_date;
         if (!symbol.endsWith('FUT')) {
             t.strike_price = symbol.slice(idx + 7, -2);
+            t.strike = t.strike_price;
             t.right = symbol.slice(-2);
         }
     }

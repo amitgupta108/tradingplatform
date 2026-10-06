@@ -1,28 +1,22 @@
-import streamer from '../../stream.mjs';
+import { streamer } from '../../stream.mjs';
 import { Subscriptions } from '../../service/subscription/subscription.mjs';
-import { eventservice } from '../../service/system/eventservice.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
+import { BrokerService } from '../../service/system/service.mjs';
 
-class BrokerImpl 
+class BrokerImpl extends BrokerService
 {
-    constructor(name, provider) {
-        this.name = name;
-        this.provider = provider;
-        this.initialized = false;
+    constructor(name) {
+        super(name);
         this.symbol_cache = new Map();
-    }
-
-    exit(appid, sublist) 
-    {
-    
     }
 }
 
 export class BrokerMarketDataImpl extends BrokerImpl
 {
-    constructor(name, provider)
+    constructor(name)
     {
-        super(name, provider);
+        super(name);
+        this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
         this.simpricefeed = false;
         this.authData;
         this.my_subs;
@@ -32,8 +26,11 @@ export class BrokerMarketDataImpl extends BrokerImpl
     {
         if (!this.initialized) 
         {
-            this.my_subs = new Subscriptions();
-            this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
+            this.es = ConfigService.getServiceByName('EVENTSERVICE');
+            this.es.addListener(`${this.name}_unsub`, (appid, list) => {
+                this.subscribe(appid, list, 'unsub');
+            })
+            this.my_subs = new Subscriptions(this.name);
             
             this.addListeners();
             this.initialized = true;
@@ -47,8 +44,8 @@ export class BrokerMarketDataImpl extends BrokerImpl
     {
         const stock_subs = this.my_subs.addNewSubscriptions(appid, p);
         const list = stock_subs.exchange === 'mcx_fo' ? ['futures'] : ['index', 'futures'];
-        const requests = stock_subs.getSubsItems(list);
-        this.subscribe(appid, requests, 'subs');
+        const requests = stock_subs.getSubsItems(list); //st_item
+        this.subscribe(appid, requests, 'start');
 
         if (stock_subs.atm !== 0) {
             const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });
@@ -83,7 +80,6 @@ export class BrokerMarketDataImpl extends BrokerImpl
     
     onQuotes(q)
     { 
-        q.m1 = Date.now();
         const qt = this.standardize(q);
         if(qt !== undefined)
         {
@@ -92,7 +88,7 @@ export class BrokerMarketDataImpl extends BrokerImpl
             if (qt.key === 'futures')
                 this.atmReview(qt);
             else if (this.simpricefeed && qt.key === 'strikex')
-                eventservice.emit(this.view_mode, qt);
+                this.es.emit(this.view_mode, qt);
         }
     }
     
@@ -115,15 +111,29 @@ export class BrokerMarketDataImpl extends BrokerImpl
         this.simpricefeed = true;
         return this.view_mode;
     }
+
+    stream(appid, action)
+    {   
+        if(action === 'pause')
+            this.my_subs.pauseStream(appid);
+        else if(action === 'resume') 
+            this.my_subs.resumeStream(appid);
+    }
+
+    exit(appid) 
+    {
+        this.my_subs.removeRequests(appid);   
+        this.my_subs.removeSubscriptions(appid);
+    }
 }
 
 export class BrokerTradeServiceImpl extends BrokerImpl
 {
-    constructor(name, provider) 
+    constructor(name) 
     {
-        super(name, provider);
+        super(name);
+        this.trade_mode = ConfigService.getKeyByFeature(this.name, 'trade');
         this.mytradename = name;
-        this.ordermanager = ConfigService.getServiceByName('ORDERMANAGER');
         this.authData;
     }
 
@@ -131,7 +141,7 @@ export class BrokerTradeServiceImpl extends BrokerImpl
     {
         if (!this.initialized) 
         {
-            this.trade_mode = ConfigService.getKeyByFeature(this.name, 'trade');
+            this.ordermanager = ConfigService.getServiceByName('ORDERMANAGER');
             this.addListeners();
             this.initialized = true;
             

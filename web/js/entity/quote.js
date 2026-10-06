@@ -2,25 +2,18 @@ class QuoteDispatcher extends EventTarget {
 
     constructor() {
         super();
-        this.aggregate = 0;
-        this.count = 1;
-        this.start = 0;
+        this.lastfq;
+        this.lastuq;
     }
 
     dispatchEvent(eventName, q)
     {
         super.dispatchEvent(generateEvent(q.key, q));
-        if (q.key === 'futures' && q.exchange.toLowerCase().startsWith('mcx'))
-            super.dispatchEvent(generateEvent('index', q));
-
-        this.aggregate += (Date.now() - q.ltt);
-        this.count++;
-        latency_label.textContent = Math.round(this.aggregate / this.count); 
-    }
-
-    reset()
-    {
-        this.aggregate = 0;
-        this.count = 1;
+        if (q.key === 'futures' && q.ltp !== this.lastfq?.ltp){
+            latency_label.textContent = Date.now() - q.ltt; 
+            this.lastfq = q;
+            if(q.exchange.toLowerCase().startsWith('mcx'))
+                super.dispatchEvent(generateEvent('index', q));
+        }
     }
 }

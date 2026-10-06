@@ -1,6 +1,6 @@
-import { SocketClient } from './socketclient.mjs';
+import { BrokerAdapter } from './BrokerAdpater.mjs';
 
-export class TPSocket extends SocketClient
+export class TPSocket extends BrokerAdapter
 {
     constructor(options) {
         super('TPCLIENT', options);

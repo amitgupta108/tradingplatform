@@ -1,9 +1,8 @@
 import utils from '../../../common/utils.mjs'
-import {simulator} from './simmanager.mjs';
-import { eventservice } from '../../service/system/eventservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 
-class BreezeMarketDataHist extends BrokerMarketDataImpl 
+export class BreezeMarketDataHist extends BrokerMarketDataImpl 
 {
     constructor(name, provider) 
     {
@@ -12,7 +11,9 @@ class BreezeMarketDataHist extends BrokerMarketDataImpl
 
     addListeners()
     {
-        eventservice.addListener('hist-quote', (q, appid) => {
+        this.provider = ConfigService.getServiceByName('SIMULATOR');
+        this.eventservice = ConfigService.getServiceByName('EVENTSERVICE');
+        this.eventservice.addListener('hist-quote', (q, appid) => {
             q.appid = appid;
             this.onQuotes(q);
         });
@@ -33,11 +34,11 @@ class BreezeMarketDataHist extends BrokerMarketDataImpl
         const requests = this.buildRequests(appid, list);
     
         if (action === 'subs')
-            this.provider.subscribe(requests);
+            this.provider.subscribe(appid, requests);
         else if( action === 'start')
             this.provider.start_sim(appid, requests);
         else
-            this.provider.subscribe(requests);
+            this.provider.unsubscribe(appid, requests);
     }
     
     standardize(q) 
@@ -60,8 +61,6 @@ class BreezeMarketDataHist extends BrokerMarketDataImpl
 
     exit(appid) {
         this.my_subs.removeSubscriptions(appid);
-        return this.simulator.clear(appid);
+        return this.provider.clear(appid);
     }
 }
-
-export const m_icici_hist = new BreezeMarketDataHist('ICICIHISTVIEW', simulator);

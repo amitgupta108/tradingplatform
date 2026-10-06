@@ -5,8 +5,7 @@ function connect()
   socket = io(`${window.location.origin}`, {
 	auth: {
 	  token: instrument.appid,
-	  mode: instrument.mode,
-	  stockCode: instrument.stockCode
+	  mode: instrument.mode
 	},
 	reconnection: false,
 	timeout: 10000
@@ -44,37 +43,19 @@ function rh(socket)
 	});
 
 	socket.on("disconnect", (reason) => {
-	  bottom_btns[0].disabled = false;
-	  console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
+	  	bottom_btns[0].disabled = false;
+	  	console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
 	});
 	
 	socket.on('history', (data) => {
-	  if(data.key === 'strikex')
-		options_chart.renderHistory(data.qA);
-	  else 
-		setInitialChart(data.key, data.qA);
+		if (data.symbol.endsWith('PE') || data.symbol.endsWith('CE'))
+			options_chart.renderHistory(data.symbol, data.qA);
+	  	else 
+			setInitialChart(data.symbol, data.qA);
 	});
 
 	socket.on('quote', (q) => {
 		qBox.dispatchEvent('quote', q);
-	});
-
-	socket.on('index', (q) => {
-	  qBox.dispatchEvent('index', q);
-	});
-	
-	socket.on('vix', (q) => {
-	  qBox.dispatchEvent('vix', q);
-	});
-
-	socket.on('futures', (q) => {    
-	  qBox.dispatchEvent('futures', q);
-		if (q.exchange.toLowerCase().startsWith('mcx'))
-			qBox.dispatchEvent('index', q);      
-	});
-
-	socket.on('strikex', (q) => {
-		qBox.dispatchEvent('strikex', q);
 	});
 
 	socket.on('stream', (response) => {
@@ -122,13 +103,6 @@ function rh(socket)
 		socn.style.backgroundColor = '#4CAF50';
 	  else
 		socn.style.backgroundColor = '#f44336';
-	});
-
-	socket.on('wsOps', (action, resp) => {
-	  if(action === 'open' && resp.status === 'success')
-		socn.style.backgroundColor = '#4CAF50';
-	  else if(action === 'close' && resp.status === 'success')
-		socn.style.backgroundColor = 'white';
 	});
   } catch(error){
 	console.log(error);
