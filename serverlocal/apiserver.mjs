@@ -26,18 +26,12 @@ function registerDataRequests(s, appid,  mode)
             market_service.changeSpeed(appid, msg);
     });
 
-    s.on('stream', (msg) => {
-        let resp_state = s.sn.stream(appid, 'pause');
-        if(mode.startsWith('HISTORY'))
-            resp_state = market_service.pause(appid, msg);
-        s.emit('stream', resp_state);
+    s.on('stream', (action) => {
+        market_service.stream(appid, action);
     });
 
     s.on('exit', (msg) => {
-        s.emit('exit', 'Exit initiated, connection being closed');
-        if (mode.startsWith('HISTORY'))
-            market_service.exit(appid);
-
+        market_service.exit(appid);
         streamer.deleteFromUserMap(appid);
         s.disconnect();
 

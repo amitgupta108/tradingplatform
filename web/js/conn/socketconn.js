@@ -2,33 +2,30 @@ let socket;
 
 function connect()
 {
-  socket = io(`${window.location.origin}`, {
-	auth: {
-	  token: instrument.appid,
-	  mode: instrument.mode
-	},
-	reconnection: false,
-	timeout: 10000
-  });
-
-  rh(socket);
+	socket = io(`${window.location.origin}`, {
+		auth: {
+			token: instrument.appid,
+			mode: instrument.mode
+		},
+		reconnection: false,
+		timeout: 10000
+	});
+	rh(socket);
 }
 
-/*--------------------------------------------------------------------------------------------------------------------------------*/
 function rh(socket)
-{  
+{
   try{
 	socket.on("connect", () => {
-	  console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
-	  data_reload = false;
-	  bottom_btns[0].disabled = true;
-	  bottom_btns[1].disabled = false;
-	  bottom_btns[3].disabled = false;
-	  bottom_btns[4].disabled = false;
-	  bottom_btns[5].disabled = false;
+		console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
+		bottom_btns[0].disabled = true;
+		bottom_btns[1].disabled = false;
+		bottom_btns[2].disabled = false;
+		bottom_btns[3].disabled = false;
+		bottom_btns[4].disabled = false;
 
-	  if(instrument.mode === 'HISTORY')
-		document.getElementById('optionSpeed').disabled = false;
+		if(instrument.mode === 'HISTORY')
+			document.getElementById('optionSpeed').disabled = false;
 	});
 
 	socket.on("connect_error", (error) => {
@@ -46,11 +43,11 @@ function rh(socket)
 	  	bottom_btns[0].disabled = false;
 	  	console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
 	});
-	
+
 	socket.on('history', (data) => {
 		if (data.symbol.endsWith('PE') || data.symbol.endsWith('CE'))
 			options_chart.renderHistory(data.symbol, data.qA);
-	  	else 
+	  	else
 			setInitialChart(data.symbol, data.qA);
 	});
 
@@ -59,14 +56,14 @@ function rh(socket)
 	});
 
 	socket.on('stream', (response) => {
-	  if(response === 'paused')
-		document.getElementById('btnStopSim').innerText = 'Resume';
-	  else if(response === 'resumed')
-		document.getElementById('btnStopSim').innerText = 'Stop';
-	  else if (response === 'started') {
-		bottom_btns[2].disabled = false;
-		bottom_btns[5].disabled = false;
-	  }    
+		if(response === 'paused')
+			document.getElementById('btnStopSim').innerText = 'Resume';
+		else if(response === 'resumed')
+			document.getElementById('btnStopSim').innerText = 'Stop';
+		else if (response === 'started') {
+			bottom_btns[2].disabled = false;
+			bottom_btns[5].disabled = false;
+		}
 	});
 
 	socket.on('exit', (response) => {
@@ -86,7 +83,7 @@ function rh(socket)
 
 	socket.on('orderbook', (orders) => {
 	  	orders.forEach((order) => {
-			if (expandSymbol(order.symbol).stockCode === instrument.stockCode) 
+			if (expandSymbol(order.symbol).stockCode === instrument.stockCode)
 			{
 		  		const p = Position.findPosition(order.symbol, true);
 		  		p.orders.set(order.orderid, order);
@@ -99,12 +96,12 @@ function rh(socket)
 	});
 
 	socket.on('hb', (resp) => {
-	  if(resp?.order_socket === 1)
-		socn.style.backgroundColor = '#4CAF50';
-	  else
-		socn.style.backgroundColor = '#f44336';
-	});
-  } catch(error){
-	console.log(error);
-  }
+		if(resp?.order_socket === 1)
+			socn.style.backgroundColor = '#4CAF50';
+		else
+			socn.style.backgroundColor = '#f44336';
+		});
+	} catch(error){
+		console.log(error);
+  	}
 }

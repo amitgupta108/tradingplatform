@@ -4,19 +4,33 @@ class Service extends EventEmitter
 {
     constructor(name) {
         super();
+        if (new.target === Service) {
+            throw new TypeError("Cannot instantiate Parent class directly");
+        }
         this.name = name;
         this.initialized = false;
         this.logEnabled = true;
     }
 
-    init() {
-        if (!this.initialized) {
+    init() 
+    {
+        if (!this.initialized) 
+        {
+            if (typeof this.cInit === 'function') 
+                this.cInit();
+
             this.initialized = true;
             return { status: 'success' };
         }
         return { status: 'already initialized' };
     }
+
+    tearDown()
+    {
+
     
+    }
+
     log(...args) {
         if (this.logEnabled) {
             console.log(`[${this.name}]`, ...args);
