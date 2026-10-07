@@ -1,14 +1,15 @@
 import qserver from '../../../srvr/qserver.mjs';
-import streamer from '../../stream.mjs';
+import utils from '../../../common/utils.mjs';
+import { streamer } from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { EXCHANGES, FUT_EXPIRIES, OPT_EXPIRIES } from '../../utils/constants.mjs'
+import { EXCHANGES, FUT_EXPIRIES} from '../../utils/constants.mjs';
 
-class CommonService extends BrokerMarketDataImpl 
+export class CommonService extends BrokerMarketDataImpl 
 {
-    constructor(name, provider)
+    constructor(name)
     {
-        super(name, provider);
+        super(name);
         this.qt_vix = { key: 'vix', stockCode: 'INDIAVIX', ltp: 0, ltt: 0 };
         this.vix_subscribed = false;
     }
@@ -19,36 +20,40 @@ class CommonService extends BrokerMarketDataImpl
             this.onVix(q);
         });
 
+        this.simulator = ConfigService.getServiceByName('SIMULATOR');
         if(process.env.PASSTHROUGH === 'Y') {
-            this.provider = ConfigService.getSocketClient('TPCLIENT');
+            this.provider = ConfigService.getAdapter('TPCLIENT');
             this.provider.addListener('quote', (arg) => this.onQuotes(arg));
         }
     }
 
     history(appid, r) 
     {
-        if (EXCHANGES[r.stockCode] === 'mcx_fo')
-            return;
-        
-        r.exchange = ['index', 'vix'].includes(r.key) ? 'NSE' : 'NFO';
-        r.stockCode = r.key === 'vix' ? 'INDVIX' : r.stockCode;
-        r.expiry = r.key === 'futures' ? FUT_EXPIRIES[r.stockCode]['FIRST']
-             : r.key === 'strikex' ? r.oExpiry : null;
+        const scrip = utils.expandSymbol(r.symbol);
+        if (EXCHANGES[r.stockCode] !== 'mcx_fo')
+        {
+            r.exchange = ['NIFTY', 'INDVIX'].includes(r.symbol) ? 'NSE' : 'NFO';
+            r.stockCode = r.symbol === 'INDVIX' ? 'INDVIX' : scrip.stockCode;
+            r.expiry = r.symbol.includes('FUT') ? r.fExpiry ?? FUT_EXPIRIES[r.stockCode]['FIRST'] : scrip.expiry;
+            r.interval = r.interval ?? '5minute';
+            r.strike = r.strike ?? scrip.strike;
+            r.right = r.right ?? scrip.right;
 
-        return qserver.getHistory(appid, r)
-        .then((response) => {
-            if (response?.Error === null) {
-                streamer.emitHistQs(appid, r.key, response.Success);
-                return {status: 'success'};
-            }
-            return { status: 'error', reason: 'history fetch error ' + response.Error };
-        });
+            return qserver.getHistory(appid, r)
+            .then((response) => {
+                if (response?.Error === null) {
+                    streamer.emitHistQs(appid, r.symbol, response.Success);
+                    return {status: 'success'};
+                }
+                return { status: 'error', reason: 'history fetch error ' + response.Error };
+            });
+        }
     }
 
-    subscribe_vix(appid, mode, action) {
-
+    subscribe_vix(appid, mode, action) 
+    {
         if (mode.startsWith('HISTORY')) 
-            return simulator.subscribe_vix(appid, mode, action);
+            return this.simulator.subscribe_vix(appid, mode, action);
         else
             return qserver.subscribe_vix(appid, mode, action)
                 .then((resp) => {
@@ -58,11 +63,11 @@ class CommonService extends BrokerMarketDataImpl
                 .catch((error) => console.log(error));
     }
 
-    onVix(q) {
+    onVix(q) 
+    {
         if (q.last !== this.qt_vix.ltp) {
             this.qt_vix.ltt = Date.parse(q.ltt);
             this.qt_vix.ltp = q.last;
-
             streamer.broadcast('vix', this.qt_vix, 'all_nse_live');
         }
     }
@@ -81,5 +86,3 @@ class CommonService extends BrokerMarketDataImpl
         return q;
     }
 }
-
-export const m_common_service = new CommonService('COMMONSERVICE', undefined);

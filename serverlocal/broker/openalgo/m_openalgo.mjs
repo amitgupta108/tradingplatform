@@ -1,20 +1,20 @@
-import OpenAlgo from 'openalgo';
 import utils from '../../../common/utils.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 
-class OpenAlgoMarketData extends BrokerMarketDataImpl 
+export class OpenAlgoMarketData extends BrokerMarketDataImpl 
 {
-    constructor(name, provider)
+    constructor(name)
     {
-        super(name, provider);
+        super(name);
         this.ws_direct;
         this.reconn_count = 0; 
     }
     
     addListeners() 
     {
-        if (!this.provider)
-            this.provider = new OpenAlgo(process.env.openalgo_key, process.env.openalgo_http, 'v1', process.env.openalgo_ws);
+        this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
+        this.provider = this.sf.getAdapter('OPENALGOCLIENT');
 
         return this.provider.connect()
         .then(() => {
@@ -88,5 +88,3 @@ class OpenAlgoMarketData extends BrokerMarketDataImpl
             client?._wsClient?.ws._sendMessage({ action: unsubscribe_all });
     }
 }
-
-export const m_openalgo_live = new OpenAlgoMarketData('OPENALGOVIEW', undefined);

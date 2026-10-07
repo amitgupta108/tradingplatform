@@ -2,14 +2,16 @@ import utils from '../../../common/utils.mjs';
 import data_interface from '../../../srvr/qserver.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
-class BreezeMarketDataLive extends BrokerMarketDataImpl 
+export class BreezeMarketDataLive extends BrokerMarketDataImpl 
 {
-    constructor(name, provider) 
+    constructor(name) 
     {
-        super(name, provider);
+        super(name);
     }
 
-    addListeners() {
+    addListeners() 
+    {
+        this.provider = data_interface;
         this.provider.addListener('live-quote', (q, appid) => {
             this.onQuotes(q, appid);
         });
@@ -60,4 +62,4 @@ class BreezeMarketDataLive extends BrokerMarketDataImpl
         return requests;
     }
 }
-export const m_icici_live = new BreezeMarketDataLive('ICICILIVEVIEW', data_interface);
+//export const m_icici_live = new BreezeMarketDataLive('ICICILIVEVIEW', data_interface);

@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 import {WebSocket as wsSocket} from 'ws';
 import EventEmitter from "node:events";
 
-export class SocketClient extends EventEmitter
+export class BrokerAdapter extends EventEmitter
 {
     constructor(name, options)
     {
@@ -34,10 +34,10 @@ export class SocketClient extends EventEmitter
                 this.ws.addEventListener('open', () => {
                     this.isConnecting = false;
                     this.isConnected = true;
-                    this.reconnectAttempts = 0;
                     this.log('WebSocket connected');
                     this.onOpen();
-                    this.emit('open');
+                    this.emit('open', this.reconnectAttempts);
+                    this.reconnectAttempts = 0;
                     resolve();
                 });
 

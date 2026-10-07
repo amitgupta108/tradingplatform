@@ -1,14 +1,13 @@
-import {eventservice} from '../eventservice.mjs'
-import streamer from '../../stream.mjs';
-import { ConfigService as config } from '../.config/configservice.mjs';
+import { ConfigService} from '../../service/.config/configservice.mjs';
+import { LOTSIZE } from '../../utils/constants.mjs';
+import { UserService } from '../../service/system/service.mjs';
 
-class OrderSimulator
+export class OrderSimulator extends UserService
 {
     constructor(name)
     {
-        this.name = name;
+        super(name);
         this.mytradename = this.name;
-        this.initialized = false;
         this.counter = 50000;
         this.orders = new Map();
     }
@@ -16,13 +15,15 @@ class OrderSimulator
     init() 
     {
         if (!this.initialized) {
-            const mymodes = config.getModesForService(this.name, 'trade');
+            this.es = ConfigService.getServiceByName('EVENTSERVICE');
+
+            const mymodes = ConfigService.getModesForService(this.name, 'trade');
             mymodes.forEach((m) => {
-                const s = config.getActiveServiceByMode('view', m);
+                const s = ConfigService.getActiveServiceByMode('view', m);
                 if(s !== undefined)
                 {
                     const eventname = s.registerPriceFeed();
-                    eventservice.addListener(eventname, (q) => {
+                    this.es.addListener(eventname, (q) => {
                         this.orderExecutionSim(eventname, q);
                     });
                 }
@@ -32,17 +33,18 @@ class OrderSimulator
         }
     }
 
-    placeOrder(appid, order, mode)
+    placeOrder(appid, order)
     {
-        const provider_key = config.getFeatureMode(mode ,'view');
+        const as = ConfigService.getServiceByName('AUTHSERVICE');
+        order.view_mode = as.getFeatureModeforApp(appid ,'view');
+        order.quantity = order.quantity * LOTSIZE[order.stockCode];
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++this.counter;
         order.state = 'opened';
-        order.view_mode = provider_key;
         this.orders.set(order.orderid, order);
 
-        streamer.emitOrders(appid, 'order', order);
+        this.es.emit('ordersim', order);
         return order;
     }
 
@@ -60,16 +62,16 @@ class OrderSimulator
                 if (order.pricetype === 'MARKET')
                     executed = true;
                 else if (order.pricetype === 'LIMIT')
-                    if (order.action === 'BUY' && q.ltp <= order.price)
+                    if (order.action === 'B' && q.ltp <= order.price)
                         executed = true;
-                    else if (order.action === 'SELL' && q.ltp >= order.price)
+                    else if (order.action === 'S' && q.ltp >= order.price)
                         executed = true;
 
                 if (executed) {
                     order.state = 'completed';
                     order.pricedAt = q.ltp;
                     order.filled_q = order.quantity;
-                    streamer.emitOrders(order.appid, 'order', order);
+                    this.es.emit('ordersim', order);
                 }
             });
         }
@@ -80,7 +82,7 @@ class OrderSimulator
         const found = this.orders.get(order.orderid);
         if (found !== undefined && found.state === 'opened') {
             found.state = 'cancelled';
-            streamer.emitOrders(appid, 'order', found);
+            this.es.emit('ordersim', found);
         }
         else
             console.error('cancellation failed - order not found or not open');
@@ -100,5 +102,3 @@ class OrderSimulator
         return [];
     }
 }
-
-export const ordersimulator = new OrderSimulator('ORDERSIMULATOR');

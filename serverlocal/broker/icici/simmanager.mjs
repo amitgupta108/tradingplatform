@@ -1,13 +1,20 @@
 import {simstate} from './simstate.mjs';
 import qserver from '../../../srvr/qserver.mjs';
-import { eventservice } from '../eventservice.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
+import { UserService } from '../../service/system/service.mjs';
 
-class Simulator
+export class SimulatorHistory extends UserService
 {
     constructor(name) 
     {
-        this.name = name;
+        super(name);
         this.simdata = simstate;
+    }
+
+    init()
+    {
+        this.initialized = true;
+        return {status: 'success'};
     }
 
     clientInit(appid, simStartTime, speed = '1x') 
@@ -150,7 +157,10 @@ class Simulator
             }
 
             if (idx >= 0)
-                eventservice.emit('hist-quote', st.quotes[idx], appid);
+                {
+                    const es = ConfigService.getServiceByName('EVENTSERVICE');
+                    es.emit('hist-quote', st.quotes[idx], appid);
+                }
         }
         
         if ((st.quotes === undefined || st.quotes.length - idx < 50) && st.state != 'load requested')
@@ -202,7 +212,7 @@ class Simulator
     {
         var resp = await qserver.getHistoryAsync(instrument, sTime, sTime + ((16 * 60) * 1000), '1second')
             .catch((error) => {
-                console.warn("getHistoricalDatav2 failed, ", error.message);
+                console.error("getHistoricalDatav2 failed, ", error.message);
                 return Promise.reject(error);
             });
 
@@ -262,5 +272,3 @@ class Simulator
         }
     }
 }
-
-export const simulator = new Simulator('SIMULATOR');

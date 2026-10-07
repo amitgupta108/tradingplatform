@@ -1,68 +1,103 @@
-import { ConfigService } from './service/.config/configservice.mjs'
+import { SystemService } from './service/system/service.mjs';
+import { ConfigService } from './service/.config/configservice.mjs';
 
-function emitOrders(order)
-{    
-    send('order', order);
-}
-
-function emitQs(q)
+class StreamingService extends SystemService
 {
-    send('quote', q);
-}
-
-function emitHistQs(appid, key, qA) {
-    const app_obj = ConfigService.getFromUserMap(appid);
-    if (app_obj !== undefined)
-        emit(app_obj.socket, 'history', { time: Date.now(), key: key, qA: qA });
-}
-
-function send(type, msg)
-{
-    const app_obj = ConfigService.getFromUserMap(msg.appid);
-    if (app_obj !== undefined)
-        emit(app_obj.socket, type, msg);
-    else
-        group_emit(type, msg);
-}
-
-function group_emit(type, msg)
-{ 
-    const receivers = getReceivers(type, msg);   
-    receivers.forEach((appid) => {
-        msg.appid = appid;
-        emit(ConfigService.getFromUserMap(appid).socket, type, msg);
-    });
-}
-
-function getReceivers(type, msg)
-{
-    const receivers = [];
-    if (type === 'order') 
+    constructor(name)
     {
-        for (const [k, v] of ConfigService.usermapEntries()) {
-            if(msg.modes.includes(v.mode))
-                receivers.push(k);
+        super(name);
+        this.name = name;
+        this.usermap = new Map();
+    }
+
+    init()
+    {
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('ordersim', (order) => {
+            this.send('order', order);
+        });
+        this.initialized = true;
+        return { status: 'initialized' };
+    }
+
+    emitOrders(order)
+    {    
+        this.send('order', order);
+    }
+
+    emitQs(q)
+    {
+        this.send('quote', q);
+    }
+
+    emitHistQs(appid, symbol, qA) {
+        const app_obj = this.getFromUserMap(appid);
+        if (app_obj !== undefined)
+            this.emit(app_obj.socket, 'history', {symbol: symbol, qA: qA });
+    }
+
+    send(type, msg)
+    {
+        const app_obj = this.getFromUserMap(msg.appid);
+        if (app_obj !== undefined)
+            this.emit(app_obj.socket, type, msg);
+        else
+            this.group_emit(type, msg);
+    }
+
+    group_emit(type, msg)
+    { 
+        const receivers = this.getReceivers(type, msg);   
+        receivers.forEach((appid) => {
+            msg.appid = appid;
+            this.emit(this.getFromUserMap(appid).socket, type, msg);
+        });
+    }
+
+    getReceivers(type, msg)
+    {
+        const receivers = [];
+        if (type === 'order') 
+        {
+            for (const [k, v] of this.usermapEntries()) {
+                if(msg.modes.includes(v.mode))
+                    receivers.push(k);
+            }
+        }
+        return receivers;
+    }
+
+    broadcast(type, msg, group)
+    {
+        for (const [k, v] of this.usermapEntries()) {
+            if (v && (type === 'hb' || (type === 'vix' && !v.mode.startsWith('HISTORY'))))
+                this.emit(v.socket, type, msg);
         }
     }
-    return receivers;
-}
 
-function broadcast(type, msg, group)
-{
-    for (const [k, v] of ConfigService.usermapEntries()) {
-        if (v && (type === 'hb' || (type === 'vix' && !v.mode.startsWith('HISTORY'))))
-            emit(v.socket, type, msg);
+     emit(s, type, msg)
+    {
+        if(type === 'vix')
+            type = 'quote';
+        s.emit(type, msg);
     }
+
+    addToUserMap(appid, app_obj) {
+        this.usermap.set(appid, app_obj);
+    }
+
+    getFromUserMap(appid) {
+        return this.usermap.get(appid);
+    }
+
+    deleteFromUserMap(appid) {
+        this.usermap.delete(appid);
+    }
+
+    usermapEntries() {
+        return this.usermap.entries();
+    }
+
 }
 
-function emit(s, type, msg)
-{
-    s.emit(type, msg);
-}
-
-export default {
-    emitQs,
-    emitOrders,
-    emitHistQs,
-    broadcast,
-}
+export const streamer = new StreamingService('STREAMSERVICE');
