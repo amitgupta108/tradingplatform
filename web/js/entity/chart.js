@@ -32,10 +32,8 @@ function setInitialChart(symbol, qA)
 	var qs = initialSeriesData(qA, withEma);
 	series[key].ref.setData(qs);
 
-	if (withEma) {
-		const seriesName = key === 'futures' ? 'fEma' : 'iEma';
-		series[seriesName].ref.setData(qs);
-	}
+	if (withEma) 
+		series[`ema_${key}`].ref.setData(qs);
 }
 
 function initialSeriesData(qA, withEma = false)
