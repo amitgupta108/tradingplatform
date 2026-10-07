@@ -1,4 +1,3 @@
-import {scripstore} from '../../service/scripstore.mjs';
 import { KotakMarketData } from './m_kotak.mjs';
 import utils from '../../../common/utils.mjs';
 import { parse } from 'date-fns';
@@ -7,9 +6,9 @@ const pattern = "dd/MM/yyyy HH:mm:ss";
 
 export class KotakMarketDataHSM extends KotakMarketData 
 {
-    constructor(name, provider)
+    constructor(name)
     {
-        super(name, provider);
+        super(name);
     }
 
     onSnapshot(snapshot)
@@ -26,7 +25,8 @@ export class KotakMarketDataHSM extends KotakMarketData
         const qt = this.symbol_cache.get(q.tk);
         if (qt !== undefined && (q.ltp !== undefined || q.iv !== undefined)) {
             qt.ltp = q.name === 'sf' ? Number(q.ltp) : Number(q.iv);
-            qt.ltt = q.m1;
+            qt.ltt = q.ltt * 1000;
+            qt.yclose = q.close;
             return qt;
         }
     }
@@ -37,13 +37,13 @@ export class KotakMarketDataHSM extends KotakMarketData
         if(snapshot.name === 'sf') {
             const { tk: token, e: exchange, ltp: ltp, ...rest } = snapshot;
             qt = { token, exchange, ltp};    
-            qt.symbol = snapshot.e === 'mcx_fo' ? snapshot.ts : scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey;
+            qt.symbol = snapshot.e === 'mcx_fo' ? snapshot.ts : this.scrips.findScripByKey('token', snapshot.tk)?.scripReferenceKey;
             qt.ltt = snapshot.fdtm !== undefined ? parse(snapshot.fdtm, pattern, new Date()).getTime() : Date.now();
         }
         else if (snapshot.name === 'if') {
             const { tk: token, e: exchange, iv: ltp,  ...rest } = snapshot;
             qt = { token, exchange, ltp};
-            qt.symbol = scripstore.findScripByKey('token', snapshot.tk)?.scripReferenceKey ?? snapshot.tk;
+            qt.symbol = this.scrips.findScripByKey('token', snapshot.tk)?.scripReferenceKey ?? snapshot.tk;
             qt.symbol = snapshot.tk === 'Nifty 50' ? 'NIFTY' : qt.symbol;
             qt.ltt = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
         }

@@ -1,12 +1,12 @@
-import { BinRespTypes, RespTypeValues, STAT, SCRIP_PREFIX, INDEX_PREFIX, RespTypes } from '../../../dist/marketdatafeed/constants/types.js';
-import { PacketBuilder } from '../../../dist/marketdatafeed/protocol/PacketBuilder.js';
-import { PacketParser } from '../../../dist/marketdatafeed/protocol/PacketParser.js';
-import { buf2Long } from '../../../dist/marketdatafeed/utils/binary.js';
-import { SocketClient } from './socketclient.mjs';
+import { BinRespTypes, RespTypeValues, STAT, SCRIP_PREFIX, INDEX_PREFIX, RespTypes } from './HSMUtils/constants/types.js';
+import { PacketBuilder } from './HSMUtils/protocol/PacketBuilder.js';
+import { PacketParser } from './HSMUtils/protocol/PacketParser.js';
+import { buf2Long } from './HSMUtils/utils/binary.js';
+import { BrokerAdapter } from './BrokerAdpater.mjs';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';
 
-export class HSMClient extends SocketClient
+export class HSMClient extends BrokerAdapter
 {
     constructor(options) {
         super('HSMCLIENT', options);

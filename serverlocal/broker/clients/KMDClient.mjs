@@ -1,8 +1,8 @@
 
 import { PacketParser } from '../../utils/PacketParser.mjs';
-import { SocketClient } from './socketclient.mjs';
+import { KotakAdapter } from './KotakAdapter.mjs';
 
-export class KMDClient extends SocketClient 
+export class KMDClient extends KotakAdapter
 {
     constructor(options) {
         super('KMDCLIENT', options);
@@ -11,12 +11,15 @@ export class KMDClient extends SocketClient
 
     initiateConnect(authData) {
         this.authData = authData;
-        return this.connect(this.authData.feedUrl, 'node');
+        return this.connect(this.authData.feedUrl, 'ws');
     }
 
     onOpen() {
         this.authenticate();
         this.ws.binaryType = 'arraybuffer';
+        this.ws.addEventListener('pong', () => {
+            this.log('ready state: ' + this.ws?.readyState);
+        });
     }
 
     authenticate() {
@@ -84,5 +87,16 @@ export class KMDClient extends SocketClient
             inputtoken: scripStr,
         }
         this.sendMessage(JSON.stringify(request));    
+    }
+
+    history(request){
+        const params = {
+            neosymbol: request.scrip,
+            fromdate: new Date(request.startTime).toISOString().split('T')[0],
+            todate: new Date(request.endTime).toISOString().split('T')[0],
+            interval: '5min'
+        }
+
+        return this.get('history', params);
     }
 }

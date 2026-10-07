@@ -1,8 +1,8 @@
 import { open } from 'lmdb';
 
-import { SystemService } from "../service.mjs";
+import { SystemService } from "./service.mjs";
 
-class PersistenceService extends SystemService
+export class PersistenceService extends SystemService
 {
     constructor(name)
     {
@@ -25,5 +25,3 @@ class PersistenceService extends SystemService
         return await this.store.put(key, value);
     }
 }
-
-export const persistenceservice = new PersistenceService('PERSISTSERVICE');

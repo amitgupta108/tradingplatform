@@ -1,5 +1,6 @@
 import scrips_config from '../config/scrips_config.json' with { type: 'json' };
 import services_config from '../config/services_config.json' with { type: 'json' };
+import apps_config from '../config/app_config.json' with {type: 'json'};
 
 export const {
     OPT_EXPIRIES,
@@ -14,5 +15,12 @@ export const {
 } = scrips_config;
 
 export const {
-    services
+    services,
 } = services_config;
+
+export const {
+    appids,
+    modes,
+    access,
+    providers
+} = apps_config;

@@ -1,7 +1,6 @@
-import { eventservice } from '../eventservice.mjs';
-import { SocketClient } from './socketclient.mjs';
+import { BrokerAdapter } from './BrokerAdpater.mjs';
 
-export class TPSocket extends SocketClient
+export class TPSocket extends BrokerAdapter
 {
     constructor(options) {
         super('TPCLIENT', options);
@@ -21,7 +20,7 @@ export class TPSocket extends SocketClient
         });
 
         this.ws.on('scrips', (data) => {
-            eventservice.emit('scrips', data);
+            this.emit('scrips', data);
         });
 
         this.ws.on('quote', (data) => {

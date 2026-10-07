@@ -23,7 +23,7 @@ export class SocketIO
     {
         const {AppClientManager} = await import('../serverlocal/app.mjs');
         const app = new AppClientManager();
-        app.startServices();
+        await app.startServices();
 
         this.sio.on('connection', (s) => {
             app.connect(s);

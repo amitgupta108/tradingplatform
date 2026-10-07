@@ -6,9 +6,8 @@ import csvParser from 'csv-parser';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { ConfigService } from './.config/configservice.mjs';
-import { eventservice } from './eventservice.mjs';
 import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
-import { SystemService } from './service.mjs';
+import { BrokerService } from './system/service.mjs';
 
 const FIELD_MAP = {
 	pSymbol:      'token',
@@ -62,11 +61,11 @@ async function clearStaleCacheFiles()
 	}
 }
 
-class ScripStore extends SystemService
+export class ScripStore extends BrokerService
 {
 	constructor(name)
 	{
-		super('SCRIPSTORE');
+		super(name);
 		this.isLoaded = false;    
 		this.inMemoryStore = new Map();
 	}
@@ -95,7 +94,8 @@ class ScripStore extends SystemService
 	async remoteLoad(filters)
 	{
 		return await new Promise((resolve, reject) => {
-			eventservice.addListener('scrips', (scrips) => {
+			const es = ConfigService.getServiceByName('EVENTSERVICE');
+			es.addListener('scrips', (scrips) => {
 				scrips.forEach((s) => {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
 				});
@@ -212,5 +212,3 @@ class ScripStore extends SystemService
 	getScrips(filters) { return Array.from(this.inMemoryStore.values()).filter((r) => filterfn(r, filters)); }
 	getStoreStatus() { return { loaded: this.isLoaded, totalRecords: this.inMemoryStore.size }; }
 }
-
-export const scripstore = new ScripStore();

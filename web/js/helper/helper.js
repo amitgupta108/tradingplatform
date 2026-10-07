@@ -38,6 +38,24 @@ function expandSymbol(symbol)
   return s;
 }
 
+const scrip_cache = new Map();
+function getScrip(symbol) {
+  let s = scrip_cache.get(symbol);
+  if (s === undefined) {
+    const idx = symbol.search(regex);
+
+    s = { stockCode: idx === -1 ? symbol : symbol.slice(0, idx) };
+    s.right = symbol.slice(-2);
+    s.expiry = symbol.slice(idx, idx + 7);
+    s.strike = symbol.slice(idx + 7, -2);
+    s.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
+    s.name = s.expiry + ' ' + s.strike + ' ' + s.right;
+    s.symbol = symbol;
+    scrip_cache.set(symbol, s);
+  }
+  return s;
+}
+
 function generateEvent(type, nv)
 {
   return new CustomEvent(type, {

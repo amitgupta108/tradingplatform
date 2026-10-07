@@ -15,10 +15,10 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 
 async function startServers() {
     const { SocketIO } = await import('./serverapps/socketio.mjs');
-    (new SocketIO()).start();
+    await (new SocketIO()).start();
 
     const { WSServer } = await import('./serverapps/socketws.mjs',);
-    (new WSServer()).start();
+    await (new WSServer()).start();
 
 }
 
