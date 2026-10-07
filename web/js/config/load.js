@@ -81,7 +81,8 @@ qBox.addEventListener('futures', (event) => {
 	document.title = fut_title + spot_title;
 	spot_label.textContent = fut_title + spot_title;
 
-	time_label.textContent = new Date().toLocaleTimeString();
+	time_label.textContent = (instrument.mode === 'HISTORY' ?
+		new Date(q.ltt) : new Date()).toLocaleTimeString();
 });
 
 qBox.addEventListener('strikex', (event) => {
