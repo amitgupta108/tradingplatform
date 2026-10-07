@@ -29,7 +29,10 @@ export class BrokerMarketDataImpl extends BrokerImpl
             this.es = ConfigService.getServiceByName('EVENTSERVICE');
             this.es.addListener(`${this.name}_unsub`, (appid, list) => {
                 this.subscribe(appid, list, 'unsub');
-            })
+            });
+            this.es.addListener('oc_unsub', (count) => {
+                this.my_subs.autoUnsub(count);
+            });
             this.my_subs = new Subscriptions(this.name);
             
             this.addListeners();
@@ -99,7 +102,7 @@ export class BrokerMarketDataImpl extends BrokerImpl
             streamer.emitQs(qt);
         }
         else {
-            const appids = this.my_subs.getSubscribers(qt.symbol);
+            const appids = this.my_subs.getSubscribers(qt.symbol, true);
             appids.forEach((a) => {
                 qt.appid = a;
                 streamer.emitQs(qt);
