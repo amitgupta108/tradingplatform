@@ -41,19 +41,17 @@ function start()
 	emit('startv2', instrument); 
 }
 
-function stop() 
+function pauseResume() 
 {
-	if(document.getElementById('btnStopSim').innerText === 'Stop')
-		emit('stream', 'pause');
-	else if (document.getElementById('btnStopSim').innerText === 'Resume')
-		emit('stream', 'resume');
+	const action = document.getElementById('btnStopSim').innerText;
+	emit('stream', action.toLowerCase());
+
+	document.getElementById('btnStopSim').innerText = action.toLowerCase() === 'pause' ? 'Resume' : 'Pause';
 }
 
 function exit() 
 {
-	//socket.disconnect();
-	//bottom_btns.forEach((btn) => btn.disabled = true);
-	emit('exit', 'pause');
+	emit('exit', 'exit');
 }
 
 function listOrders()
@@ -66,21 +64,6 @@ function streamOptionChain(event)
 	event.stopPropagation();
 	const idx = document.getElementById('expiry_btn_1').disabled ? 0 : 1;
 	emit('option_chain', {expiry: instrument.oExpiries[idx], action:'toggle'});
-}
-
-function wsOps(action)
-{
-	emit('wsOps', action, tpt);
-}
-
-function subs_vix()
-{
-	qBox.reset();
-}
-
-function reload()
-{
-	emit('reload', '');
 }
 
 function auth(action)

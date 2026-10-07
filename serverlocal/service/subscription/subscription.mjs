@@ -42,8 +42,9 @@ export class Subscriptions
         this.req_map.addRequests(appid, requests);
     }
 
-    removeRequests(requests) {
-        this.req_map.removeRequests(requests);
+    removeRequests(appid) {
+        const unsub_list = this.req_map.removeRequests(appid);
+        this.es.emit(`${this.owner}_unsub`, appid, unsub_list);
     }
 
     getSubscribers(symbol, active) 
@@ -52,17 +53,23 @@ export class Subscriptions
         return (!active) ? subscribers :
             subscribers.filter((appid) => {
                 return this.getSubscriptions(appid)?.toStream;
-        })
+        });
     }
 
     pauseStream(appid){
-        this.getSubscriptions(appid).pause();
+        this.getSubscriptions(appid).pause(true);
     }
 
     resumeStream(appid) {
-        this.getSubscriptions(appid).toStream = true;
+        this.getSubscriptions(appid).pause(false);
     }
 
+    autoUnsub(obj_count) {
+        const list = this.getFullSubsList();
+        for( const l of list) {
+            this.removeRequests(t.unsub(obj_count.count));
+        }
+    }
 }
 
 export class SubscribersMap
@@ -83,16 +90,16 @@ export class SubscribersMap
         });
     }
 
-    removeRequests(appid, requests) 
+    removeRequests(appid) 
     {
         const unsub_list = [];
-        requests.forEach((r) => {
-            const subscribers = this.req_map.get(r.symbol);
+        this.req_map.keys().forEach((symbol) => {
+            const subscribers = this.req_map.get(symbol);
             const idx = subscribers.findIndex((v) => v === appid);
             if(idx !== -1) {
                 subscribers.splice(idx, 1);
                 if(subscribers.length === 0)
-                    this.es.emit(`${this.owner}_unsub`, appid, requests);
+                    unsub_list.push({symbol: symbol});
             }
         });
         return unsub_list;
@@ -100,6 +107,12 @@ export class SubscribersMap
 
     getSubscribers(symbol) {
         return this.req_map.get(symbol);
+    }
+
+    getRequests(appid) {
+        return Array.from(this.req_map.keys()).filter((k) => {
+            return this.req_map.get(k).includes(appid);
+        });
     }
 }
 
@@ -129,9 +142,9 @@ export class SubsTemplate
         });
     }
 
-    pause()
+    pause(toPause)
     {
-        this.toStream = false;
+        this.toStream = !toPause;
     }
 
     getSubsItems(keys)
@@ -233,5 +246,19 @@ export class SubsTemplate
             this.atm = Math.round(uq.ltp / sz) * sz;
             return { load: true, uq: uq };
         }
+    }
+
+    unsub(count)
+    {
+        const osts = this.getActiveOptionChains();
+        const unsub_strikes = [];
+        for(const ost of osts) {
+            const unsub_list = ost.strikes.filter((s) => {
+                Math.abs((s.strike - this.atm) > count * STRIKE_SIZE[this.stockCode])
+           });
+
+           unsub_strikes.concat(unsub_list);
+        }
+        return unsub_strikes;
     }
 }
