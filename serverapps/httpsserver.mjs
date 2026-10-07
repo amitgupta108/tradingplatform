@@ -42,6 +42,7 @@ hServer.listen(port, host, () => {
 const allowedOrigins = [
     'http://localhost:1025', // Your live production frontend domain  
     'https://0.0.0.0:1030',               // Alternative local development port
+    'https://13.235.102.236:1029'
 ];
 
 function handleRequests(req, res) 

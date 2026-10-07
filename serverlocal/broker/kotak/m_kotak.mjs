@@ -46,13 +46,17 @@ export class KotakMarketData extends BrokerMarketDataImpl
         list.forEach((e) => {
             if(e.key === 'index') {
                 e.token = e.symbol === 'NIFTY' ? 'NIFTY 50' : e.symbol;
-                indices.push(e.exchange + '|' + e.token);
+                indices.push('nse_cm' + '|' + e.token);
             } else {
-                e.token = this.scrips.findScripByRefKey(e.symbol)?.token;
-                scrips.push(e.exchange + '|' + e.token);
+                const scrip = this.scrips.findScripByRefKey(e.symbol);
+                if (scrip !== undefined) {
+                    e.token = scrip.token;
+                    e.exchange = scrip.exchangeSegment;
+                    scrips.push(e.exchange + '|' + e.token);
+                }
             }
 
-            if (this.symbol_cache.get(e.token) === undefined)
+            if (e.token && e.exchange && this.symbol_cache.get(e.token) === undefined)
                 this.symbol_cache.set(e.token, e);
         });
         return {i_reqs: indices, s_reqs: scrips};
