@@ -4,11 +4,14 @@ export class EventService extends SystemService
 {
     constructor(name) {
         super(name);
+        this.eod = new Date();
+        this.eod.setHours(23, 59, 59);
         this.events = {
-            'ENDOFDAY': { active: true, ref: undefined, type: 'timeout' },
-            'TEARDOWN': { active: true, ref: undefined, type: 'immediate' },
-            'OC_UNSUB': { active: true, ref : undefined, type: 'interval', interval: 1} //minutes
+            'OC_UNSUB': { active: true, ref: undefined, type: 'interval', interval: 1 }, //minutes
+            'ENDOFDAY': { active: true, ref: undefined, type: 'timeout', timeout: this.eod.getTime() - Date.now() },
+            'TEARDOWN': { active: false, ref: undefined, type: 'immediate' },
         };
+        this.log(this.eod);
     }
 
     cInit()
@@ -37,13 +40,9 @@ export class EventService extends SystemService
 
     setTimeoutEvent(name) 
     {
-        const today = new Date();
-        today.setHours(23, 59, 59);
-        this.log(today);
-
         this.events[name].ref = setTimeout(() => {
-            this.emit('EOD', today);
-        }, today.getTime() - Date.now());
+            this.emit('EOD', this.eod);
+        }, this.events[name].timeout);
     }
 
     setImmediateEvent(name) {

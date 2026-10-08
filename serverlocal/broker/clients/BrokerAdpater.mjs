@@ -104,7 +104,7 @@ export class BrokerAdapter extends EventEmitter
             this.ws.close(1000, 'Client disconnecting');
             this.ws = null;
         }
-        this.shouldReconnect = false;
+        this.autoReconnect = false;
         this.isConnected = false;
         this.isConnecting = false;
         this.emit('disconnected');
