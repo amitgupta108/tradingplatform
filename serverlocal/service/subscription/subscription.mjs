@@ -67,7 +67,7 @@ export class Subscriptions
     autoUnsub(obj_count) {
         const list = this.getFullSubsList();
         for( const l of list) {
-            this.removeRequests(t.unsub(obj_count.count));
+            this.removeRequests(l.unsub(obj_count.count));
         }
     }
 }
