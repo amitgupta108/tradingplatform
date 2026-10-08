@@ -5,6 +5,7 @@ import { HSMClient } from '../../broker/clients/HSMClient.mjs';
 import { KotakHSISocket } from '../../broker/clients/HSIClient.mjs';
 import { KotakAdapter } from '../../broker/clients/KotakAdapter.mjs';
 import { InfraService } from '../system/service.mjs';
+import { ConfigService } from './configservice.mjs';
 
 const options = {
     autoReconnect: true,
@@ -22,6 +23,17 @@ export class AdapterFactory extends InfraService
         this.adapters = new Map();
     }
 
+    cInit()
+    {
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('EOD', () => {
+            this.adapters.values().forEach((a) => {
+                if(typeof a.disconnect === 'function')
+                    a.disconnect();
+            });
+        });
+    }
+    
     getAdapter(key) 
     {
         let c = this.adapters.get(key);
