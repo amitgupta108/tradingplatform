@@ -1,6 +1,6 @@
 import EventEmitter from "node:events";
 
-class Service extends EventEmitter 
+export class Service extends EventEmitter 
 {
     constructor(name) {
         super();

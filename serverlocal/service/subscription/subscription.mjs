@@ -66,8 +66,8 @@ export class Subscriptions
 
     autoUnsub(obj_count) {
         const list = this.getFullSubsList();
-        for( const l of list) {
-            this.removeRequests(l.unsub(obj_count.count));
+        for( const [k, v] of list) {
+            this.removeRequests(v.unsub(obj_count.count));
         }
     }
 }
@@ -253,7 +253,7 @@ export class SubsTemplate
         const osts = this.getActiveOptionChains();
         const unsub_strikes = [];
         for(const ost of osts) {
-            const unsub_list = ost.strikes.filter((s) => {
+            const unsub_list = ost.strikes?.filter((s) => {
                 Math.abs((s.strike - this.atm) > count * STRIKE_SIZE[this.stockCode])
            });
 

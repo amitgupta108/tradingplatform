@@ -20,17 +20,24 @@ export class KotakAdapter extends BrokerAdapter
         this.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
         this.endpoints.orderbook = new URL('/quick/user/orders', baseUrl).href;
         this.endpoints.positions = new URL('/quick/user/positions', baseUrl).href;
-        this.endpoints.history = new URL('/market-data/1.0/historical/details', baseUrl).href;
+        this.endpoints.history = new URL(`${baseUrl}/market-data/1.0/historical/details`);
     }
 
-    getHeaders() {
-        return {
-            'accept': 'application/json',
-            'Sid': this.authData.hsi_sid,
-            'Auth': this.authData.hsi_token,
-            'neo-fin-key': 'neotradeapi',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        };
+    getHeaders(action) 
+    {
+        if(action === 'history')
+            return {
+                'Authorization': 'b6ae356a-6686-42f6-b884-b8734b6c974a',
+                'Content-Type': 'application/json'
+            };
+        else
+            return {
+                'accept': 'application/json',
+                'Sid': this.authData.hsi_sid,
+                'Auth': this.authData.hsi_token,
+                'neo-fin-key': 'neotradeapi',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            };
     }
 
     post(endpt, body) {
@@ -46,7 +53,7 @@ export class KotakAdapter extends BrokerAdapter
     }
 
     get(endpt, params) {
-        const headers = this.getHeaders();
+        const headers = this.getHeaders(endpt);
         const api_url = this.endpoints[endpt];
         if(params)
             api_url.search = new URLSearchParams(params).toString();

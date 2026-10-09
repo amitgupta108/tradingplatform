@@ -44,7 +44,7 @@ function registerDataRequests(s, appid,  mode)
 
     s.on('snapshot', (msg) => {
         market_service.snapshot(appid, msg);
-    })
+    });
 }
 
 function registerTradeRequests(s, appid, mode) {
@@ -114,17 +114,31 @@ function registerAdminRequests(s, appid, mode)
         const service = ConfigService.getAdminService(mode, 'LIVE_STREAMING');
         service.subscribe(appid, list, provider);
     });
+
+    s.on('algo', (action) => {
+        const service = ConfigService.getAdminService(mode, 'ALGO_SERVICE');
+        return service.run('nse_fo|48704');
+    });
+
 }
 
-async function registerDisconnectionHandler(s, appid, mode)
+function registerDisconnectionHandler(s, appid, mode)
 {
     s.on("disconnect", (reason) => {
-        if(reason === 'client namespace disconnect')
-            exit(s, appid, mode);
-        else if(['server namespace disconnect',
-                'server shutting down', 'transport close', 'transport error'].includes(reason))
-            console.log("socket disconnected  " + reason);
+        exit(s, appid, mode);
+        console.log("socket disconnected  " + reason);
     });
+}
+
+function exit(s, appid, mode)
+{
+    const market_service = ConfigService.getActiveServiceByMode('view', mode);
+    market_service.exit(appid);
+    streamer.deleteFromUserMap(appid);
+    s.emit('exit', 'exit');
+    s.disconnect();
+
+    console.log('user exited:' + appid);
 }
 
 const catchAsync = (handler, eventName) => {
