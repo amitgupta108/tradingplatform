@@ -88,15 +88,4 @@ export class KMDClient extends KotakAdapter
         }
         this.sendMessage(JSON.stringify(request));    
     }
-
-    history(request){
-        const params = {
-            neosymbol: request.scrip,
-            fromdate: new Date(request.startTime).toISOString().split('T')[0],
-            todate: new Date(request.endTime).toISOString().split('T')[0],
-            interval: '5min'
-        }
-
-        return this.get('history', params);
-    }
 }

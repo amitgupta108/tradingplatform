@@ -140,9 +140,11 @@ export class BrokerAdapter extends EventEmitter
     }
 
     sendHeartbeat() {
-        if (this.ws && this.isConnected) {
+        if (this.ws && this.ws.readyState === 1) 
             this.ws.ping();
-        }
+        else 
+            this.handleReconnect();
+
     }
 
     startHeartbeat() {
