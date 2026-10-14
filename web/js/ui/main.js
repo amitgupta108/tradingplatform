@@ -73,6 +73,11 @@ function auth(action)
 	document.getElementById("tpt").value = "";
 }
 
+function algo(action)
+{
+	emit('algo', 'toggle');
+}
+
 function showChart() {
 	switchCharts(1);
 	let container;

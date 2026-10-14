@@ -34,8 +34,8 @@ export class EventService extends SystemService
     setIntervalEvent(name)
     {
         this.events[name].ref = setInterval(() => {
-            this.emit('oc_unsub', {count: 8});
-        }, this.events[name].interval * 60 * 60 * 1000);
+            this.emit('oc_unsub', {count: 7});
+        }, this.events[name].interval * 60 * 1000);
     }
 
     setTimeoutEvent(name) 

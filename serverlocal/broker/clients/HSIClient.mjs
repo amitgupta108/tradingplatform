@@ -36,24 +36,17 @@ export class KotakHSISocket extends KotakAdapter
             this.emit(message.type, this.name, message.data);
         else if (message.msg === 'connected')
             this.starthb();
-
     }
 
-    starthb() {
-
+    starthb() 
+    {
         streamer.broadcast('hb', { order_socket: this.ws?.readyState });
-
-        if (this.wsping !== undefined)
-            clearInterval(this.wsping);
+        clearInterval(this.wsping);
 
         this.wsping = setInterval(() => {
-            if(this.lasthb !== undefined && Date.now() - this.lasthb > this.heartbeatInterval + 5000) {
-                streamer.broadcast('hb', { order_socket: this.ws?.readyState });
-                this.log('Heartbeat timeout, closing socket');
-                this.ws.close();
-                return;
-            }
-            this.ws.ping();
+            streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+            this.log('Heartbeat timeout, closing socket');
+            this.ws.close(); //so it triggers reconnect
         }, this.heartbeatInterval);
     }
 }
