@@ -300,7 +300,7 @@ export class PacketParser
             close: close / divider, 
             //atp: average / divider, 
             ltt: lastTradeTime, 
-            lut: lastUpdateTime, 
+            //lut: lastUpdateTime, 
             //ltq: lastQty,
             //tbq: totalBuy, 
             //tsq: totalSell, 
