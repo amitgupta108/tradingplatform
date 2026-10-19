@@ -98,7 +98,7 @@ function lookbackPeriod()
 
 class Chart
 {
-	constructor(container, options)
+	constructor(panel, options)
 	{
 		this.currentcount = 0;
 		this.symbols = [];
@@ -107,13 +107,13 @@ class Chart
 		this.strat_series;
 		this.withStrategy = true;
 
-		this.setupChart(container, options);
+		this.setupChart(panel, options);
 		qBox.addEventListener('strikex', this);
 	}
 
-	setupChart(container, options)
+	setupChart(panel, options)
 	{
-		this.chart = LightweightCharts.createChart(container, options);
+		this.chart = LightweightCharts.createChart(charts[panel].container, options);
 		this.chart.priceScale('right').applyOptions({
 			visible: true,
 			mode: 0,
@@ -140,7 +140,11 @@ class Chart
 			else
 				this.series[i].symbol = this.symbols[i];
 		}
-
+		
+		const extra = this.series.length - this.symbols.length; 
+		if (extra > 0)
+			this.series.splice(this.symbols.length, extra);
+		
 		this.chart.timeScale().fitContent();
 		this.chart.timeScale().scrollToPosition(15);
 	}
@@ -154,7 +158,7 @@ class Chart
 			this.series[idx].lastq = q;
 			renderChart(this.series[idx].ref, undefined, q);
 		
-			if(this.withStrategy)
+			if (this.withStrategy && this.strategyImpl() !== null)
 				renderChart(this.strat_series, undefined, {ltp: this.strategyImpl(), ltt: q.ltt});
 		}
 	}
@@ -163,7 +167,10 @@ class Chart
 	{
 		let strategy_price = 0;
 		for (var i = 0; i < this.symbols.length; i++) {
-			strategy_price += this.series[i].lastq !== undefined ? this.series[i].lastq.ltp : 0;
+			if(this.series[i].lastq === undefined)
+				return null;
+			
+			strategy_price += this.series[i].lastq.ltp;
 		}
 		return strategy_price;
 	}
@@ -207,7 +214,7 @@ class Chart
 		const p = lookbackPeriod();
 		for (const s of symbols){
 			const r = structuredClone(p);
-			r.symbol = s;
+			r.symbol = s === 'index' ? instrument.stockCode : s;
 			requests.push(r);
 		}
 		socket.emit('history', requests);
@@ -258,7 +265,8 @@ const chartOptions = {
 
 const chart1 = LightweightCharts.createChart(charts['futures'].container, chartOptions);
 const chart2 = LightweightCharts.createChart(charts['index'].container, chartOptions);
-const options_chart = new Chart(charts['strikes'].container, chartOptions);
+//const index_chart = new Chart('index', chartOptions);
+const options_chart = new Chart('strikes', chartOptions);
 
 const priceScaleOptions = {
 	visible: true,
@@ -279,3 +287,5 @@ chart1.timeScale().fitContent();
 chart1.timeScale().scrollToPosition(15);
 chart2.timeScale().fitContent();
 chart2.timeScale().scrollToPosition(15);
+
+//chart2.show(['index'], false);

@@ -85,7 +85,7 @@ class Position
 		const scrip = expandSymbol(this.symbol);
 		const oc = OptionChain.get(scrip.expiry_date);
 		if(oc !== undefined)
-			oc.markPosition(scrip, this.psize);    
+			oc.markPosition(this.symbol, this.psize);    
 		
 		this.#pRow.querySelector('#pos_exit_cb').disabled = this.psize === 0 ? true : false;
 		this.#pRow.style.display = 'table-row';
