@@ -1,27 +1,23 @@
-import { ConfigService} from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/.config/configservice.mjs';
 import { LOTSIZE } from '../../utils/constants.mjs';
 import { UserService } from '../../service/system/service.mjs';
 
-export class OrderSimulator extends UserService
-{
-    constructor(name)
-    {
+export class OrderSimulator extends UserService {
+    constructor(name) {
         super(name);
         this.mytradename = this.name;
         this.counter = 50000;
         this.orders = new Map();
     }
 
-    init() 
-    {
+    init() {
         if (!this.initialized) {
             this.es = ConfigService.getServiceByName('EVENTSERVICE');
 
             const mymodes = ConfigService.getModesForService(this.name, 'trade');
             mymodes.forEach((m) => {
                 const s = ConfigService.getActiveServiceByMode('view', m);
-                if(s !== undefined)
-                {
+                if (s !== undefined) {
                     const eventname = s.registerPriceFeed();
                     this.es.addListener(eventname, (q) => {
                         this.orderExecutionSim(eventname, q);
@@ -33,11 +29,10 @@ export class OrderSimulator extends UserService
         }
     }
 
-    placeOrder(appid, order)
-    {
+    placeOrder(appid, order) {
         const as = ConfigService.getServiceByName('AUTHSERVICE');
-        order.view_mode = as.getFeatureModeforApp(appid ,'view');
-        order.quantity = order.quantity * LOTSIZE[order.stockCode];
+        order.view_mode = as.getFeatureModeforApp(appid, 'view');
+        order.quantity = order.quantity;
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++this.counter;
@@ -48,8 +43,7 @@ export class OrderSimulator extends UserService
         return order;
     }
 
-    orderExecutionSim(view_mode, q) 
-    {
+    orderExecutionSim(view_mode, q) {
         const openorders = Array.from(this.orders.values()).filter((order) => {
             return (order.state === 'opened'
                 && order.symbol === q.symbol
@@ -77,8 +71,7 @@ export class OrderSimulator extends UserService
         }
     }
 
-    cancelOrder(appid, order) 
-    {
+    cancelOrder(appid, order) {
         const found = this.orders.get(order.orderid);
         if (found !== undefined && found.state === 'opened') {
             found.state = 'cancelled';
@@ -86,19 +79,18 @@ export class OrderSimulator extends UserService
         }
         else
             console.error('cancellation failed - order not found or not open');
-        
+
         return found;
     }
 
-    orderbook(appid, stockCode) 
-    {
+    orderbook(appid, stockCode) {
         return Array.from(this.orders.values()).filter((order) => {
             return order.appid === appid
-            && order.stockCode === stockCode;
+                && order.stockCode === stockCode;
         });
     }
 
-    positions(appid, stockCode){
+    positions(appid, stockCode) {
         return [];
     }
 }

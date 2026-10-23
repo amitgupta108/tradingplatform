@@ -4,7 +4,7 @@ function emit(event, arg1, arg2) {
 
 function historyParams()
 {
-	const endTime = instrument.simStartTime ?? Date.now();
+	const endTime = instrument.mode === 'HISTORY'? instrument.simStartTime : Date.now();
 	const startTime = endTime - 4 * 24 * 60 * 60 * 1000; // 4 days back
 
 	const p = {
