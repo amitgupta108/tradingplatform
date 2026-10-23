@@ -35,18 +35,6 @@ export class KotakHSISocket extends KotakAdapter
         if (message.type !== 'cn')
             this.emit(message.type, this.name, message.data);
         else if (message.msg === 'connected')
-            this.starthb();
-    }
-
-    starthb() 
-    {
-        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
-        clearInterval(this.wsping);
-
-        this.wsping = setInterval(() => {
-            streamer.broadcast('hb', { order_socket: this.ws?.readyState });
-            this.log('Heartbeat timeout, closing socket');
-            this.ws.close(); //so it triggers reconnect
-        }, this.heartbeatInterval);
+            this.startHeartbeat();
     }
 }
