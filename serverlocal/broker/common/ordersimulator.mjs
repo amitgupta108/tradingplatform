@@ -32,7 +32,7 @@ export class OrderSimulator extends UserService {
     placeOrder(appid, order) {
         const as = ConfigService.getServiceByName('AUTHSERVICE');
         order.view_mode = as.getFeatureModeforApp(appid, 'view');
-        order.quantity = order.quantity;
+        order.quantity = order.quantity * LOTSIZE[order.stockCode];;
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++this.counter;

@@ -108,7 +108,7 @@ function displayOrderList(btn, parent)
 
 			newtr.childNodes[1].textContent = o.orderid;
 			newtr.childNodes[3].textContent = o.action;
-			newtr.childNodes[5].textContent = o.filled_q + ' / ' + (o.quantity * LOT_SIZE[instrument.stockCode]);
+			newtr.childNodes[5].textContent = o.filled_q + ' / ' + (o.quantity);
 			newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
 			newtr.childNodes[9].textContent = tqty;
 			newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
