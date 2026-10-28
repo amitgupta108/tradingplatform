@@ -90,7 +90,7 @@ function updateCandle(q, curCandle){
 
 function lookbackPeriod()
 {
-	const endTime = instrument.simStartTime ?? Date.now();
+	const endTime = instrument.mode === 'HISTORY'? instrument.simStartTime : Date.now();
 	const startTime = endTime - 4 * 24 * 60 * 60 * 1000; // 4 days back
 
 	return {startTime: startTime, endTime: endTime, interval: '5minute'};
