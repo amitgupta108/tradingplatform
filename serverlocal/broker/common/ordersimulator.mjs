@@ -37,6 +37,7 @@ export class OrderSimulator extends UserService {
         order.pricedAt = 0;
         order.orderid = ++this.counter;
         order.state = 'opened';
+        order.submittime = Date.now();
         this.orders.set(order.orderid, order);
 
         this.es.emit('ordersim', order);
@@ -65,6 +66,7 @@ export class OrderSimulator extends UserService {
                     order.state = 'completed';
                     order.pricedAt = q.ltp;
                     order.filled_q = order.quantity;
+                    order.executiontime = Date.now();
                     this.es.emit('ordersim', order);
                 }
             });

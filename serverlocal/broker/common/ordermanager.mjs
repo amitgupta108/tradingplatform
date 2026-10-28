@@ -49,6 +49,7 @@ export class OrderManager extends UserService
             if(order.orderid === undefined) {
                 order.orderid = ++this.counter;
                 order.localid = order.orderid;
+                order.submittime = Date.now();
             }
             order.filled_q = 0;
             order.pricedAt = 0;
@@ -74,6 +75,8 @@ export class OrderManager extends UserService
             live_order.trade_mode = found.trade_mode;
             live_order.strategy = found.strategy;
             live_order.localid = found.localid;
+            live_order.submittime = found.submittime;
+            live_order.executiontime = Date.now();
             this.live_order_map.delete(found.localid);
         }
         console.log('order notifcation ' + order?.ordSt + ' ' + order?.nOrdNo + ' found : ' + found?.orderid);
