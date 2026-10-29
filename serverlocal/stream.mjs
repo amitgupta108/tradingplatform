@@ -70,7 +70,7 @@ class StreamingService extends SystemService
     broadcast(type, msg, group)
     {
         for (const [k, v] of this.usermapEntries()) {
-            if (v && (type === 'hb' || (type === 'vix' && !v.mode.startsWith('HISTORY'))))
+            if ((type === 'hb' || (type === 'vix') && !v?.mode.startsWith('HISTORY')))
                 this.emit(v.socket, type, msg);
         }
     }
