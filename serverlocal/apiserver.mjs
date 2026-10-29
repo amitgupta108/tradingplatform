@@ -33,6 +33,7 @@ function registerDataRequests(s, appid,  mode)
     s.on('exit', (msg) => {
         market_service.exit(appid);
         streamer.deleteFromUserMap(appid);
+        s.emit('exit', 'user initiated');
         s.disconnect();
 
         console.log('user exited:' + appid);
@@ -125,20 +126,12 @@ function registerAdminRequests(s, appid, mode)
 function registerDisconnectionHandler(s, appid, mode)
 {
     s.on("disconnect", (reason) => {
-        exit(s, appid, mode);
+        const market_service = ConfigService.getActiveServiceByMode('view', mode);
+        market_service.exit(appid);
+        streamer.deleteFromUserMap(appid);
+
         console.log("socket disconnected  " + reason);
     });
-}
-
-function exit(s, appid, mode)
-{
-    const market_service = ConfigService.getActiveServiceByMode('view', mode);
-    market_service.exit(appid);
-    streamer.deleteFromUserMap(appid);
-    s.emit('exit', 'exit');
-    s.disconnect();
-
-    console.log('user exited:' + appid);
 }
 
 const catchAsync = (handler, eventName) => {
