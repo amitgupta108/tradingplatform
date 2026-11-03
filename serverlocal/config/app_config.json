@@ -1,0 +1,92 @@
+{
+    "appids": [
+        {
+            "mode": "HISTORY",
+            "appid": "b6033d82-1d88-470a-bf28-58b217f098e7"
+        },
+        {
+            "mode": "HISTORY",
+            "appid": "5be36ca0-44e8-44d9-b739-4864c6dfc553"
+        },
+        {
+            "mode": "HISTORY",
+            "appid": "5be36ca0-5590-44d9-b739-4864c6dfc553"
+        },
+        {
+            "mode": "S5T1ABS",
+            "appid": "186ee155-38d9-49c1-9e18-b17551e8a4bx"
+        },
+        {
+            "mode": "S5TSABS",
+            "appid": "996ee155-48d9-49c1-0e18-b17551e8a4gh"
+        },
+        {
+            "mode": "S5T1ABS",
+            "appid": "186ee155-38d9-49c1-9e19-b17551e8a4bx"
+        },
+        {
+            "mode": "S5TSABS",
+            "appid": "996ee155-48d9-49c8-0e18-b17551e8a4gh"
+        },
+        {
+            "mode": "S2T1AB",
+            "appid": "dN2wzV0S-x3Ca-SVQI-AAAH-940b886ee169"
+        },
+        {
+            "mode": "S1T1ABS",
+            "appid": "0cd4a0ed-c4a1-4318-940b-b4d3841468d9"
+        },
+        {
+            "mode": "S5T1ABS",
+            "appid": "886ee155-38d9-49c1-9e18-b17551e8a4be"
+        },
+        {
+            "mode": "S5TSABS",
+            "appid": "531c0a81-0558-4ad7-8b4c-1ea5bf3775d3"
+        },
+        {
+            "mode": "S2T1ABS",
+            "appid": "431c0a81-0558-4ad7-8b4c-1ea5bf3775b4"
+        }
+    ],
+    "modes": {
+        "HISTORY": { "view": "HISTORY", "trade": "SIMULATION", "admin": ["BROKER_AUTH"] },
+        "S1T1ABS": { "view": "LIVE_1", "trade": "LIVE_1", "admin": ["BROKER_AUTH", "SCRIP_STORE"] },
+        "S1T0AS": { "view": "LIVE_1", "admin": ["SCRIP_STORE"] },
+        "S2T1AB": { "view": "LIVE_2", "trade": "LIVE_1", "admin": ["BROKER_AUTH"] },
+        "S2T2A0": { "view": "LIVE_2", "trade": "LIVE_2" },
+        "S2TSA0": { "view": "LIVE_2", "trade": "SIMULATION" },
+        "S3T1AB": { "view": "LIVE_3", "trade": "LIVE_1", "admin": ["BROKER_AUTH"] },
+        "S3T0A0": { "view": "LIVE_3" },
+        "S5TSABS": { "view": "LIVE_5", "trade": "SIMULATION", "admin": ["BROKER_AUTH", "SCRIP_STORE"] },
+        "S5T1ABS": { "view": "LIVE_5", "trade": "LIVE_1", "admin": ["BROKER_AUTH", "SCRIP_STORE"] },
+        "S6T0A0": { "view": "LIVE_6" },
+        "TPMODE": { "admin": ["SCRIP_STORE", "LIVE_STREAMING"] }
+    },
+    "access": {
+        "view": ["vix", "startv2", "history", "speed", "exit", "stream", "option_chain"],
+        "trade": ["order", "cancelorder", "orderbook", "positions", "updateorder"],
+        "admin": ["authenticate", "scrips", "subscribe", "unsubscribe", "algo"]
+    },
+    "providers": {
+        "view": {
+            "LIVE_1": "KOTAKHSMVIEW",
+            "LIVE_2": "OPENALGOVIEW",
+            "LIVE_3": "ICICILIVEVIEW",
+            "LIVE_5": "KOTAKLIVEVIEW",
+            "LIVE_6": "COMMONSERVICE",
+            "HISTORY": "ICICIHISTVIEW"
+        },
+        "trade": {
+            "LIVE_1": "KOTAKNEOTRADE",
+            "LIVE_2": "OPENALGOTRADE",
+            "SIMULATION": "ORDERSIMULATOR"
+        },
+        "admin": {
+            "BROKER_AUTH": "AUTHSERVICE",
+            "SCRIP_STORE": "SCRIPSTORE",
+            "LIVE_STREAMING": "SERVERSTREAM",
+            "ALGO_SERVICE": "ALGOSERVICE"
+        }
+    }
+}

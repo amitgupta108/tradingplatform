@@ -1,0 +1,91 @@
+{
+    "OPT_EXPIRIES": {
+        "NIFTY": {
+            "FIRST": "27OCT26",
+            "SECOND": "03NOV26"
+        },
+        "CRUDEOIL": {
+            "FIRST": "17NOV26",
+            "SECOND": "16DEC26"
+        },
+        "BANKNIFTY": {
+            "FIRST": "27OCT26"
+        }
+    },
+    "FUT_EXPIRIES": {
+        "NIFTY": {
+            "FIRST": "27OCT26"
+        },
+        "CRUDEOIL": {
+            "FIRST": "19NOV26",
+            "SECOND": "18DEC26"
+        }
+    },
+    "OPT_CONFIG": {
+        "DEFAULT": {
+            "start": 0,
+            "end": 10,
+            "toStream": true
+        },
+        "FIRST": {
+            "start": 0,
+            "end": 7,
+            "toStream": true
+        },
+        "SECOND": {
+            "start": 3,
+            "end": 10,
+            "toStream": true
+        }
+    },
+    "EXCHANGES": {
+        "NIFTY": "nse_fo",
+        "CRUDEOIL": "mcx_fo"
+    },
+    "STRIKE_SIZE": {
+        "NIFTY": 50,
+        "BANKNIFTY": 100,
+        "CRUDEOIL": 50
+    },
+    "LOTSIZE": {
+        "NIFTY": 65,
+        "CRUDEOIL": 100,
+        "BANKNIFTY": 25
+    },
+    "filePaths": [
+        {
+            "segment": "nse_fo",
+            "url": "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-10-29/transformed/nse_fo.csv"
+        },
+        {
+            "segment": "mcx_fo",
+            "url": "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-10-27/transformed/mcx_fo.csv"
+        }
+    ],
+    "filters": {
+        "expiryDate": [
+            "1478183400",
+            "1478701800",
+            "1479911400",
+            "1792454399",
+            "1794959999",
+            "1795132799"
+        ],
+        "underlying": [
+            "NIFTY",
+            "CRUDEOIL"
+        ]
+    },
+    "tp_filters": {
+        "expiryDate": [
+            "1476369000",
+            "1477578600",
+            "1792108799",
+            "1792454399"
+        ],
+        "underlying": [
+            "NIFTY",
+            "CRUDEOIL"
+        ]
+    }
+}

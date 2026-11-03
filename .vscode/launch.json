@@ -1,0 +1,43 @@
+{
+    "inputs": [],
+    "configurations": [
+        {
+            "name": "Run on 1025",
+            "program": "${workspaceFolder}/dist/start.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node",
+            "args": [
+                "1025"
+            ],
+            "runtimeArgs": [
+                "--env-file=${workspaceFolder}/dist/serverlocal/.env",
+                "--env-file=${workspaceFolder}/dist/serverlocal/config/.env.s",
+            ],
+            "runtimeExecutable": "/Users/amitgupta/.nvm/versions/node/v24.14.0/bin/node",
+            "outputCapture": "std"
+        },
+        {
+            "name": "Run on 1026",
+            "program": "${workspaceFolder}/dist/start.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node",
+            "args": [
+                "1026"
+            ],
+            "runtimeArgs": [
+                "--env-file=${workspaceFolder}/dist/serverlocal/.env.p",
+                "--env-file=${workspaceFolder}/dist/serverlocal/config/.env.s",
+            ],
+            "runtimeExecutable": "/Users/amitgupta/.nvm/versions/node/v24.14.0/bin/node",
+            "outputCapture": "std"
+        }
+    ],
+    "compounds": [],
+    "version": "0.2.0"
+}

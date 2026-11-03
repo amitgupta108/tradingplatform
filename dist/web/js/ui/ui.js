@@ -1,0 +1,264 @@
+function newOrder(order)
+{
+	const rows = order_rows_tbody.rows;
+	if(rows.length > 0)
+	{
+		if(!basket.checked)
+			var idx = 0
+		else
+			var idx = Array.from(rows).findIndex((r) => {
+				return r.querySelector('#owsymbol').textContent === order.symbol;
+			});
+
+		if(idx !== -1)
+			rows[idx].remove();
+	}
+	appendOrderRow(order);
+	showOrderWindow();
+}
+
+function appendOrderRow(order)
+{
+	const scripName = expandSymbol(order.symbol).name;
+
+	var tr = tRow(t_order_window_row);
+	tr.querySelector('#owsymbol').textContent  = order.symbol;
+	tr.querySelector('#scripName').textContent  = scripName;
+
+	const ordertype = tr.querySelector('#ordertype');
+	ordertype.textContent = order.ordertype;
+	if(ordertype.textContent === 'LIMIT'){
+		tr.querySelector('#lmtprice').disabled = false;
+		tr.querySelector('#lmtprice').value = order.price;
+	}
+	const action_btn = tr.querySelector('#ow_action_btn');
+	action_btn.textContent = order.action;
+	const selectbox = tr.querySelector('select');
+	selectbox.value = order.quantity / LOT_SIZE[instrument.stockCode];
+
+	if(order.type === 'modify')
+		tr.title = order.orderid;
+	
+	if(!basket.checked)
+		tr.classList.remove('hover-row');
+
+	if(order.action === 'B') {
+		action_btn.classList.replace('sell', 'buy');
+		selectbox.classList.replace('sell', 'buy');
+	}
+	else
+	{
+		action_btn.classList.replace('buy', 'sell');
+		selectbox.classList.replace('buy', 'sell');
+	}
+
+	order_rows_tbody.prepend(tr);
+	submitOWinBtn.disabled = true;
+}
+
+function showOrderWindow()
+{
+	basket.disabled = true;
+	const rows = order_rows_tbody.rows;
+	
+	oWindow.classList.remove('buy', 'sell', 'multi');
+	if(rows.length === 1){
+		const action = rows[0].querySelector('#ow_action_btn').textContent;
+		const style = action === 'B' ? 'buy' : 'sell';
+		oWindow.classList.add(style);
+	}
+	else
+		oWindow.classList.add('multi');
+
+	oWindow.style.display = "block";
+}
+
+function hideOWin()
+{
+	oWindow.style.display = "none";
+	order_rows_tbody.innerHTML = "";
+	basket.disabled = false;
+	submitOWinBtn.disabled = true;
+	in_prep_orders.orders = {};
+	Order.clearUIOrders();
+}
+
+function flipAction(orderRowBtn, orderRow)
+{
+	submitOWinBtn.disabled = true;
+	const selectbox = orderRow.querySelector('select');
+
+	var action = orderRowBtn.innerText;
+	orderRowBtn.innerText = action === 'B' ? 'S' : 'B';
+	if(action === 'B') {
+		orderRowBtn.classList.replace('buy', 'sell');
+		selectbox.classList.replace('buy', 'sell');
+	}
+	else {
+		orderRowBtn.classList.replace('sell', 'buy');
+		selectbox.classList.replace('sell', 'buy');
+	}
+
+	showOrderWindow();
+}
+
+function switchTabs(idx)
+{
+	document.getElementById('c_oc_div').classList.toggle('active');
+	document.getElementById('n_oc_div').classList.toggle('active');
+
+	const active = idx === 1 ? 0 : 1;
+	const btns = [expiry_btn_1, expiry_btn_2];
+	btns[idx].disabled = true;
+	btns[active].disabled = false;
+}
+
+function switchCharts(idx)
+{
+	const left = document.getElementById('leftContainer');
+	const tabs = left.querySelectorAll('div[id^="chart_tab_"]');
+	const panes = left.querySelectorAll('div[id^="leftContainer_"]');
+	for(var i = 0; i < 3; i++)
+	{
+		tabs[i].classList.remove('active-tab');
+		panes[i].style.display = 'none';
+	}
+
+	tabs[idx].classList.add('active-tab');
+	panes[idx].style.display = 'block';
+}
+
+function tRow(template, withListener = true){
+	const new_row = document.importNode(template.content, true).querySelector('tr');
+	if(withListener){
+	new_row.addEventListener('click', (e) => {
+		e.stopPropagation();
+
+		if(e.target !== new_row)
+			handleClickEvent(e);
+	}, true);
+
+	new_row.addEventListener('change', (e) => {
+		e.stopPropagation();
+
+		if(e.target !== new_row)
+			handleChangeEvent(e);
+	}, true);
+
+	new_row.addEventListener('input', (e) => {
+		e.stopPropagation();
+
+		if(e.target.id === 'lmtprice' && e.target !== new_row)
+			submitOWinBtn.disabled = true;
+		}, true);
+	}
+	return new_row;
+}
+
+function handleChangeEvent(e)
+{
+	const clicked = e.target;
+	const parent = e.currentTarget;
+
+	if(parent.id === 'order-window-tr')
+		submitOWinBtn.disabled = true;
+	else if(clicked.id === 'pos_exit_cb')
+		position_cb_action();
+}
+
+function handleClickEvent(e)
+{
+	const cl_el = e.target;
+	const pn_el = e.currentTarget;
+
+	if(cl_el.id === 'ordertype')
+		flipOrderType(cl_el, pn_el);
+	else if(cl_el.id === 'div_trans_btn')
+		createOrder(cl_el, pn_el);
+	else if(cl_el.id === 'row_attn_btn')
+		hl_row(cl_el, pn_el);
+	else if(cl_el.id === 'ow_action_btn')
+		flipAction(cl_el, pn_el);
+	else if(cl_el.id === 'ow_row_rm_btn')
+		removeOrderRow(cl_el, pn_el);
+	else if(cl_el.id === 'orderdisplay-btn')
+		displayOrderList(cl_el, pn_el);
+	else if (cl_el.id === 'conf_cancel_lb')
+		confirmCancel(cl_el, pn_el);
+	else if(cl_el.id === 'cancel_order_btn')
+		cancelOrder(cl_el, pn_el);
+	else if (cl_el.id === 'modify_order_btn')
+		modifyOrder(cl_el, pn_el);
+	else if(cl_el.id === 'drop_cancel_btn')
+		dropCancelOrder(cl_el, pn_el);
+	else if(cl_el.id === 'pos_exit_cb')
+		return;
+}
+
+function flipOrderType(c, p)
+{
+	submitOWinBtn.disabled = true;
+	c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
+	const limitp = qSel(p, 'lmtprice', 'id');
+	limitp.disabled = c.textContent === 'MARKET' ? true: false;
+	if(c.textContent === 'MARKET')
+		limitp.value = "";
+}
+
+function hl_row(c, p)
+{
+	const expiry = getScrip(p.title).expiry;
+	OptionChain.get(expiry).decorate(p.title, {key: 'highlight', value: 'toggle'});
+}
+
+function removeOrderRow(c, p){
+	p.remove();
+}
+
+function cancelOrder(c, p_row)
+{
+	emit('updateorder', {orderid: p_row.title, action: 'cancel'});
+	sOrderSubmit.play();
+	orderlistDiv.style.display = 'none';
+}
+
+function createOrder(c, p_row) {
+	
+	const symbol = p_row.title;
+	const action = c.innerText;
+
+	const order = new Order(symbol, action);
+	newOrder(order);
+}
+
+function modifyOrder(c, p_row) 
+{
+	const list_head = order_list_thead.querySelector('td');
+	const symbol = list_head.title;
+
+	const order = Order.findOpenOrder(symbol, p_row.title);
+	order.type = 'modify';
+	newOrder(order);
+	orderlistDiv.style.display = 'none';
+}
+
+function confirmCancel(c, p) {
+	var overlay = c.nextElementSibling;
+	overlay.style.display = 'flex';
+}
+
+function dropCancelOrder(c, p)
+{
+	c.parentElement.style.display = 'none';
+}
+
+function position_cb_action()
+{
+	const checkboxes = document.querySelectorAll('#pos_exit_cb');
+	const checkedIdx = Array.from(checkboxes)
+		.map((cb, i) => cb.checked ? i : null)
+		.filter(val => val !== null);
+
+	exit_pos_btn.style.display = checkedIdx.length > 0 ? 'block' : 'none';
+	pos_all_cb.checked = checkedIdx.length === checkboxes.length;
+}
