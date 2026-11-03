@@ -25,16 +25,16 @@ function appendOrderRow(order)
 	tr.querySelector('#owsymbol').textContent  = order.symbol;
 	tr.querySelector('#scripName').textContent  = scripName;
 
-	const pricetype = tr.querySelector('#ordertype');
-	pricetype.textContent = order.pricetype;
-	if(pricetype.textContent === 'LIMIT'){
+	const ordertype = tr.querySelector('#ordertype');
+	ordertype.textContent = order.ordertype;
+	if(ordertype.textContent === 'LIMIT'){
 		tr.querySelector('#lmtprice').disabled = false;
 		tr.querySelector('#lmtprice').value = order.price;
 	}
 	const action_btn = tr.querySelector('#ow_action_btn');
 	action_btn.textContent = order.action;
 	const selectbox = tr.querySelector('select');
-	selectbox.value = order.quantity;
+	selectbox.value = order.quantity / LOT_SIZE[instrument.stockCode];
 
 	if(order.type === 'modify')
 		tr.title = order.orderid;
@@ -207,7 +207,8 @@ function flipOrderType(c, p)
 
 function hl_row(c, p)
 {
-	p.classList.toggle('row_background');
+	const expiry = getScrip(p.title).expiry;
+	OptionChain.get(expiry).decorate(p.title, {key: 'highlight', value: 'toggle'});
 }
 
 function removeOrderRow(c, p){

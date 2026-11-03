@@ -33,32 +33,36 @@ export class KotakMarketData extends BrokerMarketDataImpl
         this.my_subs.addRequests(appid, list);
         const requests = this.buildRequests(list);
 
-        if (requests.i_reqs.length > 0)
-            this.adapter.subscribe(requests.i_reqs, 'Indices', action, false);
+        if (requests.length > 0)
+            this.adapter.subscribe(requests, 'Scrips', action, false);
+    }
 
-        if (requests.s_reqs.length > 0)
-            this.adapter.subscribe(requests.s_reqs, 'Scrips', action, false);
+    subscribeIndices(appid, stockCode){
+        let requests = [];
+        if(stockCode === 'NIFTY') {
+            requests = ['nse_cm|NIFTY 50', 'nse_cm|INDIA VIX'];
+            this.my_subs.addRequests(appid, [{'symbol': 'NIFTY'}, {'symbol': 'VIX'}]);
+            this.symbol_cache.set('NIFTY 50', {symbol: 'NIFTY', exchange: 'nse_cm', stockCode: 'NIFTY', token: 'Nifty 50', key: 'index'});
+            this.symbol_cache.set('INDIA VIX', {symbol: 'VIX', exchange: 'nse_cm', stockCode: 'VIX', token: 'INDIA VIX', key: 'vix'});
+        }
+        if(requests.length > 0)
+            this.adapter.subscribe(requests, 'Indices', 'subscribe', false);
     }
 
     buildRequests(list) 
     {
-        const indices = [], scrips = [];
+        const scrips = [];
         list.forEach((e) => {
-            if(e.key === 'index') {
-                e.token = e.symbol === 'NIFTY' ? 'NIFTY 50' : e.symbol;
-                indices.push('nse_cm' + '|' + e.token);
-            } else {
-                const scrip = this.scrips.findScripByRefKey(e.symbol);
-                if (scrip !== undefined) {
-                    e.token = scrip.token;
-                    e.exchange = scrip.exchangeSegment;
-                    scrips.push(e.exchange + '|' + e.token);
-                }
+            const scrip = this.scrips.findScripByRefKey(e.symbol);
+            if (scrip !== undefined) {
+                e.token = scrip.token;
+                e.exchange = scrip.exchangeSegment;
+                scrips.push(e.exchange + '|' + e.token);
             }
 
             if (e.token && e.exchange && this.symbol_cache.get(e.token) === undefined)
                 this.symbol_cache.set(e.token, e);
         });
-        return {i_reqs: indices, s_reqs: scrips};
+        return scrips;
     }
 }

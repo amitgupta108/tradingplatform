@@ -97,7 +97,7 @@ export class OrderManager extends UserService
             return service_keys.includes(order.trade_mode)
                 && order.symbol === live_order.symbol
                 && order.action === live_order.action
-                && order.pricetype === live_order.pricetype
+                && order.ordertype === live_order.ordertype
                 && order.price === live_order.price
                 && order.quantity === live_order.quantity
                 && order.quantity >= live_order.filled_q
@@ -109,12 +109,12 @@ export class OrderManager extends UserService
     formatLiveOrder(order)
     {
         var { nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol, 
-            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, unFldSz: unfilled_q,
-            qty: quantity, prcTp: pricetype, ordSrc: source, strategyCode: strategy, algid: algoid, algCat: algocategory, ...rest } = order;
+            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, qty: quantity, 
+            prcTp: ordertype, ordSrc: source, strategyCode: strategy, algid: algoid, algCat: algocategory, ...rest } = order;
 
         var fOrder = {
             orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
-            filled_q, unfilled_q, quantity, pricetype, source, strategy, algocategory, algoid };
+            filled_q, quantity, ordertype, source, strategy, algocategory, algoid };
         
         if(fOrder.state === 'open') {
             fOrder.state = 'opened';
@@ -123,8 +123,8 @@ export class OrderManager extends UserService
         else if(fOrder.state === 'complete')
             fOrder.state = 'completed';
         
-        fOrder.quantity = fOrder.quantity / LOTSIZE[fOrder.stockCode];
-        fOrder.pricetype = fOrder.pricetype === 'MKT' ? 'MARKET' : 'LIMIT';
+        fOrder.filled_q = fOrder.filled_q;
+        fOrder.ordertype = fOrder.ordertype === 'MKT' ? 'MARKET' : 'LIMIT';
         fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
         fOrder.strike_price = fOrder.strike_price.replace('.00', '');
         fOrder.symbol = fOrder.stockCode + fOrder.expiry_date + fOrder.strike_price + fOrder.right;
@@ -146,13 +146,13 @@ export class OrderManager extends UserService
                 fp.pricedAt = fp.cfBuyAmt !== 0 ? fp.cfBuyAmt / fp.cfBuyQty : fp.cfSellAmt / fp.cfSellQty;
                 fp.filled_q = fp.cfBuyQty !== 0 ? fp.cfBuyQty : fp.cfSellQty;
                 fp.action = fp.cfBuyQty > 0 ? 'BUY' : 'SELL';
-                fp.pricetype = 'MARKET';
+                fp.ordertype = 'MARKET';
                 fp.state = 'completed';
                 fp.orderid = -1;
 
-                const { tok: token, sym: stockCode, symbol, pricedAt, filled_q, pricetype, action, state, orderid, ...rest} = fp;
+                const { tok: token, sym: stockCode, symbol, pricedAt, filled_q, ordertype, action, state, orderid, ...rest} = fp;
                 
-                return {token, stockCode, symbol, pricedAt, filled_q, pricetype, action, state, orderid};
+                return {token, stockCode, symbol, pricedAt, filled_q, ordertype, action, state, orderid};
             });
     }
 

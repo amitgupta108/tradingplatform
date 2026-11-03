@@ -1,6 +1,6 @@
-import EventEmitter from "node:events";
+import { EventEmitter } from 'events';
 
-export class Service extends EventEmitter 
+export class Service extends EventEmitter
 {
     constructor(name) {
         super();
@@ -34,6 +34,12 @@ export class Service extends EventEmitter
     log(...args) {
         if (this.logEnabled) {
             console.log(`[${this.name}]`, ...args);
+        }
+    }
+
+    error(...args) {
+        if (this.logEnabled) {
+            console.error(`[${this.name}]`, ...args);
         }
     }
 
