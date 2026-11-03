@@ -126,10 +126,10 @@ function registerAdminRequests(s, appid, mode)
 function registerDisconnectionHandler(s, appid, mode)
 {
     s.on("disconnect", (reason) => {
-        const market_service = ConfigService.getActiveServiceByMode('view', mode);
+        /*const market_service = ConfigService.getActiveServiceByMode('view', mode);
         market_service.exit(appid);
         streamer.deleteFromUserMap(appid);
-
+        */
         console.log("socket disconnected  " + reason);
     });
 }

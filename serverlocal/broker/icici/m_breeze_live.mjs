@@ -1,20 +1,10 @@
-import utils from '../../../common/utils.mjs';
-import data_interface from '../../../srvr/qserver.mjs';
-import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
+import { BreezeMarketData } from './m_breeze.mjs';
 
-export class BreezeMarketDataLive extends BrokerMarketDataImpl 
+export class BreezeMarketDataLive extends BreezeMarketData
 {
     constructor(name) 
     {
         super(name);
-    }
-
-    addListeners() 
-    {
-        this.provider = data_interface;
-        this.provider.addListener('live-quote', (q, appid) => {
-            this.onQuotes(q, appid);
-        });
     }
 
     subscribe(appid, list, action) 
@@ -23,9 +13,9 @@ export class BreezeMarketDataLive extends BrokerMarketDataImpl
         const requests = this.buildRequests(appid, list);
 
         if (action === 'subs' || action === 'start')
-            this.provider.subscribe(requests);
+            this.adapter.subscribe(requests);
         else
-            this.provider.subscribe(requests);
+            this.adapter.unsubscribe(requests);
     }
 
     standardize(q) 
@@ -49,17 +39,8 @@ export class BreezeMarketDataLive extends BrokerMarketDataImpl
         return { ...qt, ...this.symbol_cache.get(qt.symbol) };
     }
 
-    buildRequests(appid, list) 
-    {
-        const requests = [];
-        list.forEach((e) => {
-            if (this.symbol_cache.get(e.symbol) === undefined)
-                this.symbol_cache.set(e.symbol, utils.expandSymbol(e.symbol));
-
-            if (!(e.key === 'index' && e.exchange === 'MCX'))
-                requests.push({ appid: appid, symbol: e.symbol, instrument: e });
-        });
-        return requests;
+    subscribe_vix(appid, mode, action)
+    {    
+        return this.adapter.subscribe_vix(appid, mode, action);
     }
 }
-//export const m_icici_live = new BreezeMarketDataLive('ICICILIVEVIEW', data_interface);

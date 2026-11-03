@@ -1,5 +1,4 @@
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { LOTSIZE } from '../../utils/constants.mjs';
 import { UserService } from '../../service/system/service.mjs';
 
 export class OrderSimulator extends UserService {
@@ -32,7 +31,7 @@ export class OrderSimulator extends UserService {
     placeOrder(appid, order) {
         const as = ConfigService.getServiceByName('AUTHSERVICE');
         order.view_mode = as.getFeatureModeforApp(appid, 'view');
-        order.quantity = order.quantity * LOTSIZE[order.stockCode];;
+        order.quantity = order.quantity;
         order.filled_q = 0;
         order.pricedAt = 0;
         order.orderid = ++this.counter;
@@ -54,9 +53,9 @@ export class OrderSimulator extends UserService {
         if (openorders.length !== 0) {
             openorders.forEach((order) => {
                 var executed = false;
-                if (order.pricetype === 'MARKET')
+                if (order.ordertype === 'MARKET')
                     executed = true;
-                else if (order.pricetype === 'LIMIT')
+                else if (order.ordertype === 'LIMIT')
                     if (order.action === 'B' && q.ltp <= order.price)
                         executed = true;
                     else if (order.action === 'S' && q.ltp >= order.price)

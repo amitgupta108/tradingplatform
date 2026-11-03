@@ -45,10 +45,12 @@ export class BrokerMarketDataImpl extends BrokerImpl
     
     startv2(appid, p) 
     {
+        this.subscribeIndices(appid, p.stockCode);
+        
         const stock_subs = this.my_subs.addNewSubscriptions(appid, p);
-        const list = stock_subs.exchange === 'mcx_fo' ? ['futures'] : ['index', 'futures'];
-        const requests = stock_subs.getSubsItems(list); //st_item
+        const requests = stock_subs.getSubsItems(['futures']); //st_item
         this.subscribe(appid, requests, 'start');
+        
 
         if (stock_subs.atm !== 0) {
             const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });
@@ -81,12 +83,12 @@ export class BrokerMarketDataImpl extends BrokerImpl
         }
     }
     
-    onQuotes(q)
+    onQuotes(q, appid)
     { 
         const qt = this.standardize(q);
         if(qt !== undefined)
         {
-            this.emitQuotes(qt);
+            this.emitQuotes(qt, appid);
         
             if (qt.key === 'futures')
                 this.atmReview(qt);
@@ -95,10 +97,11 @@ export class BrokerMarketDataImpl extends BrokerImpl
         }
     }
     
-    emitQuotes(qt)
+    emitQuotes(qt, appid)
     {
         qt.view_mode = this.view_mode;
-        if (this.name === 'ICICIHISTVIEW'){
+        if (appid !== undefined) {
+            qt.appid = appid;
             streamer.emitQs(qt);
         }
         else {

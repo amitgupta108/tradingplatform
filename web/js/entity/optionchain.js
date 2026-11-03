@@ -4,7 +4,8 @@ class OptionChain {
 	h_put_tbl;
 	atm = 0;
 	row_map = new Map();
-	OTMRange = { high: 6, low: 0 };
+	decorations = new Map();
+	OTMRange = { high: 9, low: 2 };
 
 	constructor(expiry, v_oc_id) {
 		this.expiry = expiry;
@@ -52,13 +53,23 @@ class OptionChain {
 				call_rows[i].cells[2].childNodes[3].textContent = ce_strike;
 				call_rows[i].title = symbol
 				this.row_map.set(symbol, { row: call_rows[i] });
+				this.applyDecorations(symbol, call_rows[i]);
 
 				symbol = instrument.stockCode + this.expiry + pe_strike + 'PE';
 				put_rows[i].cells[2].childNodes[3].textContent = pe_strike;
 				put_rows[i].title = symbol
 				this.row_map.set(symbol, { row: put_rows[i] });
+				this.applyDecorations(symbol, put_rows[i]);
 			}
 		}
+	}
+
+	applyDecorations(symbol, row){
+		const action = this.decorations.get(`${symbol}_highlight`);
+		this.highlightRow(symbol, row, action);
+
+		const psize = this.decorations.get(`${symbol}_positionsize`);
+		this.showOpenPosition(symbol, row, psize);
 	}
 
 	handleEvent(event) {
@@ -78,18 +89,40 @@ class OptionChain {
 			r.row.cells[0].textContent = q.delta.toFixed(2);
 	}
 
-	markPosition(symbol, psize) {
+	decorate(symbol, decoration){
 		const r = this.row_map.get(symbol);
+		if(r !== undefined) {
+			if(decoration.key === 'highlight')
+				this.highlightRow(symbol, r.row, decoration.value)
+			else if (decoration.key === 'positionsize')
+				this.showOpenPosition(symbol, r.row, decoration.value);
+		}
+	}
 
-		if (r !== undefined) {
-			if (psize === 0) {
-				r.row.cells[2].childNodes[1].textContent = '';
-				r.row.classList.remove('buy', 'sell');
-			}
-			else {
-				r.row.cells[2].childNodes[1].textContent = psize;
-				r.row.cells[2].childNodes[1].classList.add(psize > 0 ? 'buy' : 'sell');
-			}
+	highlightRow(symbol, row, action) {
+		if(action === 'toggle')
+				action = (!this.decorations.get(`${symbol}_highlight`)) ? 'add': 'remove';
+
+		if(action === undefined || action === 'remove'){
+			row.classList.remove('row-highlight');
+			this.decorations.delete(`${symbol}_highlight`);
+		}
+		else if(action === 'add') {
+			row.classList.add('row-highlight');
+			this.decorations.set(`${symbol}_highlight`, action);
+		}
+	}
+
+	showOpenPosition(symbol, row, psize) {
+		if (psize === undefined || psize === 0) {
+			row.cells[2].childNodes[1].textContent = '';
+			row.classList.remove('buy', 'sell');
+			this.decorations.delete(`${symbol}_positionsize`);
+		}
+		else {
+			row.cells[2].childNodes[1].textContent = psize;
+			row.cells[2].childNodes[1].classList.add(psize > 0 ? 'buy' : 'sell');
+			this.decorations.set(`${symbol}_positionsize`, psize);
 		}
 	}
 
