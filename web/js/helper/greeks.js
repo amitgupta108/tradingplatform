@@ -1,18 +1,18 @@
 const expiryTimestampCache = new Map();
-const ir = 0.065;
+const ir = 0.0575;
 
 function addIVNDelta(q, uq) 
 {
     if (q !== undefined && uq !== undefined) 
     {
         const flag = q.right === 'CE' ? 'c' : 'p';
-        const yearsToExpiry = getYearsToExpiry(q);
+        const yearsToExpiry = getYearsToExpiry(uq);
         if(yearsToExpiry < 0)
             throw new Error('invalid input');
 
         try {
-            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, uq.ltp, Number(q.strike_price), yearsToExpiry, ir, flag);
-            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, uq.ltp, Number(q.strike_price), yearsToExpiry, ir, iv);
+            var iv = js_vollib.black.implied_volatility.implied_volatility(q.ltp, uq.ltp * 0.9972, Number(q.strike_price), ir, yearsToExpiry, flag);
+            var delta = js_vollib.black.greeks.analytical.delta(flag, uq.ltp * 0.9972, Number(q.strike_price), ir, yearsToExpiry, iv);
 
             q.iv = Math.round(iv * 10000) / 100;
             q.delta = Math.round(delta * 10000) / 100;
@@ -34,8 +34,8 @@ function _addIVNDelta(q, uq)
         const flag = q.right === 'CE' ? 'c' : 'p';
 
         try{
-            var iv = js_vollib.black_scholes.implied_volatility.implied_volatility(q.ltp, fdisprice, Number(q.strike_price), yearsToExpiry, ir, flag);
-            var delta = js_vollib.black_scholes.greeks.analytical.delta(flag, fdisprice, Number(q.strike_price), yearsToExpiry, ir, iv);   
+            var iv = js_vollib.black.implied_volatility.implied_volatility(q.ltp, fdisprice, Number(q.strike_price), ir, yearsToExpiry, flag);
+            var delta = js_vollib.black.greeks.analytical.delta(flag, fdisprice, Number(q.strike_price), ir, yearsToExpiry, iv);   
         
             q.iv = Math.round(iv*10000)/100;
             q.delta = Math.round(delta*10000)/100;

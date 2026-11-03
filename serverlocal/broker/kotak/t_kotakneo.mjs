@@ -1,6 +1,6 @@
 import { ConfigService } from '../../service/.config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
-import { EXCHANGES, LOTSIZE } from '../../utils/constants.mjs';
+import { EXCHANGES } from '../../utils/constants.mjs';
 
 export class KotakNeoTradeService extends BrokerTradeServiceImpl 
 {
@@ -62,8 +62,8 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
         new_order.es = EXCHANGES[order.stockCode]
         new_order.pc = order.product;
         new_order.pr = String(order.price);
-        new_order.pt = order.pricetype === 'MARKET' ? 'MKT' : 'L';
-        new_order.qt = String(order.quantity * LOTSIZE[order.stockCode] );
+        new_order.pt = order.ordertype === 'MARKET' ? 'MKT' : 'L';
+        new_order.qt = String(order.quantity);
         new_order.tt = order.action;
         new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
         new_order.si = '1111111';
@@ -104,10 +104,10 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
                 .filter((order) => order.stockCode === stockCode)
                 .sort((a, b) => a.orderid - b.orderid);
             }
-            console.log('error fetching orders ' + order_json.status + ' ' + order_json.statusText);
+            this.log('error fetching orders ' + order_json.status + ' ' + order_json.statusText);
             return [];
         }
-        console.log('error fetching orders ' + response.status + ' ' + response.statusText);
+        this.log('error fetching orders ' + response.status + ' ' + response.statusText);
         return [];
     }
 
@@ -121,10 +121,10 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
                 positions = position_json.data;
                 return this.ordermanager.formatPositionRecords(positions, stockCode, cf);
             }
-            console.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
+            this.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
             return [];
         }
-        console.log('error fetching positions ' + response.status + ' ' + response.statusText);
+        this.log('error fetching positions ' + response.status + ' ' + response.statusText);
         return [];
     }
 }

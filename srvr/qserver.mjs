@@ -1,85 +1,101 @@
-import sutils from './breezeclient.mjs';
-import { QuotesEmitter, breeze } from './appstate.mjs';
+import EventEmitter from 'node:events';
+import { BreezeConnect } from 'breezeconnect';
+import { BreezeClient } from './breezeclient.mjs';
 import { ConfigService } from '../serverlocal/service/.config/configservice.mjs';
 
-const eventservice = ConfigService.getServiceByName('EVENTSERVICE');
+class QuoteServer extends EventEmitter {
 
-eventservice.addListener('icici_auth', (authdata) => {
-    breeze.generateSession(authdata.apiSecret, authdata.authcode)
-    .then((resp) => {
-        breeze.wsConnect();
-        breeze.onTicks = wsemit;
-        console.log('breeze session started ');
-    }).catch((error) => {
-        console.error('breeze error ' + error);
-    });
-});
-
-function getHistoryAsync(instrument, startTime, endTime, interval)
-{
-    return sutils.getHistory(instrument, startTime, endTime, interval);
-}
-
-function getHistory(appid, r) 
-{
-    return sutils.getHistory(r, r.startTime, r.endTime, r.interval)
-}
-
-function addListener(eventName, callback)
-{
-    const list = QuotesEmitter.listeners(eventName);
-    if(list.length === 0)
-        QuotesEmitter.addListener(eventName, callback);
-    
-    console.log('listener count on qserver ' + eventName + ' ' + QuotesEmitter.listeners(eventName).length);
-}
-
-function subscribe(appid, list)
-{
-    live_sub(list, 'subs')
-}
-
-function unsubscribe(appid, list) {
-    live_sub(list, 'unsub')
-}
-
-function live_sub(list, action)
-{
-    sutils.wssub(list, action)
-    .then((responses) => {
-        console.log('sub successful, count: ' + responses.length);
-    })
-    .catch((error) => {
-        console.log('one or more subs failed');
-    });
-}
-
-function subscribe_vix(appid, mode, action)
-{
-    var instrument = {exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second'};
-
-    const request = {
-        appid: appid,
-        symbol: instrument.stockCode,
-        instrument: instrument
-    };
+    constructor(name){
+        super();
+        this.name = name;
         
-    return sutils.wssub([request], action);
+        const es = ConfigService.getServiceByName('EVENTSERVICE');
+        
+        es.addListener('icici_auth', (authdata) => {
+            const breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+            breeze.generateSession(authdata.apiSecret, authdata.authcode)
+            .then((resp) => {
+                breeze.wsConnect();
+                breeze.onTicks = this.wsemit;
+                console.log('breeze session started ');
+                
+                breeze.socket.on('connect', () => {
+                    console.log('breeze socket connected');
+                });
+
+                breeze.socket.on('connect_error', () => {
+                    console.log('breeze socket connection error');
+                });
+
+                breeze.socket.on('disconnect', () => {
+                    console.log('breeze socket disconnected');
+                });
+                this.breezeadpater = new BreezeClient(breeze);
+            }).catch((error) => {
+                console.error('breeze error ' + error);
+            });
+        });
+    }
+
+    getHistoryAsync(instrument, startTime, endTime, interval)
+    {
+        return this.breezeadpater.getHistory(instrument, startTime, endTime, interval);
+    }
+
+    getHistory(appid, r) 
+    {
+        return this.breezeadpater.getHistory(r, r.startTime, r.endTime, r.interval);
+    }
+
+    addListener(eventName, callback)
+    {
+        const list = super.listeners(eventName);
+        if(list.length === 0)
+            super.addListener(eventName, callback);
+        
+        console.log('listener count on qserver ' + eventName + ' ' + this.listeners(eventName).length);
+    }
+
+    subscribe(appid, list)
+    {
+        this.live_sub(list, 'subs');
+    }
+
+    unsubscribe(appid, list) {
+        this.live_sub(list, 'unsub');
+    }
+
+    live_sub(list, action)
+    {
+        this.breezeadpater.wssub(list, action)
+        .then((responses) => {
+            console.log('sub successful, count: ' + responses.length);
+        })
+        .catch((error) => {
+            console.log('one or more subs failed');
+        });
+    }
+
+    subscribe_vix(appid, mode, action)
+    {
+        var instrument = {exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second'};
+
+        const request = {
+            appid: appid,
+            symbol: instrument.stockCode,
+            instrument: instrument
+        };
+            
+        return this.breezeadpater.wssub([request], action);
+    }
+
+    wsemit(q)
+    {
+        if (q.symbol?.includes('VIX') || q.stock_code?.includes('VIX'))
+            super.emit('vix', q);
+        else 
+            super.emit('live-quote', q);
+    }
 }
 
-export function wsemit(q)
-{
-    if (q.symbol?.includes('VIX') || q.stock_code?.includes('VIX'))
-        QuotesEmitter.emit('vix', q);
-    else 
-        QuotesEmitter.emit('live-quote', q);
-}
-
-export default {
-    addListener,
-    subscribe_vix,
-    subscribe,
-    unsubscribe,
-    getHistory,
-    getHistoryAsync
-};
+//export const qserver = new QuoteServer('BreezeQuotes');

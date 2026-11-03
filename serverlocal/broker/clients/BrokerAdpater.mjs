@@ -22,7 +22,7 @@ export class BrokerAdapter extends EventEmitter
         this.type;
     }
 
-    async connect(url, type) {
+    async connect(url, type, autoreconnection = false) {
         if (this.isConnected || this.isConnecting) {
             this.log('Already connected or connecting');
             return;
@@ -37,7 +37,8 @@ export class BrokerAdapter extends EventEmitter
                     this.log('WebSocket connected');
                     this.onOpen();
                     this.emit('open', this.reconnectAttempts);
-                    this.reconnectAttempts = 0;
+                    if(!autoreconnection)
+                        this.reconnectAttempts = 0;
                     resolve();
                 });
 
@@ -126,7 +127,7 @@ export class BrokerAdapter extends EventEmitter
         this.reconnectTimer = setTimeout(() => {
             this.log(`Reconnection attempt ${this.reconnectAttempts}`);
             this.emit('reconnecting', this.reconnectAttempts);
-            this.connect(this.url, this.type).catch((err) => {
+            this.connect(this.url, this.type, true).catch((err) => {
                 this.log('Reconnection failed:', err);
             });
         }, delay);
@@ -166,6 +167,12 @@ export class BrokerAdapter extends EventEmitter
     log(...args) {
         if (this.logEnabled) {
             console.log(`[${this.name}]`, ...args);
+        }
+    }
+
+    error(...args) {
+        if (this.logEnabled) {
+            console.error(`[${this.name}]`, ...args);
         }
     }
 }
