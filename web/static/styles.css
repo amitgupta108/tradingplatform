@@ -3,7 +3,7 @@
     --inside-border: #454444;
     --disabled-forecolor: #6a6262;
     --hover-seethrough: #6a626268;
-    --body-hover: #1c1a1a;
+    --body-hover: #141313;
     --element-forecolor: #f4f0f0;
     --color-red: #c7372c;
     --border-radius: 5px;
@@ -176,14 +176,12 @@ tr {
 .tr_straight {
     display: flex;
     overflow: hidden;
-    background-color: var(--body-background);
 }
 
 .tr_reverse {
     display: flex;
     overflow: hidden;
     flex-direction: row-reverse;
-    background-color: var(--body-background);
 }
 
 tr:hover {
@@ -236,7 +234,6 @@ button:disabled {
     background-color: var(--element-forecolor);
     border: 1px solid var(--inside-border);
     border-radius: var(--border-radius);
-    ;
     font-size: 12px;
     transition: all .2s ease-in-out;
     display: flex;
@@ -500,7 +497,7 @@ input:checked+.slider:before {
     background-color: var(--hover-seethrough);
 }
 
-.row_background {
+.row-highlight {
     background-color: rgba(189, 183, 107, 0.618);
 }
 

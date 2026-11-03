@@ -6,12 +6,12 @@ class Order
 	{
 		this.stockCode = instrument.stockCode;
 		this.appid = instrument.appid;
-		this.pricetype = 'MARKET';
+		this.ordertype = 'MARKET';
 		this.product = 'NRML';
 		this.price = 0;
 		this.symbol = symbol;
 		this.action = action;
-		this.quantity = (quantity !== undefined) ? quantity : 1;
+		this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[instrument.stockCode];
 		this.orderid = orderid;
 		this.type = orderid === undefined ? 'create' : 'modify';
 		this.strategy = 'default';
@@ -52,10 +52,10 @@ function validate(clickedBtn)
 		{		
 			const neworder = structuredClone(order);
 			neworder.action = r.querySelector('#ow_action_btn').innerText;
-			neworder.quantity = r.querySelector('select').value;
-			neworder.pricetype = r.querySelector('#ordertype').textContent;
+			neworder.quantity = r.querySelector('select').value * LOT_SIZE[instrument.stockCode];
+			neworder.ordertype = r.querySelector('#ordertype').textContent;
 
-			if (neworder.pricetype === 'LIMIT')
+			if (neworder.ordertype === 'LIMIT')
 			{
 				const h_price = qSel(r, 'lmtprice', 'id');
 				if(h_price.value === "") {
@@ -108,8 +108,8 @@ function displayOrderList(btn, parent)
 
 			newtr.childNodes[1].textContent = o.orderid;
 			newtr.childNodes[3].textContent = o.action;
-			newtr.childNodes[5].textContent = o.filled_q + ' / ' + (o.quantity  * LOT_SIZE[instrument.stockCode]);
-			newtr.childNodes[7].textContent = o.pricetype.slice(0, 1);
+			newtr.childNodes[5].textContent = o.filled_q + ' / ' + o.quantity;
+			newtr.childNodes[7].textContent = o.ordertype.slice(0, 1);
 			newtr.childNodes[9].textContent = tqty;
 			newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
 			newtr.childNodes[13].textContent = o.state;

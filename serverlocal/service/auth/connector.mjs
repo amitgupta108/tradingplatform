@@ -1,3 +1,4 @@
+import { Generic } from '../../../generic.mjs'
 import { ConfigService } from '../.config/configservice.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
@@ -21,9 +22,10 @@ const authdatatemplate = {
         hsi_token: undefined
     }
 };
-export class Connector
+export class Connector extends Generic
 {
     constructor(provider, notify = true, load_on_start = true){
+        super(true);
         this.provider = provider;
         this.initialized = false;
         this.notify = notify;
@@ -109,6 +111,7 @@ export class Connector
 
         return cred;
     }
+
 
     static async keyring(provider, cred) 
     {
@@ -253,3 +256,28 @@ export class TPAppConnector extends ICICIConnector
             console.log('TPCoonector' + JSON.stringify({state: 'NOT_OK', error: `${response.status}-${response.statusText}` }));
     }
 }
+
+/*
+static async keyring(provider, cred) 
+    {
+        let entries;
+        let t;
+        if(cred === undefined) {
+            const fetch = true;
+            t = authdatatemplate[provider];
+            entries = Array.from(Object.entries(t));
+        }            
+        else {
+            entries = Array.from(Object.entries(cred));
+        }
+        
+        for (const [k, v] of entries)
+        {
+            if(fetch)
+                t[k] = await getPassword(provider, k);
+            else 
+                await setPassword(provider, k, v);
+        }
+        return (fetch) ? await t : cred;
+    }
+        */

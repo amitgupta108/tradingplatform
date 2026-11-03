@@ -1,9 +1,8 @@
-import qserver from '../../../srvr/qserver.mjs';
 import utils from '../../../common/utils.mjs';
 import { streamer } from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { EXCHANGES, FUT_EXPIRIES } from '../../utils/constants.mjs';
+import { EXCHANGES} from '../../utils/constants.mjs';
 
 export class CommonService extends BrokerMarketDataImpl {
     constructor(name) {
@@ -13,11 +12,6 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     addListeners() {
-        qserver.addListener('vix', (q) => {
-            this.onVix(q);
-        });
-
-        this.simulator = ConfigService.getServiceByName('SIMULATOR');
         if (process.env.PASSTHROUGH === 'Y') {
             this.provider = ConfigService.getAdapter('TPCLIENT');
             this.provider.addListener('quote', (arg) => this.onQuotes(arg));
@@ -33,8 +27,9 @@ export class CommonService extends BrokerMarketDataImpl {
             r.interval = r.interval ?? '5minute';
             r.strike = scrip.strike;
             r.right = scrip.right;
+            const s = ConfigService.getServiceByName('ICICIHISTVIEW');
 
-            return qserver.getHistory(appid, r)
+            return s.getHistory(appid, r)
                 .then((response) => {
                     if (response?.Error === null) {
                         streamer.emitHistQs(appid, r.symbol, response.Success);
@@ -46,22 +41,26 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     subscribe_vix(appid, mode, action) {
-        if (mode.startsWith('HISTORY'))
-            return this.simulator.subscribe_vix(appid, mode, action);
-        else
-            return qserver.subscribe_vix(appid, mode, action)
-                .then((resp) => {
-                    this.vix_subscribed = true;
-                    console.log(resp);
-                })
-                .catch((error) => console.log(error));
+        if (mode.startsWith('HISTORY')){
+            const s = ConfigService.getServiceByName('ICICIHISTVIEW');
+            return s.subscribe_vix(appid, mode, action);
+        }
+        else{
+             const s = ConfigService.getServiceByName('ICICILIVEVIEW');
+            return s.subscribe_vix(appid, mode, action)
+            .then((resp) => {
+                this.vix_subscribed = true;
+                this.log(resp);
+            })
+            .catch((error) => this.log(error));
+        }
     }
 
     onVix(q) {
         if (q.last !== this.qt_vix.ltp) {
             this.qt_vix.ltt = Date.parse(q.ltt);
             this.qt_vix.ltp = q.last;
-            streamer.broadcast('vix', this.qt_vix, 'all_nse_live');
+            streamer.broadcast('quote', this.qt_vix, 'all_nse_live');
         }
     }
 

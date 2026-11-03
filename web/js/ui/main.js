@@ -86,7 +86,7 @@ function showChart() {
 	else
 		container = n_oc_container;
 
-	const rows = container.querySelectorAll('tr.row_background');
+	const rows = container.querySelectorAll('tr.row-highlight');
 	if (rows.length !== 0)
 	{
 		const symbols = Array.from(rows).map((r) => r.title);
