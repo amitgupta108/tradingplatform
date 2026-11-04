@@ -1,66 +1,68 @@
-import { breeze } from "./appstate.mjs";
+export class BreezeClient {
+    constructor(breeze){
+        this.breeze = breeze;
+    }
 
-async function getHistory(instrument, sTime, endTime, interval) 
-{
-    var b = { exchangeCode: instrument.exchange };
-    b.interval = interval != undefined ? interval : '1second';
-    b.stockCode = instrument.stockCode;
-    b.strikePrice = instrument.strike;
-    b.right = instrument.right === 'CE' ? 'Call' : 'Put';
-    b.productType = instrument.right !== undefined ? 'options' : 'futures';
-    b.expiryDate = instrument.exchange !== 'NSE' ? formatExpiry(instrument.expiry, 'datetime') : undefined;
-    b.fromDate = ISODate(sTime);
-    b.toDate = ISODate(endTime); 
-        
-    return breeze.getHistoricalDatav2(b);
+    async getHistory(instrument, sTime, endTime, interval) 
+    {
+        var b = { exchangeCode: instrument.exchange.toLowerCase().includes('fo') ? 'NFO' : 'NSE' };
+        b.interval = interval != undefined ? interval : '1second';
+        b.stockCode = instrument.stockCode;
+        b.strikePrice = instrument.strike;
+        b.right = instrument.right === 'CE' ? 'Call' : 'Put';
+        b.productType = instrument.right !== undefined ? 'options' : 'futures';
+        b.expiryDate = instrument.expiry ? this.formatExpiry(instrument.expiry, 'datetime') : undefined;
+        b.fromDate = this.ISODate(sTime);
+        b.toDate = this.ISODate(endTime); 
+            
+        return this.breeze.getHistoricalDatav2(b);
+    }
+
+    ISODate(datetime) 
+    {
+        return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
+    }
+
+    formatExpiry(expiry, type) 
+    {
+        if(expiry) {
+            var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 3)).concat(expiry.slice(3, 5).toLowerCase()).concat('-20').concat(expiry.slice(5));
+            return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
+        }
+    }
+
+    wssub(list, action)
+    {
+        const promises = [];
+        list.forEach((e) => {
+            var b = this.breeze_input(e.instrument);
+            promises.push(this.subscribe(b, action));
+        });
+        return Promise.all(promises);
+    }
+
+    breeze_input(scrip)
+    {       
+        var b = {get_exchange_quotes: 'true'};
+        b.exchangeCode = scrip.key === 'index' ? 'NSE' : scrip.exchange;
+        b.productType = scrip.key === 'futures' ? 'futures' : 'options';
+        b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
+        b.expiryDate = scrip.expiry !== undefined ? formatExpiry(scrip.expiry, 'date') : undefined;
+        b.strikePrice = scrip.strike;
+        b.right = scrip.right === 'CE' ? 'Call' : 'Put';
+        console.log('subs input ' + JSON.stringify(b));
+
+        return b;
+    }
+
+    async subscribe(request, action)
+    { 
+        if(action === 'subs')
+            return this.breeze.subscribeFeeds(request);
+        else
+            return this.breeze.unsubscribeFeeds(request);
+    }
 }
-
-function ISODate(datetime) {
-    return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
-}
-
-function formatExpiry(expiry, type) {
-    var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 3)).concat(expiry.slice(3, 5).toLowerCase()).concat('-20').concat(expiry.slice(5));
-    return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
-}
-
-function wssub(list, action)
-{
-    const promises = [];
-    list.forEach((e) => {
-        var b = breeze_input(e.instrument);
-        promises.push(subscribe(b, action));
-    });
-    return Promise.all(promises);
-}
-
-function breeze_input(scrip)
-{       
-    var b = {interval: '1second'}
-    b.exchangeCode = scrip.key === 'index' ? 'NSE' : scrip.exchange;
-    b.productType = scrip.key === 'futures' ? 'futures' : 'options';
-    b.stockCode = scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode;
-    b.expiryDate = scrip.expiry !== undefined ? formatExpiry(scrip.expiry, 'date') : undefined;
-    b.strikePrice = scrip.strike;
-    b.right = scrip.right === 'CE' ? 'Call' : 'Put';
-    console.log('subs input ' + JSON.stringify(b));
-
-    return b;
-}
-
-async function subscribe(request, action)
-{ 
-    if(action === 'subs')
-        return breeze.subscribeFeeds(request);
-    else
-        return breeze.unsubscribeFeeds(request);
-}
-
-export default {
-    getHistory,
-    wssub,
-    subscribe,
-};
 
 /*
 const rename_map = {
@@ -159,47 +161,4 @@ function convert(array, map) {
     }
     return array;
 }
-
-
-async function getHistoricalData(st, instrument, sTime) 
-{
-    var resp = await getHistoricalDatav2(instrument, sTime)
-    .catch((error) => {
-        console.warn("getHistoricalDatav2 failed, ", error.message);
-        return Promise.reject(error); 
-    });
-
-    var quotes = resp.Success;
-    if (Array.isArray(quotes)) {
-        
-        st.quotes = quotes;
-        st.trimIndex = 0;
-        st.state = 'ready to stream';
-        st.lastUpdated = sTime;
-        st.indexA = processResults(st.quotes, 50);
-    }
-    return st;
-}
-
-function processResults(quotes, index)
-{
-    index = Math.max(Math.round(quotes.length * 0.10), index);
-    const frontend = quotes.slice(0, index);
-    const backend = quotes.slice(index);
-    const indexA = new Array();
-    frontend.forEach((q) => {
-        const ltt = Date.parse(q.datetime);
-        q.ltt = ltt;
-        indexA.push(ltt);
-    });
-    setImmediate(() => {
-        backend.forEach((q) => {
-            const ltt = Date.parse(q.datetime);
-            q.ltt = ltt;
-            indexA.push(ltt);
-        }); 
-    });
-    return indexA;
-}
-
 */
