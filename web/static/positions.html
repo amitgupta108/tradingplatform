@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <meta http-equiv="Cache-Control" content="no-cache"/>
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache" />
     <title>Trade Positions</title>
-        <link rel="stylesheet" href="./styles.css">   
-        <script src="https://unpkg.com/@msgpack/msgpack"></script>
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.min.js"></script>
-        <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-        <script type="text/javascript" src="../lib/js_vollib/lib/rootFinder/rootFinder.js"></script>
-        <script type="text/javascript" src="../lib/js_vollib/lib/jmat/jmat.min.js"></script>
-        <script type="text/javascript" src="../lib/js_vollib/lib/js_lets_be_rational/build/js_lets_be_rational.js"></script>
-        <script type="text/javascript" src="../lib/js_vollib/build/js_vollib.js"></script>
-    </head>
-    <body>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./theme.css">
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.min.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script type="text/javascript" src="../lib/js_vollib/lib/rootFinder/rootFinder.js"></script>
+    <script type="text/javascript" src="../lib/js_vollib/lib/jmat/jmat.min.js"></script>
+    <script type="text/javascript" src="../lib/js_vollib/lib/js_lets_be_rational/build/js_lets_be_rational.js"></script>
+    <script type="text/javascript" src="../lib/js_vollib/build/js_vollib.js"></script>
+</head>
+
+<body>
     <div class="top">
-        <!------------------------------------------------------------------------------------------------------------------------------>    
+        <!------------------------------------------------------------------------------------------------------------------------------>
         <div id="leftContainer" class="leftcontainer">
-            <div class="tabs">   
+            <div class="tabs">
                 <div id="chart_tab_1" class="tab active-tab" onclick="switchCharts(0)">
                     <label>Chart 1</label>
                 </div>
@@ -28,9 +31,9 @@
                     <label>Chart 3</label>
                 </div>
             </div>
-        <!------------------------------------------------------------------------------------------------------------------------------>        
+            <!------------------------------------------------------------------------------------------------------------------------------>
             <div style="display: grid; height: 95.4%;row-gap: 5px;align-content: space-around;">
-                <div id="leftContainer_1" >
+                <div id="leftContainer_1">
                     <div>
                         <div id="futures_chart" style="width: 100%; height: 470px; position: relative;"></div>
                     </div>
@@ -49,17 +52,17 @@
                 </div>
             </div>
         </div>
-        <!------------------------------------------------------------------------------------------------------------------------------>    
+        <!------------------------------------------------------------------------------------------------------------------------------>
         <div id="rightContainer" class="rightcontainer">
             <div id="timer">
                 <label id="timer_date_lb"></label>
                 <label id="timer_time_lb"></label>
-                <label> |   Spot:  </label>
+                <label> | </label>
                 <label id="timer_spot_lb"></label>
-                <label> |   Latency:  </label>
+                <label> | Latency: </label>
                 <label id="timer_latency_lb"></label>
             </div>
-            <!------------------------------------------------------------------------------------------------------------------------------>    
+            <!------------------------------------------------------------------------------------------------------------------------------>
             <div style="overflow: hidden;">
                 <table>
                     <tr style="border-radius: 5px;">
@@ -72,7 +75,7 @@
                     </tr>
                 </table>
             </div>
-            <!------------------------------------------------------------------------------------------------------------------------------>    
+            <!------------------------------------------------------------------------------------------------------------------------------>
             <div style="display: grid; height: 34%;row-gap: 5px;align-content: space-around;">
                 <div id="c_oc_div" class="tab-content active">
                     <table id="oc_call_table">
@@ -80,83 +83,80 @@
                     <table id="oc_put_table">
                     </table>
                 </div>
-            <!------------------------------------------------------------------------------------------------------------------------------>    
+                <!------------------------------------------------------------------------------------------------------------------------------>
                 <div id="n_oc_div" class="tab-content">
                     <table id="oc_call_table">
                     </table>
                     <table id="oc_put_table">
                     </table>
                 </div>
-                <button id="options-chart-btn" style="padding: 3px;width: 60px;" onclick="showChart()">
-                    Chart
-                </button>
             </div>
-            <!------------------------------------------------------------------------------------------------------------------------------>    
+            <!------------------------------------------------------------------------------------------------------------------------------>
             <div class="tabs">
-               
+
                 <div id="tabButton1" class="tab">
-                    <button id="expiry_btn_1" class="barely-raised-btn" onclick="switchTabs(0)"></label>
+                    <button id="expiry_btn_1" class="barely-raised-btn" onclick="switchTabs(0)" disabled></button>
                     <button id="oc_action_btn" class="smallbutton order" onclick="streamOptionChain(event)">^</button>
-                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)"></label>
+                    <button id="expiry_btn_2" class="barely-raised-btn" onclick="switchTabs(1)"></button>
                 </div>
                 <div id="tabButton2" class="tab inert-tab">
+                    <button id="sh_chart" class="smallbutton order" onclick="showChart('open')">C</button>
                     <input type="text" inputmode="numeric" id="tpt" name="tpt" style="width: 60px;height:15px;">
-                    <button id="ws_start" class="smallbutton order" onclick="wsOps('open')">></button>
+                    <button id="ws_start" class="smallbutton order" onclick="auth('open')">></button>
                     <button id="ws_stop" class="smallbutton order" onclick="wsOps('close')">||</button>
-                    <button id="socn" class="smallbutton order" onclick="reload()">@</button>
+                    <button id="socn" class="smallbutton order" onclick="algo()">@</button>
                     <label class="switch">
                         <input type="checkbox" id="toggleBasket">
                         <span class="slider round"></span>
                     </label>
                 </div>
             </div>
-            <!------------------------------------------------------------------------------------------------------------------------------>                
-            <div id="positions_div">    
+            <!------------------------------------------------------------------------------------------------------------------------------>
+            <div id="positions_div">
                 <div style="width: 100%;height:min-content;">
-                <div id="order-list" class="orderlist" style="display: none;">
-                    <table>
-                        <tbody id="order-list-thead">
-                            <tr>
-                                <td colspan="8" class="orderlist-td"></td>
+                    <div id="order-list" class="orderlist" style="display: none;">
+                        <table>
+                            <tbody id="order-list-thead">
+                                <tr>
+                                    <td colspan="8" class="orderlist-td"></td>
+                                </tr>
+                            </tbody>
+                            <tbody id="order-list-tbody">
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <table id="positions_table">
+                        <thead style="overflow: hidden;border-radius: 5px;">
+                            <tr style="overflow: hidden;border-radius: 5px;">
+                                <th width="4%">
+                                    <input type='checkbox' id="exit_all_cb"></input>
+                                </th>
+                                <th width="20%">Instrument</th>
+                                <th colspan="3" width="20%">Booked</th>
+                                <th width="10%">Avg Price</th>
+                                <th width="10%">LTP</th>
+                                <th colspan="2" width="20%">Unbooked</th>
+                                <th width="16%">Total</th>
                             </tr>
-                        </tbody>
-                        <tbody id="order-list-tbody">
+                        </thead>
+                        <tbody id="positions_tbody">
 
                         </tbody>
                     </table>
+                    <button id="exitPositionBtn" style="display: none;padding: 3px;width: 60px;">
+                        Exit
+                    </button>
                 </div>
-                <table id="positions_table">
-                    <thead style="overflow: hidden;border-radius: 5px;">
-                        <tr style="overflow: hidden;border-radius: 5px;">
-                            <th width="4%">
-                                <input type='checkbox' id="exit_all_cb"></input>
-                            </th>
-                            <th width="20%">Instrument</th>
-                            <th colspan="3" width="20%">Booked</th>                        
-                            <th width="10%">Avg Price</th>
-                            <th width="10%">LTP</th>
-                            <th colspan="2" width="20%">Unbooked</th>
-                            <th width="16%">Total</th>
-                        </tr>
-                    </thead>    
-                    <tbody id="positions_tbody">
-                        
-                    </tbody>
-                </table>
-                <button id="exitPositionBtn" style="display: none;padding: 3px;width: 60px;">
-                    Exit
-                </button>
-                </div>   
             </div>
-            <!------------------------------------------------------------------------------------------------------------------------------>    
-            
-            <div id="bottomPanel">    
+            <!------------------------------------------------------------------------------------------------------------------------------>
+
+            <div id="bottomPanel">
                 <div>
                     <button id="btnConnect" onclick="connect()">Connect</button>
                     <button id="btnStartSim" onclick="start()" disabled>Start</button>
-                    <button id="btnStopSim" onclick="stop()" disabled>Stop</button>
+                    <button id="btnStopSim" onclick="pauseResume()" disabled>Pause</button>
                     <button id="btnListOrders" onclick="listOrders()" disabled>Orders</button>
-                    <button id="btnVixSubs" onclick="subs_vix()" disabled>Vix</button>
                     <select id="optionSpeed" onchange="changeSpeed()" style="width: 35px;" disabled>
                         <option value="1x">1x</option>
                         <option value="2x">2x</option>
@@ -177,7 +177,7 @@
                 </div>
             </div>
         </div>
-    <!--floating items---------------------------------------------------------------------------------------------------------------------------->    
+        <!--floating items---------------------------------------------------------------------------------------------------------------------------->
 
         <div id="orderwindow" class="orderwindow">
             <label id="ow_close_btn" class="close-btn">X</label>
@@ -185,18 +185,18 @@
                 <tbody id="tbody-order-panel">
                 </tbody>
                 <tbody id="tbody-submit-panel">
-                    <tr> 
+                    <tr>
                         <td colspan="6" style="text-align: right;padding: 3px; border-radius: 4px; gap: 10px">
                             <button type="button" onclick="validate(this)">Validate</button>
-                            <button type="button" id="ow_submit_btn" onclick="submitOrder(this)" disabled >Order</button>
+                            <button type="button" id="ow_submit_btn" onclick="submitOrder(this)" disabled>Order</button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-    </div>  
+    </div>
 
-<!--templates---------------------------------------------------------------------------------------------------------------------------->    
+    <!--templates---------------------------------------------------------------------------------------------------------------------------->
 
     <template id="order-list-row">
         <tr style="position: relative;">
@@ -211,6 +211,7 @@
                 <label id="conf_cancel_lb">X</label>
                 <div class="orderlist-row-overlay">
                     <label id='cancel_order_btn' class="clickable">Delete</label>
+                    <label id='modify_order_btn' class="clickable">Modify</label>
                     <label id='drop_cancel_btn' class="clickable">Cancel</label>
                 </div>
             </td>
@@ -218,19 +219,19 @@
     </template>
     <template id="option-chain-row">
         <tr>
-            <td></td> 
-            <td></td> 
+            <td></td>
+            <td></td>
             <td class="hover-cell">
                 <label class="icon"></label>
                 <label></label>
                 <trade-buttons></trade-buttons>
-            </td> 
+            </td>
         </tr>
     </template>
     <template id="order-window-row">
         <tr id="order-window-tr" class="hover-row">
             <td style='width:6%;justify-items: center;'>
-                <button  id='ow_action_btn' class="smallbutton buy"></button>
+                <button id='ow_action_btn' class="smallbutton buy"></button>
                 <div class="hover-row-content">
                     <label id="ow_row_rm_btn" class="clickable">X</label>
                 </div>
@@ -240,7 +241,7 @@
                 <label id='scripName'></label>
             </td>
             <td style='width:14%'>
-                    <label id="owprice"></label>
+                <label id="owprice"></label>
             </td>
             <td style='width:14%'>
                 <select id="ow_lot_size" class="buy">
@@ -254,14 +255,15 @@
                 <label class="clickable" id="ordertype">MARKET</label>
             </td>
             <td style='width:17%'>
-                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;border: 0px" disabled>
+                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;border: 0px"
+                    disabled>
             </td>
         </tr>
     </template>
     <template id="position-table-row">
         <tr>
             <td>
-                <input type='checkbox' id="pos_exit_cb"  disabled></input>
+                <input type='checkbox' id="pos_exit_cb" disabled></input>
             </td>
             <td><label id="Instrument"></label></td>
             <td>
@@ -279,9 +281,10 @@
             </td>
         </tr>
     </template>
-<!------------------------------------------------------------------------------------------------------------------------------>    
-    
+    <!------------------------------------------------------------------------------------------------------------------------------>
+
     <script src="../js/config/data.js"></script>
+    <script src="../js/entity/quote.js"></script>
     <script src="../js/config/load.js"></script>
     <script src="../js/ui/ui.js"></script>
     <script src="../js/helper/helper.js"></script>
@@ -292,5 +295,6 @@
     <script src="../js/conn/socketconn.js"></script>
     <script src="../js/entity/order.js"></script>
     <script src="../js/entity/chart.js"></script>
-  </body>
+</body>
+
 </html>

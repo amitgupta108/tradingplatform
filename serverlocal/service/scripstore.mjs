@@ -1,229 +1,214 @@
-import axios from 'axios';
-import csv from 'csv-parser';
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsp from 'fs/promises';
 import path from 'path';
-import {OPT_EXPIRIES} from '../../common/constants.mjs';
-
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-// Recreate __dirname for ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
+import readline from 'node:readline';
+import csvParser from 'csv-parser';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { ConfigService } from './.config/configservice.mjs';
+import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
+import { BrokerService } from './system/service.mjs';
 
 const FIELD_MAP = {
-  pSymbol:      'symbol',
-  pGroup:       'group',
-  pExchSeg:     'exchangeSegment',
-  pInstType:    'instrumentType',
-  pSymbolName:  'underlying',
-  pTrdSymbol:   'tradingSymbol',
-  pOptionType:  'optionType',
-  pScripRefKey: 'scripReferenceKey',
-  pISIN:        'isin',
-  pAssetCode:   'assetCode',
-  lLotSize:     'lotSize',
-  dStrikePrice: 'strikePrice',
-  pExchange:    'exchange',
-  pInstName:    'instrumentName',
-  pExpiryDate:  'expiryDate'
+	pSymbol:      'token',
+	pExchSeg:     'exchangeSegment',
+	pInstType:    'instrumentType',
+	pSymbolName:  'underlying',
+	pTrdSymbol:   'tradingSymbol',
+	pScripRefKey: 'scripReferenceKey',
+	pExpiryDate:  'expiryDate'
 };
 
-const ALLOWED_ORIGINAL_KEYS = new Set(Object.keys(FIELD_MAP));
+const keys_kept = new Set(Object.keys(FIELD_MAP));
+const todayStr = new Date().toISOString().split('T')[0];
+const wd = path.join(process.env.workspace_location, process.env.static_data_location);
+const PREFIX = 'scrips_';
+const EXTENSION = '.ndjson';
+const cacheFilePath = path.join(wd, `${PREFIX}${todayStr}${EXTENSION}`);
 
-// Cache configuration constants
-const CACHE_PREFIX = 'scrips_cache_';
-const CACHE_EXTENSION = '.json';
-
-// ============================================================================
-// 2. PRIVATE DATA STORE STATE
-// ============================================================================
-let _inMemoryStore = []; 
-let _isLoaded = false;    
-
-// ============================================================================
-// 3. CORE PROCESSING & UTILITY ENGINE
-// ============================================================================
-
-function getTodayDateString() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+function getUpdatedUrl(url) 
+{
+	const dateRegex = /\d{4}-\d{2}-\d{2}/; 
+	return url.replace(dateRegex, todayStr);
 }
 
-function getCacheFilePath() {
-  const todayStr = getTodayDateString();
-  return path.join(__dirname, `${CACHE_PREFIX}${todayStr}${CACHE_EXTENSION}`);
+const filterfn = (record, filters) => {
+	let included = true;
+	for (const [cleanKey, allowedValues] of Object.entries(filters)) {
+		if (!allowedValues.includes(record[cleanKey]))
+			included = false;
+	}
+
+	return included;
 }
 
-function getUpdatedUrls(filePaths) {
-  const todayStr = getTodayDateString();
-  const dateRegex = /\d{4}-\d{2}-\d{2}/; 
-  return filePaths.map(url => url.replace(dateRegex, todayStr));
+async function clearStaleCacheFiles() 
+{
+	console.log('Running background garbage collection on stale disk caches...');
+
+	try {
+		const files = await fsp.readdir(wd);
+		
+		for (const file of files) {
+			if (file.endsWith(EXTENSION) && !file.includes(todayStr)) {
+				await fsp.unlink(path.join(wd, file));
+				console.log(`[GC] Deleted stale cache file from disk: ${file}`);
+			}
+		}
+		console.log('Garbage collection run successfully complete.');
+	} catch (error) {
+		console.error('Garbage collection warning:', error.message);
+	}
 }
 
-function matchesCriteria(cleanRow, criteria) {
-  for (const [cleanKey, allowedValues] of Object.entries(criteria)) {
-    if (allowedValues.length > 0 && !allowedValues.includes(cleanRow[cleanKey])) {
-      return false;
-    }
-  }
-  return true;
-}
+export class ScripStore extends BrokerService
+{
+	constructor(name)
+	{
+		super(name);
+		this.isLoaded = false;    
+		this.inMemoryStore = new Map();
+	}
 
-function translateRowToFriendlyNames(rawRow) {
-  const cleanRow = {};
-  for (const [rawKey, cleanKey] of Object.entries(FIELD_MAP)) {
-    cleanRow[cleanKey] = rawRow[rawKey];
-  }
-  return cleanRow;
-}
+	init() 
+	{		
+		if(!this.initialized)
+		{			
+			let p;
+			if (process.env.PASSTHROUGH === 'Y')
+				p = this.remoteLoad(tp_filters);
+	
+			else
+				p = this.load(filters);
 
-/**
- * Scans the target directory and purges any historical stale scrip cache files.
- */
-async function clearStaleCacheFiles() {
-  console.log('Running background garbage collection on stale disk caches...');
-  const todayStr = getTodayDateString();
-  const currentCacheFileName = `${CACHE_PREFIX}${todayStr}${CACHE_EXTENSION}`;
+			return p.then((response) => {
+				this.initialized = true;
+				return { status: response };
+			})
+			.catch ((error) => {
+				return {status: 'error', reason: error.message};
+			});
+		}
+	}
 
-  try {
-    const files = await fs.readdir(__dirname);
-    
-    for (const file of files) {
-      // Target files that start with our prefix, end with .json, but do NOT match today
-      if (file.startsWith(CACHE_PREFIX) && file.endsWith(CACHE_EXTENSION) && file !== currentCacheFileName) {
-        const fullPathToPurge = path.join(__dirname, file);
-        await fs.unlink(fullPathToPurge);
-        console.log(`[GC] Deleted stale cache file from disk: ${file}`);
-      }
-    }
-    console.log('Garbage collection run successfully complete.');
-  } catch (error) {
-    console.error('Garbage collection warning:', error.message);
-    // Non-blocking error: we do not crash the app if a file fails to delete
-  }
-}
+	async remoteLoad(filters)
+	{
+		return await new Promise((resolve, reject) => {
+			const es = ConfigService.getServiceByName('EVENTSERVICE');
+			es.addListener('scrips', (scrips) => {
+				scrips.forEach((s) => {
+					this.inMemoryStore.set(s.scripReferenceKey, s);
+				});
+				console.log('scrips remote load, size ' + this.inMemoryStore.size);
+				resolve('initialized');
+			});
 
-function processSingleFile(url, userFilterCriteria) {
-  return new Promise((resolve) => {
-    axios({ method: 'get', url: url, responseType: 'stream' })
-      .then(response => {
-        response.data
-          .pipe(csv({
-            mapHeaders: ({ header }) => ALLOWED_ORIGINAL_KEYS.has(header) ? header : null
-          }))
-          .on('data', (rawRow) => {
-            const friendlyRow = translateRowToFriendlyNames(rawRow);
-            if (matchesCriteria(friendlyRow, userFilterCriteria)) {
-              _inMemoryStore.push(friendlyRow); 
-            }
-          })
-          .on('end', () => resolve())
-          .on('error', (err) => {
-            console.error(`Parsing error on URL ${url}:`, err.message);
-            resolve(); 
-          });
-      })
-      .catch(err => {
-        console.error(`Network download failure for URL ${url}:`, err.message);
-        resolve(); 
-      });
-  });
-}
+			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
+			this.tpsocket.getScrips(filters);			
+		});
+	}
 
-// ============================================================================
-// 4. PUBLIC ACCESS API
-// ============================================================================
+	async load(filters, reload = false) 
+	{
+		clearStaleCacheFiles();
+		console.log('Checking for local persistent file cache...');
+		this.addIndicesToStore(['NIFTY']);
+		if (fs.existsSync(cacheFilePath) || reload === true) 
+		{
+			const jsonfile = fs.createReadStream(cacheFilePath, { encoding: 'utf8' });
 
-async function initStore(payload, userFilterCriteria, reload = false) {
-  const cachePath = getCacheFilePath();
+			const rl = readline.createInterface({
+				input: jsonfile,
+				crlfDelay: Infinity // Recognizes both \r\n and \n correctly
+			});
 
-  // Trigger background garbage collection immediately on bootup
-  await clearStaleCacheFiles();
-  if(_isLoaded && !reload )
-    return 0;
+			rl.on('line', (line) => {
+				if (line.trim()) {
+					const s = JSON.parse(line);
+					this.inMemoryStore.set(s.scripReferenceKey, s);
+				}
+			});
 
-  try {
-    console.log('Checking for local persistent file cache...');
-    const rawData = await fs.readFile(cachePath, 'utf-8'); 
-    _inMemoryStore = JSON.parse(rawData);
-    _isLoaded = true;
-    console.log(`--- [CACHE HIT] Loaded ${_inMemoryStore.length} records directly from disk persistence. ---`);
-    return _inMemoryStore.length;
-  } catch (error) {
-    console.log('[CACHE MISS] No valid local file found for today. Streaming from internet...');
-    
-    _inMemoryStore = []; 
-    _isLoaded = false;
-    const freshUrls = getUpdatedUrls(payload.data.filesPaths);
+			rl.on('close', () => {
+				this.isLoaded = true;
+				console.log(`--- [CACHE HIT] Loaded ${this.inMemoryStore.size} records directly from disk persistence. ---`);
+			});
+		} 
+		else
+		{
+			console.log('[CACHE MISS] No valid local file found for today.');
 
-    for (const url of freshUrls) {
-      await processSingleFile(url, userFilterCriteria);
-    }
+			for (const f of filePaths) {
+				await this.processSingleFile(f, filters, this.inMemoryStore);
+			}
 
-    try {
-      await fs.writeFile(cachePath, JSON.stringify(_inMemoryStore, null, 2), 'utf-8'); 
-      console.log(`Persistent disk cache written to: ${cachePath}`);
-    } catch (writeError) {
-      console.error('Failed to write persistent cache file to disk:', writeError.message);
-    }
+			this.isLoaded = true;
+			console.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
+		}
+	}
 
-    _isLoaded = true;
-    console.log(`--- Store Ready. ${_inMemoryStore.length} records cached in RAM. ---`);
-    return _inMemoryStore.length;
-  }
-}
+	addIndicesToStore(indices)
+	{
+		for (const index of indices) 
+		{
+			if(index === 'NIFTY') 
+			{
+				this.inMemoryStore.set('NIFTY', {
+					token: '26000',
+					exchangeSegment: 'nse_cm',
+					instrumentType: 'index',
+					scripReferenceKey: 'NIFTY'
+				});
+			}
+		}
+	}
 
-function getAllScrips() { return _inMemoryStore; }
-function findScripByKey(columnName, value) { return _inMemoryStore.find(row => row[columnName] === value) || null; }
-function queryStore(filterFn) { return _inMemoryStore.filter(filterFn); }
-function getStoreStatus() { return { loaded: _isLoaded, totalRecords: _inMemoryStore.length }; }
+	async processSingleFile(filePath, filters, store) 
+	{
+		try
+		{
+			const response = await fetch(getUpdatedUrl(filePath.url));
 
-export default {
-  load,
-  getAllScrips,
-  findScripByKey,
-  queryStore,
-  getStoreStatus
-};
+			if (!response.ok) {
+				throw new Error(`Failed to fetch ${getUpdatedUrl(filePath.url)}: ${response.statusText}`);
+			}
 
-// ============================================================================
-// 5. BOOTSTRAP Scrip Service
-// ============================================================================
-async function load(expiryDates, reload = false) {
-  const incomingPayload = {
-    "data": {
-      "baseFolder": "https://kotaksecurities.com",
-      "filesPaths": [
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-14/transformed/mcx_fo.csv",
-        "https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-07-14/transformed/nse_fo.csv"
-      ]
-    }
-  };
-  
-  //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-24/transformed/nse_fo.csv"
-  //"https://lapi.kotaksecurities.com/wso2-scripmaster/v1/prod/2026-06-02/transformed/mcx_fo.csv"
-  
-  const filters = {
-    exchangeSegment: ['nse_fo', 'mcx_fo'],
-    expiryDate: [], //1784246399
-    underlying: ['NIFTY', 'CRUDEOIL'],
-    exchange: [],
-    instrumentType: []
-  };
+			const nodeStream = Readable.fromWeb(response.body);
 
-  /*const filters = {
-    exchangeSegment: ['nse_fo'],
-    expiryDate: OPT_EXPIRIES['NIFTY']['FIRST']['date'], OPT_EXPIRIES['CRUDEOIL']['FIRST']['date']], 
-    underlying: ['NIFTY', 'CRUDEOIL'],
-    exchange: [],
-    instrumentType: ['OPTIDX', 'OPTFUT']
-  };
-  //filters.expiryDate = expiryDates;
-  */
-  await initStore(incomingPayload, filters, reload);
+			await pipeline(
+				nodeStream,
+				csvParser({
+					mapHeaders: ({ header }) => keys_kept.has(header) ? header : null
+				}), 
+				async function* (data) 
+				{
+					for await (const rawRow of data) 
+					{
+						const cleanRow = {};
+						for (const [rawKey, cleanKey] of Object.entries(FIELD_MAP)) {
+							cleanRow[cleanKey] = rawKey === 'pScripRefKey' ?
+								rawRow[rawKey] !== '' ? rawRow[rawKey].replaceAll('.00', '') : rawRow['pTrdSymbol'] :
+								rawRow[rawKey];
+						}
+
+						let included = filterfn(cleanRow, filters);
+						if(included) {
+							store.set(cleanRow.scripReferenceKey, cleanRow);
+							yield (JSON.stringify(cleanRow) + '\n').toString();
+						}
+					}
+				},
+				fs.createWriteStream(cacheFilePath, { flags: 'a', encoding: 'utf8' })
+			);
+		} catch(error){
+			console.error(error);
+		}			
+	}
+	
+	getAllScrips() { return Array.from(this.inMemoryStore.values()); }
+	findScripByKey(columnName, value) { return Array.from(this.inMemoryStore.values()).find(row => row[columnName] === value) || null; }
+	findScripByRefKey(key) { return this.inMemoryStore.get(key); }
+	queryStore(filterFn) { return Array.from(this.inMemoryStore.values()).filter(filterFn); }
+	getScrips(filters) { return Array.from(this.inMemoryStore.values()).filter((r) => filterfn(r, filters)); }
+	getStoreStatus() { return { loaded: this.isLoaded, totalRecords: this.inMemoryStore.size }; }
 }

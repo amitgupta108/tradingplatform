@@ -1,4 +1,4 @@
-import { BinRespTypes } from '../types/types.js';
+import { BinRespTypes } from '../constants/types.js';
 import { ByteData } from './ByteData.js';
 import * as utils from '../utils/utils.js';
 /**

@@ -1,4 +1,11 @@
 //import vollib from '../../js_vollib/build/js_vollib.js';
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const expiryTimestampCache = new Map();
 
 function addIVNDelta(q, uq)
@@ -108,27 +115,31 @@ function _strikes(price, startIdx = 2, endIdx = 7, sz)
 
 function expandSymbol(symbol) 
 {
-    const t = {} //template
+    const t = {symbol: symbol} //template
     const regex = /[0-9]/;
     const idx = symbol.search(regex);
-    const st_code = idx === -1 ? symbol : symbol.slice(0, idx);
-    t.stockCode = st_code;
-    t.symbol = symbol;
+    t.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
     t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
-
     if (idx !== -1) {
         t.expiry_date = symbol.slice(idx, idx + 7);
+        t.expiry = t.expiry_date;
         if (!symbol.endsWith('FUT')) {
             t.strike_price = symbol.slice(idx + 7, -2);
+            t.strike = t.strike_price;
             t.right = symbol.slice(-2);
         }
     }
     return t;
 }
 
+function getWSfolder(){
+    return path.join(__dirname, '..');
+}
+
 export default {
     filter,
     strikes,
     _strikes,
-    expandSymbol
+    expandSymbol,
+    getWSfolder
 };

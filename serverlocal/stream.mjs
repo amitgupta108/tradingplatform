@@ -1,98 +1,100 @@
-import Session from './session/session.mjs';
-import services from './service/services.mjs';
-import {socketmap, uwsmap} from './session/appstate.mjs';
-import { Encoder} from '@msgpack/msgpack';
+import { SystemService } from './service/system/service.mjs';
+import { ConfigService } from './service/.config/configservice.mjs';
 
-const FixSizeEncoder = new Encoder({
-    maxSharedBufferSize: 32 * 1024
-});
-
-function emitOrders(appid, type, order)
-{    
-    send(appid, type, order);
-}
-
-function emitQs(appid, q)
+class StreamingService extends SystemService
 {
-    send(appid, 'quote', q);
-}
-
-function emitHistQs(appid, key, qA) {
-    const app_obj = socketmap.get(appid);
-    if (app_obj !== undefined)
-        emit(app_obj.socket, 'history', { time: Date.now(), key: key, qA: qA });
-}
-
-function sendHistQs(appid, key, qA)
-{
-    const uws = uwsmap.get(appid);
-    if (uws !== undefined) {
-        const payload = FixSizeEncoder.encodeSharedRef({ event: 'history', data: { time: Date.now(), key: key, qA: qA } });
-        //console.log('payload size : ' + payload.byteLength);
-        uws.send(payload, true);
+    constructor(name)
+    {
+        super(name);
+        this.name = name;
+        this.usermap = new Map();
     }
-}
 
-function send(appid, type, msg)
-{
-    if (appid === undefined)
-        return;
+    init()
+    {
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
+        this.es.addListener('ordersim', (order) => {
+            this.send('order', order);
+        });
+        this.initialized = true;
+        return { status: 'initialized' };
+    }
 
-    const app_obj = socketmap.get(appid);
-    if (app_obj !== undefined)
-        emit(app_obj.socket, type, msg);
-    else
-        group_emit(appid, type, msg);
-}
+    emitOrders(order)
+    {    
+        this.send('order', order);
+    }
 
-function group_emit(appid, type, msg)
-{ 
-    const receivers = getReceivers(appid, type, msg);   
-    receivers.forEach((appid) => {
-        if (type === 'order')
+    emitQs(q)
+    {
+        this.send('quote', q);
+    }
+
+    emitHistQs(appid, symbol, qA) {
+        const app_obj = this.getFromUserMap(appid);
+        if (app_obj !== undefined)
+            this.emit(app_obj.socket, 'history', {symbol: symbol, qA: qA });
+    }
+
+    send(type, msg)
+    {
+        const app_obj = this.getFromUserMap(msg.appid);
+        if (app_obj !== undefined)
+            this.emit(app_obj.socket, type, msg);
+        else
+            this.group_emit(type, msg);
+    }
+
+    group_emit(type, msg)
+    { 
+        const receivers = this.getReceivers(type, msg);   
+        receivers.forEach((appid) => {
             msg.appid = appid;
-        emit(socketmap.get(appid).socket, type, msg);
-    });
-}
-
-function getReceivers(appid, type, msg)
-{
-    const receivers = [];
-    if (type === 'order' && msg.receiver !== undefined) {
-        const mode_type = type === 'order' ? 'trade_mode' : 'view_mode';
-        socketmap.forEach((v, k) => {
-            if( v.stockCode === msg.receiver.stockCode &&
-                services.getFeatureMode(v.mode, 'trade') === msg.receiver[mode_type])
-                receivers.push(k);
+            this.emit(this.getFromUserMap(appid).socket, type, msg);
         });
     }
-    else if(type === 'quote' && Session.sn(appid) !== undefined) {
-        Session.sn(appid)?.shared_with.forEach((v, k) => {
-            if (v.m_subs !== 'paused') 
-                receivers.push(k);
-        });
+
+    getReceivers(type, msg)
+    {
+        const receivers = [];
+        if (type === 'order') 
+        {
+            for (const [k, v] of this.usermapEntries()) {
+                if(msg.modes.includes(v.mode))
+                    receivers.push(k);
+            }
+        }
+        return receivers;
     }
-    return receivers;
-}
 
-function broadcast(type, msg, group)
-{
-    for (const appid of socketmap.keys()) {
-        var app_obj = socketmap.get(appid);
-        if (app_obj && (type === 'hb' || (type === 'vix' && app_obj.mode.startsWith('S'))))
-            emit(app_obj.socket, type, msg);
+    broadcast(type, msg, group)
+    {
+        for (const [k, v] of this.usermapEntries()) {
+            this.emit(v.socket, type, msg);
+        }
     }
+
+    emit(s, type, msg)
+    {
+        s.emit(type, msg);
+    }
+
+    addToUserMap(appid, app_obj) {
+        this.usermap.set(appid, app_obj);
+    }
+
+    getFromUserMap(appid) {
+        return this.usermap.get(appid);
+    }
+
+    deleteFromUserMap(appid) {
+        this.usermap.delete(appid);
+    }
+
+    usermapEntries() {
+        return this.usermap.entries();
+    }
+
 }
 
-function emit(s, type, msg)
-{
-    const key = type === 'quote' ? msg.key : type;
-    s.emit(key, msg);
-}
-
-export default {
-    emitQs,
-    emitOrders,
-    emitHistQs,
-    broadcast,
-}
+export const streamer = new StreamingService('STREAMSERVICE');
