@@ -1,42 +1,36 @@
-import utils from '../../../common/utils.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
 
-export class OpenAlgoMarketData extends BrokerMarketDataImpl 
-{
-    constructor(name)
-    {
+export class OpenAlgoMarketData extends BrokerMarketDataImpl {
+    constructor(name) {
         super(name);
         this.ws_direct;
-        this.reconn_count = 0; 
+        this.reconn_count = 0;
     }
-    
-    addListeners() 
-    {
+
+    addListeners() {
         this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
         this.provider = this.sf.getAdapter('OPENALGOCLIENT');
 
         return this.provider.connect()
-        .then(() => {
-            this.initialized = true;
-            this.ws_direct = this.provider._wsClient.ws;
-            this.ws_direct.addEventListener('close', () => {
-                console.log('openalgo websocket state ' + this.ws_direct.readyState);
-                this.autoStart();
+            .then(() => {
+                this.initialized = true;
+                this.ws_direct = this.provider._wsClient.ws;
+                this.ws_direct.addEventListener('close', () => {
+                    this.log('openalgo websocket state ' + this.ws_direct.readyState);
+                    this.autoStart();
+                });
+                return { status: 'success' }
+            }).catch((error) => {
+                this.provider._wsClient.shouldReconnect = false;
+                throw error;
             });
-            return { status: 'success' }
-        }).catch((error) => {
-            this.provider._wsClient.shouldReconnect = false;
-            throw error;
-        });
     }
 
-    autoStart() 
-    {    
+    autoStart() {
         setTimeout(() => {
             const list = this.my_subs.getFullSubsList();
-            list.forEach(([k, v]) => 
-            {
+            list.forEach(([k, v]) => {
                 const requests = v.getSubsItems(['index', 'futures']);
                 this.subscribe(k, requests, 'subs');
                 const chains = v.getActiveOptionChains();
@@ -47,34 +41,31 @@ export class OpenAlgoMarketData extends BrokerMarketDataImpl
 
             this.ws_direct = this.provider._wsClient.ws;
             this.ws_direct.addEventListener('close', () => {
-                console.log('openalgo websocket reconn count ' + this.reconn_count);
+                this.log('openalgo websocket reconn count ' + this.reconn_count);
                 this.autoStart();
             })
         }, 5000);
     }
 
-    subscribe(appid, list, action) 
-    {
+    subscribe(appid, list, action) {
         this.my_subs.addRequests(appid, list);
         const requests = this.buildRequests(list);
-    
+
         if (action === 'subs' || action === 'start')
-            this.provider.subscribe_ltp(requests, (q) => 
+            this.provider.subscribe_ltp(requests, (q) =>
                 this.onQuotes(q));
         else
             this.provider.unsubscribe_ltp(requests);
     }
 
-    standardize(qt) 
-    {
+    standardize(qt) {
         return { ...qt, ...this.symbol_cache.get(qt.symbol) };
     }
-    
-    buildRequests(requests) 
-    {
+
+    buildRequests(requests) {
         requests.forEach((r) => {
             if (this.symbol_cache.get(r.symbol) === undefined)
-                this.symbol_cache.set(r.symbol, utils.expandSymbol(r.symbol));
+                this.symbol_cache.set(r.symbol, this.getScrip(r.symbol));
 
             if (r.key === 'index')
                 r.exchange = 'NSE_INDEX';

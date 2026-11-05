@@ -7,15 +7,23 @@ export class BreezeMarketDataLive extends BreezeMarketData
         super(name);
     }
 
+    onAuthData(authdata) {
+        this.authData = authdata;
+        this.adapter.initiateConnect(this.authData, true);
+        this.initialized = true;
+    }
+
     subscribe(appid, list, action) 
     {
-        this.my_subs.addRequests(appid, list);
+        this.subscriptions.addRequests(appid, list);
         const requests = this.buildRequests(appid, list);
+        this.adapter.subscribeQuotes(requests, action);
+    }
 
-        if (action === 'subs' || action === 'start')
-            this.adapter.subscribe(requests);
-        else
-            this.adapter.unsubscribe(requests);
+    subscribeIndices(appid, stockCode) {
+        const requests = this.indicesRequest(stockCode);
+        this.subscriptions.addRequests(appid, requests);
+        this.adapter.subscribeQuotes(requests, 'subs');
     }
 
     standardize(q) 
@@ -25,7 +33,7 @@ export class BreezeMarketDataLive extends BreezeMarketData
         qt.stockCode = q.stock_code === 'CRUDE' ? 'CRUDEOIL' : q.stock_code;
         qt.ltp = Number(q.close);
         qt.ltt = Date.parse(q.datetime);
-        qt.symbol = qt.stockCode;
+        qt.symbol = qt.stockCode === 'INDVIX' ? 'VIX' :  qt.stockCode;
 
         if (q.expiry_date !== undefined) {
             qt.expiry_date = (q.expiry_date.replaceAll('-20', '').replaceAll('-', '')).toUpperCase();

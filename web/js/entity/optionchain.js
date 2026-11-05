@@ -5,11 +5,15 @@ class OptionChain {
 	atm = 0;
 	row_map = new Map();
 	decorations = new Map();
-	OTMRange = { high: 9, low: 2 };
+	OTMRanges = [
+		{ low: 0, high: 7 },
+		{ low: 3, high: 10 }
+	];
 
 	constructor(expiry, v_oc_id) {
 		this.expiry = expiry;
 		this.interval = STRIKE_SIZE[instrument.stockCode];
+		this.OTMRange = v_oc_id.startsWith('c') ? this.OTMRanges[0] : this.OTMRanges[1];
 
 		const h_oc_div = document.getElementById(v_oc_id);
 		const tbls = Array.from(h_oc_div.querySelectorAll('table'));
@@ -64,7 +68,7 @@ class OptionChain {
 		}
 	}
 
-	applyDecorations(symbol, row){
+	applyDecorations(symbol, row) {
 		const action = this.decorations.get(`${symbol}_highlight`);
 		this.highlightRow(symbol, row, action);
 
@@ -75,7 +79,7 @@ class OptionChain {
 	handleEvent(event) {
 		var q = event.detail;
 
-		if (q?.expiry_date !== this.expiry)
+		if (q?.expiry !== this.expiry)
 			return;
 
 		const r = this.row_map.get(q.symbol);
@@ -89,10 +93,10 @@ class OptionChain {
 			r.row.cells[0].textContent = q.delta.toFixed(2);
 	}
 
-	decorate(symbol, decoration){
+	decorate(symbol, decoration) {
 		const r = this.row_map.get(symbol);
-		if(r !== undefined) {
-			if(decoration.key === 'highlight')
+		if (r !== undefined) {
+			if (decoration.key === 'highlight')
 				this.highlightRow(symbol, r.row, decoration.value)
 			else if (decoration.key === 'positionsize')
 				this.showOpenPosition(symbol, r.row, decoration.value);
@@ -100,14 +104,14 @@ class OptionChain {
 	}
 
 	highlightRow(symbol, row, action) {
-		if(action === 'toggle')
-				action = (!this.decorations.get(`${symbol}_highlight`)) ? 'add': 'remove';
+		if (action === 'toggle')
+			action = (!this.decorations.get(`${symbol}_highlight`)) ? 'add' : 'remove';
 
-		if(action === undefined || action === 'remove'){
+		if (action === undefined || action === 'remove') {
 			row.classList.remove('row-highlight');
 			this.decorations.delete(`${symbol}_highlight`);
 		}
-		else if(action === 'add') {
+		else if (action === 'add') {
 			row.classList.add('row-highlight');
 			this.decorations.set(`${symbol}_highlight`, action);
 		}
@@ -120,8 +124,11 @@ class OptionChain {
 			this.decorations.delete(`${symbol}_positionsize`);
 		}
 		else {
-			row.cells[2].childNodes[1].textContent = psize;
+			if (row.cells[2].childNodes[1].textContent !== '')
+				row.cells[2].childNodes[1].classList.remove('buy', 'sell');
+
 			row.cells[2].childNodes[1].classList.add(psize > 0 ? 'buy' : 'sell');
+			row.cells[2].childNodes[1].textContent = psize;
 			this.decorations.set(`${symbol}_positionsize`, psize);
 		}
 	}
