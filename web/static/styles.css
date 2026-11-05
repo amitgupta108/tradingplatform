@@ -6,6 +6,7 @@
     --body-hover: #141313;
     --element-forecolor: #f4f0f0;
     --color-red: #c7372c;
+    --color-green: #00897b;
     --border-radius: 5px;
 }
 
@@ -253,8 +254,8 @@ button:disabled {
 }
 
 .smallbutton.buy {
-    color: #00897b;
-    border-color: #00897b;
+    color: var(--color-green);
+    border-color: var(--color-green);
 }
 
 .smallbutton.buy:hover {
@@ -281,8 +282,8 @@ button:disabled {
 }
 
 .icon.buy {
-    color: rgb(56, 103, 224);
-    border-color: rgb(56, 103, 224);
+    color: var(--color-green);
+    border-color: var(--color-green);
 }
 
 .icon.sell {
@@ -303,7 +304,7 @@ select {
 }
 
 select.buy {
-    border: 1px solid var(--element-background);
+    border: 1px solid var(--color-green);
 }
 
 select.sell {
@@ -353,7 +354,7 @@ select:hover {
 }
 
 .orderwindow.buy {
-    background-color: var(--element-hover);
+    background-color: var(--color-green);
 }
 
 .orderwindow.sell {

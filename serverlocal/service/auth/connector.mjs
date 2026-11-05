@@ -4,27 +4,12 @@ import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
 
 const authdatatemplate = {
-    icici: {
-        provider: undefined,
-        date: undefined,
-        appKey: undefined,
-        appSecret: undefined,
-        authcode: undefined
-    },
-    kotak: {
-        provider: undefined,
-        date: undefined,
-        hsm_sid: undefined,
-        hsm_token: undefined,
-        feedUrl: undefined,
-        baseUrl: undefined,
-        hsi_sid: undefined,
-        hsi_token: undefined
-    }
+    icici: ['provider', 'date', 'appKey', 'appSecret', 'authcode'],
+    kotak: ['provider', 'date', 'feedUrl', 'baseUrl', 'hsi_sid', 'hsi_token'],
 };
-export class Connector extends Generic
-{
-    constructor(provider, notify = true, load_on_start = true){
+
+export class Connector extends Generic {
+    constructor(provider, notify = true, load_on_start = true) {
         super(true);
         this.provider = provider;
         this.initialized = false;
@@ -33,55 +18,45 @@ export class Connector extends Generic
         this.authdata;
     }
 
-    async loadAuthdata()
-    {
+    async loadAuthdata() {
         const l_authdata = await Connector.authkeys(this.provider, undefined);
-        if(l_authdata?.date === new Date().toDateString())
-        {
+        if (l_authdata?.date === new Date().toDateString()) {
             await this.saveAndNotify(l_authdata);
             this.initialized = true;
         }
         return this.initialized;
     }
 
-    authenticate()
-    {
+    authenticate() {
         let authcodeurl;
-        if(this.provider === 'fyers')    
+        if (this.provider === 'fyers')
             authcodeurl = this.connector.generateAuthCode();
-        else if(this.provider === 'icici')
+        else if (this.provider === 'icici')
             authcodeurl = 'https://api.icicidirect.com/apiuser/home';
-        
+
         webpage(authcodeurl)
-        .then(() => {
-             return {status: `Opened ${authcodeurl} in your default web browser.`};
-        })
-        .catch((error) => {
-            return { status: 'error', reason: error };
-        });    
+            .then(() => {
+                return { status: `Opened ${authcodeurl} in your default web browser.` };
+            })
+            .catch((error) => {
+                return { status: 'error', reason: error };
+            });
     }
 
-    async saveFyersAccessToken(webreturned)
-    {
+    async saveFyersAccessToken(webreturned) {
         this.connector.generate_access_token({ "secret_key": this.conn_data.key, "auth_code": webreturned.authcode })
-        .then((response) => {
-            console.log(response);
-            this.authdata = response;
-            this.authdata.date = webreturned.date;
-            this.authdata.authcode = webreturned.authcode;
-            eventservice('fyers_connect', this.authdata);
-        }).catch((error) => {
-            console.log(error)
-        });;
+            .then((response) => {
+                console.log(response);
+                this.authdata = response;
+                this.authdata.date = webreturned.date;
+                this.authdata.authcode = webreturned.authcode;
+                eventservice('fyers_connect', this.authdata);
+            }).catch((error) => {
+                console.log(error)
+            });;
     }
 
-    getAuthdataTemplate(provider)
-    {
-        return authdatatemplate[provider];
-    }
-
-    async saveAndNotify(authdata)
-    {
+    async saveAndNotify(authdata) {
         this.authdata = authdata;
         const es = ConfigService.getServiceByName('EVENTSERVICE');
         if (this.notify)
@@ -89,22 +64,25 @@ export class Connector extends Generic
         await Connector.authkeys(authdata.provider, this.authdata);
     }
 
-    static authkeys(id, cred) 
-    {
+    static getAuthdataTemplate(provider) {
+        const properties = authdatatemplate[provider];
+        return Object.fromEntries(properties.map((key) => [key, undefined]));
+    }
+
+    static authkeys(id, cred) {
         try {
-            if(process.env.KEYCHAIN === 'Y')
+            if (process.env.KEYCHAIN === 'Y')
                 return this.keyring(id, cred);
-            else 
+            else
                 return this.lmdb(id, cred);
         } catch (exception) {
             console.error('error in authkeys operation: ' + id + ' ' + exception)
         }
     }
 
-    static lmdb(provider, cred) 
-    {
+    static lmdb(provider, cred) {
         const ps = ConfigService.getServiceByName('PERSISTENCESERVICE');
-        if(cred === undefined)
+        if (cred === undefined)
             cred = ps.get(`authkeys_${provider}`);
         else
             ps.set(`authkeys_${provider}`, cred);
@@ -113,12 +91,10 @@ export class Connector extends Generic
     }
 
 
-    static async keyring(provider, cred) 
-    {
-        cred = cred ?? authdatatemplate[provider];
+    static async keyring(provider, cred) {
+        cred = cred ?? Connector.getAuthdataTemplate(provider);
         const entries = Array.from(Object.entries(cred));
-        for (const [k, v] of entries)
-        {
+        for (const [k, v] of entries) {
             if (v === undefined)
                 cred[k] = await getPassword(provider, k);
             else
@@ -128,22 +104,20 @@ export class Connector extends Generic
     }
 }
 
-export class ICICIConnector extends Connector
-{
+export class ICICIConnector extends Connector {
     constructor(provider, notify, load_on_start) {
         super(provider, notify, load_on_start);
         this.authcodeurl = 'https://api.icicidirect.com/apiuser/home';
     }
 
-    authenticate() 
-    {
+    authenticate() {
         webpage(this.authcodeurl)
-        .then(() => {
-            return { status: `Opened ${this.authcodeurl} in your default web browser.` };
-        })
-        .catch((error) => {
-            return { status: 'error', reason: error };
-        });
+            .then(() => {
+                return { status: `Opened ${this.authcodeurl} in your default web browser.` };
+            })
+            .catch((error) => {
+                return { status: 'error', reason: error };
+            });
     }
 
     generateSession(webreturned) {
@@ -158,14 +132,12 @@ export class ICICIConnector extends Connector
     }
 }
 
-export class KotakConnector extends Connector
-{
-    constructor(provider, notify, load_on_start){
+export class KotakConnector extends Connector {
+    constructor(provider, notify, load_on_start) {
         super(provider, notify, load_on_start);
     }
 
-    apiLogin(num) 
-    {
+    apiLogin(num) {
         const options = {
             method: "POST",
             headers: {
@@ -182,8 +154,7 @@ export class KotakConnector extends Connector
         return fetch(process.env.kotak_loginURL, options);
     }
 
-    apiValidate(sid, token) 
-    {
+    apiValidate(sid, token) {
         const options = {
             method: "POST",
             headers: {
@@ -211,19 +182,17 @@ export class KotakConnector extends Connector
                     this.authdata = {
                         provider: this.provider,
                         date: new Date().toDateString(),
-                        hsm_sid: lr_result.sid,
-                        hsm_token: lr_result.token,
                         baseUrl: vr_result.baseUrl,
                         feedUrl: vr_result.feedUrl,
                         hsi_sid: vr_result.sid,
                         hsi_token: vr_result.token
                     }
                     this.saveAndNotify(this.authdata);
-                    return { status: 'success'};
+                    return { status: 'success' };
                 }
-                return { status: 'error', reason: 'kotak validate failed ' + vr.statusText};
+                return { status: 'error', reason: 'kotak validate failed ' + vr.statusText };
             }
-            return { status: 'error', reason: 'login api call not completed ' + lr.statusText};
+            return { status: 'error', reason: 'login api call not completed ' + lr.statusText };
         }
         catch (exception) {
             console.error('kotak auth error ' + exception);
@@ -232,14 +201,12 @@ export class KotakConnector extends Connector
     }
 }
 
-export class TPAppConnector extends ICICIConnector
-{
-    constructor(provider, notify, load_on_start){
+export class TPAppConnector extends Connector {
+    constructor(provider, notify, load_on_start) {
         super(provider, notify, load_on_start);
     }
 
-    async authenticate(params) 
-    {
+    async authenticate(params) {
         const api_url = `${process.env.TP_SERVER}` + '/api/value';
         const options = {
             method: 'POST',
@@ -247,13 +214,13 @@ export class TPAppConnector extends ICICIConnector
                 'accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ provider: params.arg1})
+            body: JSON.stringify({ provider: params.arg1 })
         };
         const response = await fetch(api_url, options);
-        if(response.ok)
+        if (response.ok)
             return await response.json();
         else
-            console.log('TPCoonector' + JSON.stringify({state: 'NOT_OK', error: `${response.status}-${response.statusText}` }));
+            console.log('TPCoonector' + JSON.stringify({ state: 'NOT_OK', error: `${response.status}-${response.statusText}` }));
     }
 }
 

@@ -1,5 +1,4 @@
-class Position
-{
+class Position {
 	#m = {
 		bookedQ: [3, 0],
 		bookedPL: [4, 0],
@@ -9,39 +8,36 @@ class Position
 		unbookedPL: [8, 0],
 		totalPL: [9, 1],
 	};
-	booked = {pl: 0.00, qty: 0, avgP: 0.00};
+	booked = { pl: 0.00, qty: 0, avgP: 0.00 };
 	psize = 0;
 	orders = new Map();
 	#pRow;
 	symbol;
 
-	constructor(symbol)
-	{
+	constructor(symbol) {
 		this.symbol = symbol;
 		positions.set(symbol, this);
 		this.ini(symbol);
 	}
 
-	ini(symbol)
-	{
+	ini(symbol) {
 		this.#pRow = tRow(t_position_table_row);
 		this.#pRow.title = symbol;
 		this.#pRow.querySelector('#orderdisplay-btn').title = symbol;
-		this.#pRow.querySelector('#Instrument').textContent = expandSymbol(symbol).name;
-		
+		this.#pRow.querySelector('#Instrument').textContent = getScrip(symbol).name;
+
 		document.getElementById('positions_tbody').append(this.#pRow);
 	}
 
-	value(p, v = undefined)
-	{
+	value(p, v = undefined) {
 		var i = this.#m[p];
 		const node = this.#pRow.cells[i[0]].childNodes[i[1]];
-		if(v != undefined)
+		if (v != undefined)
 			node.innerText = decimal2.includes(p) ? Number(v).toFixed(2) : v;
-	
+
 		return Number(node.innerText);
 	}
-	
+
 	orderupdate(exorder) {
 		this.orders.set(exorder.orderid, exorder);
 		if (exorder.state !== 'opened')
@@ -53,21 +49,17 @@ class Position
 		label.style.backgroundColor = (opencount === 0 ? 'white' : 'skyblue');
 	}
 
-	positionUpdate() 
-	{  
+	positionUpdate() {
 		let buyq = 0; let sellq = 0;
 		let buyv = 0; let sellv = 0;
 		let ltp = 0;
 		for (const o of this.orders.values()) {
-			if(['complete', 'completed'].includes(o.state))
-			{
-				if(o.action === 'B')
-				{
+			if (['complete', 'completed'].includes(o.state)) {
+				if (o.action === 'B') {
 					buyq += Number(o.filled_q);
 					buyv += Number(o.filled_q) * Number(o.pricedAt);
-				}  
-				else
-				{
+				}
+				else {
 					sellq += Number(o.filled_q);
 					sellv += Number(o.filled_q) * Number(o.pricedAt);
 				}
@@ -82,17 +74,16 @@ class Position
 
 		this.pnlUpdate(abp, asp, ltp)
 
-		const scrip = expandSymbol(this.symbol);
-		const oc = OptionChain.get(scrip.expiry_date);
-		if(oc !== undefined)
-			oc.decorate(this.symbol, {key: 'positionsize', value: this.psize});    
-		
+		const scrip = getScrip(this.symbol);
+		const oc = OptionChain.get(scrip.expiry);
+		if (oc !== undefined)
+			oc.decorate(this.symbol, { key: 'positionsize', value: this.psize });
+
 		this.#pRow.querySelector('#pos_exit_cb').disabled = this.psize === 0 ? true : false;
 		this.#pRow.style.display = 'table-row';
 	}
 
-	pnlUpdate(abp, asp, ltp)
-	{
+	pnlUpdate(abp, asp, ltp) {
 		this.booked.pl = ((asp - abp) * this.booked.qty);
 		this.booked.avgP = this.psize === 0 ? 0 : this.psize > 0 ? abp : asp;
 
@@ -103,8 +94,8 @@ class Position
 		this.value('bookedQ', this.booked.qty);
 		this.value('bookedPL', this.booked.pl);
 		this.value('averageP', this.booked.avgP);
-		
-		this.value('LTP', ltp);    
+
+		this.value('LTP', ltp);
 		this.value('unbookedQ', this.psize);
 
 		const new_unbookedPL = (ltp - this.booked.avgP) * this.psize;
@@ -113,13 +104,12 @@ class Position
 
 		this.value('unbookedPL', new_unbookedPL);
 		this.value('totalPL', new_bookedPL + new_unbookedPL);
-		pNL.dispatchEvent(generateEvent('change', {change_b: b_change, change_unb: unb_change}));
+		pNL.dispatchEvent(generateEvent('change', { change_b: b_change, change_unb: unb_change }));
 	}
 
-	static findPosition(symbol, newp)
-	{
+	static findPosition(symbol, newp) {
 		var p = positions.get(symbol);
-		if(p === undefined && newp)
+		if (p === undefined && newp)
 			p = new Position(symbol);
 		return p;
 	}
