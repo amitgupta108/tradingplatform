@@ -1,18 +1,14 @@
-import { KotakMarketData } from './m_kotak.mjs';
-import utils from '../../../common/utils.mjs';
+/*import { KotakMarketData } from './m_kotak.mjs';
 import { parse } from 'date-fns';
 
 const pattern = "dd/MM/yyyy HH:mm:ss";
 
-export class KotakMarketDataHSM extends KotakMarketData 
-{
-    constructor(name)
-    {
+export class KotakMarketDataHSM extends KotakMarketData {
+    constructor(name) {
         super(name);
     }
 
-    onSnapshot(snapshot)
-    {
+    onSnapshot(snapshot) {
         const qt = this.toScrip(snapshot);
         this.emitQuotes(qt);
 
@@ -20,8 +16,7 @@ export class KotakMarketDataHSM extends KotakMarketData
             this.atmReview(qt);
     }
 
-    standardize(q)
-    {
+    standardize(q) {
         const qt = this.symbol_cache.get(q.tk);
         if (qt !== undefined && (q.ltp !== undefined || q.iv !== undefined)) {
             qt.ltp = q.name === 'sf' ? Number(q.ltp) : Number(q.iv);
@@ -31,25 +26,24 @@ export class KotakMarketDataHSM extends KotakMarketData
         }
     }
 
-    toScrip(snapshot)
-    {
+    toScrip(snapshot) {
         let qt;
-        if(snapshot.name === 'sf') {
+        if (snapshot.name === 'sf') {
             const { tk: token, e: exchange, ltp: ltp, ...rest } = snapshot;
-            qt = { token, exchange, ltp};    
+            qt = { token, exchange, ltp };
             qt.symbol = snapshot.e === 'mcx_fo' ? snapshot.ts : this.scrips.findScripByKey('token', snapshot.tk)?.scripReferenceKey;
             qt.ltt = snapshot.fdtm !== undefined ? parse(snapshot.fdtm, pattern, new Date()).getTime() : Date.now();
         }
         else if (snapshot.name === 'if') {
-            const { tk: token, e: exchange, iv: ltp,  ...rest } = snapshot;
-            qt = { token, exchange, ltp};
+            const { tk: token, e: exchange, iv: ltp, ...rest } = snapshot;
+            qt = { token, exchange, ltp };
             qt.symbol = this.scrips.findScripByKey('token', snapshot.tk)?.scripReferenceKey ?? snapshot.tk;
             qt.symbol = snapshot.tk === 'Nifty 50' ? 'NIFTY' : qt.symbol;
             qt.ltt = snapshot.tvalue !== undefined ? parse(snapshot.tvalue, pattern, new Date()).getTime() : Date.now();
         }
         qt.ltp = Number(qt.ltp);
-        this.symbol_cache.set(snapshot.tk, { ...qt, ...utils.expandSymbol(qt.symbol) });
-    
+        this.symbol_cache.set(snapshot.tk, { ...qt, ...this.getScrip(qt.symbol) });
+
         return this.symbol_cache.get(snapshot.tk);
     }
-}
+}*/

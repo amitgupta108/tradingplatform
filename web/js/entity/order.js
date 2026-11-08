@@ -1,9 +1,7 @@
-class Order
-{
+class Order {
 	static ordermap = new Map();
 
-	constructor(symbol, action, quantity, orderid)
-	{
+	constructor(symbol, action, quantity, orderid) {
 		this.stockCode = instrument.stockCode;
 		this.appid = instrument.appid;
 		this.ordertype = 'MARKET';
@@ -15,50 +13,47 @@ class Order
 		this.orderid = orderid;
 		this.type = orderid === undefined ? 'create' : 'modify';
 		this.strategy = 'default';
-		
+
 		Order.ordermap.set(symbol, this);
 	}
 
-	static getUIOrder(symbol){
+	static getUIOrder(symbol) {
 		return Order.ordermap.get(symbol);
 	}
 
-	static removeUIOrder(symbol){
+	static removeUIOrder(symbol) {
 		Order.ordermap.delete(symbol);
 	}
-	
-	static clearUIOrders(){
+
+	static clearUIOrders() {
 		Order.ordermap.clear();
 	}
 
-	static findOpenOrder(symbol, orderid){
+	static findOpenOrder(symbol, orderid) {
 		const p = Position.findPosition(symbol);
 		const order = p?.orders.get(orderid);
-		if(order !== undefined && order.state === 'opened')
+		if (order !== undefined && order.state === 'opened')
 			return order;
 	}
 }
 
-function validate(clickedBtn)
-{
-  	var isError = false;
-  	const rows = Array.from(order_rows_tbody.rows);
+function validate(clickedBtn) {
+	var isError = false;
+	const rows = Array.from(order_rows_tbody.rows);
 
-  	const neworders = rows.map((r) => {
-		
+	const neworders = rows.map((r) => {
+
 		const symbol = qSel(r, 'owsymbol', 'id').textContent;
 		const order = Order.findOpenOrder(symbol, r.title) ?? Order.getUIOrder(symbol);
-		if(order !== undefined)
-		{		
+		if (order !== undefined) {
 			const neworder = structuredClone(order);
 			neworder.action = r.querySelector('#ow_action_btn').innerText;
 			neworder.quantity = r.querySelector('select').value * LOT_SIZE[instrument.stockCode];
 			neworder.ordertype = r.querySelector('#ordertype').textContent;
 
-			if (neworder.ordertype === 'LIMIT')
-			{
+			if (neworder.ordertype === 'LIMIT') {
 				const h_price = qSel(r, 'lmtprice', 'id');
-				if(h_price.value === "") {
+				if (h_price.value === "") {
 					h_price.style.border = '1px solid red';
 					isError = true;
 				}
@@ -74,27 +69,24 @@ function validate(clickedBtn)
 	submitOWinBtn.disabled = isError;
 }
 
-function submitOrder(clickedBtn)
-{
-  	if(!in_prep_orders.isError) {
+function submitOrder(clickedBtn) {
+	if (!in_prep_orders.isError) {
 		emit('order', in_prep_orders.orders);
 
-  		sOrderSubmit.play();
-  		hideOWin();
+		sOrderSubmit.play();
+		hideOWin();
 	}
 }
 
-function displayOrderList(btn, parent)
-{
+function displayOrderList(btn, parent) {
 	const symbol = parent.title;
 	const list_head = order_list_thead.querySelector('td');
 
-	if(orderlistDiv.style.display !== 'none' && symbol === list_head.title)
+	if (orderlistDiv.style.display !== 'none' && symbol === list_head.title)
 		orderlistDiv.style.display = 'none';
-	else
-	{
+	else {
 		const p = Position.findPosition(symbol, false);
-		list_head.textContent = expandSymbol(symbol).name;
+		list_head.textContent = getScrip(symbol).name;
 		list_head.title = symbol;
 		order_list_tbody.innerHTML = "";
 
@@ -115,7 +107,7 @@ function displayOrderList(btn, parent)
 			newtr.childNodes[13].textContent = o.state;
 			newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
 			newtr.childNodes[15].childNodes[1].disabled = (o.state === 'opened' ? false : true);
-			if(o.state === 'opened')
+			if (o.state === 'opened')
 				newtr.childNodes[15].childNodes[1].classList.add('clickable');
 			else
 				newtr.childNodes[15].childNodes[1].classList.remove('clickable');

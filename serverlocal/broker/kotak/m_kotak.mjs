@@ -1,10 +1,8 @@
 import { ConfigService } from '../../service/.config/configservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
-export class KotakMarketData extends BrokerMarketDataImpl 
-{
-    constructor(name)
-    {
+export class KotakMarketData extends BrokerMarketDataImpl {
+    constructor(name) {
         super(name);
         this.scrips = ConfigService.getServiceByName('SCRIPSTORE');
     }
@@ -24,33 +22,31 @@ export class KotakMarketData extends BrokerMarketDataImpl
         this.authData = authdata;
         this.adapter.initiateConnect(this.authData);
         this.initialized = true;
-        console.log('Kotak authdata available');
+        this.log('Kotak authdata available');
     }
 
-    subscribe(appid, list, action) 
-    {
-        action = action === 'start' ? 'subs' : action;
-        this.my_subs.addRequests(appid, list);
+    subscribe(appid, list, action) {
+        action = action === 'start' ? 'subs' : action === 'stop' ? 'unsub' : action;
+        this.subscriptions.addRequests(appid, list);
         const requests = this.buildRequests(list);
 
         if (requests.length > 0)
             this.adapter.subscribe(requests, 'Scrips', action, false);
     }
 
-    subscribeIndices(appid, stockCode){
+    subscribeIndices(appid, stockCode) {
         let requests = [];
-        if(stockCode === 'NIFTY') {
+        if (stockCode === 'NIFTY') {
             requests = ['nse_cm|NIFTY 50', 'nse_cm|INDIA VIX'];
-            this.my_subs.addRequests(appid, [{'symbol': 'NIFTY'}, {'symbol': 'VIX'}]);
-            this.symbol_cache.set('NIFTY 50', {symbol: 'NIFTY', exchange: 'nse_cm', stockCode: 'NIFTY', token: 'Nifty 50', key: 'index'});
-            this.symbol_cache.set('INDIA VIX', {symbol: 'VIX', exchange: 'nse_cm', stockCode: 'VIX', token: 'INDIA VIX', key: 'vix'});
+            this.subscriptions.addRequests(appid, [{ 'symbol': 'NIFTY' }, { 'symbol': 'VIX' }]);
+            this.symbol_cache.set('NIFTY 50', { symbol: 'NIFTY', exchange: 'nse_cm', stockCode: 'NIFTY', token: 'Nifty 50', key: 'index' });
+            this.symbol_cache.set('INDIA VIX', { symbol: 'VIX', exchange: 'nse_cm', stockCode: 'VIX', token: 'INDIA VIX', key: 'vix' });
         }
-        if(requests.length > 0)
+        if (requests.length > 0)
             this.adapter.subscribe(requests, 'Indices', 'subscribe', false);
     }
 
-    buildRequests(list) 
-    {
+    buildRequests(list) {
         const scrips = [];
         list.forEach((e) => {
             const scrip = this.scrips.findScripByRefKey(e.symbol);

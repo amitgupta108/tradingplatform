@@ -1,11 +1,8 @@
 import { EXCHANGES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.mjs';
-import utils from '../../../common/utils.mjs';
 import { ConfigService } from '../.config/configservice.mjs';
 
-export class Subscriptions 
-{
-    constructor(owner) 
-    {
+export class Subscriptions {
+    constructor(owner) {
         this.owner = owner;
         this.subs_map = new Map();
         this.req_map = new SubscribersMap();
@@ -14,10 +11,10 @@ export class Subscriptions
 
     addNewSubscriptions(appid, session) {
         let subs = this.getSubscriptions(appid);
-        if(subs === undefined) {
+        if (subs === undefined) {
             subs = new SubsTemplate(appid, session);
             this.subs_map.set(appid, subs);
-        }        
+        }
         return subs;
     }
 
@@ -30,12 +27,12 @@ export class Subscriptions
     }
 
     getSubscriptionsForStockCode(stockCode) {
-        return this.subs_map.values().filter((t) => 
+        return this.subs_map.values().filter((t) =>
             t.stockCode === stockCode);
     }
 
     getFullSubsList() {
-            return this.subs_map.entries();
+        return this.subs_map.entries();
     }
 
     addRequests(appid, requests) {
@@ -47,16 +44,15 @@ export class Subscriptions
         this.es.emit(`${this.owner}_unsub`, appid, unsub_list);
     }
 
-    getSubscribers(symbol, active) 
-    {
+    getSubscribers(symbol, active) {
         const subscribers = this.req_map.getSubscribers(symbol);
         return (!active) ? subscribers :
             subscribers.filter((appid) => {
                 return this.getSubscriptions(appid)?.toStream;
-        });
+            });
     }
 
-    pauseStream(appid){
+    pauseStream(appid) {
         this.getSubscriptions(appid).pause(true);
     }
 
@@ -66,14 +62,13 @@ export class Subscriptions
 
     autoUnsub(obj_count) {
         const list = this.getFullSubsList();
-        for( const [k, v] of list) {
+        for (const [k, v] of list) {
             this.removeRequests(v.unsub(obj_count.count));
         }
     }
 }
 
-export class SubscribersMap
-{
+export class SubscribersMap {
     constructor() {
         this.req_map = new Map();
     }
@@ -90,16 +85,15 @@ export class SubscribersMap
         });
     }
 
-    removeRequests(appid) 
-    {
+    removeRequests(appid) {
         const unsub_list = [];
         this.req_map.keys().forEach((symbol) => {
             const subscribers = this.req_map.get(symbol);
             const idx = subscribers.findIndex((v) => v === appid);
-            if(idx !== -1) {
+            if (idx !== -1) {
                 subscribers.splice(idx, 1);
-                if(subscribers.length === 0)
-                    unsub_list.push({symbol: symbol});
+                if (subscribers.length === 0)
+                    unsub_list.push({ symbol: symbol });
             }
         });
         return unsub_list;
@@ -116,10 +110,8 @@ export class SubscribersMap
     }
 }
 
-export class SubsTemplate
-{
-    constructor(appid, session)
-    {
+export class SubsTemplate {
+    constructor(appid, session) {
         this.appid = appid;
         this.toStream = true;
         this.stockCode = session.stockCode;
@@ -128,77 +120,102 @@ export class SubsTemplate
         this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [
-            { key: 'index', stockCode: this.stockCode, toStream: true, symbol: this.stockCode, exchange: 'nse_cm'},
-            { key: 'futures', stockCode: this.stockCode, toStream: true, expiry: this.fExpiry,
+            {
+                key: 'futures', stockCode: this.stockCode, toStream: true, expiry: this.fExpiry,
                 symbol: this.stockCode.concat(this.fExpiry).concat('FUT'), exchange: this.exchange
             }
         ];
 
-        session.oExpiries.forEach((expiry) => 
-        {
-            const idx = this.st.findIndex((s) => s.key === 'optionchain' && s.expiry === expiry);
-            if(idx === -1)
-                this.st.push({key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry});
+        session.oExpiries.forEach((expiry, index) => {
+            this.st.push({ key: 'optionchain', stockCode: this.stockCode, toStream: true, expiry: expiry, index: index, strikes: [] });
         });
     }
 
-    pause(toPause)
-    {
+    pause(toPause) {
         this.toStream = !toPause;
     }
 
-    getSubsItems(keys)
-    {
+    getSubsItems(keys) {
         return this.st.filter((st) => {
-            if(this.stockCode === 'CRUDEOIL' && st.key === 'index')    
+            if (this.stockCode === 'CRUDEOIL' && st.key === 'index')
                 return false;
             else
                 return keys.includes(st.key);
         });
     }
-    
+
     getSubsItemByKey(key) {
         return this.st.find((s) => s.key === key);
     }
 
     getOptionChainByExpiry(expiry) {
         return this.st.find((s) => {
-            return s.key === 'optionchain' 
-            && s.expiry === expiry;
+            return s.key === 'optionchain'
+                && s.expiry === expiry;
         });
     }
 
-    optionChainAction(expiry, action)
-    {
+    /** deprecated */
+    option_chain(expiry, action) {
         const ost = this.getOptionChainByExpiry(expiry);
-        if(ost !== -1)
-        {
-            if(ost.toStream === false && ['start', 'toggle'].includes(action)){
+        if (ost !== -1) {
+            if (ost.toStream === false && ['start', 'toggle'].includes(action)) {
                 ost.toStream = true;
-                if(this.atm !== 0) {
+                if (this.atm !== 0) {
                     const strikes = this.buildOptionChain({ ltp: this.atm }, expiry);
-                    return { action: 'subs', strikes: strikes };
-                    //eventservice.emit('subscription', this.appid, strikes, 'subs');
+                    return { status: 'success', action: 'subs', strikes: strikes };
                 }
-            } 
+            }
             else if (ost.toStream === true && action === 'toggle') {
                 ost.toStream = false;
-                return { action: 'unsub', strikes: ost.strikes }
-                //eventservice.emit('subscription', this.appid, ost.strikes, 'unsub');
+                return { status: 'success', action: 'unsub', strikes: ost.strikes }
             }
         }
     }
 
-    buildOptionChain(uq, expiry)
-    {
+    optionChain(expiry, action) {
+
+        let response;
+        if (action.key === 'stream')
+            response = this.streamOptionChain(expiry, action.value);
+        else if (action.key === 'subscribe')
+            response = this.subscribeOptionChain(expiry, action.value);
+
+        response.action = action;
+        return response;
+    }
+
+    streamOptionChain(expiry, action) {
+        if (action === 'toggle')
+            action = this.toStream ? 'stop' : 'start';
+
         const ost = this.getOptionChainByExpiry(expiry);
-        const oc_config = OPT_CONFIG['SIX'];
-        const st_prices = utils._strikes(uq.ltp, oc_config.startIdx, oc_config.endIdx, STRIKE_SIZE[this.stockCode]);
-        
+        if (ost !== -1)
+            if (action === 'start' ? ost.toStream = true : ost.toStream = false);
+
+        return { status: 'success', strikes: ost.strikes };
+    }
+
+    subscribeOptionChain(expiry, action) {
+        if (action === 'start' && this.atm !== 0) {
+            const strikes = this.buildOptionChain({ ltp: this.atm }, expiry);
+            return { status: 'success', strikes: strikes };
+        }
+        else if (action === 'stop') {
+            const ost = this.getOptionChainByExpiry(expiry);
+            return { status: 'success', strikes: ost.strikes };
+        }
+    }
+
+    buildOptionChain(uq, expiry) {
+        const ost = this.getOptionChainByExpiry(expiry);
+        const config = ost.index === 0 ? OPT_CONFIG['FIRST'] : OPT_CONFIG['SECOND'];
+        const st_prices = this.strikes(uq.ltp, config.start, config.end, STRIKE_SIZE[this.stockCode]);
+
         const strikes = st_prices.map((s) => {
             s.exchange = this.exchange;
             s.expiry = expiry,
-            s.key = 'strikex';
+                s.key = 'strikex';
             s.stockCode = this.stockCode;
             s.symbol = this.stockCode + expiry + s.strike + s.right;
             return s;
@@ -208,9 +225,8 @@ export class SubsTemplate
         return strikes;
     }
 
-    reloadStrikes(uq)
-    {
-        const strikesset = [];     
+    reloadStrikes(uq) {
+        const strikesset = [];
         const osts = this.getActiveOptionChains();
         osts.forEach((ost) => {
             strikesset.push(this.buildOptionChain(uq, ost.expiry));
@@ -219,9 +235,8 @@ export class SubsTemplate
         return strikesset;
     }
 
-    getActiveOptionChains()
-    {  
-        return this.st.filter((s) => 
+    getActiveOptionChains() {
+        return this.st.filter((s) =>
             s.key === 'optionchain'
             && s.toStream === true);
     }
@@ -230,35 +245,45 @@ export class SubsTemplate
         //toStream
     }
 
-    getNotified(uq)
-    {
+    getNotified(uq) {
         const sz = STRIKE_SIZE[this.stockCode];
         this.atm_check_counter++;
-        
-        if (this.atm_check_counter === 15) {
+
+        if (this.atm_check_counter === 30) {
             this.atm_check_counter = 1;
             if (Math.abs(this.atm - uq.ltp) > sz) {
                 this.atm = Math.round(uq.ltp / sz) * sz;
                 return { load: true, uq: uq }
             }
         }
-        else if(this.atm_check_counter === 0) {
+        else if (this.atm_check_counter === 0) {
             this.atm = Math.round(uq.ltp / sz) * sz;
             return { load: true, uq: uq };
         }
     }
 
-    unsub(count)
-    {
+    unsub(count) {
         const osts = this.getActiveOptionChains();
         const unsub_strikes = [];
-        for(const ost of osts) {
+        for (const ost of osts) {
             const unsub_list = ost.strikes?.filter((s) => {
                 Math.abs((s.strike - this.atm) > count * STRIKE_SIZE[this.stockCode])
-           });
+            });
 
-           unsub_strikes.concat(unsub_list);
+            unsub_strikes.concat(unsub_list);
         }
         return unsub_strikes;
+    }
+
+    strikes(price, startIdx = 2, endIdx = 7, sz) {
+        const atmIdx = Math.round(price / sz);
+        const idxs = endIdx - startIdx;
+        var strikes = new Array(idxs * 2);
+
+        for (var j = startIdx; j <= endIdx; j++) {
+            strikes[j - startIdx] = { strike: (atmIdx - j) * sz, right: 'PE' };
+            strikes[j + idxs - startIdx + 1] = { strike: (atmIdx + j) * sz, right: 'CE' };
+        }
+        return strikes;
     }
 }

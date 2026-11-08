@@ -1,8 +1,7 @@
-import utils from '../../../common/utils.mjs';
 import { streamer } from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/.config/configservice.mjs';
-import { EXCHANGES} from '../../utils/constants.mjs';
+import { EXCHANGES } from '../../utils/constants.mjs';
 
 export class CommonService extends BrokerMarketDataImpl {
     constructor(name) {
@@ -19,7 +18,7 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     history(appid, r) {
-        const scrip = utils.expandSymbol(r.symbol);
+        const scrip = this.getScrip(r.symbol);
         if (EXCHANGES[r.stockCode] !== 'mcx_fo') {
             r.exchange = ['NIFTY', 'INDVIX'].includes(r.symbol) ? 'NSE' : 'NFO';
             r.stockCode = r.symbol === 'INDVIX' ? 'INDVIX' : scrip.stockCode;
@@ -41,18 +40,18 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     subscribe_vix(appid, mode, action) {
-        if (mode.startsWith('HISTORY')){
+        if (mode.startsWith('HISTORY')) {
             const s = ConfigService.getServiceByName('ICICIHISTVIEW');
             return s.subscribe_vix(appid, mode, action);
         }
-        else{
-             const s = ConfigService.getServiceByName('ICICILIVEVIEW');
+        else {
+            const s = ConfigService.getServiceByName('ICICILIVEVIEW');
             return s.subscribe_vix(appid, mode, action)
-            .then((resp) => {
-                this.vix_subscribed = true;
-                this.log(resp);
-            })
-            .catch((error) => this.log(error));
+                .then((resp) => {
+                    this.vix_subscribed = true;
+                    this.log(resp);
+                })
+                .catch((error) => this.log(error));
         }
     }
 
