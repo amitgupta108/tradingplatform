@@ -1,4 +1,4 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
+/*import { ConfigService } from '../../service/.config/configservice.mjs';
 import { UserService } from '../../service/system/service.mjs';
 
 export class SimulatorHistory extends UserService
@@ -205,93 +205,92 @@ export class SimulatorHistory extends UserService
     }
     
 
-/*---------------------------------------------------------External APIs------------------------------------------------------------------------*/    
+//---------------------------------------------------------External APIs------------------------------------------------------------------------
 
-    clientInit(appid, simStartTime, speed = '1x') 
-    {
-        this.subs_reqs.set(appid, new Array(0));
-        if(this.clocks.get(appid) === undefined) {
-            this.qs_store.set(appid, new Array(0));
-            this.clocks.set(appid, {appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed, lastaction: 'none'});
-        }
-    }
-
-    start_sim(appid, requests) 
-    {
-        if(requests?.length > 0)
-        {
-            this.subscribe(appid, requests);
-            const c = this.clocks.get(appid);
-            c.lastaction = 'start';
-            this.startStreamer(c.key);
-            c.state = 'start initiated';
-        }
-    }
-
-    subscribe(appid, requests) 
-    {   
-        const exReqs = this.subs_reqs.get(appid);
-
-        requests.forEach((request) => {
-            const idx = exReqs.findIndex((s) => s.symbol === request.symbol);
-            
-            if(idx === -1)
-                exReqs.push(request);
-                
-            this.addToClientStore(appid, request.instrument);
-        });
-    }
-
-    unsubscribe(appid, requests) {
-        const i_reqs = this.subs_reqs.get(appid);
-        requests.forEach((request) => {
-            
-            var idx = i_reqs.findIndex((s) => s.symbol === request.symbol);
-        
-            if(idx !== -1)
-                i_reqs.splice(idx, 1);
-        });
-    }
-
-    changeSpeed(appid, stmrkey) {
-        var clock = this.clocks.get(appid);
-        clock.key = stmrkey;
-
-        var stmr = this.streamers.find((s) => s.key === stmrkey);
-        var exReq = this.subs_reqs.get(appid) || [];
-        if (stmr.state === 'stopped' && exReq.length > 0)
-            this.startStreamer(stmrkey);
-    }
-
-    stream(appid, action) 
-    {
-        const c = this.clocks.get(appid);
-        c.lastaction = action;
-        c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
-        return c.state;
-    }
-
-    subscribe_vix(appid, mode, action) {
-        var instrument = { exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second' };
-
-        const request = { 
-            appid: appid,
-            symbol: instrument.stockCode,
-            instrument: instrument
-        };
-   
-        if (action === 'subs')
-            this.subscribe(appid, [request]);
-        else
-            this.unsubscribe(appid, [request]);
-    }
-
-    clear(appid) {
-        this.clocks.delete(appid);
-        this.qs_store.delete(appid);
-        this.subs_reqs.delete(appid);
-
-        this.log('Drop user ' + appid);
-        return { status: 'success' };
+clientInit(appid, simStartTime, speed = '1x')
+{
+    this.subs_reqs.set(appid, new Array(0));
+    if (this.clocks.get(appid) === undefined) {
+        this.qs_store.set(appid, new Array(0));
+        this.clocks.set(appid, { appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed, lastaction: 'none' });
     }
 }
+
+start_sim(appid, requests)
+{
+    if (requests?.length > 0) {
+        this.subscribe(appid, requests);
+        const c = this.clocks.get(appid);
+        c.lastaction = 'start';
+        this.startStreamer(c.key);
+        c.state = 'start initiated';
+    }
+}
+
+subscribe(appid, requests)
+{
+    const exReqs = this.subs_reqs.get(appid);
+
+    requests.forEach((request) => {
+        const idx = exReqs.findIndex((s) => s.symbol === request.symbol);
+
+        if (idx === -1)
+            exReqs.push(request);
+
+        this.addToClientStore(appid, request.instrument);
+    });
+}
+
+unsubscribe(appid, requests) {
+    const i_reqs = this.subs_reqs.get(appid);
+    requests.forEach((request) => {
+
+        var idx = i_reqs.findIndex((s) => s.symbol === request.symbol);
+
+        if (idx !== -1)
+            i_reqs.splice(idx, 1);
+    });
+}
+
+changeSpeed(appid, stmrkey) {
+    var clock = this.clocks.get(appid);
+    clock.key = stmrkey;
+
+    var stmr = this.streamers.find((s) => s.key === stmrkey);
+    var exReq = this.subs_reqs.get(appid) || [];
+    if (stmr.state === 'stopped' && exReq.length > 0)
+        this.startStreamer(stmrkey);
+}
+
+stream(appid, action)
+{
+    const c = this.clocks.get(appid);
+    c.lastaction = action;
+    c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
+    return c.state;
+}
+
+subscribe_vix(appid, mode, action) {
+    var instrument = { exchange: 'NSE', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second' };
+
+    const request = {
+        appid: appid,
+        symbol: instrument.stockCode,
+        instrument: instrument
+    };
+
+    if (action === 'subs')
+        this.subscribe(appid, [request]);
+    else
+        this.unsubscribe(appid, [request]);
+}
+
+clear(appid) {
+    this.clocks.delete(appid);
+    this.qs_store.delete(appid);
+    this.subs_reqs.delete(appid);
+
+    this.log('Drop user ' + appid);
+    return { status: 'success' };
+}
+}*/

@@ -1,48 +1,36 @@
 import { ConfigService } from './service/.config/configservice.mjs';
 import { streamer } from './stream.mjs';
-import apiserver from './apiserver.mjs'; 
+import { apiserver } from './apiserver.mjs';
+import { SystemService } from './service/system/service.mjs';
 
-class ClientManager
-{
-    constructor(name)
-    {
-        this.name = name;
-        this.logEnabled = true;
-    }
-
-    log(...args) {
-        if (this.logEnabled) {
-            console.log(`[${this.name}]`, ...args);
-        }
+class ClientManager extends SystemService {
+    constructor(name) {
+        super(name);
     }
 }
 
-export class AppClientManager extends ClientManager
-{
-    constructor()
-    {
+export class AppClientManager extends ClientManager {
+    constructor() {
         super('APPCLIENTMANAGER');
     }
 
-    async startServices() 
-    {
+    async startServices() {
         await ConfigService.initializeAll();
         streamer.init();
     }
 
-    connect(s)
-    {        
+    connect(s) {
         const appid = s.handshake.auth.token;
         const mode = s.handshake.auth.mode;
-        
+
         const as = ConfigService.getServiceByName('AUTHSERVICE');
         const matches = as.validate(appid, mode)
-        if(matches.length !== 1) {
+        if (matches.length !== 1) {
             console.log('app not authenticated');
             return;
         }
-        
-        streamer.addToUserMap(appid, { socket: s, mode: mode});
+
+        streamer.addToUserMap(appid, { socket: s, mode: mode });
         this.registerHandlers(s, appid, mode);
 
         s.on("error", (err) => {
@@ -50,16 +38,15 @@ export class AppClientManager extends ClientManager
         });
     }
 
-    registerHandlers(s, appid, mode)
-    {
+    registerHandlers(s, appid, mode) {
         const profile = ConfigService.getProfile(mode);
 
         if (Object.hasOwn(profile, 'view'));
-            apiserver.registerDataRequests(s, appid, mode);
-        
+        apiserver.registerDataRequests(s, appid, mode);
+
         if (Object.hasOwn(profile, 'trade'));
-            apiserver.registerTradeRequests(s, appid, mode);
-        
+        apiserver.registerTradeRequests(s, appid, mode);
+
         if (Object.hasOwn(profile, 'admin'))
             apiserver.registerAdminRequests(s, appid, mode);
 
@@ -67,11 +54,10 @@ export class AppClientManager extends ClientManager
         this.registerAuthorizer(s, mode);
     }
 
-    registerAuthorizer(s, mode)
-    {
+    registerAuthorizer(s, mode) {
         s.use(([eventName, ...args], next) => {
-            const implementedEvents = s.eventNames(); 
-            
+            const implementedEvents = s.eventNames();
+
             if (!implementedEvents.includes(eventName))
                 return next(new Error(`Unsupported event: ${eventName}`));
 
@@ -84,16 +70,13 @@ export class AppClientManager extends ClientManager
     }
 }
 
-export class ServerClientManager extends ClientManager
-{
-    constructor() 
-    {
+export class ServerClientManager extends ClientManager {
+    constructor() {
         super('SERVERCLIENTMANAGER');
         this.socketmap = new Map();
     }
 
-    startServices()
-    {
+    startServices() {
         this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.es.addListener('quote_subsmanager_serverclient', (appid, q) => {
             this.send(appid, 'quote', q);
@@ -102,13 +85,12 @@ export class ServerClientManager extends ClientManager
             this.send(appid, 'order', order);
         });
     }
-     
-    connect(s)
-    {
+
+    connect(s) {
         this.log('Client connected');
         const appid = crypto.randomUUID();
-        
-        s.send(JSON.stringify({ type: 'handshake', appid: appid}));
+
+        s.send(JSON.stringify({ type: 'handshake', appid: appid }));
         const profile = { socket: s, mode: 'S5TSABS' };
         this.socketmap.set(appid, profile);
 
@@ -117,12 +99,11 @@ export class ServerClientManager extends ClientManager
             this.log('Received from client: ' + payload);
 
             const message = JSON.parse(payload);
-            if (message.appid !== undefined && this.socketmap.has(message.appid))
-            {
+            if (message.appid !== undefined && this.socketmap.has(message.appid)) {
                 const profile = this.socketmap.get(message.appid);
-                if(message.event === 'history')    
+                if (message.event === 'history')
                     profile.mode = 'history';
-                
+
                 this.es.emit('SERVERAPP', message);
             }
             else
@@ -138,8 +119,7 @@ export class ServerClientManager extends ClientManager
         });
     }
 
-    send(appid, type, data) 
-    {
+    send(appid, type, data) {
         const s = this.socketmap.get(appid);
         s?.send(JSON.stringify({ type: type, data: data }));
     }

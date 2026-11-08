@@ -1,4 +1,4 @@
-export class BreezeClient {
+/*export class BreezeClient {
     constructor(breeze){
         this.breeze = breeze;
     }
@@ -63,7 +63,7 @@ export class BreezeClient {
             return this.breeze.unsubscribeFeeds(request);
     }
 }
-
+*/
 /*
 const rename_map = {
     //add new property, same value
