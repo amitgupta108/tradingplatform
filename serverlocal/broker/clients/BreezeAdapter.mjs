@@ -22,42 +22,46 @@ export class BreezeAdapter extends BrokerAdapter {
         this.sessionOn = false;
     }
 
-    connect()
+    connect(withSocket)
     {
         if(this.sessionOn)
             return;
 
         this.self = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+        this.sessionOn = true;
+
         return this.self.generateSession(this.authdata.apiSecret, this.authdata.authcode)
         .then((resp) => {
-            this.sessionOn = true;
+            
+            if(withSocket) {
+                this.self.wsConnect();
+                this.self.onTicks = this.handleTicks.bind(this);
+                this.log('breeze session started ');
+                this.ws = this.self.socket;
+                this.ws.on('connect', () => {
+                    this.isConnected = true;
+                    this.log('breeze socket connected');
+                });
 
-            this.self.wsConnect();
-            this.self.onTicks = this.handleTicks.bind(this);
-            this.log('breeze session started ');
-            this.ws = this.self.socket;
-            this.ws.on('connect', () => {
-                this.isConnected = true;
-                this.log('breeze socket connected');
-            });
+                this.ws.on('connect_error', () => {
+                    this.log('breeze socket connection error');
+                });
 
-            this.ws.on('connect_error', () => {
-                this.log('breeze socket connection error');
-            });
-
-            this.ws.on('disconnect', () => {
-                this.isConnected = false;
-                this.log('breeze socket disconnected');
-            });
+                this.ws.on('disconnect', () => {
+                    this.isConnected = false;
+                    this.log('breeze socket disconnected');
+                });
+            }
         }).catch((error) => {
             this.error('breeze connection error ' + error);
+            this.sessionOn = false;
         });
     }
 
-    initiateConnect(authdata)
+    initiateConnect(authdata, withSocket = false)
     {
         this.authdata = authdata;
-        return this.connect();
+        return this.connect(withSocket);
     }
     
     getHistory(scrip, sTime, endTime, interval) 
@@ -76,29 +80,17 @@ export class BreezeAdapter extends BrokerAdapter {
         list.forEach((e) => {
             var request = this.getRequest(e.instrument);
             request.get_exchange_quotes = true;
-            promises.push(this.breezeSubscribe(request, action));
+            promises.push(this.subscribeFeed(request, action));
         });
         return Promise.all(promises);
     }
 
-    breezeSubscribe(request, action)
+    subscribeFeed(request, action)
     { 
         if(action === 'subs')
             return this.self.subscribeFeeds(request);
         else
             return this.self.unsubscribeFeeds(request);
-    }
-
-    subscribe_vix(appid, mode, action)
-    {
-        var instrument = {exchange: 'nse_cm', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second'};
-
-        const request = {
-            appid: appid,
-            symbol: instrument.stockCode,
-            instrument: instrument
-        };
-        return this.subscribeQuotes([request], action);
     }
 
     handleTicks(q)

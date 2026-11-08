@@ -10,13 +10,13 @@ import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
 import { BrokerService } from './system/service.mjs';
 
 const FIELD_MAP = {
-	pSymbol:      'token',
-	pExchSeg:     'exchangeSegment',
-	pInstType:    'instrumentType',
-	pSymbolName:  'underlying',
-	pTrdSymbol:   'tradingSymbol',
+	pSymbol: 'token',
+	pExchSeg: 'exchangeSegment',
+	pInstType: 'instrumentType',
+	pSymbolName: 'underlying',
+	pTrdSymbol: 'tradingSymbol',
 	pScripRefKey: 'scripReferenceKey',
-	pExpiryDate:  'expiryDate'
+	pExpiryDate: 'expiryDate'
 };
 
 const keys_kept = new Set(Object.keys(FIELD_MAP));
@@ -26,9 +26,8 @@ const PREFIX = 'scrips_';
 const EXTENSION = '.ndjson';
 const cacheFilePath = path.join(wd, `${PREFIX}${todayStr}${EXTENSION}`);
 
-function getUpdatedUrl(url) 
-{
-	const dateRegex = /\d{4}-\d{2}-\d{2}/; 
+function getUpdatedUrl(url) {
+	const dateRegex = /\d{4}-\d{2}-\d{2}/;
 	return url.replace(dateRegex, todayStr);
 }
 
@@ -42,13 +41,12 @@ const filterfn = (record, filters) => {
 	return included;
 }
 
-async function clearStaleCacheFiles() 
-{
+async function clearStaleCacheFiles() {
 	console.log('Running background garbage collection on stale disk caches...');
 
 	try {
 		const files = await fsp.readdir(wd);
-		
+
 		for (const file of files) {
 			if (file.endsWith(EXTENSION) && !file.includes(todayStr)) {
 				await fsp.unlink(path.join(wd, file));
@@ -61,23 +59,19 @@ async function clearStaleCacheFiles()
 	}
 }
 
-export class ScripStore extends BrokerService
-{
-	constructor(name)
-	{
+export class ScripStore extends BrokerService {
+	constructor(name) {
 		super(name);
-		this.isLoaded = false;    
+		this.isLoaded = false;
 		this.inMemoryStore = new Map();
 	}
 
-	init() 
-	{		
-		if(!this.initialized)
-		{			
+	init() {
+		if (!this.initialized) {
 			let p;
 			if (process.env.PASSTHROUGH === 'Y')
 				p = this.remoteLoad(tp_filters);
-	
+
 			else
 				p = this.load(filters);
 
@@ -85,36 +79,33 @@ export class ScripStore extends BrokerService
 				this.initialized = true;
 				return { status: response };
 			})
-			.catch ((error) => {
-				return {status: 'error', reason: error.message};
-			});
+				.catch((error) => {
+					return { status: 'error', reason: error.message };
+				});
 		}
 	}
 
-	async remoteLoad(filters)
-	{
+	async remoteLoad(filters) {
 		return await new Promise((resolve, reject) => {
 			const es = ConfigService.getServiceByName('EVENTSERVICE');
 			es.addListener('scrips', (scrips) => {
 				scrips.forEach((s) => {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
 				});
-				console.log('scrips remote load, size ' + this.inMemoryStore.size);
+				this.log('scrips remote load, size ' + this.inMemoryStore.size);
 				resolve('initialized');
 			});
 
 			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
-			this.tpsocket.getScrips(filters);			
+			this.tpsocket.getScrips(filters);
 		});
 	}
 
-	async load(filters, reload = false) 
-	{
+	async load(filters, reload = false) {
 		clearStaleCacheFiles();
-		console.log('Checking for local persistent file cache...');
+		this.log('Checking for local persistent file cache...');
 		this.addIndicesToStore(['NIFTY']);
-		if (fs.existsSync(cacheFilePath) || reload === true) 
-		{
+		if (fs.existsSync(cacheFilePath) || reload === true) {
 			const jsonfile = fs.createReadStream(cacheFilePath, { encoding: 'utf8' });
 
 			const rl = readline.createInterface({
@@ -131,28 +122,24 @@ export class ScripStore extends BrokerService
 
 			rl.on('close', () => {
 				this.isLoaded = true;
-				console.log(`--- [CACHE HIT] Loaded ${this.inMemoryStore.size} records directly from disk persistence. ---`);
+				this.log(`--- [CACHE HIT] Loaded ${this.inMemoryStore.size} records directly from disk persistence. ---`);
 			});
-		} 
-		else
-		{
-			console.log('[CACHE MISS] No valid local file found for today.');
+		}
+		else {
+			this.log('[CACHE MISS] No valid local file found for today.');
 
 			for (const f of filePaths) {
 				await this.processSingleFile(f, filters, this.inMemoryStore);
 			}
 
 			this.isLoaded = true;
-			console.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
+			this.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
 		}
 	}
 
-	addIndicesToStore(indices)
-	{
-		for (const index of indices) 
-		{
-			if(index === 'NIFTY') 
-			{
+	addIndicesToStore(indices) {
+		for (const index of indices) {
+			if (index === 'NIFTY') {
 				this.inMemoryStore.set('NIFTY', {
 					token: '26000',
 					exchangeSegment: 'nse_cm',
@@ -163,10 +150,8 @@ export class ScripStore extends BrokerService
 		}
 	}
 
-	async processSingleFile(filePath, filters, store) 
-	{
-		try
-		{
+	async processSingleFile(filePath, filters, store) {
+		try {
 			const response = await fetch(getUpdatedUrl(filePath.url));
 
 			if (!response.ok) {
@@ -179,11 +164,9 @@ export class ScripStore extends BrokerService
 				nodeStream,
 				csvParser({
 					mapHeaders: ({ header }) => keys_kept.has(header) ? header : null
-				}), 
-				async function* (data) 
-				{
-					for await (const rawRow of data) 
-					{
+				}),
+				async function* (data) {
+					for await (const rawRow of data) {
 						const cleanRow = {};
 						for (const [rawKey, cleanKey] of Object.entries(FIELD_MAP)) {
 							cleanRow[cleanKey] = rawKey === 'pScripRefKey' ?
@@ -192,7 +175,7 @@ export class ScripStore extends BrokerService
 						}
 
 						let included = filterfn(cleanRow, filters);
-						if(included) {
+						if (included) {
 							store.set(cleanRow.scripReferenceKey, cleanRow);
 							yield (JSON.stringify(cleanRow) + '\n').toString();
 						}
@@ -200,11 +183,11 @@ export class ScripStore extends BrokerService
 				},
 				fs.createWriteStream(cacheFilePath, { flags: 'a', encoding: 'utf8' })
 			);
-		} catch(error){
-			console.error(error);
-		}			
+		} catch (error) {
+			this.error(error);
+		}
 	}
-	
+
 	getAllScrips() { return Array.from(this.inMemoryStore.values()); }
 	findScripByKey(columnName, value) { return Array.from(this.inMemoryStore.values()).find(row => row[columnName] === value) || null; }
 	findScripByRefKey(key) { return this.inMemoryStore.get(key); }
