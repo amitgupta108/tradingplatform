@@ -1,56 +1,57 @@
-import {BreezeMarketData} from './m_breeze.mjs';
+import { BreezeMarketData } from './m_breeze.mjs';
 
-export class BreezeMarketDataHist extends BreezeMarketData { 
+export class BreezeMarketDataHist extends BreezeMarketData {
 
     clocks = new Map();
     qs_store = new Map();
     subs_reqs = new Map();
 
     streamers = [
-        {key: '1x', speed: 1, qsid: 0, state: 'stopped'},
-        {key: '2x', speed: 2, qsid: 0, state: 'stopped'},
-        {key: '3x', speed: 3, qsid: 0, state: 'stopped'},  
-        {key: '5x', speed: 5, qsid: 0, state: 'stopped'},
-        {key: '10x', speed: 10, qsid: 0, state: 'stopped'},
-    ];  
+        { key: '1x', speed: 1, qsid: 0, state: 'stopped' },
+        { key: '2x', speed: 2, qsid: 0, state: 'stopped' },
+        { key: '3x', speed: 3, qsid: 0, state: 'stopped' },
+        { key: '5x', speed: 5, qsid: 0, state: 'stopped' },
+        { key: '10x', speed: 10, qsid: 0, state: 'stopped' },
+    ];
 
-    constructor(name) 
-    {
+    constructor(name) {
         super(name);
     }
 
-    startStreamer(stmrkey)
-    {
+    onAuthData(authdata) {
+        this.authData = authdata;
+
+        this.adapter.initiateConnect(this.authData, false);
+        this.initialized = true;
+    }
+
+    startStreamer(stmrkey) {
         const stmr = this.streamers.find((s) => s.key === stmrkey);
-        
-        if(stmr.state === 'stopped') 
-        {
+
+        if (stmr.state === 'stopped') {
             stmr.qsid = setInterval(() => {
-            
+
                 this.dothings(stmrkey);
                 this.runclient_clocks(stmrkey);
-                if(Array.from(this.clocks.values()).filter(c => c.key === stmrkey).length === 0) 
+                if (Array.from(this.clocks.values()).filter(c => c.key === stmrkey).length === 0)
                     this.stopStreamer(stmrkey);
             }, 980 / stmr.speed);
-            stmr.state = 'started';   
+            stmr.state = 'started';
         }
     }
 
-    stopStreamer(stmrkey)
-    {
+    stopStreamer(stmrkey) {
         var stmr = this.streamers.find((x) => x.key === stmrkey);
-        
-        if(stmr?.state != 'stopped') {
+
+        if (stmr?.state != 'stopped') {
             clearInterval(stmr.qsid);
             stmr.state = 'stopped';
             stmr.qsid = 0;
         }
     }
 
-    dothings(stmrkey) 
-    {
-        try
-        {
+    dothings(stmrkey) {
+        try {
             for (const c of this.clocks.values()) {
                 if (c.key === stmrkey && c.lastaction !== 'pause') {
                     var reqs = this.subs_reqs.get(c.appid) || [];
@@ -59,34 +60,34 @@ export class BreezeMarketDataHist extends BreezeMarketData {
                     });
                 }
             }
-        } catch (error){
+        } catch (error) {
             this.log('Error for appid, unsubscribe all: ' + error.appid + ' ' + error.stack);
             this.subs_reqs.delete(error.appid);
         }
     }
 
-    runclient_clocks(stmrkey) 
-    {
+    runclient_clocks(stmrkey) {
         for (const c of this.clocks.values()) {
             if (c.key === stmrkey) {
-                if(c.state === 'start initiated')
+                if (c.state === 'start initiated')
                     c.state = 'started';
 
-                if(!(c.state === 'paused' || c.state === 'stopped'))
+                if (!(c.state === 'paused' || c.state === 'stopped'))
                     c.currentTime = c.currentTime + 1000;
             }
         }
     }
 
-    addToClientStore(appid, instrument)
-    {
+    addToClientStore(appid, instrument) {
         const qArray = this.qs_store.get(appid);
         const c = this.clocks.get(appid);
 
         let st = qArray.find((q) => q.symbol === instrument.symbol);
         if (st === undefined) {
-            let st = { appid: appid, symbol: instrument.symbol, quotes: [],
-                trimIndex: -1, state: 'initialized', lastUpdated: c.currentTime};
+            let st = {
+                appid: appid, symbol: instrument.symbol, quotes: [],
+                trimIndex: -1, state: 'initialized', lastUpdated: c.currentTime
+            };
 
             qArray.push(st);
 
@@ -95,8 +96,7 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         }
     }
 
-    q(appid, instrument, time)
-    {
+    q(appid, instrument, time) {
         const qArray = this.qs_store.get(appid);
         const st = qArray.find((q) => q.symbol === instrument.symbol);
 
@@ -114,10 +114,9 @@ export class BreezeMarketDataHist extends BreezeMarketData {
             if (idx >= 0 && idx < st.quotes.length)
                 this.onQuotes(st.quotes[idx], appid);
         }
-        
+
         const reloadThreshold = 80;
-        if ((st?.quotes === undefined || st.quotes.length - idx < reloadThreshold) && st.state != 'load requested')
-        {
+        if ((st?.quotes === undefined || st.quotes.length - idx < reloadThreshold) && st.state != 'load requested') {
             st.quotes.splice(0, idx);
             st.trimIndex = -1;
             st.state = 'load requested';
@@ -129,23 +128,22 @@ export class BreezeMarketDataHist extends BreezeMarketData {
     }
 
     qw(st, instrument, time) {
-        this.getHistoricalData(st, instrument, time)
-        .then((st) => {
-            if(!st.quotes || st.quotes.length === 0)
-                this.log('no historical records fetched');
-        }).catch((reason) => {
-            st.state = 'load failed';
-            this.log('Rejection for appid: ' + st.appid + ' ' + reason);
-        });
+        this.loadHistoricalData(st, instrument, time)
+            .then((st) => {
+                if (!st.quotes || st.quotes.length === 0)
+                    this.log('no historical records fetched');
+            }).catch((reason) => {
+                st.state = 'load failed';
+                this.log('Rejection for appid: ' + st.appid + ' ' + reason);
+            });
     }
 
-    processResults(st, quotes, symbol) 
-    {
+    processResults(st, quotes, symbol) {
         let index = 50;
         index = Math.min(quotes.length, index);
-        for(var i = 0; i < index; i++){
+        for (var i = 0; i < index; i++) {
             st.quotes.push(this.trim(quotes[i], symbol));
-        }       
+        }
         setImmediate(() => {
             for (var i = index; i < quotes.length; i++) {
                 st.quotes.push(this.trim(quotes[i], symbol));
@@ -153,10 +151,9 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         });
     }
 
-    trim(q, symbol)
-    {
-        const {exchange_code: exchange, stock_code: stockCode, close: ltp, datetime: ltt, ...rest} = q;
-        const qt = {exchange, stockCode, ltp, ltt};
+    trim(q, symbol) {
+        const { exchange_code: exchange, stock_code: stockCode, close: ltp, datetime: ltt, ...rest } = q;
+        const qt = { exchange, stockCode, ltp, ltt };
         qt.ltt = Date.parse(qt.ltt);
         qt.symbol = symbol;
 
@@ -176,10 +173,8 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         return { status: 'success' };
     }
 
-    start_sim(appid, requests) 
-    {
-        if(requests?.length > 0)
-        {
+    start_sim(appid, requests) {
+        if (requests?.length > 0) {
             this.subscribeScrips(appid, requests);
             const c = this.clocks.get(appid);
             c.lastaction = 'start';
@@ -188,16 +183,15 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         }
     }
 
-    subscribeScrips(appid, requests) 
-    {   
+    subscribeScrips(appid, requests) {
         const exReqs = this.subs_reqs.get(appid);
 
         requests.forEach((request) => {
             const idx = exReqs.findIndex((s) => s.symbol === request.symbol);
-            
-            if(idx === -1)
+
+            if (idx === -1)
                 exReqs.push(request);
-                
+
             this.addToClientStore(appid, request.instrument);
         });
     }
@@ -205,28 +199,27 @@ export class BreezeMarketDataHist extends BreezeMarketData {
     unsubscribeScrips(appid, requests) {
         const i_reqs = this.subs_reqs.get(appid);
         requests.forEach((request) => {
-            
+
             var idx = i_reqs.findIndex((s) => s.symbol === request.symbol);
-        
-            if(idx !== -1)
+
+            if (idx !== -1)
                 i_reqs.splice(idx, 1);
         });
     }
 
 
-    async getHistoricalData(st, instrument, sTime) 
-    {
+    async loadHistoricalData(st, instrument, sTime) {
         var resp = await this.adapter.getHistory(instrument, sTime, sTime + ((1000) * 1000), '1second')
-        .catch((error) => {
-            this.error("getHistoricalDatav2 failed, ", error.message);
-            return Promise.reject(error);
-        });
+            .catch((error) => {
+                this.error("loadHistoricalDatav2 failed, ", error.message);
+                return Promise.reject(error);
+            });
 
         let quotes = resp.Success;
         if (quotes?.length > 0) {
             st.state = 'ready to stream';
             st.lastUpdated = sTime;
-           this.processResults(st, quotes, instrument.symbol);
+            this.processResults(st, quotes, instrument.symbol);
         }
         else {
             st.state = 'load failed';
@@ -234,20 +227,19 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         }
         return st;
     }
-/*---------------------------------------------------------External APIs------------------------------------------------------------------------*/        
+    /*---------------------------------------------------------External APIs------------------------------------------------------------------------*/
 
-    getHistory(appid, request) 
-    {
-        return this.adapter.getHistory(request, request.startTime, request.endTime, request.interval);            
+    getHistory(appid, request) {
+        const endtime = this.clocks.get(appid) !== undefined ? this.clocks.get(appid).currentTime : request.endTime;
+        return this.adapter.getHistory(request, request.startTime, endtime, request.interval);
     }
-    
-    clientConfigure(appid, simStartTime, speed = '1x') 
-    {
-        if(simStartTime) {
+
+    clientConfigure(appid, simStartTime, speed = '1x') {
+        if (simStartTime) {
             this.subs_reqs.set(appid, new Array(0));
-            if(this.clocks.get(appid) === undefined) {
+            if (this.clocks.get(appid) === undefined) {
                 this.qs_store.set(appid, new Array(0));
-                this.clocks.set(appid, {appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed, lastaction: 'none'});
+                this.clocks.set(appid, { appid: appid, sTime: simStartTime, currentTime: simStartTime, key: speed, lastaction: 'none' });
             }
         }
         else
@@ -264,57 +256,31 @@ export class BreezeMarketDataHist extends BreezeMarketData {
             this.startStreamer(stmrkey);
     }
 
-    stream(appid, action) 
-    {
+    stream(appid, action) {
         const c = this.clocks.get(appid);
         c.lastaction = action;
         c.state = action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'unknown';
         return c.state;
     }
 
-    subscribe(appid, list, action) 
-    {
-        this.my_subs.addRequests(appid, list);
+    subscribe(appid, list, action) {
         const requests = this.buildRequests(appid, list);
-    
+
         if (action === 'subs')
             this.subscribeScrips(appid, requests);
-        else if( action === 'start')
+        else if (action === 'start')
             this.start_sim(appid, requests);
         else
             this.unsubscribeScrips(appid, requests);
     }
 
     subscribeIndices(appid, stockCode) {
-        if(stockCode === 'NIFTY') {
-            var instrument_index = { exchange: 'nse_cm', key: 'index', stockCode: 'NIFTY', symbol: 'NIFTY', interval: '1second' };
-            var request_index = { appid: appid, symbol: instrument_index.stockCode, instrument: instrument_index };
-        
-            var instrument_vix = { exchange: 'nse_cm', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second' };
-            var request_vix = { appid: appid, symbol: instrument_vix.stockCode, instrument: instrument_vix};
-        }
-        
-        if (action === 'subs')
-            this.subscribeScrips(appid, [request_index, request_vix]);
-        else
-            this.unsubscribeScrips(appid, [request_index, request_vix]);
-    }
-    
-    subscribe_vix(appid, mode, action) {
-        var instrument = { exchange: 'nse_cm', key: 'vix', stockCode: 'INDVIX', symbol: 'INDVIX', interval: '1second' };
-        const request = { appid: appid,
-            symbol: instrument.stockCode,
-            instrument: instrument
-        };
-   
-        if (action === 'subs')
-            this.subscribeScrips(appid, [request]);
-        else
-            this.unsubscribeScrips(appid, [request]);
+        const requests = this.indicesRequest(appid, stockCode);
+        this.subscribeScrips(appid, requests);
     }
 
     exit(appid) {
-        this.my_subs.removeSubscriptions(appid);
+        super.exit(appid);
         return this.clear(appid);
     }
 }

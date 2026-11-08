@@ -1,30 +1,36 @@
-import  { services, modes, providers} from '../../utils/constants.mjs';
-import { SystemService } from '../system/service.mjs'
+import { services, modes, providers } from '../../utils/constants.mjs';
 
-export class ConfigService extends SystemService
-{
-    constructor(name)
-    {
-        super(name);
+export class ConfigService {
+
+    static log(...args) {
+        if (this.logEnabled) {
+            console.log(`[${this.className}]`, ...args);
+        }
     }
-    
-    static async init()
-    {
+
+    static error(...args) {
+        if (this.logEnabled) {
+            console.error(`[${this.className}]`, ...args);
+        }
+    }
+    static async init() {
+        this.className = 'CONFIGSERVICE';
+        this.logEnabled = true;
+
         this.services = services;
         this.modes = modes;
         this.providers = providers;
 
-        for(const [k, v] of Object.entries(this.services)) {
+        for (const [k, v] of Object.entries(this.services)) {
             if (v.init === 'Y') {
-                const module  = await import(v.filepath);
+                const module = await import(v.filepath);
                 this.services[k].ref = new module[v.classdef](k);
             }
         }
         this.initialized = true;
     }
-    
-    static async initializeAll() 
-    {
+
+    static async initializeAll() {
         await this.init();
         const list = Object.entries(this.services);
         list.forEach(([k, v]) => {
@@ -33,41 +39,37 @@ export class ConfigService extends SystemService
         });
     }
 
-    static doInit(service) 
-    {
+    static doInit(service) {
         try {
             const p = service.init();
 
             if (p !== undefined) {
                 if (p instanceof Promise)
-                    p.then((response) => console.log('init message ' + service.name + ' ' + response?.status))
-                        .catch((error) => console.error('init async error ' + service.name + ' ' + error?.reason));
+                    p.then((response) => this.log('init message ' + service.name + ' ' + response?.status))
+                        .catch((error) => this.error('init async error ' + service.name + ' ' + error?.reason));
                 else
-                    console.log(service.name + ' ' + p?.status);
+                    this.log(service.name + ' ' + p?.status);
             }
         } catch (exception) {
-            console.error('init sync error ' + service.name + ' ' + exception);
+            this.error('init sync error ' + service.name + ' ' + exception);
         }
     }
 
-    static getServiceByName(name)
-    {
+    static getServiceByName(name) {
         return this.services[name].ref;
     }
 
-    static getKeyByFeature(name, feature) 
-    {
+    static getKeyByFeature(name, feature) {
         const entry = Object.entries(this.providers[feature]).find(([k, v]) => {
             return v === name;
         });
 
-        if(entry !== undefined)
+        if (entry !== undefined)
             return entry[0];
     }
 
-    static getActiveServiceByMode(feature, mode) 
-    {
-        const v = this.modes[mode];    
+    static getActiveServiceByMode(feature, mode) {
+        const v = this.modes[mode];
         const provider_key = v[feature];
         const provider_name = this.providers[feature][provider_key];
         if (this.services[provider_name]?.init === 'Y')
@@ -90,8 +92,7 @@ export class ConfigService extends SystemService
         return this.modes[mode][feature];
     }
 
-    static getModesForService(name, feature) 
-    {
+    static getModesForService(name, feature) {
         const providerkey = this.getKeyByFeature(name, feature);
         const partner_keys = [];
         const fModes = Object.entries(this.modes).filter(([k, v]) => {
@@ -105,10 +106,9 @@ export class ConfigService extends SystemService
         return partner_keys;
     }
 
-    static getParentModes(feature, feature_modes)
-    {
+    static getParentModes(feature, feature_modes) {
         return Object.entries(this.modes).flatMap(([k, v]) => {
-            
+
             const match = Object.entries(v).filter(([f, service_key]) => {
                 return feature === f
                     && feature_modes.includes(service_key);

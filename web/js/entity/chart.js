@@ -1,23 +1,20 @@
-const nTVtime = unixtime => Math.round(unixtime/1000) + 330 * 60;
-const sTVtime = datetime => Math.round(Date.parse(datetime)/1000) + 330 * 60;
-const ema_alpha = 2/21;
+const nTVtime = unixtime => Math.round(unixtime / 1000) + 330 * 60;
+const sTVtime = datetime => Math.round(Date.parse(datetime) / 1000) + 330 * 60;
+const ema_alpha = 2 / 21;
 const ema_beta = 1 - ema_alpha;
 const ema = (previous, current) => {
 	return ema_alpha * current + ema_beta * previous;
 };
 
-class ChartEventEmitter extends EventTarget 
-{
-	constructor()
-	{
+class ChartEventEmitter extends EventTarget {
+	constructor() {
 		super();
 		qBox.addEventListener('index', this);
 		qBox.addEventListener('futures', this);
 		qBox.addEventListener('vix', this);
 	}
 
-	handleEvent(event)
-	{
+	handleEvent(event) {
 		const q = event.detail;
 		renderChart(series[event.type].ref, series[`ema_${event.type}`], q);
 	}
@@ -25,34 +22,30 @@ class ChartEventEmitter extends EventTarget
 
 const ChartEventer = new ChartEventEmitter();
 
-function setInitialChart(symbol, qA)
-{
+function setInitialChart(symbol, qA) {
 	const key = symbol.endsWith('FUT') ? 'futures' : symbol.toLowerCase().includes('vix') ? 'vix' : 'index';
 	const withEma = ['futures', 'index'].includes(key) ? true : false;
 	var qs = initialSeriesData(qA, withEma);
 	series[key].ref.setData(qs);
 
-	if (withEma) 
+	if (withEma)
 		series[`ema_${key}`].ref.setData(qs);
 }
 
-function initialSeriesData(qA, withEma = false)
-{
+function initialSeriesData(qA, withEma = false) {
 	if (qA === undefined || qA === null || qA.length === 0)
 		return;
 
-	var qs = qA.filter((e) => !(e.datetime.includes('9:00') ||e.datetime.includes('9:05') || e.datetime.includes('9:10')));
-	for(var i = 0; i < qs.length; i++)
-	{
-		qs[i].time = i === 0 || qs[i].datetime.includes('9:15') ? sTVtime(qs[i].datetime) : qs[i-1].time + 5 * 60;
-		if(withEma)
-			qs[i].value = i === 0 ? qs[i].close : ema(qs[i-1].value, qs[i].close);
+	var qs = qA.filter((e) => !(e.datetime.includes('9:00') || e.datetime.includes('9:05') || e.datetime.includes('9:10')));
+	for (var i = 0; i < qs.length; i++) {
+		qs[i].time = i === 0 || qs[i].datetime.includes('9:15') ? sTVtime(qs[i].datetime) : qs[i - 1].time + 5 * 60;
+		if (withEma)
+			qs[i].value = i === 0 ? qs[i].close : ema(qs[i - 1].value, qs[i].close);
 	}
 	return qs;
 }
 
-function renderChart(series_main, series_ema, q)
-{
+function renderChart(series_main, series_ema, q) {
 	var curCandle = series_main.data().at(-1);
 	let c;
 	const newCan = curCandle === undefined || nTVtime(q.ltt) - curCandle.time > 299;
@@ -64,13 +57,13 @@ function renderChart(series_main, series_ema, q)
 	series_main.update(c);
 
 	if (series_ema !== undefined) {
-		if(newCan)
+		if (newCan)
 			series_ema.val = series_ema.ref.data().at(-1) === undefined ? q.ltp : series_ema.ref.data().at(-1).value;
-		series_ema.ref.update({ time: c.time, value: ema(series_ema.val, q.ltp)});
+		series_ema.ref.update({ time: c.time, value: ema(series_ema.val, q.ltp) });
 	}
 }
 
-function newCandle(q, curCandle){
+function newCandle(q, curCandle) {
 	return {
 		time: nTVtime(q.ltt) - (nTVtime(q.ltt) % 300),
 		open: (curCandle) ? curCandle.close : q.open ?? q.ltp,
@@ -80,7 +73,7 @@ function newCandle(q, curCandle){
 	};
 }
 
-function updateCandle(q, curCandle){
+function updateCandle(q, curCandle) {
 	curCandle.high = Math.max(q.ltp, curCandle.high);
 	curCandle.low = Math.min(q.ltp, curCandle.low);
 	curCandle.close = q.ltp;
@@ -88,18 +81,15 @@ function updateCandle(q, curCandle){
 	return curCandle;
 }
 
-function lookbackPeriod()
-{
-	const endTime = instrument.mode === 'HISTORY'? instrument.simStartTime : Date.now();
-	const startTime = endTime - 4 * 24 * 60 * 60 * 1000; // 4 days back
+function lookbackPeriod() {
+	const endTime = instrument.mode === 'HISTORY' ? instrument.simStartTime : Date.now();
+	const startTime = endTime - 1 * 24 * 60 * 60 * 1000; // 4 days back
 
-	return {startTime: startTime, endTime: endTime, interval: '5minute'};
+	return { startTime: startTime, endTime: endTime, interval: '5minute' };
 }
 
-class Chart
-{
-	constructor(panel, options)
-	{
+class Chart {
+	constructor(panel, options) {
 		this.currentcount = 0;
 		this.symbols = [];
 		this.series = []; //symbol: undefined, lastq: undefined, ref: undefined, hist: []
@@ -111,10 +101,14 @@ class Chart
 		qBox.addEventListener('strikex', this);
 	}
 
-	setupChart(panel, options)
-	{
+	setupChart(panel, options) {
 		this.chart = LightweightCharts.createChart(charts[panel].container, options);
 		this.chart.priceScale('right').applyOptions({
+			visible: true,
+			mode: 0,
+		});
+
+		this.chart.priceScale('left').applyOptions({
 			visible: true,
 			mode: 0,
 		});
@@ -123,96 +117,101 @@ class Chart
 			{ priceScaleId: 'right', title: 'ST' });
 	}
 
-	show(symbols, withStrategy = true)
-	{
+	show(symbols, withStrategy = true) {
 		this.symbols = symbols;
 		this.withStrategy = withStrategy;
 		this.currentcount = 0;
 		this.requestHistory(this.symbols);
 
-		for (var i = 0; i < this.symbols.length; i++)
-		{
-			if(this.series[i] === undefined)
+		for (var i = 0; i < this.symbols.length; i++) {
+			if (this.series[i] === undefined) {
 				this.series[i] = {
 					symbol: this.symbols[i], ref: this.chart.addSeries(LightweightCharts.CandlestickSeries,
-					{ priceScaleId: 'right', title: this.symbols[i].slice(-7) })
+						{ priceScaleId: i % 2 === 0 ? 'right' : 'left', title: this.symbols[i].slice(-7) })
 				};
-			else
+			}
+			else {
 				this.series[i].symbol = this.symbols[i];
+				this.series[i].ref.setData([]);
+				this.series[i].ref.applyOptions({ title: this.symbols[i].slice(-7) })
+			}
 		}
-		
-		const extra = this.series.length - this.symbols.length; 
+		this.strat_series.setData([]);
+		const extra = this.series.length - this.symbols.length;
 		if (extra > 0)
 			this.series.splice(this.symbols.length, extra);
-		
+
 		this.chart.timeScale().fitContent();
 		this.chart.timeScale().scrollToPosition(15);
 	}
 
-	handleEvent(event)
-	{
+	handleEvent(event) {
 		const q = event.detail;
 		const idx = this.symbols.findIndex((s) => q.symbol === s);
-		if(idx !== -1)
-		{
+		if (idx !== -1) {
 			this.series[idx].lastq = q;
 			renderChart(this.series[idx].ref, undefined, q);
-		
+
 			if (this.withStrategy && this.strategyImpl() !== null)
-				renderChart(this.strat_series, undefined, {ltp: this.strategyImpl(), ltt: q.ltt});
+				renderChart(this.strat_series, undefined, { ltp: this.strategyImpl(), ltt: q.ltt });
 		}
 	}
 
-	strategyImpl() 
-	{
+	strategyImpl() {
 		let strategy_price = 0;
 		for (var i = 0; i < this.symbols.length; i++) {
-			if(this.series[i].lastq === undefined)
+			if (this.series[i].lastq === undefined)
 				return null;
-			
+
 			strategy_price += this.series[i].lastq.ltp;
 		}
 		return strategy_price;
 	}
 
-	renderHistory(symbol, qA)
-	{
+	renderHistory(symbol, qA) {
 		const qs = initialSeriesData(qA);
-		if (qs && qs.length > 0) 
-		{
+		if (qs && qs.length > 0) {
 			const idx = this.symbols.findIndex((s) => s === symbol);
 			this.series[idx].ref.setData(qs);
 			this.series[idx].hist = qs;
 			++this.currentcount;
 		}
 
-		if (this.withStrategy && this.currentcount === this.symbols.length)
-		{
+		if (this.withStrategy && this.currentcount === this.symbols.length && this.currentcount === 2)
+			this.renderStrangleHistory(this.symbols);
+	}
+
+	renderStrangleHistory(symbols) {
+		if (symbols[0].slice(-2) !== symbols[1].slice(-2))
+			this.historyStrategyImpl('strangle', symbols);
+	}
+
+	historyStrategyImpl(name, symbols) {
+		if (name === 'strangle' && this.series[0].hist.length === this.series[1].hist.length) {
 			const hist_length = this.series[0].hist.length;
 			let aggregate_hist = [hist_length];
-			for (var i = 0; i < hist_length; i++) 
-			{
+			for (var i = 0; i < hist_length; i++) {
 				aggregate_hist[i] = {
 					time: sTVtime(this.series[0].hist[i].datetime),
 					close: 0, high: 0, open: 0, low: 0,
 				};
-				for (var j = 0; j < this.symbols.length; j++) {
-					aggregate_hist[i]['close'] += this.series[j].hist[i]['close'];
-					aggregate_hist[i]['high'] += this.series[j].hist[i]['high'];
-					aggregate_hist[i]['open'] += this.series[j].hist[i]['open'];
-					aggregate_hist[i]['low'] += this.series[j].hist[i]['low'];
-				}
+
+				aggregate_hist[i]['close'] = this.series[0].hist[i]['close'] + this.series[1].hist[i]['close'];
+				aggregate_hist[i]['open'] = this.series[0].hist[i]['open'] + this.series[1].hist[i]['open'];
+				const val1 = this.series[0].hist[i]['high'] + this.series[1].hist[i]['low'];
+				const val2 = this.series[0].hist[i]['low'] + this.series[1].hist[i]['high'];
+				aggregate_hist[i]['high'] = Math.max(val1, val2);
+				aggregate_hist[i]['low'] = Math.min(val1, val2);
 			}
 			this.strat_series.setData(aggregate_hist);
 			aggregate_hist = [];
 		}
 	}
 
-	requestHistory(symbols)
-	{
+	requestHistory(symbols) {
 		const requests = [];
 		const p = lookbackPeriod();
-		for (const s of symbols){
+		for (const s of symbols) {
 			const r = structuredClone(p);
 			r.symbol = s === 'index' ? instrument.stockCode : s;
 			requests.push(r);
@@ -265,7 +264,6 @@ const chartOptions = {
 
 const chart1 = LightweightCharts.createChart(charts['futures'].container, chartOptions);
 const chart2 = LightweightCharts.createChart(charts['index'].container, chartOptions);
-//const index_chart = new Chart('index', chartOptions);
 const options_chart = new Chart('strikes', chartOptions);
 
 const priceScaleOptions = {
@@ -276,11 +274,11 @@ const priceScaleOptions = {
 chart1.priceScale('left').applyOptions(priceScaleOptions);
 
 const series = {
-	vix: {ref: chart1.addSeries(LightweightCharts.CandlestickSeries, {priceScaleId: 'left'}), val: 0},
-	futures: {ref: chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }), val: 0},
-	ema_futures: {ref: chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 }), val: 0},
-	index: {ref: chart2.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }), val: 0},
-	ema_index: {ref: chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 }), val: 0},
+	vix: { ref: chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'left' }), val: 0 },
+	futures: { ref: chart1.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }), val: 0 },
+	ema_futures: { ref: chart1.addSeries(LightweightCharts.LineSeries, { priceScaleId: 'right', color: '#2962FF', lineWidth: 2 }), val: 0 },
+	index: { ref: chart2.addSeries(LightweightCharts.CandlestickSeries, { priceScaleId: 'right' }), val: 0 },
+	ema_index: { ref: chart2.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2 }), val: 0 },
 };
 
 chart1.timeScale().fitContent();
