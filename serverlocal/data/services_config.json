@@ -1,10 +1,9 @@
 {
-    "services":
-    {
+    "services": {
         "CONFIGSERVICE": {
             "init": "Y",
             "classdef": "ConfigService",
-            "filepath": "../.config/configservice.mjs",
+            "filepath": "../config/configservice.mjs",
             "type": "system",
             "seq": "1"
         },
@@ -18,7 +17,7 @@
         "PERSISTSERVICE": {
             "init": "Y",
             "classdef": "PersistenceService",
-            "filepath": "../system/persistence.mjs",
+            "filepath": "../system/persistence.js",
             "type": "system",
             "seq": "3"
         },
@@ -83,7 +82,6 @@
             "init": "Y",
             "classdef": "KotakMarketDataLive",
             "filepath": "../../broker/kotak/m_kotak_live.mjs",
-            "provider": "KMDCLIENT",
             "type": "broker"
         },
         "KOTAKNEOTRADE": {
@@ -109,14 +107,20 @@
             "classdef": "OpenAlgoMarketData",
             "filepath": "../../broker/openalgo/m_openalgo.mjs",
             "type": "broker"
-        }, 
+        },
         "AUTHSERVICE": {
             "init": "Y",
             "classdef": "AuthService",
             "filepath": "../auth/authservice.mjs",
             "type": "system",
             "seq": "20"
+        },
+        "CONFIGURATIONS": {
+            "init": "Y",
+            "classdef": "Configurations",
+            "filepath": "./configurations.js",
+            "type": "user",
+            "seq": "21"
         }
     }
 }
-

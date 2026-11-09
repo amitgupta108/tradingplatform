@@ -1,4 +1,4 @@
-import { BinRespTypes, RespTypeValues, STAT, SCRIP_PREFIX, INDEX_PREFIX, RespTypes } from './HSMUtils/constants/types.js';
+/*import { BinRespTypes, RespTypeValues, STAT, SCRIP_PREFIX, INDEX_PREFIX, RespTypes } from './HSMUtils/constants/types.js';
 import { PacketBuilder } from './HSMUtils/protocol/PacketBuilder.js';
 import { PacketParser } from './HSMUtils/protocol/PacketParser.js';
 import { buf2Long } from './HSMUtils/utils/binary.js';
@@ -160,4 +160,4 @@ export class HSMClient extends BrokerAdapter
         const request = PacketBuilder.buildThrottlingRequest(scrips);
         this.sendMessage(request);
     }
-}
+}*/

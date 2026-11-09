@@ -1,4 +1,4 @@
-import { services, modes, providers } from '../../utils/constants.mjs';
+import { services, modes, providers } from '../../utils/constants.js';
 
 export class ConfigService {
 

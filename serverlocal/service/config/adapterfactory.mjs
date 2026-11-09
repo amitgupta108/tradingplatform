@@ -2,7 +2,7 @@ import { OpenAlgoClient } from '../../broker/clients/OpenAlgoClient.mjs';
 import { TPSocket } from '../../broker/clients/TPClient.mjs';
 import { KMDClient } from '../../broker/clients/KMDClient.mjs';
 import { KotakHSISocket } from '../../broker/clients/HSIClient.mjs';
-import { KotakAdapter } from '../../broker/clients/KotakAdapter.mjs';
+import { KotakAdapter } from '../../broker/clients/KotakAdapter.js';
 import { BreezeAdapter } from '../../broker/clients/BreezeAdapter.mjs';
 import { InfraService } from '../system/service.mjs';
 import { ConfigService } from './configservice.mjs';
@@ -15,37 +15,33 @@ const options = {
     throttleInterval: 120000
 };
 
-export class AdapterFactory extends InfraService
-{
-    constructor(name){
+export class AdapterFactory extends InfraService {
+    constructor(name) {
         super(name);
         this.adapters = new Map();
     }
 
-    cInit()
-    {
+    cInit() {
         this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.es.addListener('EOD', () => {
             this.adapters.values().forEach((a) => {
-                if(typeof a.disconnect === 'function')
+                if (typeof a.disconnect === 'function')
                     a.disconnect();
             });
         });
     }
-    
-    getAdapter(key) 
-    {
+
+    getAdapter(key) {
         let c = this.adapters.get(key);
-        if(c === undefined) {
+        if (c === undefined) {
             c = this.creatAdapter(key);
             this.adapters.set(key, c);
         }
         return c;
     }
 
-    creatAdapter(key)
-    {
-        if( key === 'KOTAKADAPTER')
+    creatAdapter(key) {
+        if (key === 'KOTAKADAPTER')
             return new KotakAdapter('KOTAKADAPTER', options);
         else if (key === 'KMDCLIENT')
             return new KMDClient(options);
