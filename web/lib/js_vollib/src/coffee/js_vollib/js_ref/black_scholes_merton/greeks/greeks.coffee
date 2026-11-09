@@ -1,1 +1,0 @@
-js_vollib.js_ref.black_scholes_merton.greeks = {}
