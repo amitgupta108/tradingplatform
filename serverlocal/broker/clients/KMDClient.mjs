@@ -1,9 +1,8 @@
 
 import { PacketParser } from '../../utils/PacketParser.mjs';
-import { KotakAdapter } from './KotakAdapter.mjs';
+import { KotakAdapter } from './KotakAdapter.js';
 
-export class KMDClient extends KotakAdapter
-{
+export class KMDClient extends KotakAdapter {
     constructor(options) {
         super('KMDCLIENT', options);
         this.dividers = null;
@@ -25,7 +24,7 @@ export class KMDClient extends KotakAdapter
     authenticate() {
         const authPayload = {
             user: process.env.kotak_ucc,
-            auth: this.authData.hsi_sid,
+            auth: this.authData.sid,
             format: 'native_batch',
             source: 'NEOTRADEAPI',
         }
@@ -33,10 +32,8 @@ export class KMDClient extends KotakAdapter
         this.log('Authentication request sent');
     }
 
-    handleMessage(event) 
-    {
-        try 
-        {
+    handleMessage(event) {
+        try {
             const data = event.data;
             if (typeof data !== 'string' && data instanceof ArrayBuffer) {
                 const packets = PacketParser.splitBatch(Buffer.from(data));
@@ -55,8 +52,7 @@ export class KMDClient extends KotakAdapter
         }
     }
 
-    handleResponse(parsed)
-    {
+    handleResponse(parsed) {
         if (parsed?.type === 'scrip' || parsed?.type === 'index')
             this.emit('quote', parsed);
         else if (parsed?.type === 'scrip_lite')
@@ -86,6 +82,6 @@ export class KMDClient extends KotakAdapter
             event: event,
             inputtoken: scripStr,
         }
-        this.sendMessage(JSON.stringify(request));    
+        this.sendMessage(JSON.stringify(request));
     }
 }

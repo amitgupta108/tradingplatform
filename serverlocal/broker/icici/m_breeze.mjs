@@ -1,4 +1,4 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
 export class BreezeMarketData extends BrokerMarketDataImpl {

@@ -1,17 +1,14 @@
-import { SystemService } from './service/system/service.mjs';
-import { ConfigService } from './service/.config/configservice.mjs';
+import { SystemService } from './service/system/service.js';
+import { ConfigService } from './service/config/configservice.mjs';
 
-class StreamingService extends SystemService
-{
-    constructor(name)
-    {
+class StreamingService extends SystemService {
+    constructor(name) {
         super(name);
         this.name = name;
         this.usermap = new Map();
     }
 
-    init()
-    {
+    init() {
         this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.es.addListener('ordersim', (order) => {
             this.send('order', order);
@@ -20,24 +17,21 @@ class StreamingService extends SystemService
         return { status: 'initialized' };
     }
 
-    emitOrders(order)
-    {    
+    emitOrders(order) {
         this.send('order', order);
     }
 
-    emitQs(q)
-    {
+    emitQs(q) {
         this.send('quote', q);
     }
 
     emitHistQs(appid, symbol, qA) {
         const app_obj = this.getFromUserMap(appid);
         if (app_obj !== undefined)
-            this.emit(app_obj.socket, 'history', {symbol: symbol, qA: qA });
+            this.emit(app_obj.socket, 'history', { symbol: symbol, qA: qA });
     }
 
-    send(type, msg)
-    {
+    send(type, msg) {
         const app_obj = this.getFromUserMap(msg.appid);
         if (app_obj !== undefined)
             this.emit(app_obj.socket, type, msg);
@@ -45,37 +39,32 @@ class StreamingService extends SystemService
             this.group_emit(type, msg);
     }
 
-    group_emit(type, msg)
-    { 
-        const receivers = this.getReceivers(type, msg);   
+    group_emit(type, msg) {
+        const receivers = this.getReceivers(type, msg);
         receivers.forEach((appid) => {
             msg.appid = appid;
             this.emit(this.getFromUserMap(appid).socket, type, msg);
         });
     }
 
-    getReceivers(type, msg)
-    {
+    getReceivers(type, msg) {
         const receivers = [];
-        if (type === 'order') 
-        {
+        if (type === 'order') {
             for (const [k, v] of this.usermapEntries()) {
-                if(msg.modes.includes(v.mode))
+                if (msg.modes.includes(v.mode))
                     receivers.push(k);
             }
         }
         return receivers;
     }
 
-    broadcast(type, msg, group)
-    {
+    broadcast(type, msg, group) {
         for (const [k, v] of this.usermapEntries()) {
             this.emit(v.socket, type, msg);
         }
     }
 
-    emit(s, type, msg)
-    {
+    emit(s, type, msg) {
         s.emit(type, msg);
     }
 

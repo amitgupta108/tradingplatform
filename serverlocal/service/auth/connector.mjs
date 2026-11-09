@@ -1,11 +1,11 @@
 import { Generic } from '../../../generic.mjs'
-import { ConfigService } from '../.config/configservice.mjs';
+import { ConfigService } from '../config/configservice.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
 
 const authdatatemplate = {
     icici: ['provider', 'date', 'appKey', 'appSecret', 'authcode'],
-    kotak: ['provider', 'date', 'feedUrl', 'baseUrl', 'hsi_sid', 'hsi_token'],
+    kotak: ['provider', 'date', 'feedUrl', 'baseUrl', 'sid', 'token'],
 };
 
 export class Connector extends Generic {
@@ -184,8 +184,8 @@ export class KotakConnector extends Connector {
                         date: new Date().toDateString(),
                         baseUrl: vr_result.baseUrl,
                         feedUrl: vr_result.feedUrl,
-                        hsi_sid: vr_result.sid,
-                        hsi_token: vr_result.token
+                        sid: vr_result.sid,
+                        token: vr_result.token
                     }
                     this.saveAndNotify(this.authdata);
                     return { status: 'success' };

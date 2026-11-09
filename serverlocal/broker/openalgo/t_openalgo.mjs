@@ -1,24 +1,22 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 
-export class OpenAlgoTradeService extends BrokerTradeServiceImpl 
-{
-    constructor(name)
-    {
+export class OpenAlgoTradeService extends BrokerTradeServiceImpl {
+    constructor(name) {
         super(name);
     }
-    
+
     addListeners() {
         this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
         this.provider = this.sf.getAdapter('OPENALGOCLIENT');
 
         if (this.provider._wsClient && !(this.provider._wsClient.isConnecting || this.provider._wsClient.isConnected))
             return this.provider.connect()
-            .then(() => {
-                return { status: 'success' }
-            });
+                .then(() => {
+                    return { status: 'success' }
+                });
     }
-    
+
     async orderbook(appid, stockCode) {
         var response = await this.provider.orderbook();
         if (response.status === 'success')

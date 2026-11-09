@@ -1,9 +1,8 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
-import { EXCHANGES } from '../../utils/constants.mjs';
+import { EXCHANGES } from '../../utils/constants.js';
 
-export class KotakNeoTradeService extends BrokerTradeServiceImpl 
-{
+export class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name) {
         super(name);
     }
@@ -14,12 +13,12 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
             this.onAuthData(data);
             this.ordermanager.register(this.trade_mode, 'HSICLIENT');
         });
-        
+
         this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
         this.adapter = this.af.getAdapter('KOTAKADAPTER');
     }
 
-    onAuthData(authData){
+    onAuthData(authData) {
         this.authData = authData;
         this.adapter.initiateConnect(this.authData);
         this.initialized = true;
@@ -48,30 +47,29 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
         return { state: 'NOT_OK', error: `${response.status}-${response.statusText}` };
     }
 
-    toKotakOrder(order) 
-    {
+    toKotakOrder(order) {
         const scripstore = ConfigService.getServiceByName('SCRIPSTORE');
 
-        const new_order = {};
-        new_order.am = 'NO',
-        new_order.dq = '0',
-        new_order.mp = '6',
-        new_order.pf = 'N',
-        new_order.rt = 'DAY',
-        new_order.tp = '0',
-        new_order.es = EXCHANGES[order.stockCode]
-        new_order.pc = order.product;
-        new_order.pr = String(order.price);
-        new_order.pt = order.ordertype === 'MARKET' ? 'MKT' : 'L';
-        new_order.qt = String(order.quantity);
-        new_order.tt = order.action;
-        new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
-        new_order.si = '1111111';
-        new_order.sy = 'category';
-        new_order.sn = '2222222';
-        new_order.sc = 'default';
-        if(order.type === 'modify')
-        {
+        const new_order = {
+            am: 'NO',
+            dq: '0',
+            mp: '6',
+            pf: 'N',
+            rt: 'DAY',
+            tp: '0',
+            es: EXCHANGES[order.stockCode],
+            pc: order.product,
+            pr: String(order.price),
+            pt: order.ordertype === 'MARKET' ? 'MKT' : 'L',
+            qt: String(order.quantity),
+            tt: order.action,
+            ts: scripstore.findScripByRefKey(order.symbol).tradingSymbol,
+            si: '1111111',
+            sy: 'category',
+            sn: '2222222',
+            sc: 'default'
+        }
+        if (order.type === 'modify') {
             new_order.no = order.orderid;
             new_order.vd = 'DAY';
             new_order.tk = scripstore.findScripByRefKey(order.symbol).token;
@@ -101,8 +99,8 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
                     this.ordermanager.addOrders(odr);
                     return odr;
                 })
-                .filter((order) => order.stockCode === stockCode)
-                .sort((a, b) => a.orderid - b.orderid);
+                    .filter((order) => order.stockCode === stockCode)
+                    .sort((a, b) => a.orderid - b.orderid);
             }
             this.log('error fetching orders ' + order_json.status + ' ' + order_json.statusText);
             return [];

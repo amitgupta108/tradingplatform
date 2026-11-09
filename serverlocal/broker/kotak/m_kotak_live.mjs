@@ -1,28 +1,24 @@
 import { KotakMarketData } from './m_kotak.mjs';
 import { streamer } from '../../stream.mjs';
+import { EXCHANGES } from '../../utils/constants.js';
 
-export class KotakMarketDataLive extends KotakMarketData 
-{
-    constructor(name)
-    {
+export class KotakMarketDataLive extends KotakMarketData {
+    constructor(name) {
         super(name);
     }
 
-    snapshot(appid, list) 
-    {
+    snapshot(appid, list) {
         this.my_subs.addRequests(appid, list);
         const requests = this.buildRequests(list);
         this.adapter.snapshot(requests, 'Scrips', false);
     }
 
-    onSnapshot(snapshot)
-    {
+    onSnapshot(snapshot) {
         const qt = this.symbol_cache.get(snapshot.token);
         this.emitQuotes(qt);
     }
 
-    standardize(q)
-    {
+    standardize(q) {
         const qt = this.symbol_cache.get(q.token.toUpperCase());
         if (qt !== undefined && q.ltp !== undefined) {
             qt.expiry_date = qt.expiry;
@@ -34,18 +30,15 @@ export class KotakMarketDataLive extends KotakMarketData
         }
     }
 
-    async history(appid, r) 
-    {
+    async history(appid, r) {
         const scrip = this.scrips.findScripByRefKey(r.symbol);
         r.scrip = scrip.exchange + '|' + scrip.token;
-        if(['nse_cm', 'nse_fo'].includes(scrip.exchange))
-        {
+        if (['nse_cm', 'nse_fo'].includes(scrip.exchange)) {
             const response = await this.adapter.history(r);
-            if(response.ok)
-            {
+            if (response.ok) {
                 const qA = await response.json();
                 streamer.emitHistQs(appid, r.symbol, qA.data.candles);
-                return {status: 'success'};
+                return { status: 'success' };
             }
         }
     }

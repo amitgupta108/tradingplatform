@@ -1,30 +1,26 @@
 import { streamer } from '../../stream.mjs';
-import { ConfigService } from '../../service/.config/configservice.mjs';
-import { LOTSIZE } from '../../utils/constants.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
+import { LOTSIZE } from '../../utils/constants.js';
 import { UserService } from '../../service/system/service.mjs';
 
-export class OrderManager extends UserService
-{
-    constructor(name)
-    {
+export class OrderManager extends UserService {
+    constructor(name) {
         super(name);
-        this.order_generators = new Map(); 
+        this.order_generators = new Map();
         this.live_order_map = new Map();
         this.counter = 10000;
     }
 
-    init()
-    {        
+    init() {
         this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.es.addListener('kotak_auth', (kotakauth) => {
             this.kotakauth = kotakauth;
         });
         this.initialized = true;
-        return {status: 'success'};
+        return { status: 'success' };
     }
 
-    register(service_key, notifier)
-    {
+    register(service_key, notifier) {
         this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
         const order_notifier = this.af.getAdapter(notifier); //e.g HSIClient
         order_notifier.initiateConnect(this.kotakauth);
@@ -33,20 +29,19 @@ export class OrderManager extends UserService
 
             const services = Array.from(this.order_generators.entries());
             const service_keys = services.filter(([k, v]) => {
-                if(v === notifier_name)
+                if (v === notifier_name)
                     return k;
             })
             this.notify('order', service_keys, order)
         });
-        
+
         this.order_generators.set(service_key, notifier);
     }
 
-    neworders(appid, orders)
-    {
+    neworders(appid, orders) {
         orders.forEach((order) => {
-        
-            if(order.orderid === undefined) {
+
+            if (order.orderid === undefined) {
                 order.orderid = ++this.counter;
                 order.localid = order.orderid;
                 order.submittime = Date.now();
@@ -58,16 +53,14 @@ export class OrderManager extends UserService
         });
     }
 
-    notify(type, service_keys, message)
-    {    
+    notify(type, service_keys, message) {
         if (type === 'order' && ['open', 'complete', 'rejected', 'cancelled'].includes(message.ordSt))
             this.liveOrderMatching(service_keys, message);
-        else if(type === 'position')
+        else if (type === 'position')
             this.emitPosition(service_keys, message);
     }
 
-    liveOrderMatching(service_keys, order) 
-    {
+    liveOrderMatching(service_keys, order) {
         const live_order = this.formatLiveOrder(order);
         const found = this.findMatch(service_keys, live_order);
         if (found !== undefined) {
@@ -86,12 +79,11 @@ export class OrderManager extends UserService
         streamer.emitOrders(live_order);
     }
 
-    findMatch(service_keys, live_order) 
-    {
+    findMatch(service_keys, live_order) {
         let found = this.live_order_map.get(live_order.orderid);
         if (found !== undefined)
             return found;
-                
+
         const local_orders = Array.from(this.live_order_map.values());
         return local_orders.find((order) => {
             return service_keys.includes(order.trade_mode)
@@ -106,23 +98,23 @@ export class OrderManager extends UserService
         });
     }
 
-    formatLiveOrder(order)
-    {
-        var { nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol, 
-            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, qty: quantity, 
+    formatLiveOrder(order) {
+        var { nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol,
+            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, qty: quantity,
             prcTp: ordertype, ordSrc: source, strategyCode: strategy, algid: algoid, algCat: algocategory, ...rest } = order;
 
         var fOrder = {
             orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
-            filled_q, quantity, ordertype, source, strategy, algocategory, algoid };
-        
-        if(fOrder.state === 'open') {
+            filled_q, quantity, ordertype, source, strategy, algocategory, algoid
+        };
+
+        if (fOrder.state === 'open') {
             fOrder.state = 'opened';
             filled_q = 0;
         }
-        else if(fOrder.state === 'complete')
+        else if (fOrder.state === 'complete')
             fOrder.state = 'completed';
-        
+
         fOrder.filled_q = fOrder.filled_q;
         fOrder.ordertype = fOrder.ordertype === 'MKT' ? 'MARKET' : 'LIMIT';
         fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
@@ -133,15 +125,14 @@ export class OrderManager extends UserService
         return fOrder;
     }
 
-    formatPositionRecords(positions, stockCode, cf)
-    {
-        return positions.filter((p) => 
+    formatPositionRecords(positions, stockCode, cf) {
+        return positions.filter((p) =>
             (Number(p.cfBuyQty) > 0 || Number(p.cfSellQty) > 0) && stockCode === p.sym)
             .map((fp) => {
                 fp.expiry_date = fp.expDt.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
                 fp.strike_price = fp.stkPrc.replace('.00', '');
                 fp.symbol = fp.sym + fp.expiry_date + fp.strike_price + fp.optTp;
-                fp.cfBuyAmt = Number(fp.cfBuyAmt); fp.cfSellAmt= Number(fp.cfSellAmt);
+                fp.cfBuyAmt = Number(fp.cfBuyAmt); fp.cfSellAmt = Number(fp.cfSellAmt);
                 fp.cfBuyQty = Number(fp.cfBuyQty); fp.cfSellQty = Number(fp.cfSellQty);
                 fp.pricedAt = fp.cfBuyAmt !== 0 ? fp.cfBuyAmt / fp.cfBuyQty : fp.cfSellAmt / fp.cfSellQty;
                 fp.filled_q = fp.cfBuyQty !== 0 ? fp.cfBuyQty : fp.cfSellQty;
@@ -150,35 +141,31 @@ export class OrderManager extends UserService
                 fp.state = 'completed';
                 fp.orderid = -1;
 
-                const { tok: token, sym: stockCode, symbol, pricedAt, filled_q, ordertype, action, state, orderid, ...rest} = fp;
-                
-                return {token, stockCode, symbol, pricedAt, filled_q, ordertype, action, state, orderid};
+                const { tok: token, sym: stockCode, symbol, pricedAt, filled_q, ordertype, action, state, orderid, ...rest } = fp;
+
+                return { token, stockCode, symbol, pricedAt, filled_q, ordertype, action, state, orderid };
             });
     }
 
-    getOpenOrder(service_key, orderid)
-    {
+    getOpenOrder(service_key, orderid) {
         const order = this.live_order_map.get(orderid);
-        if(order?.trade_mode === service_key)    
+        if (order?.trade_mode === service_key)
             return order
     }
 
-    addOrders(order)
-    {
+    addOrders(order) {
         (this.live_order_map.get(order.orderid) === undefined)
-            this.live_order_map.set(order.orderid, order);
+        this.live_order_map.set(order.orderid, order);
     }
 
-    emitPosition(service_key, position)
-    {
+    emitPosition(service_key, position) {
         //eventservice.emit(service_key, this.formatLivePosition(position));
     }
 
-    formatLivePosition(position)
-    {
-        const { actId: account, sym: ts, exSeg: ex_segment, prod: product_type, flBuyQty: buyq, flSellQty: sellq, buyAmt: buyAmt, 
-            sellAmt: sellAmt, posFlg: positionFlag, sqrFlg: squareoffFlag, lotSz: lot_size, multiplier: multiplier, hsUpTm: updateTime} = position;
-        return {account, ts, ex_segment, product_type, buyq, sellq, buyAmt, sellAmt, positionFlag, squareoffFlag, lot_size, multiplier, updateTime};
+    formatLivePosition(position) {
+        const { actId: account, sym: ts, exSeg: ex_segment, prod: product_type, flBuyQty: buyq, flSellQty: sellq, buyAmt: buyAmt,
+            sellAmt: sellAmt, posFlg: positionFlag, sqrFlg: squareoffFlag, lotSz: lot_size, multiplier: multiplier, hsUpTm: updateTime } = position;
+        return { account, ts, ex_segment, product_type, buyq, sellq, buyAmt, sellAmt, positionFlag, squareoffFlag, lot_size, multiplier, updateTime };
     }
 
 }
