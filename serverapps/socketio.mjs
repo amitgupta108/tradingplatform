@@ -1,10 +1,8 @@
 import { hServer } from './httpsserver.mjs';
 import { Server } from "socket.io";
 
-export class SocketIO
-{
-    constructor()
-    {
+export class SocketIO {
+    constructor() {
         this.sio = new Server(hServer, {
             cors: {
                 origin: '*',
@@ -19,11 +17,10 @@ export class SocketIO
         });
     }
 
-    async start()
-    {
-        const {AppClientManager} = await import('../serverlocal/app.mjs');
+    async start(stockCode = 'CRUDEOIL') {
+        const { AppClientManager } = await import('../serverlocal/app.mjs');
         const app = new AppClientManager();
-        await app.startServices();
+        await app.startServices(stockCode);
 
         this.sio.on('connection', (s) => {
             app.connect(s);

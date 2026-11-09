@@ -1,9 +1,9 @@
 import { ConfigService } from './service/.config/configservice.mjs';
 import { streamer } from './stream.mjs';
-import { apiserver } from './apiserver.mjs';
-import { SystemService } from './service/system/service.mjs';
+import apiserver from './apiserver.mjs';
+import { Generic } from '../generic.js';
 
-class ClientManager extends SystemService {
+class ClientManager extends Generic {
     constructor(name) {
         super(name);
     }
@@ -14,9 +14,16 @@ export class AppClientManager extends ClientManager {
         super('APPCLIENTMANAGER');
     }
 
-    async startServices() {
+    async startServices(stockCode, autorun = false) {
         await ConfigService.initializeAll();
         streamer.init();
+        if (autorun)
+            this.run(stockCode);
+    }
+
+    run(stockCode) {
+        const s = ConfigService.getServiceByName('KOTAKLIVEVIEW');
+        s.startv2('APPCLIENT', { stockCode: stockCode, simStartTime: Date.now() });
     }
 
     connect(s) {
