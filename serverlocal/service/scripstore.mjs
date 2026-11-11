@@ -93,7 +93,7 @@ export class ScripStore extends BrokerService {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
 				});
 				this.log('scrips remote load, size ' + this.inMemoryStore.size);
-				resolve('initialized');
+				resolve('success');
 			});
 
 			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
@@ -135,7 +135,7 @@ export class ScripStore extends BrokerService {
 			this.isLoaded = true;
 			this.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
 		}
-		return { status: 'success' };
+		return 'success';
 	}
 
 	addIndicesToStore(indices) {

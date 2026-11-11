@@ -97,7 +97,7 @@
             "type": "broker"
         },
         "ICICILIVEVIEW": {
-            "init": "Y",
+            "init": "N",
             "classdef": "BreezeMarketDataLive",
             "filepath": "../../broker/icici/m_breeze_live.mjs",
             "type": "broker"

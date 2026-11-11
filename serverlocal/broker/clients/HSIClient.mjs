@@ -1,9 +1,10 @@
 import { streamer } from '../../stream.mjs';
-import { KotakAdapter } from './KotakAdapter.js';
+import { Socket } from './adapter.js';
 
-export class KotakHSISocket extends KotakAdapter {
-    constructor(options) {
-        super('HSICLIENT', options);
+export class KotakHSISocket extends Socket {
+    constructor() {
+        super();
+        this.name = 'HSICLIENT';
         this.wsping = undefined;
         this.lasthb = undefined;
     }

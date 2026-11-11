@@ -12,10 +12,10 @@ export interface AuthHeaders {
 export interface AuthData {
     provider: string;
     date: string;
-    feedUrl: string;
-    baseUrl: string;
-    sid: string;
-    token: string;
+    feedUrl?: string;
+    baseUrl?: string;
+    sid?: string;
+    token?: string;
 }
 
 export interface Endpoints {

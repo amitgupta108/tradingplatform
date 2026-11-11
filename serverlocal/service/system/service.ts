@@ -52,10 +52,8 @@ export class InfraService extends Service {
 }
 
 export class BrokerService extends Service {
-    provider: string;
-    constructor(name: string, provider: string) {
+    constructor(name: string) {
         super(name);
-        this.provider = provider;
     }
 }
 

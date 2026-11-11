@@ -3,12 +3,9 @@ import { ConfigService } from '../config/configservice.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
 import webpage from 'open';
 
-const authdatatemplate = {
-    icici: ['provider', 'date', 'appKey', 'appSecret', 'authcode'],
-    kotak: ['provider', 'date', 'feedUrl', 'baseUrl', 'sid', 'token'],
-};
-
 export class Connector extends Generic {
+
+    static authdatatemplate = ['provider', 'date', 'feedUrl', 'baseUrl', 'sid', 'token'];
     constructor(provider, notify = true, load_on_start = true) {
         super(true);
         this.provider = provider;
@@ -27,35 +24,6 @@ export class Connector extends Generic {
         return this.initialized;
     }
 
-    authenticate() {
-        let authcodeurl;
-        if (this.provider === 'fyers')
-            authcodeurl = this.connector.generateAuthCode();
-        else if (this.provider === 'icici')
-            authcodeurl = 'https://api.icicidirect.com/apiuser/home';
-
-        webpage(authcodeurl)
-            .then(() => {
-                return { status: `Opened ${authcodeurl} in your default web browser.` };
-            })
-            .catch((error) => {
-                return { status: 'error', reason: error };
-            });
-    }
-
-    async saveFyersAccessToken(webreturned) {
-        this.connector.generate_access_token({ "secret_key": this.conn_data.key, "auth_code": webreturned.authcode })
-            .then((response) => {
-                console.log(response);
-                this.authdata = response;
-                this.authdata.date = webreturned.date;
-                this.authdata.authcode = webreturned.authcode;
-                eventservice('fyers_connect', this.authdata);
-            }).catch((error) => {
-                console.log(error)
-            });;
-    }
-
     async saveAndNotify(authdata) {
         this.authdata = authdata;
         const es = ConfigService.getServiceByName('EVENTSERVICE');
@@ -64,36 +32,28 @@ export class Connector extends Generic {
         await Connector.authkeys(authdata.provider, this.authdata);
     }
 
-    static getAuthdataTemplate(provider) {
-        const properties = authdatatemplate[provider];
-        return Object.fromEntries(properties.map((key) => [key, undefined]));
+    static async authkeys(id, cred) {
+        if (process.env.KEYCHAIN === 'Y')
+            return await this.keyring(id, cred);
+        else
+            return await this.lmdb(id, cred);
     }
 
-    static authkeys(id, cred) {
-        try {
-            if (process.env.KEYCHAIN === 'Y')
-                return this.keyring(id, cred);
-            else
-                return this.lmdb(id, cred);
-        } catch (exception) {
-            console.error('error in authkeys operation: ' + id + ' ' + exception)
-        }
-    }
-
-    static lmdb(provider, cred) {
+    static async lmdb(provider, cred) {
         const ps = ConfigService.getServiceByName('PERSISTENCESERVICE');
         if (cred === undefined)
             cred = ps.get(`authkeys_${provider}`);
         else
-            ps.set(`authkeys_${provider}`, cred);
+            await ps.set(`authkeys_${provider}`, cred);
 
         return cred;
     }
 
-
     static async keyring(provider, cred) {
-        cred = cred ?? Connector.getAuthdataTemplate(provider);
-        const entries = Array.from(Object.entries(cred));
+        const entries = cred ? Array.from(Object.entries(cred)) : Connector.authdatatemplate.map((k) => [k, undefined]);
+        if (cred === undefined)
+            cred = {};
+
         for (const [k, v] of entries) {
             if (v === undefined)
                 cred[k] = await getPassword(provider, k);
@@ -107,26 +67,13 @@ export class Connector extends Generic {
 export class ICICIConnector extends Connector {
     constructor(provider, notify, load_on_start) {
         super(provider, notify, load_on_start);
-        this.authcodeurl = 'https://api.icicidirect.com/apiuser/home';
-    }
-
-    authenticate() {
-        webpage(this.authcodeurl)
-            .then(() => {
-                return { status: `Opened ${this.authcodeurl} in your default web browser.` };
-            })
-            .catch((error) => {
-                return { status: 'error', reason: error };
-            });
     }
 
     generateSession(webreturned) {
         this.authdata = {
             provider: webreturned.provider,
             date: webreturned.date,
-            appKey: process.env.breeze_appKey,
-            appSecret: process.env.breeze_secret,
-            authcode: webreturned.authcode
+            sid: webreturned.sid
         }
         this.saveAndNotify(this.authdata);
     }
@@ -223,28 +170,3 @@ export class TPAppConnector extends Connector {
             console.log('TPCoonector' + JSON.stringify({ state: 'NOT_OK', error: `${response.status}-${response.statusText}` }));
     }
 }
-
-/*
-static async keyring(provider, cred) 
-    {
-        let entries;
-        let t;
-        if(cred === undefined) {
-            const fetch = true;
-            t = authdatatemplate[provider];
-            entries = Array.from(Object.entries(t));
-        }            
-        else {
-            entries = Array.from(Object.entries(cred));
-        }
-        
-        for (const [k, v] of entries)
-        {
-            if(fetch)
-                t[k] = await getPassword(provider, k);
-            else 
-                await setPassword(provider, k, v);
-        }
-        return (fetch) ? await t : cred;
-    }
-        */

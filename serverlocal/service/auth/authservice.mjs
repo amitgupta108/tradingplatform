@@ -37,9 +37,6 @@ export class AuthService extends SystemService {
             params = { arg1: id_text }
             provider = 'kotak';
         }
-        else if (id_text === 'icici') {
-            provider = 'icici';
-        }
         else if (id_text === 'tp-icici-p') {
             params = { arg1: 'icici' };
             provider = 'tpapp';

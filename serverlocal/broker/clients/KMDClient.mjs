@@ -1,10 +1,11 @@
 
 import { PacketParser } from '../../utils/PacketParser.mjs';
-import { KotakAdapter } from './KotakAdapter.js';
+import { Socket } from './adapter.js';
 
-export class KMDClient extends KotakAdapter {
-    constructor(options) {
-        super('KMDCLIENT', options);
+export class KMDClient extends Socket {
+    constructor() {
+        super();
+        this.name = 'KMDCLIENT';
         this.dividers = null;
     }
 

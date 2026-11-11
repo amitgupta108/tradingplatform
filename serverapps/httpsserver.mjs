@@ -112,7 +112,8 @@ function handleAuthReq(parsedUrl, res) {
     }
     else if (parsedUrl.pathname.endsWith('/icici.html')) {
         authdata.provider = 'icici';
-        authdata.authcode = parsedUrl.searchParams.get('apisession');
+        authdata.date = new Date().toDateString();
+        authdata.sid = parsedUrl.searchParams.get('apisession');
     }
     const es = ConfigService.getServiceByName('EVENTSERVICE');
     es.emit('ext_auth', authdata);

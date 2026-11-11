@@ -1,11 +1,9 @@
-import { io } from 'socket.io-client';
-import {WebSocket as wsSocket} from 'ws';
-import EventEmitter from "node:events";
+/*import { io } from 'socket.io-client';
+import { WebSocket as wsSocket } from 'ws';
+import { Adapter } from './adapter.js';
 
-export class BrokerAdapter extends EventEmitter
-{
-    constructor(name, options)
-    {
+export class BrokerAdapter extends Adapter {
+    constructor(name, options) {
         super();
         this.name = name;
         this.autoReconnect = options.autoReconnect ?? true;
@@ -37,7 +35,7 @@ export class BrokerAdapter extends EventEmitter
                     this.log('WebSocket connected');
                     this.onOpen();
                     this.emit('open', this.reconnectAttempts);
-                    if(!autoreconnection)
+                    if (!autoreconnection)
                         this.reconnectAttempts = 0;
                     resolve();
                 });
@@ -55,7 +53,7 @@ export class BrokerAdapter extends EventEmitter
                     }
                 });
 
-                this.ws.addEventListener('close',  (event) => {
+                this.ws.addEventListener('close', (event) => {
                     this.log('WebSocket closed:', JSON.stringify(event));
                     this.isConnected = false;
                     this.isConnecting = false;
@@ -70,16 +68,15 @@ export class BrokerAdapter extends EventEmitter
             }
         });
     }
- 
-    newSocket(url, type)
-    {
+
+    newSocket(url, type) {
         this.url = url;
         this.type = type;
-        if(type === 'node')
+        if (type === 'node')
             return new WebSocket(url);
-        else if( type === 'ws')
+        else if (type === 'ws')
             return new wsSocket(url);
-        else if(type === 'socketio')
+        else if (type === 'socketio')
             return io(url, {
                 auth: {
                     token: this.authData.appid,
@@ -97,7 +94,7 @@ export class BrokerAdapter extends EventEmitter
         }
         this.ws.send(data);
     }
-    
+
     disconnect() {
         this.stopHeartbeat();
         this.clearReconnectTimer();
@@ -141,9 +138,9 @@ export class BrokerAdapter extends EventEmitter
     }
 
     sendHeartbeat() {
-        if (this.ws && this.ws.readyState === 1) 
+        if (this.ws && this.ws.readyState === 1)
             this.ws.ping();
-        else 
+        else
             this.handleReconnect();
 
     }
@@ -175,4 +172,4 @@ export class BrokerAdapter extends EventEmitter
             console.error(`[${this.name}]`, ...args);
         }
     }
-}
+}*/

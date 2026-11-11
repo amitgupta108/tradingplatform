@@ -1,23 +1,24 @@
 import type { AuthHeaders, AuthData, Endpoints } from "../../utils/types.js";
-import { BrokerAdapter } from './BrokerAdpater.mjs';
+import { Adapter } from './adapter.js';
 
-export class KotakAdapter extends BrokerAdapter {
+export class KotakAdapter extends Adapter {
 
-    declare authData: AuthData;
     endpoints: Endpoints;
 
-    constructor(name: string, options: any) {
-        super(name, options);
+    constructor() {
+        super();
+        this.name = 'KOTAKADAPTER';
         this.endpoints = {};
     }
 
-    initiateConnect(authData: AuthData) {
+    async initiateConnect(authData: AuthData) {
         this.authData = authData;
         this.cache_url();
+        return await this.get('positions', {});
     }
 
     cache_url() {
-        const baseUrl = this.authData.baseUrl;
+        const baseUrl = this.authData!.baseUrl;
         this.endpoints.order = new URL('/quick/order/rule/ms/place', baseUrl).href;
         this.endpoints.modify = new URL('/quick/order/vr/modify', baseUrl).href;
         this.endpoints.cancel = new URL('/quick/order/cancel', baseUrl).href;
@@ -27,25 +28,30 @@ export class KotakAdapter extends BrokerAdapter {
         this.endpoints.expiries = new URL(`${baseUrl}/market-data/1.0/watchlist/expiries`);
     }
 
-    getHeaders(endpt: string): AuthHeaders {
-        if (['history', 'expiries'].includes(endpt))
+    getHeaders(endpt: string): AuthHeaders | undefined {
+        if (['history', 'expiries'].includes(endpt)) {
             return {
                 'Authorization': process.env.kotak_apiKey,
                 'Content-Type': 'application/json'
             } as AuthHeaders;
-        else
+        }
+        else {
+            if (this.authData!.sid)
+                this.log('Headers not found for endpoint ' + endpt);
+
             return {
                 'Accept': 'application/json',
-                'Sid': this.authData.sid,
-                'Auth': this.authData.token,
                 'neo-fin-key': 'neotradeapi',
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Sid': this.authData!.sid,
+                'Auth': this.authData!.token
             } as AuthHeaders;
+        }
     }
 
     post(endpt: string, body: any) {
-        const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
         const headers = this.getHeaders(endpt);
+        const requestBody = new URLSearchParams({ jData: JSON.stringify(body) });
         const api_url = this.endpoints[endpt];
         const options = {
             method: 'POST',
