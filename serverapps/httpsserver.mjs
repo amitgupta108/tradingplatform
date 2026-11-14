@@ -2,7 +2,7 @@ import https from 'node:https';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
-import path from 'node:path'; 
+import path from 'node:path';
 
 import { ConfigService } from '../serverlocal/service/.config/configservice.mjs';
 
@@ -45,12 +45,10 @@ const allowedOrigins = [
     'https://***REMOVED***:1029'
 ];
 
-function handleRequests(req, res) 
-{
+function handleRequests(req, res) {
     const origin = req.headers.origin;
 
-    if (origin && allowedOrigins.includes(origin)) 
-    {
+    if (origin && allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
 
         // CRITICAL: Set to true if you plan to transmit HTTP-Only session cookies or authorization tokens
@@ -68,9 +66,9 @@ function handleRequests(req, res)
     const parsedUrl = new URL(req.url, `https://${req.headers.host}`);
     let pathname = parsedUrl.pathname;
 
-    if (req.method === 'OPTIONS') 
+    if (req.method === 'OPTIONS')
         handleOptionsRequest(req, res)
-    else if(pathname.startsWith('/redirect'))
+    else if (pathname.startsWith('/redirect'))
         handleAuthReq(parsedUrl, res);
     else if (pathname.startsWith('/api'))
         handleAPIReq(req, res);
@@ -78,14 +76,12 @@ function handleRequests(req, res)
         handleStaticReq(parsedUrl, res);
 }
 
-function handleOptionsRequest(req, res)
-{
+function handleOptionsRequest(req, res) {
     res.writeHead(204); // 204 No Content confirms parameters are accepted
     res.end();
 }
 
-function handleStaticReq(parsedUrl, res)
-{
+function handleStaticReq(parsedUrl, res) {
     let filePath = path.join(__dirname, '../web/', parsedUrl.pathname);
     const ext = path.extname(filePath);
     const contentType = mimeTypes[ext] || 'application/octet-stream';
@@ -106,21 +102,18 @@ function handleStaticReq(parsedUrl, res)
     });
 }
 
-function handleAuthReq(parsedUrl, res)
-{
-    const authdata = {date: new Date().toDateString()};
-    if(parsedUrl.pathname.endsWith('/fyers.html'))
-    {    
+function handleAuthReq(parsedUrl, res) {
+    const authdata = { date: new Date().toDateString() };
+    if (parsedUrl.pathname.endsWith('/fyers.html')) {
         authdata.provider = 'fyers'
         authdata.authcode = parsedUrl.searchParams.get('auth_code');
         authdata.status = parsedUrl.searchParams.get('s');
         authdata.code = parsedUrl.searchParams.get('code');
     }
-    else if(parsedUrl.pathname.endsWith('/icici.html'))
-    {
+    else if (parsedUrl.pathname.endsWith('/icici.html')) {
         authdata.provider = 'icici';
-        authdata.authcode = parsedUrl.searchParams.get('apisession');        
-    }        
+        authdata.authcode = parsedUrl.searchParams.get('apisession');
+    }
     const es = ConfigService.getServiceByName('EVENTSERVICE');
     es.emit('ext_auth', authdata);
     const responseType = 'text/html';
@@ -128,24 +121,30 @@ function handleAuthReq(parsedUrl, res)
     res.end('<!DOCTYPE html><title>Redirect</title><label onclick="window.close()">X</label>', 'utf-8');
 }
 
-async function handleAPIReq(req, res)
-{
+async function handleAPIReq(req, res) {
     res.setHeader('Content-Type', 'application/json');
 
-    if (req.url === '/api/value' && req.method === 'POST')
-    {
+    if (req.url === '/api/value' && req.method === 'POST') {
         const body = await getRequestBody(req);
         const provider = body.provider;
-        
+
         const as = ConfigService.getServiceByName('AUTHSERVICE');
         const wrapper = await as.authdata(provider);
         res.writeHead(200);
         res.end(JSON.stringify(wrapper));
     }
+    else if (req.url === '/api/scrips' && req.method === 'POST') {
+        const body = await getRequestBody(req);
+        const filters = body.filters;
+
+        const ss = ConfigService.getServiceByName('SCRIPSTORE');
+        const scrips = await ss.getScrips(filters);
+        res.writeHead(200);
+        res.end(JSON.stringify(scrips));
+    }
 }
 
-function getRequestBody(req)
-{
+function getRequestBody(req) {
     return new Promise((resolve, reject) => {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });

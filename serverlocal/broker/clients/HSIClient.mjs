@@ -1,8 +1,7 @@
 import { streamer } from '../../stream.mjs';
 import { KotakAdapter } from './KotakAdapter.mjs';
 
-export class KotakHSISocket extends KotakAdapter
-{
+export class KotakHSISocket extends KotakAdapter {
     constructor(options) {
         super('HSICLIENT', options);
         this.wsping = undefined;
@@ -27,9 +26,13 @@ export class KotakHSISocket extends KotakAdapter
         this.sendMessage(payload);
         this.log('On open hsi ');
     }
-    
-    handleMessage(event)
-    {
+
+    onError(error) {
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+        this.error(error);
+    }
+
+    handleMessage(event) {
         const data = event.data;
         const message = JSON.parse(data.toString());
         if (message.type !== 'cn')
