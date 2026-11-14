@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ConfigService } from '../serverlocal/service/.config/configservice.mjs';
+import { ConfigService } from '../serverlocal/service/config/configservice.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,7 +112,8 @@ function handleAuthReq(parsedUrl, res) {
     }
     else if (parsedUrl.pathname.endsWith('/icici.html')) {
         authdata.provider = 'icici';
-        authdata.authcode = parsedUrl.searchParams.get('apisession');
+        authdata.date = new Date().toDateString();
+        authdata.sid = parsedUrl.searchParams.get('apisession');
     }
     const es = ConfigService.getServiceByName('EVENTSERVICE');
     es.emit('ext_auth', authdata);

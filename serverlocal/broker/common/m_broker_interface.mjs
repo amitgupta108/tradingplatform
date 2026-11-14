@@ -1,7 +1,7 @@
 import { streamer } from '../../stream.mjs';
 import { Subscriptions } from '../../service/subscription/subscription.mjs';
-import { ConfigService } from '../../service/.config/configservice.mjs';
-import { BrokerService } from '../../service/system/service.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
+import { BrokerService } from '../../service/system/service.js';
 
 class BrokerImpl extends BrokerService {
     constructor(name) {

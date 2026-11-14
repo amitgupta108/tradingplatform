@@ -1,7 +1,7 @@
 import { streamer } from '../../stream.mjs';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
-import { ConfigService } from '../../service/.config/configservice.mjs';
-import { EXCHANGES } from '../../utils/constants.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
+import { EXCHANGES } from '../../utils/constants.js';
 
 export class CommonService extends BrokerMarketDataImpl {
     constructor(name) {

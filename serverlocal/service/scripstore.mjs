@@ -5,8 +5,8 @@ import readline from 'node:readline';
 import csvParser from 'csv-parser';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
-import { ConfigService } from './.config/configservice.mjs';
-import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
+import { ConfigService } from './config/configservice.mjs';
+import { filePaths, filters, tp_filters } from '../utils/constants.js';
 import { BrokerService } from './system/service.mjs';
 
 const FIELD_MAP = {
@@ -93,7 +93,7 @@ export class ScripStore extends BrokerService {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
 				});
 				this.log('scrips remote load, size ' + this.inMemoryStore.size);
-				resolve('initialized');
+				resolve('success');
 			});
 
 			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
@@ -135,6 +135,7 @@ export class ScripStore extends BrokerService {
 			this.isLoaded = true;
 			this.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
 		}
+		return 'success';
 	}
 
 	addIndicesToStore(indices) {

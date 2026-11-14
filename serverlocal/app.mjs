@@ -1,4 +1,4 @@
-import { ConfigService } from './service/.config/configservice.mjs';
+import { ConfigService } from './service/config/configservice.mjs';
 import { streamer } from './stream.mjs';
 import { apiserver } from './apiserver.mjs';
 import { SystemService } from './service/system/service.mjs';

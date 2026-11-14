@@ -1,4 +1,4 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
 
 export class KotakMarketData extends BrokerMarketDataImpl {
@@ -11,9 +11,8 @@ export class KotakMarketData extends BrokerMarketDataImpl {
         this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.es.addListener('kotak_auth', (arg) => this.onAuthdata(arg));
 
-        const adapter = this.name === 'KOTAKLIVEVIEW' ? 'KMDCLIENT' : 'HSMCLIENT';
         this.sf = ConfigService.getServiceByName('ADAPTERFACTORY');
-        this.adapter = this.sf.getAdapter(adapter);
+        this.adapter = this.sf.getAdapter('KMDCLIENT');
         this.adapter.addListener('quote', (arg) => this.onQuotes(arg));
         this.adapter.addListener('snapshot', (arg) => this.onSnapshot(arg));
     }

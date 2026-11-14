@@ -1,22 +1,19 @@
-import { ConfigService } from "../.config/configservice.mjs";
+import { ConfigService } from "../config/configservice.mjs";
 import { SubscribersMap } from "./subscription.mjs";
 import { UserService } from "../system/service.mjs";
 
-export class SubsManager extends UserService
-{
-    constructor(name) 
-    {
+export class SubsManager extends UserService {
+    constructor(name) {
         super(name);
         this.data_subscribers = new SubscribersMap();
         this.order_subscribers = new SubscribersMap();
         this.initialized = false;
     }
-    
-    init()
-    {
+
+    init() {
         this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.es.addListener('SERVERAPP', (message) => {
-            if(message.profile.mode === 'history')
+            if (message.profile.mode === 'history')
                 this.historyClient(message);
             else
                 this.handleMessage(message)
@@ -36,7 +33,7 @@ export class SubsManager extends UserService
         this.history_simulator = ConfigService.getServiceByName('SIMULATOR');
 
         this.initialized = true;
-        return {status: 'success'};
+        return { status: 'success' };
     }
 
     onQuotes(q) {
@@ -48,38 +45,35 @@ export class SubsManager extends UserService
     }
 
     onOrder(notifier, order) {
-        
+
         this.es.emit('order_subsmanager_serverclient', order.appid, order);
-        
+
     }
 
-    handleMessage(message) 
-    {
-        try 
-        {
+    handleMessage(message) {
+        try {
             const { event, profile, data } = message;
             const appid = message.appid;
             if (['subscribe', 'unsubscribe'].includes(event)) {
                 const requests = [];
-                for(const r of data) {
+                for (const r of data) {
                     requests.push(r.exchange + '|' + r.symbol);
-                }   
+                }
 
                 this.kotak_data.subscribe(requests, 'Scrips', event, true);
-                if(event === 'subscribe')
+                if (event === 'subscribe')
                     this.data_subscribers.addRequests(appid, data);
-                else if(event === 'unsubscribe')
+                else if (event === 'unsubscribe')
                     this.data_subscribers.removeRequests(appid, data);
             }
             else if (event === 'order') {
-                this.order_subscribers.addRequests(appid, data); 
+                this.order_subscribers.addRequests(appid, data);
             }
             else if (event === 'place_order') {
                 const order = this.order_simulator.placeOrder(appid, data);
                 return { status: 'success', order: order };
             }
-            else if (event === 'history')
-            {
+            else if (event === 'history') {
                 this.history_simulator.clientConfigure(appid, data.startTime, '1x');
             }
             else {

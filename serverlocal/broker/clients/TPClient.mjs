@@ -1,22 +1,20 @@
-import { BrokerAdapter } from './BrokerAdpater.mjs';
+import { Socket } from './adapter.js';
 
-export class TPSocket extends BrokerAdapter
-{
-    constructor(options) {
-        super('TPCLIENT', options);
-        this.appid;
-        this.mode;
+export class TPSocket extends Socket {
+    constructor() {
+        this.name = 'TPCLIENT';
+        this.stype = 'socketio';
     }
 
     initiateConnect(authData) {
         this.authData = authData;
-        return this.connect(authData.url, 'socketio');
+        return this.connect(process.env.TP_SERVER, 'socketio');
     }
 
     onOpen() {
 
         this.ws.on('connect', () => {
-            console.log('On tpsocket open ');
+            this.log('On tpsocket open ');
         });
 
         this.ws.on('scrips', (data) => {
@@ -28,18 +26,16 @@ export class TPSocket extends BrokerAdapter
         });
 
         this.ws.on('disconnect', (code, reason) => {
-            console.log("connection closed tpsocket " + code + " " + reason.toString());
+            this.log("connection closed tpsocket " + code + " " + reason.toString());
         });
 
     }
 
-    async getScrips(filters)
-    {
+    async getScrips(filters) {
         this.ws.emit('scrips', filters);
     }
 
-    subscribe(list)
-    {
+    subscribe(list) {
         this.ws.emit('subscribe', list, 'KOTAKLIVEVIEW');
 
     }

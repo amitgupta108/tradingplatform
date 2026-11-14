@@ -1,8 +1,11 @@
 import { EventEmitter } from 'events';
 
-export class Service extends EventEmitter
-{
-    constructor(name) {
+export class Service extends EventEmitter {
+    name: string;
+    initialized: boolean;
+    logEnabled: boolean;
+
+    constructor(name: string) {
         super();
         if (new.target === Service) {
             throw new TypeError("Cannot instantiate Parent class directly");
@@ -12,12 +15,10 @@ export class Service extends EventEmitter
         this.logEnabled = true;
     }
 
-    init() 
-    {
-        if (!this.initialized) 
-        {
-            if (typeof this.cInit === 'function') 
-                this.cInit();
+    init() {
+        if (!this.initialized) {
+            if (typeof (this as any).cInit === 'function')
+                (this as any).cInit();
 
             this.initialized = true;
             return { status: 'success' };
@@ -25,59 +26,39 @@ export class Service extends EventEmitter
         return { status: 'already initialized' };
     }
 
-    tearDown()
-    {
-
-    
-    }
-
-    log(...args) {
+    log(...args: string[]) {
         if (this.logEnabled) {
             console.log(`[${this.name}]`, ...args);
         }
     }
 
-    error(...args) {
+    error(...args: string[]) {
         if (this.logEnabled) {
             console.error(`[${this.name}]`, ...args);
         }
     }
-
 }
 
 export class SystemService extends Service {
-
-    constructor(name)
-    {
+    constructor(name: string) {
         super(name);
     }
-
 }
 
 export class InfraService extends Service {
-
-    constructor(name)
-    {
+    constructor(name: string) {
         super(name);
     }
-
 }
 
 export class BrokerService extends Service {
-
-    constructor(name, provider)
-    {
+    constructor(name: string) {
         super(name);
-        this.provider = provider;
     }
-
 }
 
 export class UserService extends Service {
-
-    constructor(name)
-    {
+    constructor(name: string) {
         super(name);
     }
-
 }

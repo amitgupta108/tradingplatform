@@ -1,5 +1,5 @@
-import { EXCHANGES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.mjs';
-import { ConfigService } from '../.config/configservice.mjs';
+import { EXCHANGES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.js';
+import { ConfigService } from '../config/configservice.mjs';
 
 export class Subscriptions {
     constructor(owner) {
@@ -116,7 +116,7 @@ export class SubsTemplate {
         this.toStream = true;
         this.stockCode = session.stockCode;
         this.exchange = EXCHANGES[session.stockCode];
-        this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
+        this.fExpiry = session.fExpiry ?? ConfigService.getServiceByName('CONFIGURATIONS').futexpiries[this.stockCode][0];
         this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [

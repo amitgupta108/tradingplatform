@@ -1,11 +1,10 @@
 import { streamer } from '../../stream.mjs';
-import { KotakAdapter } from './KotakAdapter.mjs';
+import { Socket } from './adapter.js';
 
-export class KotakHSISocket extends KotakAdapter {
-    constructor(options) {
-        super('HSICLIENT', options);
-        this.wsping = undefined;
-        this.lasthb = undefined;
+export class KotakHSISocket extends Socket {
+    constructor() {
+        super();
+        this.name = 'HSICLIENT';
     }
 
     initiateConnect(authData) {
@@ -22,7 +21,7 @@ export class KotakHSISocket extends KotakAdapter {
     }
 
     authenticate() {
-        const payload = `{type:cn,Authorization:${this.authData.hsi_token},Sid:${this.authData.hsi_sid},src:WEB}`;
+        const payload = `{type:cn,Authorization:${this.authData.token},Sid:${this.authData.sid},src:WEB}`;
         this.sendMessage(payload);
         this.log('On open hsi ');
     }
