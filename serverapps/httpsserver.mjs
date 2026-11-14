@@ -134,6 +134,15 @@ async function handleAPIReq(req, res) {
         res.writeHead(200);
         res.end(JSON.stringify(wrapper));
     }
+    else if (req.url === '/api/scrips' && req.method === 'POST') {
+        const body = await getRequestBody(req);
+        const filters = body.filters;
+
+        const ss = ConfigService.getServiceByName('SCRIPSTORE');
+        const scrips = await ss.getScrips(filters);
+        res.writeHead(200);
+        res.end(JSON.stringify(scrips));
+    }
 }
 
 function getRequestBody(req) {

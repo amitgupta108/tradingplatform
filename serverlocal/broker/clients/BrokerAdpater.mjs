@@ -1,14 +1,14 @@
-/*import { io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { WebSocket as wsSocket } from 'ws';
-import { Adapter } from './adapter.js';
+import EventEmitter from "node:events";
 
-export class BrokerAdapter extends Adapter {
+export class BrokerAdapter extends EventEmitter {
     constructor(name, options) {
         super();
         this.name = name;
         this.autoReconnect = options.autoReconnect ?? true;
-        this.maxRetries = options.maxRetries ?? 2;
-        this.retryDelay = options.retryDelay ?? 2000;
+        this.maxRetries = options.maxRetries ?? 5;
+        this.retryDelay = options.retryDelay ?? 3000;
         this.heartbeatInterval = options.heartbeatInterval ?? 30000;
         this.logEnabled = options.logEnabled ?? true;
         this.heartbeatTimer = null;
@@ -47,6 +47,7 @@ export class BrokerAdapter extends Adapter {
                 this.ws.addEventListener('error', (error) => {
                     this.log('WebSocket error:', JSON.stringify(error));
                     this.emit('error', error);
+                    this.onError(error);
                     if (!this.isConnected) {
                         this.isConnecting = false;
                         reject(error);
@@ -85,6 +86,10 @@ export class BrokerAdapter extends Adapter {
                 reconnection: true,
                 timeout: 5000
             });
+    }
+
+    onError(error) {
+        this.error(error);
     }
 
     sendMessage(data) {
@@ -146,6 +151,7 @@ export class BrokerAdapter extends Adapter {
     }
 
     startHeartbeat() {
+        this.reconnectAttempts = 0;
         this.stopHeartbeat();
         if (this.heartbeatInterval > 0) {
             this.heartbeatTimer = setInterval(() => {

@@ -5,8 +5,6 @@ export class KotakHSISocket extends Socket {
     constructor() {
         super();
         this.name = 'HSICLIENT';
-        this.wsping = undefined;
-        this.lasthb = undefined;
     }
 
     initiateConnect(authData) {
@@ -26,6 +24,11 @@ export class KotakHSISocket extends Socket {
         const payload = `{type:cn,Authorization:${this.authData.token},Sid:${this.authData.sid},src:WEB}`;
         this.sendMessage(payload);
         this.log('On open hsi ');
+    }
+
+    onError(error) {
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+        this.error(error);
     }
 
     handleMessage(event) {
