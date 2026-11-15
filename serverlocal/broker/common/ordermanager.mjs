@@ -1,7 +1,7 @@
-import { streamer } from '../../stream.mjs';
+import { streamer } from '../../stream.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { LOTSIZE } from '../../utils/constants.js';
-import { UserService } from '../../service/system/service.mjs';
+import { UserService } from '../../service/system/service.js';
+import { KotakHSISocket } from '../clients/HSIClient.mjs';
 
 export class OrderManager extends UserService {
     constructor(name) {
@@ -12,29 +12,21 @@ export class OrderManager extends UserService {
     }
 
     init() {
-        this.es = ConfigService.getServiceByName('EVENTSERVICE');
-        this.es.addListener('kotak_auth', (kotakauth) => {
-            this.kotakauth = kotakauth;
-        });
         this.initialized = true;
         return { status: 'success' };
     }
 
     register(service_key, notifier) {
-        this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
-        const order_notifier = this.af.getAdapter(notifier); //e.g HSIClient
-        order_notifier.initiateConnect(this.kotakauth);
-
-        order_notifier.addListener('order', (notifier_name, order) => {
-
-            const services = Array.from(this.order_generators.entries());
-            const service_keys = services.filter(([k, v]) => {
-                if (v === notifier_name)
-                    return k;
-            })
-            this.notify('order', service_keys, order)
-        });
-
+        if (notifier === 'HSIClient') {
+            KotakHSISocket.getInstance().addListener('order', (notifier_name, order) => {
+                const services = Array.from(this.order_generators.entries());
+                const service_keys = services.filter(([k, v]) => {
+                    if (v === notifier_name)
+                        return k;
+                })
+                this.notify('order', service_keys, order)
+            });
+        }
         this.order_generators.set(service_key, notifier);
     }
 

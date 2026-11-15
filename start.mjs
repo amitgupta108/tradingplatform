@@ -2,7 +2,7 @@ import consoleStamp from 'console-stamp';
 consoleStamp(console, { format: ':date(HH:MM:ss.l)' });
 
 process.on('uncaughtException', (error) => {
-    console.error('FATAL: Uncaught Exception ' +  error.stack);
+    console.error('FATAL: Uncaught Exception ' + error.stack);
     //setTimeout(() => process.exit(1), 5000); 
 });
 
@@ -14,18 +14,17 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 async function startServers() {
-    const { SocketIO } = await import('./serverapps/socketio.mjs');
+    const { SocketIO } = await import('./serverapps/socketio.js');
     await (new SocketIO()).start();
 
-    const { WSServer } = await import('./serverapps/socketws.mjs',);
+    const { WSServer } = await import('./serverapps/socketws.js',);
     await (new WSServer()).start();
 
 }
 
 await startServers();
 
-function shutdown(signal) 
-{
+function shutdown(signal) {
     setTimeout(() => {
         console.error("Forced shutdown due to timeout.");
         process.exit(1);

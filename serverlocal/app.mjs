@@ -1,12 +1,26 @@
 import { ConfigService } from './service/config/configservice.mjs';
-import { streamer } from './stream.mjs';
+import { streamer } from './stream.js';
 import { apiserver } from './apiserver.mjs';
-import { SystemService } from './service/system/service.mjs';
+import { SystemService } from './service/system/service.js';
+import { DataApi } from './api/data.js';
 
 class ClientManager extends SystemService {
     constructor(name) {
         super(name);
+        this.dataApi = new DataApi();
     }
+
+    startServices() { }
+    connect(s) { }
+    send() { }
+    registerHandlers(s, appid, mode) { }
+
+    catchAsync(requestName, fn) {
+        return (...args) => {
+            fn.apply(this, args)
+                .catch(err => this.error(requestName, err));
+        }
+    };
 }
 
 export class AppClientManager extends ClientManager {
@@ -15,8 +29,11 @@ export class AppClientManager extends ClientManager {
     }
 
     async startServices() {
-        await ConfigService.initializeAll();
+        const responses = await ConfigService.initializeAll();
+        //await ConfigService.getServiceByName('CONFIGURATIONS').configLoad();
         streamer.init();
+
+        return responses;
     }
 
     connect(s) {
@@ -25,11 +42,12 @@ export class AppClientManager extends ClientManager {
 
         const as = ConfigService.getServiceByName('AUTHSERVICE');
         const matches = as.validate(appid, mode)
-        if (matches.length !== 1) {
+        if (matches.length === 1) {
             console.log('app not authenticated');
             return;
         }
 
+        this.registerDataHandlers(s);
         streamer.addToUserMap(appid, { socket: s, mode: mode });
         this.registerHandlers(s, appid, mode);
 
@@ -38,14 +56,32 @@ export class AppClientManager extends ClientManager {
         });
     }
 
+    send(s, type, data) {
+        s.emit(type, data);
+    }
+
+    registerDataHandlers(s) {
+        s.on('expiries', (stockCode) => {
+            this.send(s, 'expiries', this.dataApi.getExpiries(stockCode, undefined));
+        });
+
+        s.on('historyv2', this.catchAsync('historyv2', async (requests) => {
+            this.log("history request " + requests.length);
+            for (const r of requests) {
+                const resp = await this.dataApi.getHistoryAsync(r);
+                this.send(s, 'historyv2', { symbol: r.symbol, qA: resp });
+            }
+        }));
+    }
+
     registerHandlers(s, appid, mode) {
         const profile = ConfigService.getProfile(mode);
 
-        if (Object.hasOwn(profile, 'view'));
-        apiserver.registerDataRequests(s, appid, mode);
+        if (Object.hasOwn(profile, 'view'))
+            apiserver.registerDataRequests(s, appid, mode);
 
-        if (Object.hasOwn(profile, 'trade'));
-        apiserver.registerTradeRequests(s, appid, mode);
+        if (Object.hasOwn(profile, 'trade'))
+            apiserver.registerTradeRequests(s, appid, mode);
 
         if (Object.hasOwn(profile, 'admin'))
             apiserver.registerAdminRequests(s, appid, mode);

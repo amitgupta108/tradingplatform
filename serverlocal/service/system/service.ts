@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-
 export class Service extends EventEmitter {
     name: string;
     initialized: boolean;

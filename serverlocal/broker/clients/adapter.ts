@@ -1,7 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { AuthData } from '../../utils/types.js'
-import { WebSocket as wsSocket } from "ws";
-import { io } from "socket.io-client";
+import { WebSocket } from "ws";
 
 abstract class BasicAdapter extends EventEmitter {
     logEnabled: boolean = true;
@@ -25,35 +24,36 @@ abstract class BasicAdapter extends EventEmitter {
     }
 }
 
-export class Adapter extends BasicAdapter {
-    static instance?: typeof Adapter;
+export abstract class TPAdapter extends BasicAdapter {
+    static instance?: typeof TPAdapter;
 
     isAuthenticated: boolean = false;
-    adapter?: any;
+    abstract init(): Promise<boolean>;
 
     constructor() {
         super();
-        if (!['BreezeAdapter', 'KotakAdapter'].includes(this.constructor.name))
-            throw new Error(this.constructor.name + ' cannot be instantiated outside of the parent-class.');
+        if (new.target.instance)
+            throw new Error(this.constructor.name + ' cannot be instantiated using new. Use getInstance() method.');
     }
 
-    static getInstance<T extends Adapter>(this: new () => T): typeof Adapter {
-        const targetclassdef = this as unknown as typeof Adapter;
+    static async getInstance<T extends TPAdapter>(this: new () => T): Promise<typeof TPAdapter> {
+        const targetclassdef = this as unknown as typeof TPAdapter;
         if (!targetclassdef.instance) {
-            targetclassdef.instance = new this() as unknown as typeof Adapter;
+            targetclassdef.instance = new this() as unknown as typeof TPAdapter;
+            await (targetclassdef.instance as any).init();
         }
         return targetclassdef.instance;
     }
 }
 
-export abstract class Socket extends BasicAdapter {
-    static instance?: typeof Socket;
+export abstract class TPSocket extends BasicAdapter {
+    static instance?: typeof TPSocket;
 
     abstract onOpen(): void;
     abstract handleMessage(data: any): void;
     autoReconnect: boolean = true;
-    maxRetries: number = 2;
-    retryDelay: number = 2000;
+    maxRetries: number = 5;
+    retryDelay: number = 3000;
     reconnectAttempts: number = 0;
     reconnectTimer: any = null;
     heartbeatInterval: number = 30000;
@@ -61,24 +61,24 @@ export abstract class Socket extends BasicAdapter {
     isConnecting: boolean = false;
     isConnected: boolean = false;
     url?: string;
-    ws?: any;
-    abstract type?: string;
+    ws?: WebSocket
 
     constructor() {
         super();
-        if (!['HSIClient', 'KMDClient', 'TPSocket'].includes(this.constructor.name))
-            throw new Error(this.constructor.name + ' cannot be instantiated outside of the parent-class.');
+        if (new.target.instance)
+            throw new Error(this.constructor.name + ' cannot be instantiated using new. Use getInstance() method.');
     }
 
-    static getInstance<T extends Socket>(this: new () => T): typeof Socket {
-        const targetclassdef = this as unknown as typeof Socket;
+    static async getInstance<T extends TPSocket>(this: new () => T): Promise<typeof TPSocket> {
+        const targetclassdef = this as unknown as typeof TPSocket;
         if (!targetclassdef.instance) {
-            targetclassdef.instance = new this() as unknown as typeof Socket;
+            targetclassdef.instance = new this() as unknown as typeof TPSocket;
+            await (targetclassdef.instance as any).init();
         }
         return targetclassdef.instance;
     }
 
-    async connect(url: string, type: string, autoreconnection: boolean = false) {
+    async connect(url: string, autoreconnection: boolean = false) {
         if (this.isConnected || this.isConnecting) {
             this.log('Already connected or connecting');
             return;
@@ -86,7 +86,7 @@ export abstract class Socket extends BasicAdapter {
         this.isConnecting = true;
         return new Promise((resolve: any, reject: any) => {
             try {
-                this.ws = this.newSocket(url, type);
+                this.ws = new WebSocket(url);
                 this.ws.addEventListener('open', () => {
                     this.isConnecting = false;
                     this.isConnected = true;
@@ -98,20 +98,21 @@ export abstract class Socket extends BasicAdapter {
                     resolve();
                 });
 
-                this.ws.addEventListener('message', (event) => {
+                this.ws.addEventListener('message', (event: any) => {
                     this.handleMessage(event);
                 });
 
                 this.ws.addEventListener('error', (error) => {
                     this.log('WebSocket error:', JSON.stringify(error));
                     this.emit('error', error);
+                    this.onError(error);
                     if (!this.isConnected) {
                         this.isConnecting = false;
                         reject(error);
                     }
                 });
 
-                this.ws.addEventListener('close', (event) => {
+                this.ws.addEventListener('close', (event: any) => {
                     this.log('WebSocket closed:', JSON.stringify(event));
                     this.isConnected = false;
                     this.isConnecting = false;
@@ -127,24 +128,6 @@ export abstract class Socket extends BasicAdapter {
         });
     }
 
-    newSocket(url: string, type: string) {
-        this.url = url;
-        this.type = type;
-        if (type === 'node')
-            return new WebSocket(url);
-        else if (type === 'ws')
-            return new wsSocket(url);
-        else if (type === 'socketio')
-            return io(url, {
-                auth: {
-                    token: process.env.apiKey,
-                    mode: 'TPCLIENT'
-                },
-                reconnection: true,
-                timeout: 5000
-            });
-    }
-
     sendMessage(data) {
         if (!this.ws || !this.isConnected) {
             this.log('Cannot send message: not connected');
@@ -158,12 +141,15 @@ export abstract class Socket extends BasicAdapter {
         this.clearReconnectTimer();
         if (this.ws) {
             this.ws.close(1000, 'Client disconnecting');
-            this.ws = null;
         }
         this.autoReconnect = false;
         this.isConnected = false;
         this.isConnecting = false;
         this.emit('disconnected');
+    }
+
+    onError(error: any) {
+        this.error(`Error in ${this.name} - ${JSON.stringify(error)}`);
     }
 
     handleReconnect() {
@@ -182,7 +168,7 @@ export abstract class Socket extends BasicAdapter {
         this.reconnectTimer = setTimeout(() => {
             this.log(`Reconnection attempt ${this.reconnectAttempts}`);
             this.emit('reconnecting', this.reconnectAttempts);
-            this.connect(this.url!, this.type!, true).catch((err) => {
+            this.connect(this.url!, true).catch((err) => {
                 this.log('Reconnection failed:', err);
             });
         }, delay);
@@ -200,10 +186,10 @@ export abstract class Socket extends BasicAdapter {
             this.ws.ping();
         else
             this.handleReconnect();
-
     }
 
     startHeartbeat() {
+        this.reconnectAttempts = 0;
         this.stopHeartbeat();
         if (this.heartbeatInterval > 0) {
             this.heartbeatTimer = setInterval(() => {
@@ -216,18 +202,6 @@ export abstract class Socket extends BasicAdapter {
         if (this.heartbeatTimer) {
             clearInterval(this.heartbeatTimer);
             this.heartbeatTimer = null;
-        }
-    }
-
-    log(...args: string[]) {
-        if (this.logEnabled) {
-            console.log(`[${this.name}]`, ...args);
-        }
-    }
-
-    error(...args: string[]) {
-        if (this.logEnabled) {
-            console.error(`[${this.name}]`, ...args);
         }
     }
 }

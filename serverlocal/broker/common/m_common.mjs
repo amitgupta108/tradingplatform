@@ -1,20 +1,25 @@
-import { streamer } from '../../stream.mjs';
+import { streamer } from '../../stream.js';
 import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
 import { ConfigService } from '../../service/config/configservice.mjs';
 import { EXCHANGES } from '../../utils/constants.js';
+import { TPRemoteAdapter } from '../clients/TPRemote.js';
 
 export class CommonService extends BrokerMarketDataImpl {
     constructor(name) {
         super(name);
-        this.qt_vix = { key: 'vix', stockCode: 'INDIAVIX', ltp: 0, ltt: 0 };
-        this.vix_subscribed = false;
     }
 
-    addListeners() {
+    async addListeners() {
         if (process.env.PASSTHROUGH === 'Y') {
-            this.provider = ConfigService.getAdapter('TPCLIENT');
-            this.provider.addListener('quote', (arg) => this.onQuotes(arg));
+            this.adapter = await TPRemoteAdapter.getInstance();
+            this.adapter.addListener('quote', (arg) => this.onQuotes(arg));
         }
+    }
+
+    async tpScrips(filters) {
+        this.adapter = await TPRemoteAdapter.getInstance();
+        if (this.adapter.isAuthenticated)
+            return await this.adapter.getScrips(filters);
     }
 
     history(appid, r) {
@@ -39,39 +44,11 @@ export class CommonService extends BrokerMarketDataImpl {
         }
     }
 
-    subscribe_vix(appid, mode, action) {
-        if (mode.startsWith('HISTORY')) {
-            const s = ConfigService.getServiceByName('ICICIHISTVIEW');
-            return s.subscribe_vix(appid, mode, action);
-        }
-        else {
-            const s = ConfigService.getServiceByName('ICICILIVEVIEW');
-            return s.subscribe_vix(appid, mode, action)
-                .then((resp) => {
-                    this.vix_subscribed = true;
-                    this.log(resp);
-                })
-                .catch((error) => this.log(error));
-        }
-    }
-
     onVix(q) {
         if (q.last !== this.qt_vix.ltp) {
             this.qt_vix.ltt = Date.parse(q.ltt);
             this.qt_vix.ltp = q.last;
             streamer.broadcast('quote', this.qt_vix, 'all_nse_live');
         }
-    }
-
-    subscribe(appid, list, action) {
-        this.my_subs.addRequests(appid, list);
-        if (action === 'subs' || action === 'start')
-            this.provider.subscribe(list);
-        else
-            this.provider.unsubscribe(list);
-    }
-
-    standardize(q) {
-        return q;
     }
 }

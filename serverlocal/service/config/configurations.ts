@@ -1,68 +1,68 @@
 import { ConfigService } from "./configservice.mjs";
-import type { TExpiriesSet, IExpiries, AuthData } from '../../utils/types.js';
+import type { IExpiries, TExpiriesSet } from '../../utils/types.js';
 import { EXCHANGES, STOCKCODES } from "../../utils/constants.js";
 import { KotakAdapter } from "../../broker/clients/KotakAdapter.js";
 import { UserService } from "../system/service.js";
 
 export class Configurations extends UserService {
-    expiries: TExpiriesSet = {};
-    initialized: boolean = false;
-    kotakadaper!: KotakAdapter;
+    expiries: TExpiriesSet = {
+        'NIFTY': { 'FUTURES': [], 'OPTIONS': [] } as IExpiries,
+        'CRUDEOIL': { 'FUTURES': [], 'OPTIONS': [] } as IExpiries
+    };
+    ps: any;
 
     constructor() {
         super('CONFIGURATIONS');
     }
 
-    async cInit() {
-        const es = ConfigService.getServiceByName('EVENTSERVICE');
-        es.addListener('kotak_auth', async (authdata: AuthData) => {
-            await this.onAuthData(authdata);
+    async cInit(): Promise<boolean> {
+        return await new Promise(async (resolve, reject) => {
+            this.ps = ConfigService.getServiceByName('PERSISTSERVICE');
+            for (const stock of STOCKCODES) {
+                for (const type of ['FUTURES', 'OPTIONS']) {
+                    this.expiries[stock][type] = await this.loadExpiries(stock, type);
+                }
+            }
+            resolve(true);
         });
     }
 
-    async onAuthData(authData: AuthData) {
-        const af = ConfigService.getServiceByName('ADAPTERFACTORY');
-        this.kotakadaper = af.getAdapter('KOTAKADAPTER');
-        this.kotakadaper.initiateConnect(authData);
+    private async loadExpiries(stockCode: string, type: string) {
+        this.expiries[stockCode][type] = this.ps.getData(`EXPIRIES_${stockCode}_${type}'`) as string[];
 
-        const ps = ConfigService.getServiceByName('PERSISTSERVICE');
-        for (const stock of STOCKCODES) {
-            this.expiries[stock] = ps.getData(`${stock}_EXPIRIES`) as IExpiries;
-            this.log(JSON.stringify(this.expiries[stock], null, 2));
+        let dates: string[] | undefined;
+        if (!this.expiries[stockCode][type] || this.expiries[stockCode][type].length < 2)
+            dates = await this.fetchExpiries(stockCode, type)
+        else if (Date.now() > (new Date(this.expiries[stockCode][type][0]).getTime() + 16 * 60 * 60 * 1000))
+            dates?.shift();
 
-            if (this.expiries[stock]['options'].length === 0 || new Date(this.expiries[stock]['options'][0]).getTime() < Date.now()) {
-                this.expiries[stock] = {} as IExpiries;
-                this.expiries[stock]['options'] = await this.fetchExpiries(stock, 'options');
-                this.expiries[stock]['futures'] = await this.fetchExpiries(stock, 'futures');
-            }
-            ps.setData(`${stock}_EXPIRIES`, this.expiries[stock]);
-        }
-        this.log(JSON.stringify(this.expiries, null, 2));
+        if (dates !== undefined)
+            this.persistExpiries(stockCode, type, dates);
     }
 
-    async fetchExpiries(symbol: string, type: string): Promise<string[]> {
-        const params = {
-            NIFTY: { exchange: EXCHANGES[symbol], underlying: 'NIFTY' },
-            CRUDEOIL: { exchange: EXCHANGES[symbol], underlying: 'CRUDEOIL' },
-        }
-        params[symbol].instrument_type = type === 'futures' ? 'fut' : 'option';
+    private async persistExpiries(stockCode: string, type: string, dates: string[]) {
+        this.expiries[stockCode][type] = dates;
+        this.ps.setData(`EXPIRIES_${stockCode}_${type}`, dates);
+    }
 
-        const response = await this.kotakadaper.get('expiries', params[symbol]);
-        if (response.ok) {
-            const data = await response.json();
-            return data.expiries;
+    private async fetchExpiries(stockCode: string, type: string): Promise<string[]> {
+        const adapter = await KotakAdapter.getInstance() as any as KotakAdapter;
+        if (adapter.isAuthenticated) {
+            const response = await adapter.get('expiries', {
+                exchange: EXCHANGES[stockCode], underlying: stockCode,
+                instrument_type: type === 'FUTURES' ? 'fut' : 'option'
+            });
+            if (response.ok)
+                return (await response.json() as any)?.expiries;
+            this.log(`Error fetching expiries for ${stockCode}: ${response.statusText}`);
         }
-        this.log(`Error fetching expiries for ${symbol}: ${response.statusText}`);
         return [];
     }
 
-    getExpiry(stock: string): IExpiries | undefined {
-        if (this.initialized)
-            return this.expiries?.[stock];
-    }
-
-    getAllExpiries(): TExpiriesSet | undefined {
-        if (this.initialized)
-            return this.expiries;
+    getExpiries(stockCode: string, type: string | undefined): string[] | IExpiries {
+        if (type !== undefined)
+            return this.expiries[stockCode][type] as string[];
+        else
+            return this.expiries[stockCode] as any;
     }
 }

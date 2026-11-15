@@ -19,7 +19,8 @@ export const {
 } = services_config;
 
 export const {
-    appids,
+    appclients,
+    serverclients,
     modes,
     access,
     providers

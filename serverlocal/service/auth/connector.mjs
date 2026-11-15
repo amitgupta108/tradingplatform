@@ -1,16 +1,15 @@
-import { Generic } from '../../../generic.mjs'
+import { Generic } from '../../../generic.js'
 import { ConfigService } from '../config/configservice.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
-import webpage from 'open';
 
 export class Connector extends Generic {
 
     static authdatatemplate = ['provider', 'date', 'feedUrl', 'baseUrl', 'sid', 'token'];
-    constructor(provider, notify = true, load_on_start = true) {
-        super(true);
+    constructor(provider, load_on_start = true) {
+        super();
         this.provider = provider;
+        this.name = `${provider}-connector`;
         this.initialized = false;
-        this.notify = notify;
         this.load_on_start = load_on_start;
         this.authdata;
     }
@@ -18,25 +17,26 @@ export class Connector extends Generic {
     async loadAuthdata() {
         const l_authdata = await Connector.authkeys(this.provider, undefined);
         if (l_authdata?.date === new Date().toDateString()) {
-            await this.saveAndNotify(l_authdata);
+            this.authdata = l_authdata;
             this.initialized = true;
         }
         return this.initialized;
     }
 
     async saveAndNotify(authdata) {
-        this.authdata = authdata;
-        const es = ConfigService.getServiceByName('EVENTSERVICE');
-        if (this.notify)
+        if (authdata?.date === new Date().toDateString()) {
+            this.authdata = authdata;
+            const es = ConfigService.getServiceByName('EVENTSERVICE');
             es.emit(`${authdata.provider}_auth`, this.authdata);
-        await Connector.authkeys(authdata.provider, this.authdata);
+            return await Connector.authkeys(authdata.provider, this.authdata);
+        }
     }
 
     static async authkeys(id, cred) {
         if (process.env.KEYCHAIN === 'Y')
-            return await this.keyring(id, cred);
+            return await Connector.keyring(id, cred);
         else
-            return await this.lmdb(id, cred);
+            return await Connector.lmdb(id, cred);
     }
 
     static async lmdb(provider, cred) {
@@ -62,26 +62,75 @@ export class Connector extends Generic {
         }
         return cred;
     }
+
+    static async remoteFetch(provider) {
+        return fetch(`${process.env.TP_REMOTE_URL}/api/value`, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ provider: provider })
+        });
+    }
 }
 
 export class ICICIConnector extends Connector {
-    constructor(provider, notify, load_on_start) {
-        super(provider, notify, load_on_start);
+    constructor(provider, load_on_start) {
+        super(provider, load_on_start);
     }
 
-    generateSession(webreturned) {
-        this.authdata = {
-            provider: webreturned.provider,
-            date: webreturned.date,
-            sid: webreturned.sid
+    async authenticate(authcode) {
+        let l_authdata;
+        if (authcode === 'tp-icici-p') {
+            const response = await Connector.remoteFetch(this.provider);
+            if (response.ok)
+                l_authdata = await response.json();
+            else
+                return { status: 'error', reason: response.statusText };
         }
-        this.saveAndNotify(this.authdata);
+        else
+            l_authdata = {
+                sid: authcode, provider: this.provider,
+                date: new Date().toDateString()
+            };
+        await this.saveAndNotify(l_authdata);
+        return { status: 'success' };
     }
 }
 
 export class KotakConnector extends Connector {
-    constructor(provider, notify, load_on_start) {
-        super(provider, notify, load_on_start);
+    constructor(provider, load_on_start) {
+        super(provider, load_on_start);
+    }
+
+    async authenticate(authcode) {
+        try {
+            let response;
+            if (authcode === 'tp-kotap-p')
+                response = await Connector.remoteFetch(this.provider);
+            else {
+                const lr = await this.apiLogin(authcode);
+                if (lr.ok) {
+                    const lr_result = (await lr.json()).data;
+                    response = await this.apiValidate(lr_result.sid, lr_result.token);
+                }
+                else
+                    return { status: 'error', reason: 'login api call not completed ' + lr.statusText };
+            }
+            if (response.ok) {
+                const { baseUrl, feedUrl, sid, token, ...result } = (await response.json()).data;
+                const l_authdata = { baseUrl, feedUrl, sid, token, provider: this.provider, date: new Date().toDateString() };
+                await this.saveAndNotify(l_authdata);
+                return { status: 'success' };
+            }
+            else
+                return { status: 'error', reason: 'kotak validate failed ' + response.statusText };
+        }
+        catch (exception) {
+            this.error('kotak auth error ' + exception);
+            return { status: 'error', reason: 'kotak auth error ' + exception };
+        }
     }
 
     apiLogin(num) {
@@ -116,57 +165,5 @@ export class KotakConnector extends Connector {
             }),
         };
         return fetch(process.env.kotak_valURL, options);
-    }
-
-    async authenticate(params) {
-        try {
-            const lr = await this.apiLogin(params.arg1);
-            if (lr.ok) {
-                const lr_result = (await lr.json()).data;
-                const vr = await this.apiValidate(lr_result.sid, lr_result.token);
-                if (vr.ok) {
-                    const vr_result = (await vr.json()).data;
-                    this.authdata = {
-                        provider: this.provider,
-                        date: new Date().toDateString(),
-                        baseUrl: vr_result.baseUrl,
-                        feedUrl: vr_result.feedUrl,
-                        sid: vr_result.sid,
-                        token: vr_result.token
-                    }
-                    this.saveAndNotify(this.authdata);
-                    return { status: 'success' };
-                }
-                return { status: 'error', reason: 'kotak validate failed ' + vr.statusText };
-            }
-            return { status: 'error', reason: 'login api call not completed ' + lr.statusText };
-        }
-        catch (exception) {
-            console.error('kotak auth error ' + exception);
-            return { status: 'error', reason: 'kotak auth error ' + exception };
-        }
-    }
-}
-
-export class TPAppConnector extends Connector {
-    constructor(provider, notify, load_on_start) {
-        super(provider, notify, load_on_start);
-    }
-
-    async authenticate(params) {
-        const api_url = `${process.env.TP_SERVER}` + '/api/value';
-        const options = {
-            method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ provider: params.arg1 })
-        };
-        const response = await fetch(api_url, options);
-        if (response.ok)
-            return await response.json();
-        else
-            console.log('TPCoonector' + JSON.stringify({ state: 'NOT_OK', error: `${response.status}-${response.statusText}` }));
     }
 }

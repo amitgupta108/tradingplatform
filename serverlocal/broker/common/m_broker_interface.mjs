@@ -1,11 +1,12 @@
-import { streamer } from '../../stream.mjs';
+import { streamer } from '../../stream.js';
 import { Subscriptions } from '../../service/subscription/subscription.mjs';
-import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerService } from '../../service/system/service.js';
+import { ConfigService } from '../../service/config/configservice.mjs';
 
 class BrokerImpl extends BrokerService {
     constructor(name) {
         super(name);
+        this.adapter;
         this.symbol_cache = new Map();
     }
 
@@ -29,14 +30,15 @@ class BrokerImpl extends BrokerService {
 export class BrokerMarketDataImpl extends BrokerImpl {
     constructor(name) {
         super(name);
-        this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
+        this.view_mode;
         this.simpricefeed = false;
-        this.authData;
         this.subscriptions;
     }
 
-    init() {
+    async init() {
         if (!this.initialized) {
+            this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
+
             this.es = ConfigService.getServiceByName('EVENTSERVICE');
             this.es.addListener(`${this.name}_unsub`, (appid, list) => {
                 this.subscribe(appid, list, 'unsub');
@@ -46,9 +48,8 @@ export class BrokerMarketDataImpl extends BrokerImpl {
             });
             this.subscriptions = new Subscriptions(this.name);
 
-            this.addListeners();
+            await this.addListeners();
             this.initialized = true;
-
             return { status: 'success' };
         }
         return { status: 'already initialized' };
@@ -90,16 +91,21 @@ export class BrokerMarketDataImpl extends BrokerImpl {
             this.subscribe(appid, response.strikes, response.action);
     }
 
-
     optionchainAction(appid, expiry, action) {
         const subs = this.subscriptions.getSubscriptions(appid);
         if (subs !== undefined) {
-            const response = subs.optionChain(expiry, action);
-            if (action.key === 'subscribe' && response.status === 'success') {
-                this.subscribe(appid, response.strikes, action.value);
-            }
-            else if (action.key === 'stream' && response.status === 'success') {
-                this.log(`optionchainAction: ${action.key} - ${action.value} - success`);
+            const response = subs.optionchainAction(expiry, action);
+            if (response.status === 'success') {
+                if (action.key === 'strikes') {
+                    this.subscribe(appid, response.oldstrikes, 'unsub');
+                    this.subscribe(appid, response.strikes, 'subs');
+                }
+                else if (action.key === 'subscribe') {
+                    this.subscribe(appid, response.strikes, 'subs');
+                }
+                else if (action.key === 'stream') {
+                    this.log(`optionchainAction: ${action.key} - ${action.value} - success`);
+                }
             }
         }
     }
@@ -152,18 +158,21 @@ export class BrokerMarketDataImpl extends BrokerImpl {
 export class BrokerTradeServiceImpl extends BrokerImpl {
     constructor(name) {
         super(name);
-        this.trade_mode = ConfigService.getKeyByFeature(this.name, 'trade');
+        this.trade_mode;
         this.mytradename = name;
         this.authData;
     }
 
-    init() {
+    async init() {
         if (!this.initialized) {
-            this.ordermanager = ConfigService.getServiceByName('ORDERMANAGER');
-            this.addListeners();
-            this.initialized = true;
+            this.trade_mode = ConfigService.getKeyByFeature(this.name, 'trade');
 
-            return { status: 'success' };
+            this.ordermanager = ConfigService.getServiceByName('ORDERMANAGER');
+            if (await this.addListeners()) {
+                this.initialized = true;
+                return { status: 'success' };
+            }
+            return { status: 'error', emsg: 'broker not initialized' };
         }
         return { status: 'already initialized' };
     }

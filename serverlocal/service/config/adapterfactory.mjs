@@ -4,7 +4,7 @@ import { KMDClient } from '../../broker/clients/KMDClient.mjs';
 import { KotakHSISocket } from '../../broker/clients/HSIClient.mjs';
 import { KotakAdapter } from '../../broker/clients/KotakAdapter.js';
 import { BreezeAdapter } from '../../broker/clients/BreezeAdapter.mjs';
-import { InfraService } from '../system/service.mjs';
+import { InfraService } from '../system/service.js';
 import { ConfigService } from './configservice.mjs';
 
 const options = {
@@ -42,16 +42,16 @@ export class AdapterFactory extends InfraService {
 
     creatAdapter(key) {
         if (key === 'KOTAKADAPTER')
-            return new KotakAdapter('KOTAKADAPTER', options);
+            return new KotakAdapter();
         else if (key === 'KMDCLIENT')
-            return new KMDClient(options);
+            return new KMDClient();
         else if (key === 'HSICLIENT')
-            return new KotakHSISocket(options);
+            return new KotakHSISocket();
         else if (key === 'OPENALGOCLIENT')
             return OpenAlgoClient.getInstance();
         else if (key === 'BREEZEADAPTER')
             return BreezeAdapter.getInstance();
         else if (key === 'TPCLIENT')
-            return new TPSocket(options);
+            return new TPSocket();
     }
 }

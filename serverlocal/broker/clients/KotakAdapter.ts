@@ -1,7 +1,8 @@
 import type { AuthHeaders, AuthData, Endpoints } from "../../utils/types.js";
-import { Adapter } from './adapter.js';
+import { TPAdapter } from './adapter.js';
+import { ConfigService } from "../../service/config/configservice.mjs";
 
-export class KotakAdapter extends Adapter {
+export class KotakAdapter extends TPAdapter {
 
     endpoints: Endpoints;
 
@@ -11,10 +12,15 @@ export class KotakAdapter extends Adapter {
         this.endpoints = {};
     }
 
-    async initiateConnect(authData: AuthData) {
-        this.authData = authData;
-        this.cache_url();
-        return await this.get('positions', {});
+    async init() {
+        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
+        const authData = await authservice.authdata('kotak')
+        if (authData.date === new Date().toDateString()) {
+            this.authData = authData;
+            this.cache_url();
+            this.isAuthenticated = true;
+        }
+        return this.isAuthenticated;
     }
 
     cache_url() {
@@ -37,15 +43,15 @@ export class KotakAdapter extends Adapter {
         }
         else {
             if (this.authData!.sid)
-                this.log('Headers not found for endpoint ' + endpt);
-
-            return {
-                'Accept': 'application/json',
-                'neo-fin-key': 'neotradeapi',
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Sid': this.authData!.sid,
-                'Auth': this.authData!.token
-            } as AuthHeaders;
+                return {
+                    'Accept': 'application/json',
+                    'neo-fin-key': 'neotradeapi',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Sid': this.authData!.sid,
+                    'Auth': this.authData!.token
+                } as AuthHeaders;
+            else
+                this.log('Nosid found for endpoint ' + endpt);
         }
     }
 

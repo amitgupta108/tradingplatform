@@ -2,6 +2,13 @@ import { services, modes, providers } from '../../utils/constants.js';
 
 export class ConfigService {
 
+    static className = 'CONFIGSERVICE';
+    static logEnabled = true;
+    static services = services;
+    static modes = modes;
+    static providers = providers;
+    static initialized = false;
+
     static log(...args) {
         if (this.logEnabled) {
             console.log(`[${this.className}]`, ...args);
@@ -13,35 +20,26 @@ export class ConfigService {
             console.error(`[${this.className}]`, ...args);
         }
     }
-    static async init() {
-        this.className = 'CONFIGSERVICE';
-        this.logEnabled = true;
-
-        this.services = services;
-        this.modes = modes;
-        this.providers = providers;
-
-        for (const [k, v] of Object.entries(this.services)) {
-            if (v.init === 'Y') {
-                const module = await import(v.filepath);
-                this.services[k].ref = new module[v.classdef](k);
-            }
-        }
-        this.initialized = true;
-    }
 
     static async initializeAll() {
-        await this.init();
-        const list = Object.entries(this.services);
-        list.forEach(([k, v]) => {
-            if (v.init === 'Y' && k !== 'CONFIGSERVICE')
-                this.doInit(v.ref);
+
+        const list = Array.from(Object.entries(this.services)).filter(([k, v]) => {
+            return v.init === 'Y';
+        });
+
+        for (const [k, v] of list) {
+            const module = await import(v.filepath);
+            this.services[k].ref = new module[v.classdef](k);
+        }
+
+        return list.map(async ([k, v]) => {
+            return await this.doInit(this.services[k].ref);
         });
     }
 
-    static doInit(service) {
+    static async doInit(service) {
         try {
-            const p = service.init();
+            var p = await service.init();
 
             if (p !== undefined) {
                 if (p instanceof Promise)
@@ -53,6 +51,7 @@ export class ConfigService {
         } catch (exception) {
             this.error('init sync error ' + service.name + ' ' + exception);
         }
+        return p;
     }
 
     static getServiceByName(name) {
@@ -90,6 +89,19 @@ export class ConfigService {
 
     static getFeatureMode(mode, feature) {
         return this.modes[mode][feature];
+    }
+
+    static getPartnerFeatureServices(servicename, feature, partnerfeature) {
+        const providerkey = this.getKeyByFeature(servicename, feature);
+
+        return Object.entries(this.modes).map(([k, v]) => {
+            if (v[feature] === providerkey)
+                return v[partnerfeature];
+        }).filter(x => x !== undefined)
+            .map(p => {
+                const service_name = this.providers[partnerfeature][p];
+                return [p, this.getServiceByName(service_name)];
+            });
     }
 
     static getModesForService(name, feature) {

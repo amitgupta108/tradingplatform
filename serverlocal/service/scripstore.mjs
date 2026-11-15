@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { ConfigService } from './config/configservice.mjs';
 import { filePaths, filters, tp_filters } from '../utils/constants.js';
-import { BrokerService } from './system/service.mjs';
+import { BrokerService } from './system/service.js';
 
 const FIELD_MAP = {
 	pSymbol: 'token',
@@ -71,23 +71,29 @@ export class ScripStore extends BrokerService {
 			let p;
 			if (process.env.PASSTHROUGH === 'Y')
 				p = this.remoteLoad(tp_filters);
-
 			else
 				p = this.load(filters);
 
 			return p.then((response) => {
 				this.initialized = true;
 				return { status: response };
-			})
-				.catch((error) => {
-					return { status: 'error', reason: error.message };
-				});
+			}).catch((error) => {
+				this.error(error);
+				return { status: 'error', reason: error.message };
+			});
 		}
 	}
 
 	async remoteLoad(filters) {
-		return await new Promise((resolve, reject) => {
-			const es = ConfigService.getServiceByName('EVENTSERVICE');
+		return await new Promise(async (resolve, reject) => {
+			const cs = ConfigService.getServiceByName('COMMONSERVICE');
+			const scrips = await cs.tpScrips(filters);
+			scrips.forEach((s) => {
+				this.inMemoryStore.set(s.scripReferenceKey, s);
+			});
+			this.log('scrips remote load, size ' + this.inMemoryStore.size);
+			resolve('success');
+			/*const es = ConfigService.getServiceByName('EVENTSERVICE');
 			es.addListener('scrips', (scrips) => {
 				scrips.forEach((s) => {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
@@ -97,7 +103,7 @@ export class ScripStore extends BrokerService {
 			});
 
 			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
-			this.tpsocket.getScrips(filters);
+			this.tpsocket.getScrips(filters);*/
 		});
 	}
 
