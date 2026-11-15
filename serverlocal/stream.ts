@@ -14,7 +14,7 @@ class StreamingService extends SystemService {
         this.usermap = new Map();
     }
 
-    init() {
+    async init() {
         const es = ConfigService.getServiceByName('EVENTSERVICE') as EventService;
         es.addListener('ordersim', (order: any) => {
             this.send('order', order);

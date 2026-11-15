@@ -66,7 +66,7 @@ export class ScripStore extends BrokerService {
 		this.inMemoryStore = new Map();
 	}
 
-	init() {
+	async init() {
 		if (!this.initialized) {
 			let p;
 			if (process.env.PASSTHROUGH === 'Y')
@@ -86,24 +86,17 @@ export class ScripStore extends BrokerService {
 
 	async remoteLoad(filters) {
 		return await new Promise(async (resolve, reject) => {
-			const cs = ConfigService.getServiceByName('COMMONSERVICE');
-			const scrips = await cs.tpScrips(filters);
-			scrips.forEach((s) => {
-				this.inMemoryStore.set(s.scripReferenceKey, s);
-			});
-			this.log('scrips remote load, size ' + this.inMemoryStore.size);
-			resolve('success');
-			/*const es = ConfigService.getServiceByName('EVENTSERVICE');
-			es.addListener('scrips', (scrips) => {
-				scrips.forEach((s) => {
+			try {
+				const cs = ConfigService.getServiceByName('COMMONSERVICE');
+				const scrips = await cs.tpScrips(filters);
+				for (const s of scrips) {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
-				});
+				}
 				this.log('scrips remote load, size ' + this.inMemoryStore.size);
 				resolve('success');
-			});
-
-			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
-			this.tpsocket.getScrips(filters);*/
+			} catch (error) {
+				reject(error);
+			}
 		});
 	}
 

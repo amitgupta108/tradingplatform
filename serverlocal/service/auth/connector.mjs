@@ -10,15 +10,18 @@ export class Connector extends Generic {
         this.provider = provider;
         this.name = `${provider}-connector`;
         this.initialized = false;
+        this.es = ConfigService.getServiceByName('EVENTSERVICE');
         this.load_on_start = load_on_start;
         this.authdata;
     }
 
-    async loadAuthdata() {
+    async loadAuthdata(notify) {
         const l_authdata = await Connector.authkeys(this.provider, undefined);
         if (l_authdata?.date === new Date().toDateString()) {
             this.authdata = l_authdata;
             this.initialized = true;
+            if (notify)
+                this.es.emit('authdata', this.authdata);
         }
         return this.initialized;
     }
@@ -26,8 +29,7 @@ export class Connector extends Generic {
     async saveAndNotify(authdata) {
         if (authdata?.date === new Date().toDateString()) {
             this.authdata = authdata;
-            const es = ConfigService.getServiceByName('EVENTSERVICE');
-            es.emit('authdata', this.authdata);
+            this.es.emit('authdata', this.authdata);
             await Connector.authkeys(authdata.provider, this.authdata);
 
             return { status: 'success' };

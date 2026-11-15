@@ -1,4 +1,4 @@
-import { io } from 'socket.io-client';
+/*import { io } from 'socket.io-client';
 import { WebSocket as wsSocket } from 'ws';
 import EventEmitter from "node:events";
 

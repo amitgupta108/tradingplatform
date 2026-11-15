@@ -42,6 +42,7 @@ export class EventService extends SystemService {
                     this.setImmediateEvent(name);
             }
         }
+        return true;
     }
 
     setIntervalEvent(name: string) {
