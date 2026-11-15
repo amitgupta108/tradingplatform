@@ -18,11 +18,6 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         super(name);
     }
 
-    onAuthData(authdata) {
-        this.authData = authdata;
-        this.adapter.initiateConnect(this.authData, false);
-    }
-
     startStreamer(stmrkey) {
         const stmr = this.streamers.find((s) => s.key === stmrkey);
 

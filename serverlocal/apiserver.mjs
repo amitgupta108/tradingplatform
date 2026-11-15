@@ -1,6 +1,6 @@
 import { ConfigService } from './service/config/configservice.mjs';
-import { SystemService } from './service/system/service.mjs';
-import { streamer } from './stream.mjs';
+import { SystemService } from './service/system/service.js';
+import { streamer } from './stream.js';
 
 class APIServer extends SystemService {
     constructor() {
@@ -114,18 +114,9 @@ class APIServer extends SystemService {
             s.emit('scrips', scrips);
         });
 
-        s.on('authenticate', this.catchAsync((text) => {
+        s.on('authenticate', this.catchAsync((authcode) => {
             const service = ConfigService.getAdminService(mode, 'BROKER_AUTH');
-            if (text.length === 8) {
-                const es = ConfigService.getServiceByName('EVENTSERVICE');
-                es.emit('ext_auth', {
-                    date: new Date().toDateString(),
-                    provider: 'icici',
-                    authcode: text
-                });
-            }
-            else
-                return service.authenticate(text);
+            return service.authenticate(authcode);
         }, 'authenticate'));
 
         /*

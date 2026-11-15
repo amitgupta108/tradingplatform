@@ -1,16 +1,9 @@
 {
     "services": {
-        "CONFIGSERVICE": {
-            "init": "Y",
-            "classdef": "ConfigService",
-            "filepath": "../config/configservice.mjs",
-            "type": "system",
-            "seq": "1"
-        },
         "EVENTSERVICE": {
             "init": "Y",
             "classdef": "EventService",
-            "filepath": "../system/eventservice.mjs",
+            "filepath": "../system/eventservice.js",
             "type": "system",
             "seq": "2"
         },
@@ -28,6 +21,13 @@
             "type": "system",
             "seq": "4"
         },
+        "AUTHSERVICE": {
+            "init": "Y",
+            "classdef": "AuthService",
+            "filepath": "../auth/authservice.mjs",
+            "type": "system",
+            "seq": "5"
+        },
         "SERVERSTREAM": {
             "init": "N",
             "classdef": "ServerStreamManager",
@@ -35,7 +35,7 @@
             "type": "infra"
         },
         "ADAPTERFACTORY": {
-            "init": "Y",
+            "init": "N",
             "classdef": "AdapterFactory",
             "filepath": "./adapterfactory.mjs",
             "type": "infra",
@@ -85,7 +85,7 @@
             "type": "broker"
         },
         "KOTAKNEOTRADE": {
-            "init": "N",
+            "init": "Y",
             "classdef": "KotakNeoTradeService",
             "filepath": "../../broker/kotak/t_kotakneo.mjs",
             "type": "broker"
@@ -97,7 +97,7 @@
             "type": "broker"
         },
         "ICICILIVEVIEW": {
-            "init": "N",
+            "init": "Y",
             "classdef": "BreezeMarketDataLive",
             "filepath": "../../broker/icici/m_breeze_live.mjs",
             "type": "broker"
@@ -107,13 +107,6 @@
             "classdef": "OpenAlgoMarketData",
             "filepath": "../../broker/openalgo/m_openalgo.mjs",
             "type": "broker"
-        },
-        "AUTHSERVICE": {
-            "init": "Y",
-            "classdef": "AuthService",
-            "filepath": "../auth/authservice.mjs",
-            "type": "system",
-            "seq": "20"
         },
         "CONFIGURATIONS": {
             "init": "Y",

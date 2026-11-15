@@ -1,4 +1,4 @@
-import { InfraService } from "../system/service.mjs"
+import { InfraService } from "../system/service.js"
 import { ConfigService } from "../config/configservice.mjs"
 
 export class ServerStreamManager extends InfraService {

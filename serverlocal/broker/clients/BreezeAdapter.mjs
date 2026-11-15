@@ -1,45 +1,52 @@
 import { BreezeConnect } from 'breezeconnect';
-import { Adapter } from './adapter.js';
+import { TPAdapter } from './adapter.js';
+import { ConfigService } from '../../service/config/configservice.mjs';
 
-export class BreezeAdapter extends Adapter {
+export class BreezeAdapter extends TPAdapter {
     constructor() {
         super();
         this.name = 'BREEZEADAPTER';
-        this.adapter = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+        this.isConnected = false;
+        this.breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+        //this.iSocket;
     }
 
-    connect() {
-        if (this.authenticated)
-            return;
-        return this.adapter.generateSession(process.env.breeze_secret, this.authData.sid)
+    async init() {
+        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
+        const authData = await authservice.authdata('icici')
+        if (authData.date === new Date().toDateString()) {
+            this.authData = authData;
+            await this.connect().catch(e => { this.error('breeze connection error ' + e); });
+        }
+        return this.authenticated;
+    }
+
+    async connect() {
+        return this.breeze.generateSession(process.env.breeze_secret,
+            this.authData.sid ?? this.authData.authcode)
             .then((resp) => {
-                this.authenticated = true;
                 this.log('breeze session started ');
-/*
-                this.adapter.wsConnect();
-                this.adapter.onTicks = this.handleTicks.bind(this);
-                this.ws = this.adapter.socket;
-                this.ws.on('connect', () => {
+
+                this.breeze.wsConnect();
+                this.breeze.onTicks = this.handleTicks.bind(this);
+                /*this.iSocket = this.breeze.socket;
+                this.iSocket.on('connect', () => {
                     this.isConnected = true;
                     this.log('breeze socket connected');
                 });
 
-                this.ws.on('connect_error', () => {
+                this.iSocket.on('connect_error', () => {
                     this.log('breeze socket connection error');
                 });
 
-                this.ws.on('disconnect', () => {
+                this.iSocket.on('disconnect', () => {
                     this.isConnected = false;
                     this.log('breeze socket disconnected');
-                });
-  */          }).catch((error) => {
-                    this.error('breeze connection error ' + error);
-                });
-    }
-
-    initiateConnect(authData) {
-        this.authData = authData;
-        return this.connect();
+                });*/
+                this.authenticated = true;
+            }).catch((error) => {
+                this.error('breeze connection error ' + error);
+            });
     }
 
     getHistory(scrip, sTime, endTime, interval) {
@@ -48,21 +55,21 @@ export class BreezeAdapter extends Adapter {
         request.fromDate = this.ISODate(sTime);
         request.toDate = this.ISODate(endTime);
 
-        return this.adapter.getHistoricalDatav2(request);
+        return this.breeze.getHistoricalDatav2(request);
     }
 
     subscribe(request, action) {
         if (action === 'subs')
-            return this.adapter.subscribeFeeds([this.getRequest(request)]);
+            return this.breeze.subscribeFeeds([this.getRequest(request)]);
         else
-            return this.adapter.unsubscribeFeeds([this.getRequest(request)]);
+            return this.breeze.unsubscribeFeeds([this.getRequest(request)]);
     }
 
     handleTicks(q) {
         if (q.symbol?.includes('VIX') || q.stock_code?.includes('VIX'))
-            super.emit('vix', q);
+            this.emit('vix', q);
         else
-            super.emit('live-quote', q);
+            this.emit('live-quote', q);
     }
 
     getRequest(scrip) {

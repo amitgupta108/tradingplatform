@@ -1,16 +1,20 @@
-import { streamer } from '../../stream.mjs';
-import { Socket } from './adapter.js';
+import { streamer } from '../../stream.js';
+import { TPSocket } from './adapter.js';
 
-export class KotakHSISocket extends Socket {
+export class KotakHSISocket extends TPSocket {
     constructor() {
         super();
         this.name = 'HSICLIENT';
     }
 
-    initiateConnect(authData) {
-        this.authData = authData;
-        const url = `wss://${authData.baseUrl.substring(8)}/realtime`
-        return this.connect(url, 'ws');
+    async init() {
+        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
+        const authData = await authservice.authdata('kotak')
+        if (authData.date === new Date().toDateString()) {
+            this.authData = authData;
+            const url = `wss://${authData.baseUrl.substring(8)}/realtime`
+            return this.connect(url);
+        }
     }
 
     onOpen() {
@@ -18,6 +22,11 @@ export class KotakHSISocket extends Socket {
         this.ws.on('pong', () => {
             streamer.broadcast('hb', { order_socket: this.ws?.readyState });
         });
+    }
+
+    onError(error) {
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+        this.emit('error', this.name, JSON.stringify({ error: error, code: 401 }));
     }
 
     authenticate() {

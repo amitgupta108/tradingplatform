@@ -1,5 +1,5 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { UserService } from '../../service/system/service.mjs';
+import { UserService } from '../../service/system/service.js';
 
 export class OrderSimulator extends UserService {
     constructor(name) {
@@ -13,13 +13,12 @@ export class OrderSimulator extends UserService {
         if (!this.initialized) {
             this.es = ConfigService.getServiceByName('EVENTSERVICE');
 
-            const mymodes = ConfigService.getModesForService(this.name, 'trade');
-            mymodes.forEach((m) => {
-                const s = ConfigService.getActiveServiceByMode('view', m);
-                if (s !== undefined) {
-                    const eventname = s.registerPriceFeed();
-                    this.es.addListener(eventname, (q) => {
-                        this.orderExecutionSim(eventname, q);
+            const partnerservices = ConfigService.getPartnerFeatureServices(this.name, 'trade', 'view');
+            partnerservices.forEach(([key, service]) => {
+                if (service !== undefined) {
+                    const eventname = service.registerPriceFeed(); //eventname is not loaded initially, hence resorting to m.
+                    this.es.addListener(key, (q) => {
+                        this.orderExecutionSim(key, q);
                     });
                 }
             });

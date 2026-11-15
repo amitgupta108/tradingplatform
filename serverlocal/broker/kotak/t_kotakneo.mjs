@@ -1,6 +1,7 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
 import { EXCHANGES } from '../../utils/constants.js';
+import { KotakAdapter } from '../clients/KotakAdapter.js';
 
 export class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name) {
@@ -8,20 +9,9 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl {
     }
 
     addListeners() {
-        this.es = ConfigService.getServiceByName('EVENTSERVICE');
-        this.es.addListener('kotak_auth', (data) => {
-            this.onAuthData(data);
-            this.ordermanager.register(this.trade_mode, 'HSICLIENT');
-        });
-
-        this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
-        this.adapter = this.af.getAdapter('KOTAKADAPTER');
-    }
-
-    onAuthData(authData) {
-        this.authData = authData;
-        this.adapter.initiateConnect(this.authData);
-        this.initialized = true;
+        this.adapter = KotakAdapter.getInstance();
+        this.ordermanager.register(this.trade_mode, 'HSICLIENT');
+        return true;
     }
 
     async placeOrder(appid, order, modify = false) {

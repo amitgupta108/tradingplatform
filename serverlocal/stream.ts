@@ -1,54 +1,60 @@
 import { SystemService } from './service/system/service.js';
 import { ConfigService } from './service/config/configservice.mjs';
+import { EventService } from './service/system/eventservice.js';
+
+interface UserMapEntry {
+    socket: any;
+    mode: string;
+}
 
 class StreamingService extends SystemService {
-    constructor(name) {
+    usermap: Map<string, UserMapEntry>;
+    constructor(name: string) {
         super(name);
-        this.name = name;
         this.usermap = new Map();
     }
 
     init() {
-        this.es = ConfigService.getServiceByName('EVENTSERVICE');
-        this.es.addListener('ordersim', (order) => {
+        const es = ConfigService.getServiceByName('EVENTSERVICE') as EventService;
+        es.addListener('ordersim', (order: any) => {
             this.send('order', order);
         });
         this.initialized = true;
         return { status: 'initialized' };
     }
 
-    emitOrders(order) {
+    emitOrders(order: any): void {
         this.send('order', order);
     }
 
-    emitQs(q) {
+    emitQs(q: any): void {
         this.send('quote', q);
     }
 
-    emitHistQs(appid, symbol, qA) {
+    emitHistQs(appid: string, symbol: string, qA: any) {
         const app_obj = this.getFromUserMap(appid);
         if (app_obj !== undefined)
-            this.emit(app_obj.socket, 'history', { symbol: symbol, qA: qA });
+            this.finalEmit(app_obj.socket, 'history', { symbol: symbol, qA: qA });
     }
 
-    send(type, msg) {
+    private send(type: string, msg: any) {
         const app_obj = this.getFromUserMap(msg.appid);
         if (app_obj !== undefined)
-            this.emit(app_obj.socket, type, msg);
+            this.finalEmit(app_obj.socket, type, msg);
         else
             this.group_emit(type, msg);
     }
 
-    group_emit(type, msg) {
+    private group_emit(type: string, msg: any) {
         const receivers = this.getReceivers(type, msg);
-        receivers.forEach((appid) => {
+        receivers.forEach((appid: string) => {
             msg.appid = appid;
-            this.emit(this.getFromUserMap(appid).socket, type, msg);
+            this.finalEmit(this.getFromUserMap(appid)?.socket, type, msg);
         });
     }
 
-    getReceivers(type, msg) {
-        const receivers = [];
+    private getReceivers(type: string, msg: any): string[] {
+        const receivers: string[] = [];
         if (type === 'order') {
             for (const [k, v] of this.usermapEntries()) {
                 if (msg.modes.includes(v.mode))
@@ -58,29 +64,29 @@ class StreamingService extends SystemService {
         return receivers;
     }
 
-    broadcast(type, msg, group) {
+    broadcast(type: string, msg: any, group?: string) {
         for (const [k, v] of this.usermapEntries()) {
-            this.emit(v.socket, type, msg);
+            this.finalEmit(v.socket, type, msg);
         }
     }
 
-    emit(s, type, msg) {
+    private finalEmit(s: any, type: string, msg: any): void {
         s.emit(type, msg);
     }
 
-    addToUserMap(appid, app_obj) {
+    addToUserMap(appid: string, app_obj: UserMapEntry): void {
         this.usermap.set(appid, app_obj);
     }
 
-    getFromUserMap(appid) {
+    getFromUserMap(appid: string): UserMapEntry | undefined {
         return this.usermap.get(appid);
     }
 
-    deleteFromUserMap(appid) {
+    deleteFromUserMap(appid: string): void {
         this.usermap.delete(appid);
     }
 
-    usermapEntries() {
+    private usermapEntries(): IterableIterator<[string, UserMapEntry]> {
         return this.usermap.entries();
     }
 

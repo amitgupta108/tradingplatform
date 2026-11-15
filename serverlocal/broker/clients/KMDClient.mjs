@@ -1,17 +1,22 @@
 
 import { PacketParser } from '../../utils/PacketParser.mjs';
-import { Socket } from './adapter.js';
+import { TPSocket } from './adapter.js';
+import { ConfigService } from '../../service/config/configservice.mjs';
 
-export class KMDClient extends Socket {
+export class KMDClient extends TPSocket {
     constructor() {
         super();
         this.name = 'KMDCLIENT';
         this.dividers = null;
     }
 
-    initiateConnect(authData) {
-        this.authData = authData;
-        return this.connect(this.authData.feedUrl, 'ws');
+    async init() {
+        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
+        const authData = await authservice.authdata('kotak')
+        if (authData.date === new Date().toDateString()) {
+            this.authData = authData;
+            await this.connect(this.authData.feedUrl);
+        }
     }
 
     onOpen() {

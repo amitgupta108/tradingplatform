@@ -1,6 +1,6 @@
 import { ConfigService } from "../config/configservice.mjs";
 import { SubscribersMap } from "./subscription.mjs";
-import { UserService } from "../system/service.mjs";
+import { UserService } from "../system/service.js";
 
 export class SubsManager extends UserService {
     constructor(name) {

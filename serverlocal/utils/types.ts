@@ -30,8 +30,8 @@ export interface Endpoints {
 
 
 export interface IExpiries {
-    options: string[];
-    futures: string[];
+    'FUTURES': string[];
+    'OPTIONS': string[];
 }
 
 export type TExpiriesSet = {

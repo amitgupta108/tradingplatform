@@ -1,11 +1,15 @@
-import { hServer } from './httpsserver.mjs';
+import { WebServer } from './httpsserver.js';
 import { Server } from "socket.io";
 
-export class SocketIO
-{
-    constructor()
-    {
-        this.sio = new Server(hServer, {
+export class SocketIO {
+    webServer: WebServer | null = null;
+    sio: Server | null = null;
+    constructor() {
+
+        this.webServer = new WebServer();
+        this.webServer.init();
+
+        this.sio = new Server(this.webServer.hServer as any, {
             cors: {
                 origin: '*',
                 methods: ["GET", "POST"],
@@ -19,13 +23,12 @@ export class SocketIO
         });
     }
 
-    async start()
-    {
-        const {AppClientManager} = await import('../serverlocal/app.mjs');
+    async start() {
+        const { AppClientManager } = await import('../serverlocal/app.mjs');
         const app = new AppClientManager();
         await app.startServices();
 
-        this.sio.on('connection', (s) => {
+        this.sio?.on('connection', (s) => {
             app.connect(s);
         });
     }
