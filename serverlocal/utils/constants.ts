@@ -1,6 +1,6 @@
 import scrips_config from '../data/scrips_config.json' with { type: 'json' };
 import services_config from '../data/services_config.json' with { type: 'json' };
-import apps_config from '../config/app_config.json' with { type: 'json' };
+import apps_config from '../../../../secure/app_config.json' with { type: 'json' };
 
 export const STOCKCODES = ['NIFTY', 'CRUDEOIL'];
 

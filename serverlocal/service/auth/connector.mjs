@@ -27,9 +27,12 @@ export class Connector extends Generic {
         if (authdata?.date === new Date().toDateString()) {
             this.authdata = authdata;
             const es = ConfigService.getServiceByName('EVENTSERVICE');
-            es.emit(`${authdata.provider}_auth`, this.authdata);
-            return await Connector.authkeys(authdata.provider, this.authdata);
+            es.emit('authdata', this.authdata);
+            await Connector.authkeys(authdata.provider, this.authdata);
+
+            return { status: 'success' };
         }
+        return { status: 'error', reason: 'authdata is not valid ' + authdata.toString() }
     }
 
     static async authkeys(id, cred) {
@@ -63,15 +66,10 @@ export class Connector extends Generic {
         return cred;
     }
 
-    static async remoteFetch(provider) {
-        return fetch(`${process.env.TP_REMOTE_URL}/api/value`, {
-            method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ provider: provider })
-        });
+    async remoteFetch(provider) {
+        const commonutils = ConfigService.getServiceByName('COMMONSERVICE');
+        const l_authdata = await commonutils.tpValues(provider);
+        return await this.saveAndNotify(l_authdata);
     }
 }
 
@@ -81,21 +79,13 @@ export class ICICIConnector extends Connector {
     }
 
     async authenticate(authcode) {
-        let l_authdata;
-        if (authcode === 'tp-icici-p') {
-            const response = await Connector.remoteFetch(this.provider);
-            if (response.ok)
-                l_authdata = await response.json();
-            else
-                return { status: 'error', reason: response.statusText };
-        }
-        else
-            l_authdata = {
-                sid: authcode, provider: this.provider,
-                date: new Date().toDateString()
-            };
-        await this.saveAndNotify(l_authdata);
-        return { status: 'success' };
+        if (authcode === 'tp-icici-p')
+            return await this.remoteFetch(this.provider);
+
+        return await this.saveAndNotify({
+            sid: authcode, provider: this.provider,
+            date: new Date().toDateString()
+        });
     }
 }
 
@@ -105,32 +95,21 @@ export class KotakConnector extends Connector {
     }
 
     async authenticate(authcode) {
-        try {
-            let response;
-            if (authcode === 'tp-kotap-p')
-                response = await Connector.remoteFetch(this.provider);
-            else {
-                const lr = await this.apiLogin(authcode);
-                if (lr.ok) {
-                    const lr_result = (await lr.json()).data;
-                    response = await this.apiValidate(lr_result.sid, lr_result.token);
-                }
-                else
-                    return { status: 'error', reason: 'login api call not completed ' + lr.statusText };
-            }
-            if (response.ok) {
-                const { baseUrl, feedUrl, sid, token, ...result } = (await response.json()).data;
-                const l_authdata = { baseUrl, feedUrl, sid, token, provider: this.provider, date: new Date().toDateString() };
-                await this.saveAndNotify(l_authdata);
-                return { status: 'success' };
-            }
-            else
-                return { status: 'error', reason: 'kotak validate failed ' + response.statusText };
-        }
-        catch (exception) {
-            this.error('kotak auth error ' + exception);
-            return { status: 'error', reason: 'kotak auth error ' + exception };
-        }
+        if (authcode === 'tp-kotap-p')
+            return await this.remoteFetch(this.provider);
+
+        const lr = await this.apiLogin(authcode);
+        if (!lr.ok)
+            return { status: 'error', reason: 'login api call not completed ' + lr.statusText };
+
+        const lr_result = (await lr.json()).data;
+        const response = await this.apiValidate(lr_result.sid, lr_result.token);
+        if (!response.ok)
+            return { status: 'error', reason: 'kotak validate failed ' + response.statusText };
+
+        const { baseUrl, feedUrl, sid, token, ...result } = (await response.json()).data;
+        const l_authdata = { baseUrl, feedUrl, sid, token, provider: this.provider, date: new Date().toDateString() };
+        return await this.saveAndNotify(l_authdata);
     }
 
     apiLogin(num) {

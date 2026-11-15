@@ -150,19 +150,27 @@ export class WebServer {
             res.writeHead(401);
             res.end(JSON.stringify({ error: 'Unauthorized' }));
         }
-        else
+        else {
+            let wrapper: any;
             if (req.url === '/api/value' && req.method === 'POST') {
                 const jsonbody = await this.getRequestBody(req) as { provider: string };
-                const wrapper = await this.dataApi?.getValues(jsonbody?.provider);
-                res.writeHead(200);
-                res.end(JSON.stringify(wrapper));
+                wrapper = await this.dataApi?.getValues(jsonbody?.provider);
             }
             else if (req.url === '/api/scrips' && req.method === 'POST') {
                 const jsonbody = await this.getRequestBody(req) as { filters: any };
-                const scrips = await this.dataApi?.getScrips(jsonbody?.filters);
-                res.writeHead(200);
-                res.end(JSON.stringify(scrips));
+                wrapper = await this.dataApi?.getScrips(jsonbody?.filters);
             }
+            else if (req.url === '/api/history' && req.method === 'POST') {
+                const jsonbody = await this.getRequestBody(req) as { request: any };
+                wrapper = await this.dataApi?.getHistory(jsonbody?.request, undefined);
+            }
+            else if (req.url === '/api/expiries' && req.method === 'POST') {
+                const jsonbody = await this.getRequestBody(req) as { options: any };
+                wrapper = await this.dataApi?.getExpiries(jsonbody?.options);
+            }
+            res.writeHead(200);
+            res.end(JSON.stringify(wrapper));
+        }
     }
 
     getRequestBody(req: IncomingMessage) {

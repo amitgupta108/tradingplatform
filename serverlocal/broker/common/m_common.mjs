@@ -16,32 +16,47 @@ export class CommonService extends BrokerMarketDataImpl {
         }
     }
 
+    async tpExpiries(stockCode) {
+        this.adapter = await TPRemoteAdapter.getInstance();
+        if (this.adapter.isAuthenticated)
+            return await this.adapter.getExpiries(stockCode);
+    }
+
     async tpScrips(filters) {
         this.adapter = await TPRemoteAdapter.getInstance();
         if (this.adapter.isAuthenticated)
             return await this.adapter.getScrips(filters);
     }
 
-    history(appid, r) {
-        const scrip = this.getScrip(r.symbol);
-        if (EXCHANGES[r.stockCode] !== 'mcx_fo') {
-            r.exchange = ['NIFTY', 'INDVIX'].includes(r.symbol) ? 'NSE' : 'NFO';
-            r.stockCode = r.symbol === 'INDVIX' ? 'INDVIX' : scrip.stockCode;
-            r.expiry = scrip.expiry;
-            r.interval = r.interval ?? '5minute';
-            r.strike = scrip.strike;
-            r.right = scrip.right;
-            const s = ConfigService.getServiceByName('ICICIHISTVIEW');
+    async tpValues(provider) {
+        this.adapter = await TPRemoteAdapter.getInstance();
+        if (this.adapter.isAuthenticated)
+            return await this.adapter.getValues(provider);
+    }
 
-            return s.getHistory(appid, r)
-                .then((response) => {
-                    if (response?.Error === null) {
-                        streamer.emitHistQs(appid, r.symbol, response.Success);
-                        return { status: 'success' };
-                    }
-                    return { status: 'error', reason: 'history fetch error ' + response.Error };
-                });
+    async tpHistory(request) {
+        this.adapter = await TPRemoteAdapter.getInstance();
+        if (this.adapter.isAuthenticated)
+            return await this.adapter.getHistory(request);
+    }
+
+    async history(appid, request) {
+        const scrip = this.getScrip(request.symbol);
+        if (EXCHANGES[request.stockCode] !== 'mcx_fo') {
+            request.exchange = ['NIFTY', 'INDVIX'].includes(request.symbol) ? 'NSE' : 'NFO';
+            request.stockCode = request.symbol === 'INDVIX' ? 'INDVIX' : scrip.stockCode;
+            request.expiry = scrip.expiry;
+            request.interval = request.interval ?? '5minute';
+            request.strike = scrip.strike;
+            request.right = scrip.right;
+
+            const s = ConfigService.getServiceByName('ICICIHISTVIEW');
+            const response = await s.getHistory(appid, request);
+            streamer.emitHistQs(appid, request.symbol, response.Success);
+
+            return { status: 'success' };
         }
+        return { status: 'error', reason: 'history fetch error ' + response.Error };
     }
 
     onVix(q) {
