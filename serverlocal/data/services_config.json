@@ -28,6 +28,13 @@
             "type": "system",
             "seq": "5"
         },
+        "COMMONSERVICE": {
+            "init": "Y",
+            "classdef": "CommonService",
+            "filepath": "../../broker/common/m_common.mjs",
+            "type": "broker",
+            "seq": "6"
+        },
         "SERVERSTREAM": {
             "init": "N",
             "classdef": "ServerStreamManager",
@@ -52,12 +59,6 @@
             "init": "N",
             "classdef": "OpenAlgoTradeService",
             "filepath": "../../broker/openalgo/t_openalgo.mjs",
-            "type": "broker"
-        },
-        "COMMONSERVICE": {
-            "init": "Y",
-            "classdef": "CommonService",
-            "filepath": "../../broker/common/m_common.mjs",
             "type": "broker"
         },
         "SCRIPSTORE": {

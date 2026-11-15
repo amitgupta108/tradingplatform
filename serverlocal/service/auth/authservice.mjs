@@ -7,11 +7,12 @@ export class AuthService extends SystemService {
     constructor(name) {
         super(name);
         this.appclients = appclients;
+        this.serverclients = serverclients;
         this.modes = modes;
         this.access = access;
         this.connectors = {
-            kotak: new KotakConnector('kotak', false),
-            icici: new ICICIConnector('icici', false)
+            kotak: new KotakConnector('kotak', true),
+            icici: new ICICIConnector('icici', true)
         }
     }
 
@@ -25,14 +26,14 @@ export class AuthService extends SystemService {
         return { status: status };
     }
 
-    authenticate(authcode) {
+    async authenticate(authcode) {
         let provider;
         if (authcode.length === 6 || authcode === 'tp-kotak-p')
             provider = 'kotak';
         else if (authcode.length === 8 || authcode === 'tp-icici-p')
             provider = 'icici';
 
-        return this.connectors[provider].authenticate(authcode);
+        return await this.connectors[provider].authenticate(authcode);
     }
 
     async authdata(provider) {

@@ -10,6 +10,7 @@ export class TPRemoteAdapter extends TPAdapter {
         scrips: new URL(this.URL + '/api/scrips').href,
         history: new URL(this.URL + '/api/history').href,
         expiries: new URL(this.URL + '/api/expiries').href,
+        values: new URL(this.URL + '/api/values').href,
     };
 
     constructor() {
@@ -24,10 +25,10 @@ export class TPRemoteAdapter extends TPAdapter {
             sid: process.env.tp_appKey, token: process.env.tp_mode,
         } as AuthData;
 
-        if (!this.connectSocket && this.URL) {
+        if (this.connectSocket) {
             this.socket = io(this.URL, {
                 auth: {
-                    token: process.env.tp_appKey,
+                    appid: process.env.tp_appKey,
                     mode: process.env.tp_mode,
                 },
                 reconnection: true,
@@ -57,8 +58,16 @@ export class TPRemoteAdapter extends TPAdapter {
         return resp;
     }
 
-    async getHistory(stockCode: string, start: string, end: string, interval: string = '5min'): Promise<any> {
-        let resp = await this.post('history', { stockCode: stockCode, startDate: start, endDate: end, interval: interval });
+    async getValues(provider: string): Promise<any> {
+        let resp = await this.post('values', { provider: provider });
+        if (resp.ok) {
+            resp = await resp.json();
+        }
+        return resp;
+    }
+
+    async getHistory(request: any): Promise<any> {
+        let resp = await this.post('history', { request: request });
         if (resp.ok) {
             resp = (await resp.json());
         }

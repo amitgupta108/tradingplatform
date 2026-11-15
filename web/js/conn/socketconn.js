@@ -3,7 +3,7 @@ let socket;
 function connect() {
 	socket = io(`${window.location.origin}`, {
 		auth: {
-			token: instrument.appid,
+			appid: instrument.appid,
 			mode: instrument.mode
 		},
 		reconnection: false,

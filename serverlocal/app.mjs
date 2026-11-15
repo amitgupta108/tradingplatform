@@ -37,7 +37,7 @@ export class AppClientManager extends ClientManager {
     }
 
     connect(s) {
-        const appid = s.handshake.auth.token;
+        const appid = s.handshake.auth.appid;
         const mode = s.handshake.auth.mode;
 
         const as = ConfigService.getServiceByName('AUTHSERVICE');
@@ -61,14 +61,14 @@ export class AppClientManager extends ClientManager {
     }
 
     registerDataHandlers(s) {
-        s.on('expiries', (stockCode) => {
-            this.send(s, 'expiries', this.dataApi.getExpiries(stockCode, undefined));
+        s.on('expiries', async (stockCode) => {
+            this.send(s, 'expiries', await this.dataApi.getExpiries({ stockCode: stockCode }));
         });
 
         s.on('historyv2', this.catchAsync('historyv2', async (requests) => {
             this.log("history request " + requests.length);
             for (const r of requests) {
-                const resp = await this.dataApi.getHistoryAsync(r);
+                const resp = await this.dataApi.getHistory(r, undefined);
                 this.send(s, 'historyv2', { symbol: r.symbol, qA: resp });
             }
         }));

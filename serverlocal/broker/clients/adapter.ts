@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { AuthData } from '../../utils/types.js'
 import { WebSocket } from "ws";
+import { ConfigService } from "../../service/config/configservice.mjs";
 
 abstract class BasicAdapter extends EventEmitter {
     logEnabled: boolean = true;
@@ -10,6 +11,16 @@ abstract class BasicAdapter extends EventEmitter {
     constructor() {
         super()
     }
+
+    protected init() {
+        const es = ConfigService.getServiceByName('EVENTSERVICE');
+        es.addListener('authdata', (authData: AuthData) => {
+            this.authData = authData;
+            this.onAuthData();
+        });
+    }
+
+    abstract onAuthData(): void;
 
     log(...args: string[]) {
         if (this.logEnabled) {
@@ -43,6 +54,10 @@ export abstract class TPAdapter extends BasicAdapter {
             await (targetclassdef.instance as any).init();
         }
         return targetclassdef.instance;
+    }
+
+    onAuthData() {
+        this.isAuthenticated = true;
     }
 }
 
@@ -78,6 +93,10 @@ export abstract class TPSocket extends BasicAdapter {
         return targetclassdef.instance;
     }
 
+    onAuthData(): void {
+        this.connect(this.url!);
+    }
+
     async connect(url: string, autoreconnection: boolean = false) {
         if (this.isConnected || this.isConnecting) {
             this.log('Already connected or connecting');
@@ -90,6 +109,7 @@ export abstract class TPSocket extends BasicAdapter {
                 this.ws.addEventListener('open', () => {
                     this.isConnecting = false;
                     this.isConnected = true;
+                    this.url = url;
                     this.log('WebSocket connected');
                     this.onOpen();
                     this.emit('open', this.reconnectAttempts);
