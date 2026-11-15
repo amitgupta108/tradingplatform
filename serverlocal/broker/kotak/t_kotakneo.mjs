@@ -8,8 +8,8 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl {
         super(name);
     }
 
-    addListeners() {
-        this.adapter = KotakAdapter.getInstance();
+    async addListeners() {
+        this.adapter = await KotakAdapter.getInstance();
         this.ordermanager.register(this.trade_mode, 'HSICLIENT');
         return true;
     }
@@ -77,26 +77,24 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl {
 
     async orderbook(appid, stockCode) {
         const response = await this.adapter.get('orderbook');
-        let orders;
-        if (response.ok) {
-            const order_json = (await response.json());
+        if (!response.ok) {
+            this.log('error calling orderbook api ' + response.status + ' ' + response.statusText);
+            return { status: 'error', reason: 'error calling orderbook api ' + response.status + ' ' + response.statusText };
+        }
 
-            if (order_json.stat !== 'Not_Ok') {
-                orders = order_json.data;
-                return orders.map((order) => {
-                    const odr = this.ordermanager.formatLiveOrder(order);
-                    odr.trade_mode === this.trade_mode;
-                    this.ordermanager.addOrders(odr);
-                    return odr;
-                })
-                    .filter((order) => order.stockCode === stockCode)
-                    .sort((a, b) => a.orderid - b.orderid);
-            }
-            this.log('error fetching orders ' + order_json.status + ' ' + order_json.statusText);
+        const order_json = (await response.json());
+        if (order_json.stat === 'Not_Ok') {
+            this.log('error fetching orders ' + JSON.stringify(order_json));
             return [];
         }
-        this.log('error fetching orders ' + response.status + ' ' + response.statusText);
-        return [];
+
+        const orders = order_json.data;
+        return orders.filter((order) => {
+            const odr = this.ordermanager.formatLiveOrder(order);
+            odr.trade_mode === this.trade_mode;
+            this.ordermanager.addOrders(odr);
+            return order.stockCode === stockCode;
+        }).sort((a, b) => a.orderid - b.orderid);
     }
 
     async positions(appid, stockCode, cf = true) {
@@ -109,10 +107,10 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl {
                 positions = position_json.data;
                 return this.ordermanager.formatPositionRecords(positions, stockCode, cf);
             }
-            this.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
+            this.log('error fetching positions ' + JSON.stringify(position_json));
             return [];
         }
-        this.log('error fetching positions ' + response.status + ' ' + response.statusText);
+        this.log('error calling positions api' + response.status + ' ' + response.statusText);
         return [];
     }
 }

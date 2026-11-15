@@ -17,12 +17,14 @@ export class AuthService extends SystemService {
     }
 
     async init() {
-        const values = Array.from(Object.values(this.connectors));
         let status = '';
-        for (const v of values) {
-            if (v.load_on_start)
-                status = status + (await v.loadAuthdata()) + ' ';
-        }
+        const connectors = Array.from(Object.values(this.connectors));
+        for (const c of connectors) {
+            if (c.load_on_start) {
+                const s = await c.loadAuthdata(true);
+                status += s + ' ';
+            }
+        };
         return { status: status };
     }
 

@@ -6,15 +6,15 @@ export class Service extends EventEmitter {
 
     constructor(name: string) {
         super();
-        if (new.target === Service) {
+        if (new.target === Service)
             throw new TypeError("Cannot instantiate Parent class directly");
-        }
+
         this.name = name;
         this.initialized = false;
         this.logEnabled = true;
     }
 
-    init() {
+    async init() {
         if (!this.initialized) {
             if (typeof (this as any).cInit === 'function')
                 (this as any).cInit();

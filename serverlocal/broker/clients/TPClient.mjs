@@ -1,4 +1,4 @@
-import { Socket } from './adapter.js';
+/*import { Socket } from './adapter.js';
 
 export class TPSocket extends Socket {
     constructor() {
@@ -39,4 +39,4 @@ export class TPSocket extends Socket {
         this.ws.emit('subscribe', list, 'KOTAKLIVEVIEW');
 
     }
-}
+}*/

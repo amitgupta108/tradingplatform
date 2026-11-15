@@ -67,7 +67,7 @@ export class KotakAdapter extends TPAdapter {
         return fetch(api_url, options as RequestInit);
     }
 
-    get(endpt: string, params: any) {
+    get(endpt: string, params?: any) {
         const headers = this.getHeaders(endpt);
         const api_url = this.endpoints[endpt];
         if (params)

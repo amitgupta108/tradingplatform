@@ -9,7 +9,7 @@ export class PersistenceService extends SystemService {
         this.store;
     }
 
-    init() {
+    async init() {
         this.store = open(process.env.workspace_location + '/' + process.env.store_location, {});
         this.initialized = true;
         return { status: 'success' };
