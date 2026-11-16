@@ -1,12 +1,12 @@
 import { SystemService } from '../system/service.js';
 import { Connector, KotakConnector, ICICIConnector } from './connector.mjs';
 import { ConfigService } from '../config/configservice.mjs';
-import { appclients, serverclients, modes, access } from '../../utils/constants.js';
+import { webclients, serverclients, modes, access } from '../../utils/constants.js';
 
 export class AuthService extends SystemService {
     constructor(name) {
         super(name);
-        this.appclients = appclients;
+        this.webclients = webclients;
         this.serverclients = serverclients;
         this.modes = modes;
         this.access = access;
@@ -17,8 +17,13 @@ export class AuthService extends SystemService {
     }
 
     async init() {
+        this.eventservice = ConfigService.getServiceByName('EVENTSERVICE');
+        this.eventservice.addListener('ext_auth', ({ provider, authcode }) => {
+            this.authenticate(provider, authcode);
+        });
+
         let status = '';
-        const connectors = Array.from(Object.values(this.connectors));
+        const connectors = Object.values(this.connectors);
         for (const c of connectors) {
             if (c.load_on_start) {
                 const s = await c.loadAuthdata(true);
@@ -28,14 +33,11 @@ export class AuthService extends SystemService {
         return { status: status };
     }
 
-    async authenticate(authcode) {
-        let provider;
-        if (authcode.length === 6 || authcode === 'tp-kotak-p')
-            provider = 'kotak';
-        else if (authcode.length === 8 || authcode === 'tp-icici-p')
-            provider = 'icici';
-
-        return await this.connectors[provider].authenticate(authcode);
+    async authenticate(provider, authcode) {
+        if (['tp-icici-p', 'tp-kotak-p'].includes(authcode))
+            return await this.connectors[provider].remoteFetch(provider);
+        else
+            return await this.connectors[provider].authenticate(authcode);
     }
 
     async authdata(provider) {
@@ -43,7 +45,7 @@ export class AuthService extends SystemService {
     }
 
     validate(appid, mode) {
-        let profile = this.appclients.find((app) => {
+        let profile = this.webclients.find((app) => {
             return app.appid === appid
                 && app.mode === mode
         });
@@ -53,7 +55,7 @@ export class AuthService extends SystemService {
         }
 
         profile = this.serverclients.find((server) => {
-            return server.serverid === appid
+            return server.appid === appid
                 && server.mode === mode
         });
         if (profile !== undefined) {

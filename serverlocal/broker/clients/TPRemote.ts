@@ -14,22 +14,20 @@ export class TPRemoteAdapter extends TPAdapter {
     };
 
     constructor() {
-        super();
-        this.name = 'TPREMOTE';
-
+        super('TPREMOTE', 'tpapp');
     }
 
-    async init() {
+    async onAuthData(authData: AuthData) {
         this.authData = {
-            provider: 'tpapp', date: new Date().toDateString(),
+            provider: this.provider, date: new Date().toDateString(),
             sid: process.env.tp_appKey, token: process.env.tp_mode,
         } as AuthData;
 
         if (this.connectSocket) {
             this.socket = io(this.URL, {
                 auth: {
-                    appid: process.env.tp_appKey,
-                    mode: process.env.tp_mode,
+                    appid: this.authData.sid,
+                    mode: this.authData.token,
                 },
                 reconnection: true,
                 timeout: 5000
@@ -87,8 +85,8 @@ export class TPRemoteAdapter extends TPAdapter {
 
     getHeaders(endpt: string): AuthHeaders | undefined {
         return {
-            'sid': process.env.tp_appKey,
-            'tohen': process.env.tp_mode,
+            'sid': this.authData?.sid,
+            'token': this.authData?.token,
             'Content-Type': 'application/json'
         } as AuthHeaders;
     }

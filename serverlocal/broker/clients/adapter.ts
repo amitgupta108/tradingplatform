@@ -5,22 +5,32 @@ import { ConfigService } from "../../service/config/configservice.mjs";
 
 abstract class BasicAdapter extends EventEmitter {
     logEnabled: boolean = true;
-    name?: string;
+    name: string;
+    provider: string;
     authData?: AuthData;
 
-    constructor() {
-        super()
+    constructor(name: string, provider: string) {
+        super();
+        this.name = name;
+        this.provider = provider;
     }
 
-    protected init() {
+    private async init() {
         const es = ConfigService.getServiceByName('EVENTSERVICE');
-        es.addListener('authdata', (authData: AuthData) => {
-            this.authData = authData;
-            this.onAuthData();
+        es.addListener(`${this.provider}_auth`, async (authData: AuthData) => {
+            await this.onAuthData(authData as AuthData);
         });
+
+        var authData: AuthData;
+        if (this.provider !== 'tpapp') {
+            const authservice = ConfigService.getServiceByName('AUTHSERVICE');
+            authData = await authservice.authdata(this.provider);
+        }
+        await this.onAuthData(authData!);
     }
 
-    abstract onAuthData(): void;
+
+    abstract onAuthData(authData: AuthData): Promise<boolean>;
 
     log(...args: string[]) {
         if (this.logEnabled) {
@@ -39,10 +49,9 @@ export abstract class TPAdapter extends BasicAdapter {
     static instance?: typeof TPAdapter;
 
     isAuthenticated: boolean = false;
-    abstract init(): Promise<boolean>;
 
-    constructor() {
-        super();
+    constructor(name: string, provider: string) {
+        super(name, provider);
         if (new.target.instance)
             throw new Error(this.constructor.name + ' cannot be instantiated using new. Use getInstance() method.');
     }
@@ -54,10 +63,6 @@ export abstract class TPAdapter extends BasicAdapter {
             await (targetclassdef.instance as any).init();
         }
         return targetclassdef.instance;
-    }
-
-    onAuthData() {
-        this.isAuthenticated = true;
     }
 }
 
@@ -78,8 +83,8 @@ export abstract class TPSocket extends BasicAdapter {
     url?: string;
     ws?: WebSocket
 
-    constructor() {
-        super();
+    constructor(name: string, provider: string) {
+        super(name, provider);
         if (new.target.instance)
             throw new Error(this.constructor.name + ' cannot be instantiated using new. Use getInstance() method.');
     }
@@ -91,10 +96,6 @@ export abstract class TPSocket extends BasicAdapter {
             await (targetclassdef.instance as any).init();
         }
         return targetclassdef.instance;
-    }
-
-    onAuthData(): void {
-        this.connect(this.url!);
     }
 
     async connect(url: string, autoreconnection: boolean = false) {

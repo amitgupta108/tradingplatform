@@ -19,7 +19,7 @@ export const {
 } = services_config;
 
 export const {
-    appclients,
+    webclients,
     serverclients,
     modes,
     access,

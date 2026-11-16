@@ -81,9 +81,6 @@ export class ICICIConnector extends Connector {
     }
 
     async authenticate(authcode) {
-        if (authcode === 'tp-icici-p')
-            return await this.remoteFetch(this.provider);
-
         return await this.saveAndNotify({
             sid: authcode, provider: this.provider,
             date: new Date().toDateString()
@@ -97,9 +94,6 @@ export class KotakConnector extends Connector {
     }
 
     async authenticate(authcode) {
-        if (authcode === 'tp-kotap-p')
-            return await this.remoteFetch(this.provider);
-
         const lr = await this.apiLogin(authcode);
         if (!lr.ok)
             return { status: 'error', reason: 'login api call not completed ' + lr.statusText };

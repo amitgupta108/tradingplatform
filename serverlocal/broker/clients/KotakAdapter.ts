@@ -1,25 +1,22 @@
 import type { AuthHeaders, AuthData, Endpoints } from "../../utils/types.js";
 import { TPAdapter } from './adapter.js';
-import { ConfigService } from "../../service/config/configservice.mjs";
 
 export class KotakAdapter extends TPAdapter {
 
     endpoints: Endpoints;
 
     constructor() {
-        super();
-        this.name = 'KOTAKADAPTER';
+        super('KOTAKADAPTER', 'kotak');
         this.endpoints = {};
     }
 
-    async init() {
-        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
-        const authData = await authservice.authdata('kotak')
-        if (authData.date === new Date().toDateString()) {
+    async onAuthData(authData: AuthData) {
+        if (authData.date === new Date().toDateString() && !this.isAuthenticated) {
             this.authData = authData;
             this.cache_url();
             this.isAuthenticated = true;
         }
+        this.log(`status: [${this.provider}-${this.isAuthenticated}]`);
         return this.isAuthenticated;
     }
 

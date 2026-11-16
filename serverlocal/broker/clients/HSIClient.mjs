@@ -4,18 +4,16 @@ import { TPSocket } from './adapter.js';
 
 export class KotakHSISocket extends TPSocket {
     constructor() {
-        super();
-        this.name = 'HSICLIENT';
+        super('HSICLIENT', 'kotak');
     }
 
-    async init() {
-        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
-        const authData = await authservice.authdata('kotak')
+    async onAuthData(authData) {
         if (authData.date === new Date().toDateString()) {
             this.authData = authData;
-            const url = `wss://${authData.baseUrl.substring(8)}/realtime`
-            return this.connect(url);
+            await this.connect(`wss://${authData.baseUrl.substring(8)}/realtime`);
         }
+        this.log(`status: [${this.provider}-${this.isConnected}]`);
+        return this.isConnected;
     }
 
     onOpen() {
