@@ -4,23 +4,21 @@ import { ConfigService } from '../../service/config/configservice.mjs';
 
 export class BreezeAdapter extends TPAdapter {
     constructor() {
-        super('BREEZEADAPTER', 'breeze');
-        this.isConnected = false;
+        super('BREEZEADAPTER', 'icici');
         this.breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+
+        //this.isConnected = false;
         //this.iSocket;
     }
 
     async onAuthData(authData) {
         if (authData.date === new Date().toDateString()) {
             this.authData = authData;
-            return await this.connect()
-                .catch(e => {
-                    this.error('breeze connection error ' + e);
-                    return this.authenticated;
-                });
+            await this.connect();
+            this.isAuthenticated = true;
         }
         this.log(`status: [${this.provider}-${this.isAuthenticated}]`);
-        return this.authenticated;
+        return this.isAuthenticated;
     }
 
     async connect() {

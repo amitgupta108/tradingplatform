@@ -43,7 +43,7 @@ export class TPRemoteAdapter extends TPAdapter {
         if (resp.ok)
             return await resp.json();
         else
-            this.error('Failed to get scrips', resp.statusText);
+            this.error('Failed to get scrips: ' + resp.statusText);
 
         return;
     }
