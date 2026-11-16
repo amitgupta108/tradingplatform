@@ -89,11 +89,13 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl {
         }
 
         const orders = order_json.data;
-        return orders.filter((order) => {
+        return orders.map((order) => {
             const odr = this.ordermanager.formatLiveOrder(order);
             odr.trade_mode === this.trade_mode;
             this.ordermanager.addOrders(odr);
-            return order.stockCode === stockCode;
+            return odr;
+        }).filter((odr) => {
+            return odr.stockCode === stockCode;
         }).sort((a, b) => a.orderid - b.orderid);
     }
 

@@ -121,20 +121,13 @@ export class WebServer {
     }
 
     handleAuthRequest(parsedUrl: URL, res: ServerResponse) {
-        const authdata = { date: new Date().toDateString() } as AuthData;
-        if (parsedUrl.pathname.endsWith('/fyers.html')) {
-            authdata.provider = 'fyers'
-            authdata.sid = parsedUrl.searchParams.get('auth_code') as string;
-            //authdata.status = parsedUrl.searchParams.get('s');
-            authdata.token = parsedUrl.searchParams.get('code') as string;
+
+        if (parsedUrl.pathname.endsWith('/icici.html')) {
+            const authcode = parsedUrl.searchParams.get('apisession') as string;
+            const es = ConfigService.getServiceByName('EVENTSERVICE');
+            es.emit('ext_auth', { provider: 'icici', authcode: authcode });
         }
-        else if (parsedUrl.pathname.endsWith('/icici.html')) {
-            authdata.provider = 'icici';
-            authdata.date = new Date().toDateString();
-            authdata.sid = parsedUrl.searchParams.get('apisession') as string;
-        }
-        const es = ConfigService.getServiceByName('EVENTSERVICE');
-        es.emit('ext_auth', authdata);
+
         const responseType = 'text/html';
         res.writeHead(200, { 'Content-Type': responseType });
         res.end('<!DOCTYPE html><title>Redirect</title><label onclick="window.close()">X</label>', 'utf-8');
@@ -144,7 +137,7 @@ export class WebServer {
         res.setHeader('Content-Type', 'application/json');
         const as = ConfigService.getServiceByName('AUTHSERVICE');
         const headers = req.headers;
-        const profile = as.validate(headers['appid'], headers['mode']);
+        const profile = as.validate(headers['sid'], headers['token']);
 
         if (profile === undefined) {
             res.writeHead(401);

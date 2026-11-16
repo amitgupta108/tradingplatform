@@ -16,9 +16,9 @@ export class OrderManager extends UserService {
         return { status: 'success' };
     }
 
-    register(service_key, notifier) {
-        if (notifier === 'HSIClient') {
-            KotakHSISocket.getInstance().addListener('order', (notifier_name, order) => {
+    async register(service_key, notifier) {
+        if (notifier === 'HSICLIENT') {
+            (await KotakHSISocket.getInstance()).addListener('order', (notifier_name, order) => {
                 const services = Array.from(this.order_generators.entries());
                 const service_keys = services.filter(([k, v]) => {
                     if (v === notifier_name)
@@ -91,27 +91,19 @@ export class OrderManager extends UserService {
     }
 
     formatLiveOrder(order) {
-        var { nOrdNo: orderid, ordSt: state, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trdSym: symbol,
-            expDt: expiry_date, stkPrc: strike_price, optTp: right, trnsTp: action, fldQty: filled_q, qty: quantity,
-            prcTp: ordertype, ordSrc: source, strategyCode: strategy, algid: algoid, algCat: algocategory, ...rest } = order;
+        let { nOrdNo: orderid, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trnsTp: action,
+            fldQty: filled_q, qty: quantity, ordSrc: source, strategyCode: strategy, algid: algoid,
+            algCat: algocategory, ...rest } = order;
 
-        var fOrder = {
-            orderid, state, pricedAt, price, product, stockCode, symbol, expiry_date, strike_price, right, action,
-            filled_q, quantity, ordertype, source, strategy, algocategory, algoid
+        let fOrder = {
+            orderid, pricedAt, price, product, stockCode, action, filled_q, quantity, source, strategy, algocategory, algoid
         };
 
-        if (fOrder.state === 'open') {
-            fOrder.state = 'opened';
-            filled_q = 0;
-        }
-        else if (fOrder.state === 'complete')
-            fOrder.state = 'completed';
-
-        fOrder.filled_q = fOrder.filled_q;
-        fOrder.ordertype = fOrder.ordertype === 'MKT' ? 'MARKET' : 'LIMIT';
-        fOrder.expiry_date = fOrder.expiry_date.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
-        fOrder.strike_price = fOrder.strike_price.replace('.00', '');
-        fOrder.symbol = fOrder.stockCode + fOrder.expiry_date + fOrder.strike_price + fOrder.right;
+        fOrder.state = (order.ordSt === 'open' ? 'opened' : order.ordSt === 'complete' ? 'completed' : order.ordSt);
+        fOrder.ordertype = order.prcTp === 'MKT' ? 'MARKET' : 'LIMIT';
+        fOrder.expiry_date = order.expDt.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
+        fOrder.strike_price = order.stkPrc.replace('.00', '');
+        fOrder.symbol = stockCode + fOrder.expiry_date + fOrder.strike_price + order.optTp;
         fOrder.mode = 'live';
 
         return fOrder;
@@ -146,7 +138,6 @@ export class OrderManager extends UserService {
     }
 
     addOrders(order) {
-        (this.live_order_map.get(order.orderid) === undefined)
         this.live_order_map.set(order.orderid, order);
     }
 

@@ -69,7 +69,7 @@ export class ScripStore extends BrokerService {
 	async init() {
 		if (!this.initialized) {
 			let p;
-			if (process.env.PASSTHROUGH === 'Y')
+			if (process.env.PTFETCH_SCRIPS === 'Y')
 				p = this.remoteLoad(tp_filters);
 			else
 				p = this.load(filters);

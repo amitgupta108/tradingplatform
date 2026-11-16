@@ -5,18 +5,17 @@ import { ConfigService } from '../../service/config/configservice.mjs';
 
 export class KMDClient extends TPSocket {
     constructor() {
-        super();
-        this.name = 'KMDCLIENT';
+        super('KMDCLIENT', 'kotak');
         this.dividers = null;
     }
 
-    async init() {
-        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
-        const authData = await authservice.authdata('kotak')
+    async onAuthData(authData) {
         if (authData.date === new Date().toDateString()) {
             this.authData = authData;
             await this.connect(this.authData.feedUrl);
         }
+        this.log(`status: [${this.provider}-${this.isConnected}]`);
+        return this.isConnected;
     }
 
     onOpen() {

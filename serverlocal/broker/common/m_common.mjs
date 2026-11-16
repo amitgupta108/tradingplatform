@@ -40,23 +40,27 @@ export class CommonService extends BrokerMarketDataImpl {
             return await this.adapter.getHistory(request);
     }
 
-    async history(appid, request) {
+    async history(request, appid) {
         const scrip = this.getScrip(request.symbol);
-        if (EXCHANGES[request.stockCode] !== 'mcx_fo') {
-            request.exchange = ['NIFTY', 'INDVIX'].includes(request.symbol) ? 'NSE' : 'NFO';
-            request.stockCode = request.symbol === 'INDVIX' ? 'INDVIX' : scrip.stockCode;
-            request.expiry = scrip.expiry;
-            request.interval = request.interval ?? '5minute';
-            request.strike = scrip.strike;
-            request.right = scrip.right;
+        if (EXCHANGES[request.stockCode] === 'mcx_fo')
+            return;
 
+        let response;
+        if (process.env.PTFETCH_HISTORY === 'Y')
+            response = await this.tpHistory(request);
+        else {
             const s = ConfigService.getServiceByName('ICICIHISTVIEW');
-            const response = await s.getHistory(appid, request);
+            response = await s.getHistory(appid, request);
+        }
+
+        if (response.Error)
+            return { status: 'error', reason: 'history fetch error ' + response.Error };
+        else if (appid === undefined)
+            return response.Success;
+        else
             streamer.emitHistQs(appid, request.symbol, response.Success);
 
-            return { status: 'success' };
-        }
-        return { status: 'error', reason: 'history fetch error ' + response.Error };
+        return { status: 'success' };
     }
 
     onVix(q) {
