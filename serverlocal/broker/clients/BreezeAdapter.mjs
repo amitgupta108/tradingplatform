@@ -12,7 +12,7 @@ export class BreezeAdapter extends TPAdapter {
     }
 
     async onAuthData(authData) {
-        if (authData.date === new Date().toDateString()) {
+        if (authData.date === new Date().toDateString() && !this.isAuthenticated) {
             this.authData = authData;
             await this.connect();
             this.isAuthenticated = true;
@@ -43,7 +43,7 @@ export class BreezeAdapter extends TPAdapter {
                     this.isConnected = false;
                     this.log('breeze socket disconnected');
                 });*/
-                this.authenticated = true;
+                this.isAuthenticated = true;
             }).catch((error) => {
                 this.error('breeze connection error ' + error);
             });
@@ -74,7 +74,7 @@ export class BreezeAdapter extends TPAdapter {
 
     getRequest(scrip) {
         return {
-            exchangeCode: scrip.exchange.toLowerCase().includes('fo') ? 'NFO' : 'NSE',
+            exchangeCode: scrip.exchange.toLowerCase() === 'nse_cm' ? 'NSE' : scrip.exchange.toLowerCase().includes('nse') ? 'NFO' : 'MCX',
             stockCode: scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode,
             strikePrice: scrip.strike,
             right: scrip.right === 'CE' ? 'Call' : 'Put',

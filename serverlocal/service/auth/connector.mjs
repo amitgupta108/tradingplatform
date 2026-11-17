@@ -21,7 +21,7 @@ export class Connector extends Generic {
             this.authdata = l_authdata;
             this.initialized = true;
             if (notify)
-                this.es.emit('authdata', this.authdata);
+                this.es.emit(`${this.provider}_auth`, this.authdata);
         }
         return this.initialized;
     }
@@ -29,7 +29,7 @@ export class Connector extends Generic {
     async saveAndNotify(authdata) {
         if (authdata?.date === new Date().toDateString()) {
             this.authdata = authdata;
-            this.es.emit('authdata', this.authdata);
+            this.es.emit(`${this.provider}_auth`, this.authdata);
             await Connector.authkeys(authdata.provider, this.authdata);
 
             return { status: 'success' };

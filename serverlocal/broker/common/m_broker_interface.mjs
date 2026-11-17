@@ -2,6 +2,7 @@ import { streamer } from '../../stream.js';
 import { Subscriptions } from '../../service/subscription/subscription.mjs';
 import { BrokerService } from '../../service/system/service.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
+import { EXCHANGES } from '../../utils/constants.js';
 
 class BrokerImpl extends BrokerService {
     constructor(name) {
@@ -15,6 +16,7 @@ class BrokerImpl extends BrokerService {
         const regex = /[0-9]/;
         const idx = symbol.search(regex);
         t.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
+        t.exchange = ['NIFTY', 'INDVIX'].includes(symbol) ? 'nse_cm' : EXCHANGES[t.stockCode];
         t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
         if (idx !== -1) {
             t.expiry = symbol.slice(idx, idx + 7);
