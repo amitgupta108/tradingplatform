@@ -41,7 +41,7 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     async history(request, appid) {
-        const scrip = this.getScrip(request.symbol);
+        Object.assign(request, this.getScrip(request.symbol));
         if (EXCHANGES[request.stockCode] === 'mcx_fo')
             return;
 

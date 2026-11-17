@@ -45,7 +45,8 @@
     },
     "EXCHANGES": {
         "NIFTY": "nse_fo",
-        "CRUDEOIL": "mcx_fo"
+        "CRUDEOIL": "mcx_fo",
+        "INDVIX": "nse_cm"
     },
     "STRIKE_SIZE": {
         "NIFTY": 50,
