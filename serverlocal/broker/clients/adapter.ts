@@ -28,8 +28,6 @@ abstract class BasicAdapter extends EventEmitter {
         }
         await this.onAuthData(authData!);
     }
-
-
     abstract onAuthData(authData: AuthData): Promise<boolean>;
 
     log(...args: string[]) {
@@ -38,9 +36,9 @@ abstract class BasicAdapter extends EventEmitter {
         }
     }
 
-    error(...args: string[]) {
+    error(arg: string) {
         if (this.logEnabled) {
-            console.log(`[${this.name}]`, ...args);
+            console.error(`[${this.name}]`, arg);
         }
     }
 }
@@ -58,11 +56,16 @@ export abstract class TPAdapter extends BasicAdapter {
 
     static async getInstance<T extends TPAdapter>(this: new () => T): Promise<typeof TPAdapter> {
         const targetclassdef = this as unknown as typeof TPAdapter;
-        if (!targetclassdef.instance) {
-            targetclassdef.instance = new this() as unknown as typeof TPAdapter;
-            await (targetclassdef.instance as any).init();
+        try {
+            if (!targetclassdef.instance) {
+                targetclassdef.instance = new this() as unknown as typeof TPAdapter;
+                await (targetclassdef.instance as any).init();
+            }
+            return targetclassdef.instance;
+        } catch (error) {
+            (targetclassdef.instance! as any).error('Error in TPAdapter getInstance: ' + error);
+            throw error;
         }
-        return targetclassdef.instance;
     }
 }
 
@@ -91,11 +94,16 @@ export abstract class TPSocket extends BasicAdapter {
 
     static async getInstance<T extends TPSocket>(this: new () => T): Promise<typeof TPSocket> {
         const targetclassdef = this as unknown as typeof TPSocket;
-        if (!targetclassdef.instance) {
-            targetclassdef.instance = new this() as unknown as typeof TPSocket;
-            await (targetclassdef.instance as any).init();
+        try {
+            if (!targetclassdef.instance) {
+                targetclassdef.instance = new this() as unknown as typeof TPSocket;
+                await (targetclassdef.instance as any).init();
+            }
+            return targetclassdef.instance;
+        } catch (error) {
+            (targetclassdef.instance! as any).error('Error in TPSocket getInstance: ' + error);
+            throw error;
         }
-        return targetclassdef.instance;
     }
 
     async connect(url: string, autoreconnection: boolean = false) {
