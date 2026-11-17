@@ -1,16 +1,14 @@
-import { io } from 'socket.io-client';
-import {WebSocket as wsSocket} from 'ws';
+/*import { io } from 'socket.io-client';
+import { WebSocket as wsSocket } from 'ws';
 import EventEmitter from "node:events";
 
-export class BrokerAdapter extends EventEmitter
-{
-    constructor(name, options)
-    {
+export class BrokerAdapter extends EventEmitter {
+    constructor(name, options) {
         super();
         this.name = name;
         this.autoReconnect = options.autoReconnect ?? true;
-        this.maxRetries = options.maxRetries ?? 2;
-        this.retryDelay = options.retryDelay ?? 2000;
+        this.maxRetries = options.maxRetries ?? 5;
+        this.retryDelay = options.retryDelay ?? 3000;
         this.heartbeatInterval = options.heartbeatInterval ?? 30000;
         this.logEnabled = options.logEnabled ?? true;
         this.heartbeatTimer = null;
@@ -37,7 +35,7 @@ export class BrokerAdapter extends EventEmitter
                     this.log('WebSocket connected');
                     this.onOpen();
                     this.emit('open', this.reconnectAttempts);
-                    if(!autoreconnection)
+                    if (!autoreconnection)
                         this.reconnectAttempts = 0;
                     resolve();
                 });
@@ -49,13 +47,14 @@ export class BrokerAdapter extends EventEmitter
                 this.ws.addEventListener('error', (error) => {
                     this.log('WebSocket error:', JSON.stringify(error));
                     this.emit('error', error);
+                    this.onError(error);
                     if (!this.isConnected) {
                         this.isConnecting = false;
                         reject(error);
                     }
                 });
 
-                this.ws.addEventListener('close',  (event) => {
+                this.ws.addEventListener('close', (event) => {
                     this.log('WebSocket closed:', JSON.stringify(event));
                     this.isConnected = false;
                     this.isConnecting = false;
@@ -70,16 +69,15 @@ export class BrokerAdapter extends EventEmitter
             }
         });
     }
- 
-    newSocket(url, type)
-    {
+
+    newSocket(url, type) {
         this.url = url;
         this.type = type;
-        if(type === 'node')
+        if (type === 'node')
             return new WebSocket(url);
-        else if( type === 'ws')
+        else if (type === 'ws')
             return new wsSocket(url);
-        else if(type === 'socketio')
+        else if (type === 'socketio')
             return io(url, {
                 auth: {
                     token: this.authData.appid,
@@ -90,6 +88,10 @@ export class BrokerAdapter extends EventEmitter
             });
     }
 
+    onError(error) {
+        this.error(error);
+    }
+
     sendMessage(data) {
         if (!this.ws || !this.isConnected) {
             this.log('Cannot send message: not connected');
@@ -97,7 +99,7 @@ export class BrokerAdapter extends EventEmitter
         }
         this.ws.send(data);
     }
-    
+
     disconnect() {
         this.stopHeartbeat();
         this.clearReconnectTimer();
@@ -141,14 +143,15 @@ export class BrokerAdapter extends EventEmitter
     }
 
     sendHeartbeat() {
-        if (this.ws && this.ws.readyState === 1) 
+        if (this.ws && this.ws.readyState === 1)
             this.ws.ping();
-        else 
+        else
             this.handleReconnect();
 
     }
 
     startHeartbeat() {
+        this.reconnectAttempts = 0;
         this.stopHeartbeat();
         if (this.heartbeatInterval > 0) {
             this.heartbeatTimer = setInterval(() => {
@@ -175,4 +178,4 @@ export class BrokerAdapter extends EventEmitter
             console.error(`[${this.name}]`, ...args);
         }
     }
-}
+}*/

@@ -1,5 +1,5 @@
-import { EXCHANGES, FUT_EXPIRIES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.mjs';
-import { ConfigService } from '../.config/configservice.mjs';
+import { EXCHANGES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.js';
+import { ConfigService } from '../config/configservice.mjs';
 
 export class Subscriptions {
     constructor(owner) {
@@ -116,7 +116,7 @@ export class SubsTemplate {
         this.toStream = true;
         this.stockCode = session.stockCode;
         this.exchange = EXCHANGES[session.stockCode];
-        this.fExpiry = session.fExpiry ?? FUT_EXPIRIES[this.stockCode]['FIRST'];
+        this.fExpiry = session.fExpiry;
         this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [
@@ -173,13 +173,15 @@ export class SubsTemplate {
         }
     }
 
-    optionChain(expiry, action) {
+    optionChainAction(expiry, action) {
 
         let response;
         if (action.key === 'stream')
             response = this.streamOptionChain(expiry, action.value);
         else if (action.key === 'subscribe')
             response = this.subscribeOptionChain(expiry, action.value);
+        else if (action.key === 'strikes')
+            response = this.modifyStrikes(expiry, action.value);
 
         response.action = action;
         return response;
@@ -207,12 +209,26 @@ export class SubsTemplate {
         }
     }
 
+    modifyStrikes(expiry, range) {
+        const ost = this.getOptionChainByExpiry(expiry);
+        const currentstrikes = ost.strikes;
+        ost.strikes = this.buildRequests(this.atm, expiry, range.startIdx, range.endIdx);
+
+        return { status: 'success', strikes: ost.strikes, oldstrikes: currentstrikes };
+    }
+
     buildOptionChain(uq, expiry) {
         const ost = this.getOptionChainByExpiry(expiry);
         const config = ost.index === 0 ? OPT_CONFIG['FIRST'] : OPT_CONFIG['SECOND'];
-        const st_prices = this.strikes(uq.ltp, config.start, config.end, STRIKE_SIZE[this.stockCode]);
 
-        const strikes = st_prices.map((s) => {
+        ost.strikes = this.buildRequests(uq.ltp, expiry, config.start, config.end);
+        return ost.strikes;
+    }
+
+    buildRequests(price, expiry, startIdx, endIdx) {
+        const st_prices = this.strikes(price, startIdx, endIdx, STRIKE_SIZE[this.stockCode]);
+
+        return st_prices.map((s) => {
             s.exchange = this.exchange;
             s.expiry = expiry,
                 s.key = 'strikex';
@@ -220,9 +236,6 @@ export class SubsTemplate {
             s.symbol = this.stockCode + expiry + s.strike + s.right;
             return s;
         });
-
-        ost.strikes = strikes;
-        return strikes;
     }
 
     reloadStrikes(uq) {

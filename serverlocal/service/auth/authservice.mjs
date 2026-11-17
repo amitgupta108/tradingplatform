@@ -1,92 +1,75 @@
-import { SystemService } from '../system/service.mjs';
-import { Connector, KotakConnector, ICICIConnector, TPAppConnector } from './connector.mjs';
-import { ConfigService } from '../.config/configservice.mjs';
-import { appids, modes, access } from '../../utils/constants.mjs';
+import { SystemService } from '../system/service.js';
+import { Connector, KotakConnector, ICICIConnector } from './connector.mjs';
+import { ConfigService } from '../config/configservice.mjs';
+import { webclients, serverclients, modes, access } from '../../utils/constants.js';
 
-export class AuthService extends SystemService
-{
-    constructor(name)
-    {
+export class AuthService extends SystemService {
+    constructor(name) {
         super(name);
-        this.appids = appids;
+        this.webclients = webclients;
+        this.serverclients = serverclients;
         this.modes = modes;
         this.access = access;
         this.connectors = {
-            kotak: new KotakConnector('kotak', true, true),
-            icici: new ICICIConnector('icici', true, true),
-            tpapp: new TPAppConnector('tpapp', true, false)
+            kotak: new KotakConnector('kotak', true),
+            icici: new ICICIConnector('icici', true)
         }
     }
 
-    async init()
-    {
+    async init() {
         this.eventservice = ConfigService.getServiceByName('EVENTSERVICE');
-        this.eventservice.addListener('ext_auth', (msg) => {
-            this.generateSession(msg);
+        this.eventservice.addListener('ext_auth', ({ provider, authcode }) => {
+            this.authenticate(provider, authcode);
         });
 
-        const values = Array.from(Object.values(this.connectors));
         let status = '';
-        for(const v of values){
-            if(v.load_on_start)
-                status = status + (await v.loadAuthdata()) + ' ';
-        }
-        return { status: status};
+        const connectors = Object.values(this.connectors);
+        for (const c of connectors) {
+            if (c.load_on_start) {
+                const s = await c.loadAuthdata(true);
+                status += s + ' ';
+            }
+        };
+        return { status: status };
     }
 
-    async authenticate(id_text) 
-    {
-        let params = {}; let provider;
-        if (id_text.length === 6) {
-            params = { arg1: id_text }
-            provider = 'kotak';
-        } 
-        else if (id_text === 'icici') {
-            provider = 'icici';
-        }
-        else if (id_text === 'tp-icici-p')
-        {
-            params = { arg1: 'icici' };
-            provider = 'tpapp';
-        }
-        else if (id_text === 'tp-kotak-p') {
-            params = { arg1: 'kotak' };
-            provider = 'tpapp';
-        }
-        else 
-            return;
-
-        const authdata = await this.connectors[provider].authenticate(params);
-        if(provider === 'tpapp')
-            this.connectors[params['arg1']].saveAndNotify(authdata);
+    async authenticate(provider, authcode) {
+        if (['tp-icici-p', 'tp-kotak-p'].includes(authcode))
+            return await this.connectors[provider].remoteFetch(provider);
+        else
+            return await this.connectors[provider].authenticate(authcode);
     }
 
-    generateSession(authdata) 
-    {
-        this.connectors[authdata.provider].generateSession(authdata);
-    }
-
-    async authdata(provider)
-    {
+    async authdata(provider) {
         return await Connector.authkeys(provider, undefined);
     }
 
-    validate(appid, mode)
-    {
-        return this.appids.filter((app) => { 
+    validate(appid, mode) {
+        let profile = this.webclients.find((app) => {
             return app.appid === appid
                 && app.mode === mode
         });
+        if (profile !== undefined) {
+            profile.type = 'APP';
+            return profile;
+        }
+
+        profile = this.serverclients.find((server) => {
+            return server.appid === appid
+                && server.mode === mode
+        });
+        if (profile !== undefined) {
+            profile.type = 'SERVER';
+            return profile;
+        }
     }
 
-    getFeatureModeforApp(appid, feature)
-    {
-        const mode = this.appids.find((e) => e.appid === appid)?.mode;
+    getFeatureModeforApp(appid, feature) {
+        const mode = this.appclients.find((e) => e.appid === appid)?.mode;
         return this.modes[mode][feature];
     }
 
-    checkAccess(eventName, mode) 
-    {
+    checkAccess(eventName, mode) {
         const usertype = ConfigService.getProfile(mode);
         if (Object.hasOwn(usertype, 'view') && this.access['view'].includes(eventName))
             return true;

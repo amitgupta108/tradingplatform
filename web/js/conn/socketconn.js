@@ -2,9 +2,8 @@ let socket;
 
 function connect() {
 	socket = io(`${window.location.origin}`, {
-	//socket = io('d326ndd7qg08xl.cloudfront.net', {
-	auth: {
-			token: instrument.appid,
+		auth: {
+			appid: instrument.appid,
 			mode: instrument.mode
 		},
 		reconnection: false,

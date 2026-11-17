@@ -1,11 +1,9 @@
 import crypto from 'crypto';
-import { SystemService } from '../system/service.mjs';
+import { SystemService } from '../system/service.js';
 
-export class CryptoService extends SystemService
-{
-    constructor(name) 
-    {
-        super(name);        
+export class CryptoService extends SystemService {
+    constructor(name) {
+        super(name);
         // Generate Server's long-term master identity keys (X25519 for encryption, Ed25519 for signing)
         const encKeys = crypto.generateKeyPairSync('x25519');
         const signKeys = crypto.generateKeyPairSync('ed25519');

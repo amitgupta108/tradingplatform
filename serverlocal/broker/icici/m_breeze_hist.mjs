@@ -18,13 +18,6 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         super(name);
     }
 
-    onAuthData(authdata) {
-        this.authData = authdata;
-
-        this.adapter.initiateConnect(this.authData, false);
-        this.initialized = true;
-    }
-
     startStreamer(stmrkey) {
         const stmr = this.streamers.find((s) => s.key === stmrkey);
 
@@ -52,17 +45,17 @@ export class BreezeMarketDataHist extends BreezeMarketData {
 
     dothings(stmrkey) {
         try {
-            for (const c of this.clocks.values()) {
+            for (var c of this.clocks.values()) {
                 if (c.key === stmrkey && c.lastaction !== 'pause') {
-                    var reqs = this.subs_reqs.get(c.appid) || [];
-                    reqs.forEach((req) => {
-                        this.q(req.appid, req.instrument, c.currentTime);
-                    });
+                    const reqs = this.subs_reqs.get(c.appid) || [];
+                    for (var req of reqs) {
+                        this.q(req, c.currentTime);
+                    }
                 }
             }
         } catch (error) {
-            this.log('Error for appid, unsubscribe all: ' + error.appid + ' ' + error.stack);
-            this.subs_reqs.delete(error.appid);
+            this.error('Error in emitting quotes,for appid - symbol: ' + c.appid + ' ' + req.symbol + ' ' + error.stack);
+            this.subs_reqs.delete(c.appid);
         }
     }
 
@@ -96,23 +89,29 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         }
     }
 
-    q(appid, instrument, time) {
+    q(request, time) {
+        const { appid, instrument } = request;
         const qArray = this.qs_store.get(appid);
         const st = qArray.find((q) => q.symbol === instrument.symbol);
 
-        let idx = -1;
-        if (st?.quotes !== undefined && st.quotes.length > 0) {
-            if (st.trimIndex === undefined || st.trimIndex <= 0) {
-                idx = st.quotes.findIndex((q) => q.ltt === time);
-                if (idx >= 0)
-                    st.trimIndex = idx + 1;
-            }
-            else if (st.trimIndex > 0 && st.quotes[st.trimIndex].ltt === time) {
-                idx = st.trimIndex++;
-            }
+        try {
+            let idx = -1;
+            if (st?.quotes !== undefined && st.quotes.length > 0) {
+                if (st.trimIndex === undefined || st.trimIndex <= 0) {
+                    idx = st.quotes.findIndex((q) => q.ltt === time);
+                    if (idx >= 0)
+                        st.trimIndex = idx + 1;
+                }
+                else if (st.trimIndex > 0 && st.quotes[st.trimIndex]?.ltt === time) {
+                    idx = st.trimIndex++;
+                }
 
-            if (idx >= 0 && idx < st.quotes.length)
-                this.onQuotes(st.quotes[idx], appid);
+                if (idx >= 0 && idx < st.quotes.length)
+                    this.onQuotes(st.quotes[idx], appid);
+            }
+        } catch (e) {
+            this.unsubscribeScrips(appid, [request]);
+            this.error("Error in q: " + st.symbol + ' ' + e.stack);
         }
 
         const reloadThreshold = 80;
@@ -134,7 +133,7 @@ export class BreezeMarketDataHist extends BreezeMarketData {
                     this.log('no historical records fetched');
             }).catch((reason) => {
                 st.state = 'load failed';
-                this.log('Rejection for appid: ' + st.appid + ' ' + reason);
+                this.log('load failed for: ' + st?.symbol + ' ' + reason);
             });
     }
 

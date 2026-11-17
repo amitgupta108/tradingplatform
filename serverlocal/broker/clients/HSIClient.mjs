@@ -1,18 +1,19 @@
-import { streamer } from '../../stream.mjs';
-import { KotakAdapter } from './KotakAdapter.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
+import { streamer } from '../../stream.js';
+import { TPSocket } from './adapter.js';
 
-export class KotakHSISocket extends KotakAdapter
-{
-    constructor(options) {
-        super('HSICLIENT', options);
-        this.wsping = undefined;
-        this.lasthb = undefined;
+export class KotakHSISocket extends TPSocket {
+    constructor() {
+        super('HSICLIENT', 'kotak');
     }
 
-    initiateConnect(authData) {
-        this.authData = authData;
-        const url = `wss://${authData.baseUrl.substring(8)}/realtime`
-        return this.connect(url, 'ws');
+    async onAuthData(authData) {
+        if (authData.date === new Date().toDateString()) {
+            this.authData = authData;
+            await this.connect(`wss://${authData.baseUrl.substring(8)}/realtime`);
+        }
+        this.log(`status: [${this.provider}-${this.isConnected}]`);
+        return this.isConnected;
     }
 
     onOpen() {
@@ -22,14 +23,23 @@ export class KotakHSISocket extends KotakAdapter
         });
     }
 
+    onError(error) {
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+        this.emit('error', this.name, JSON.stringify({ error: error, code: 401 }));
+    }
+
     authenticate() {
-        const payload = `{type:cn,Authorization:${this.authData.hsi_token},Sid:${this.authData.hsi_sid},src:WEB}`;
+        const payload = `{type:cn,Authorization:${this.authData.token},Sid:${this.authData.sid},src:WEB}`;
         this.sendMessage(payload);
         this.log('On open hsi ');
     }
-    
-    handleMessage(event)
-    {
+
+    onError(error) {
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+        this.error(error);
+    }
+
+    handleMessage(event) {
         const data = event.data;
         const message = JSON.parse(data.toString());
         if (message.type !== 'cn')

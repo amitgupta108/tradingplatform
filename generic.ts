@@ -1,4 +1,4 @@
-export class Generic {
+export abstract class Generic {
 
     logEnabled: boolean;
     name: string;

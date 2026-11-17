@@ -1,18 +1,13 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
+import { BreezeAdapter } from '../clients/BreezeAdapter.mjs';
 
 export class BreezeMarketData extends BrokerMarketDataImpl {
     constructor(name) {
         super(name);
     }
 
-    addListeners() {
-        this.es.addListener('icici_auth', (authdata) => {
-            this.onAuthData(authdata);
-        });
-
-        this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
-        this.adapter = this.af.getAdapter('BREEZEADAPTER');
+    async addListeners() {
+        this.adapter = await BreezeAdapter.getInstance();
         this.adapter.addListener('quote', (q) => {
             this.onQuotes(q);
         });
@@ -41,6 +36,5 @@ export class BreezeMarketData extends BrokerMarketDataImpl {
             return { appid: appid, symbol: symbol, instrument: request };
 
         });
-
     }
 }

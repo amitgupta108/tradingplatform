@@ -1,6 +1,6 @@
-import { ConfigService } from './service/.config/configservice.mjs';
-import { SystemService } from './service/system/service.mjs';
-import { streamer } from './stream.mjs';
+import { ConfigService } from './service/config/configservice.mjs';
+import { SystemService } from './service/system/service.js';
+import { streamer } from './stream.js';
 
 class APIServer extends SystemService {
     constructor() {
@@ -32,7 +32,7 @@ class APIServer extends SystemService {
         s.on('history', this.catchAsync(async (requests) => {
             this.log("history request " + requests.length);
             for (const r of requests) {
-                const resp = util_service.history(appid, r);
+                const resp = util_service.history(r, appid);
             }
         }, 'history'));
 
@@ -114,18 +114,15 @@ class APIServer extends SystemService {
             s.emit('scrips', scrips);
         });
 
-        s.on('authenticate', this.catchAsync((text) => {
-            const service = ConfigService.getAdminService(mode, 'BROKER_AUTH');
-            if (text.length === 8) {
-                const es = ConfigService.getServiceByName('EVENTSERVICE');
-                es.emit('ext_auth', {
-                    date: new Date().toDateString(),
-                    provider: 'icici',
-                    authcode: text
-                });
+        s.on('authenticate', this.catchAsync((authcode) => {
+
+            const provider = (authcode.length === 6 || authcode === 'tp-kotak-p') ? 'kotak' :
+                (authcode.length === 8 || authcode === 'tp-icici-p') ? 'icici' : null;
+
+            if (provider) {
+                const service = ConfigService.getAdminService(mode, 'BROKER_AUTH');
+                return service.authenticate(provider, authcode);
             }
-            else
-                return service.authenticate(text);
         }, 'authenticate'));
 
         /*

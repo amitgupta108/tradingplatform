@@ -5,9 +5,9 @@ import readline from 'node:readline';
 import csvParser from 'csv-parser';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
-import { ConfigService } from './.config/configservice.mjs';
-import { filePaths, filters, tp_filters } from '../utils/constants.mjs';
-import { BrokerService } from './system/service.mjs';
+import { ConfigService } from './config/configservice.mjs';
+import { filePaths, filters, tp_filters } from '../utils/constants.js';
+import { BrokerService } from './system/service.js';
 
 const FIELD_MAP = {
 	pSymbol: 'token',
@@ -66,38 +66,37 @@ export class ScripStore extends BrokerService {
 		this.inMemoryStore = new Map();
 	}
 
-	init() {
+	async init() {
 		if (!this.initialized) {
 			let p;
-			if (process.env.PASSTHROUGH === 'Y')
+			if (process.env.PTFETCH_SCRIPS === 'Y')
 				p = this.remoteLoad(tp_filters);
-
 			else
 				p = this.load(filters);
 
 			return p.then((response) => {
 				this.initialized = true;
 				return { status: response };
-			})
-				.catch((error) => {
-					return { status: 'error', reason: error.message };
-				});
+			}).catch((error) => {
+				this.error(error);
+				return { status: 'error', reason: error.message };
+			});
 		}
 	}
 
 	async remoteLoad(filters) {
-		return await new Promise((resolve, reject) => {
-			const es = ConfigService.getServiceByName('EVENTSERVICE');
-			es.addListener('scrips', (scrips) => {
-				scrips.forEach((s) => {
+		return await new Promise(async (resolve, reject) => {
+			try {
+				const cs = ConfigService.getServiceByName('COMMONSERVICE');
+				const scrips = await cs.tpScrips(filters);
+				for (const s of scrips) {
 					this.inMemoryStore.set(s.scripReferenceKey, s);
-				});
+				}
 				this.log('scrips remote load, size ' + this.inMemoryStore.size);
-				resolve('initialized');
-			});
-
-			this.tpsocket = ConfigService.getSocketClient('TPCLIENT');
-			this.tpsocket.getScrips(filters);
+				resolve('success');
+			} catch (error) {
+				reject(error);
+			}
 		});
 	}
 
@@ -135,6 +134,7 @@ export class ScripStore extends BrokerService {
 			this.isLoaded = true;
 			this.log(`--- Store Ready. ${this.inMemoryStore.size} records cached in RAM. ---`);
 		}
+		return 'success';
 	}
 
 	addIndicesToStore(indices) {

@@ -1,5 +1,5 @@
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
-import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
 
 export class OpenAlgoMarketData extends BrokerMarketDataImpl {
     constructor(name) {

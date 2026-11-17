@@ -1,110 +1,80 @@
 import { BreezeConnect } from 'breezeconnect';
-import { BrokerAdapter } from './BrokerAdpater.mjs';
+import { TPAdapter } from './adapter.js';
+import { ConfigService } from '../../service/config/configservice.mjs';
 
-export class BreezeAdapter extends BrokerAdapter {
-    
-    static instance = null;
-    static getInstance(options = {})
-    {
-        if (!BreezeAdapter.instance) {
-            BreezeAdapter.instance = BreezeAdapter.createInstance(options);
+export class BreezeAdapter extends TPAdapter {
+    constructor() {
+        super('BREEZEADAPTER', 'icici');
+        this.breeze = new BreezeConnect({ "appKey": process.env.breeze_appKey });
+
+        //this.isConnected = false;
+        //this.iSocket;
+    }
+
+    async onAuthData(authData) {
+        if (authData.date === new Date().toDateString() && !this.isAuthenticated) {
+            this.authData = authData;
+            await this.connect();
+            this.isAuthenticated = true;
         }
-        return BreezeAdapter.instance;
+        this.log(`status: [${this.provider}-${this.isAuthenticated}]`);
+        return this.isAuthenticated;
     }
 
-    static createInstance(options){
-        return new BreezeAdapter(options);
-    }
-
-    constructor(options){
-        super('BREEZEADAPTER', options);
-        this.self;
-        this.sessionOn = false;
-    }
-
-    connect(withSocket)
-    {
-        if(this.sessionOn)
-            return;
-
-        this.self = new BreezeConnect({ "appKey": process.env.breeze_appKey });
-        this.sessionOn = true;
-
-        return this.self.generateSession(this.authdata.apiSecret, this.authdata.authcode)
-        .then((resp) => {
-            
-            if(withSocket) {
-                this.self.wsConnect();
-                this.self.onTicks = this.handleTicks.bind(this);
+    async connect() {
+        return this.breeze.generateSession(process.env.breeze_secret,
+            this.authData.sid ?? this.authData.authcode)
+            .then((resp) => {
                 this.log('breeze session started ');
-                this.ws = this.self.socket;
-                this.ws.on('connect', () => {
+
+                this.breeze.wsConnect();
+                this.breeze.onTicks = this.handleTicks.bind(this);
+                /*this.iSocket = this.breeze.socket;
+                this.iSocket.on('connect', () => {
                     this.isConnected = true;
                     this.log('breeze socket connected');
                 });
 
-                this.ws.on('connect_error', () => {
+                this.iSocket.on('connect_error', () => {
                     this.log('breeze socket connection error');
                 });
 
-                this.ws.on('disconnect', () => {
+                this.iSocket.on('disconnect', () => {
                     this.isConnected = false;
                     this.log('breeze socket disconnected');
-                });
-            }
-        }).catch((error) => {
-            this.error('breeze connection error ' + error);
-            this.sessionOn = false;
-        });
+                });*/
+                this.isAuthenticated = true;
+            }).catch((error) => {
+                this.error('breeze connection error ' + error);
+            });
     }
 
-    initiateConnect(authdata, withSocket = false)
-    {
-        this.authdata = authdata;
-        return this.connect(withSocket);
-    }
-    
-    getHistory(scrip, sTime, endTime, interval) 
-    {
+    getHistory(scrip, sTime, endTime, interval) {
         const request = this.getRequest(scrip);
         request.interval = interval != undefined ? interval : '1second';
         request.fromDate = this.ISODate(sTime);
-        request.toDate = this.ISODate(endTime); 
-            
-        return this.self.getHistoricalDatav2(request);
+        request.toDate = this.ISODate(endTime);
+
+        return this.breeze.getHistoricalDatav2(request);
     }
 
-    subscribeQuotes(list, action)
-    {
-        const promises = [];
-        list.forEach((e) => {
-            var request = this.getRequest(e.instrument);
-            request.get_exchange_quotes = true;
-            promises.push(this.subscribeFeed(request, action));
-        });
-        return Promise.all(promises);
-    }
-
-    subscribeFeed(request, action)
-    { 
-        if(action === 'subs')
-            return this.self.subscribeFeeds(request);
+    subscribe(request, action) {
+        if (action === 'subs')
+            return this.breeze.subscribeFeeds([this.getRequest(request)]);
         else
-            return this.self.unsubscribeFeeds(request);
+            return this.breeze.unsubscribeFeeds([this.getRequest(request)]);
     }
 
-    handleTicks(q)
-    {
+    handleTicks(q) {
         if (q.symbol?.includes('VIX') || q.stock_code?.includes('VIX'))
-            super.emit('vix', q);
-        else 
-            super.emit('live-quote', q);
+            this.emit('vix', q);
+        else
+            this.emit('live-quote', q);
     }
-    
-    getRequest(scrip)
-    {       
-        return { 
-            exchangeCode: scrip.exchange.toLowerCase().includes('fo') ? 'NFO' : 'NSE',
+
+    getRequest(scrip) {
+        return {
+            exchangeCode: scrip.exchange.toLowerCase() === 'nse_cm' ? 'NSE' : scrip.exchange.toLowerCase().includes('nse') ? 'NFO' : 'MCX',
             stockCode: scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode,
             strikePrice: scrip.strike,
             right: scrip.right === 'CE' ? 'Call' : 'Put',
@@ -113,14 +83,12 @@ export class BreezeAdapter extends BrokerAdapter {
         }
     }
 
-    ISODate(datetime) 
-    {
-        return (new Date(Math.round((datetime)/1000) * 1000 + (330 * 60 * 1000))).toISOString();
+    ISODate(datetime) {
+        return (new Date(Math.round((datetime) / 1000) * 1000 + (330 * 60 * 1000))).toISOString();
     }
 
-    formatExpiry(expiry, type) 
-    {
-        if(expiry) {
+    formatExpiry(expiry, type) {
+        if (expiry) {
             var e = expiry.slice(0, 2).concat('-').concat(expiry.slice(2, 3)).concat(expiry.slice(3, 5).toLowerCase()).concat('-20').concat(expiry.slice(5));
             return type === 'datetime' ? (new Date((e).concat(', 21:00'))).toISOString() : e; // add 5.30 to 15:30 to get 21:00 UTC
         }

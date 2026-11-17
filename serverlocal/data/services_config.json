@@ -1,24 +1,16 @@
 {
-    "services":
-    {
-        "CONFIGSERVICE": {
-            "init": "Y",
-            "classdef": "ConfigService",
-            "filepath": "../.config/configservice.mjs",
-            "type": "system",
-            "seq": "1"
-        },
+    "services": {
         "EVENTSERVICE": {
             "init": "Y",
             "classdef": "EventService",
-            "filepath": "../system/eventservice.mjs",
+            "filepath": "../system/eventservice.js",
             "type": "system",
             "seq": "2"
         },
         "PERSISTSERVICE": {
             "init": "Y",
             "classdef": "PersistenceService",
-            "filepath": "../system/persistence.mjs",
+            "filepath": "../system/persistence.js",
             "type": "system",
             "seq": "3"
         },
@@ -29,6 +21,20 @@
             "type": "system",
             "seq": "4"
         },
+        "AUTHSERVICE": {
+            "init": "Y",
+            "classdef": "AuthService",
+            "filepath": "../auth/authservice.mjs",
+            "type": "system",
+            "seq": "5"
+        },
+        "COMMONSERVICE": {
+            "init": "Y",
+            "classdef": "CommonService",
+            "filepath": "../../broker/common/m_common.mjs",
+            "type": "broker",
+            "seq": "6"
+        },
         "SERVERSTREAM": {
             "init": "N",
             "classdef": "ServerStreamManager",
@@ -36,7 +42,7 @@
             "type": "infra"
         },
         "ADAPTERFACTORY": {
-            "init": "Y",
+            "init": "N",
             "classdef": "AdapterFactory",
             "filepath": "./adapterfactory.mjs",
             "type": "infra",
@@ -53,12 +59,6 @@
             "init": "N",
             "classdef": "OpenAlgoTradeService",
             "filepath": "../../broker/openalgo/t_openalgo.mjs",
-            "type": "broker"
-        },
-        "COMMONSERVICE": {
-            "init": "Y",
-            "classdef": "CommonService",
-            "filepath": "../../broker/common/m_common.mjs",
             "type": "broker"
         },
         "SCRIPSTORE": {
@@ -83,11 +83,10 @@
             "init": "Y",
             "classdef": "KotakMarketDataLive",
             "filepath": "../../broker/kotak/m_kotak_live.mjs",
-            "provider": "KMDCLIENT",
             "type": "broker"
         },
         "KOTAKNEOTRADE": {
-            "init": "N",
+            "init": "Y",
             "classdef": "KotakNeoTradeService",
             "filepath": "../../broker/kotak/t_kotakneo.mjs",
             "type": "broker"
@@ -109,14 +108,13 @@
             "classdef": "OpenAlgoMarketData",
             "filepath": "../../broker/openalgo/m_openalgo.mjs",
             "type": "broker"
-        }, 
-        "AUTHSERVICE": {
+        },
+        "CONFIGURATIONS": {
             "init": "Y",
-            "classdef": "AuthService",
-            "filepath": "../auth/authservice.mjs",
-            "type": "system",
-            "seq": "20"
+            "classdef": "Configurations",
+            "filepath": "./configurations.js",
+            "type": "user",
+            "seq": "21"
         }
     }
 }
-

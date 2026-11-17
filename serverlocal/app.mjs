@@ -1,3 +1,8 @@
+import { ConfigService } from './service/config/configservice.mjs';
+import { streamer } from './stream.js';
+import { apiserver } from './apiserver.mjs';
+import { SystemService } from './service/system/service.js';
+import { DataApi } from './api/data.js';
 import { ConfigService } from './service/.config/configservice.mjs';
 import { streamer } from './stream.mjs';
 import apiserver from './apiserver.mjs';
@@ -6,7 +11,20 @@ import { Generic } from '../generic.js';
 class ClientManager extends Generic {
     constructor(name) {
         super(name);
+        this.dataApi = new DataApi();
     }
+
+    startServices() { }
+    connect(s) { }
+    send() { }
+    registerHandlers(s, appid, mode) { }
+
+    catchAsync(requestName, fn) {
+        return (...args) => {
+            fn.apply(this, args)
+                .catch(err => this.error(requestName, err));
+        }
+    };
 }
 
 export class AppClientManager extends ClientManager {
@@ -16,66 +34,90 @@ export class AppClientManager extends ClientManager {
 
     async startServices(stockCode, autorun = false) {
         await ConfigService.initializeAll();
-        streamer.init();
-        if (autorun)
-            this.run(stockCode);
-    }
+    async startServices() {
+            const responses = await ConfigService.initializeAll();
+            //await ConfigService.getServiceByName('CONFIGURATIONS').configLoad();
+            streamer.init();
 
-    run(stockCode) {
-        const s = ConfigService.getServiceByName('KOTAKLIVEVIEW');
-        s.startv2('APPCLIENT', { stockCode: stockCode, simStartTime: Date.now() });
-    }
-
-    connect(s) {
-        const appid = s.handshake.auth.token;
-        const mode = s.handshake.auth.mode;
-
-        const as = ConfigService.getServiceByName('AUTHSERVICE');
-        const matches = as.validate(appid, mode)
-        if (matches.length !== 1) {
-            console.log('app not authenticated');
-            return;
+            return responses;
+            if (autorun)
+                this.run(stockCode);
         }
 
-        streamer.addToUserMap(appid, { socket: s, mode: mode });
-        this.registerHandlers(s, appid, mode);
+        run(stockCode) {
+            const s = ConfigService.getServiceByName('KOTAKLIVEVIEW');
+            s.startv2('APPCLIENT', { stockCode: stockCode, simStartTime: Date.now() });
+        }
 
-        s.on("error", (err) => {
-            console.error(`[Global Error]  Socket ${s.id}:`, err.message);
-        });
+        connect(s) {
+            const appid = s.handshake.auth.appid;
+            const mode = s.handshake.auth.mode;
+
+            const as = ConfigService.getServiceByName('AUTHSERVICE');
+            const matches = as.validate(appid, mode)
+            if (matches.length === 1) {
+                console.log('app not authenticated');
+                return;
+            }
+
+            this.registerDataHandlers(s);
+            streamer.addToUserMap(appid, { socket: s, mode: mode });
+            this.registerHandlers(s, appid, mode);
+
+            s.on("error", (err) => {
+                console.error(`[Global Error]  Socket ${s.id}:`, err.message);
+            });
+        }
+
+        send(s, type, data) {
+            s.emit(type, data);
+        }
+
+        registerDataHandlers(s) {
+            s.on('expiries', async (stockCode) => {
+                this.send(s, 'expiries', await this.dataApi.getExpiries({ stockCode: stockCode }));
+            });
+
+            s.on('historyv2', this.catchAsync('historyv2', async (requests) => {
+                this.log("history request " + requests.length);
+                for (const r of requests) {
+                    const resp = await this.dataApi.getHistory(r, undefined);
+                    this.send(s, 'historyv2', { symbol: r.symbol, qA: resp });
+                }
+            }));
+        }
+
+        registerHandlers(s, appid, mode) {
+            const profile = ConfigService.getProfile(mode);
+
+            if (Object.hasOwn(profile, 'view'))
+                apiserver.registerDataRequests(s, appid, mode);
+
+            if (Object.hasOwn(profile, 'trade'))
+                apiserver.registerTradeRequests(s, appid, mode);
+
+            if (Object.hasOwn(profile, 'admin'))
+                apiserver.registerAdminRequests(s, appid, mode);
+
+            apiserver.registerDisconnectionHandler(s, appid, mode);
+            this.registerAuthorizer(s, mode);
+        }
+
+        registerAuthorizer(s, mode) {
+            s.use(([eventName, ...args], next) => {
+                const implementedEvents = s.eventNames();
+
+                if (!implementedEvents.includes(eventName))
+                    return next(new Error(`Unsupported event: ${eventName}`));
+
+                const auth = ConfigService.getServiceByName('AUTHSERVICE');
+                if (!auth.checkAccess(eventName, mode))
+                    return next(new Error("Unauthorized access to admin resource"));
+
+                next();
+            });
+        }
     }
-
-    registerHandlers(s, appid, mode) {
-        const profile = ConfigService.getProfile(mode);
-
-        if (Object.hasOwn(profile, 'view'));
-        apiserver.registerDataRequests(s, appid, mode);
-
-        if (Object.hasOwn(profile, 'trade'));
-        apiserver.registerTradeRequests(s, appid, mode);
-
-        if (Object.hasOwn(profile, 'admin'))
-            apiserver.registerAdminRequests(s, appid, mode);
-
-        apiserver.registerDisconnectionHandler(s, appid, mode);
-        this.registerAuthorizer(s, mode);
-    }
-
-    registerAuthorizer(s, mode) {
-        s.use(([eventName, ...args], next) => {
-            const implementedEvents = s.eventNames();
-
-            if (!implementedEvents.includes(eventName))
-                return next(new Error(`Unsupported event: ${eventName}`));
-
-            const auth = ConfigService.getServiceByName('AUTHSERVICE');
-            if (!auth.checkAccess(eventName, mode))
-                return next(new Error("Unauthorized access to admin resource"));
-
-            next();
-        });
-    }
-}
 
 export class ServerClientManager extends ClientManager {
     constructor() {

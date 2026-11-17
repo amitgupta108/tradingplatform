@@ -1,5 +1,5 @@
-/*import { ConfigService } from '../../service/.config/configservice.mjs';
-import { UserService } from '../../service/system/service.mjs';
+/*import { ConfigService } from '../../service/config/configservice.mjs';
+import { UserService } from '../../service/system/service.js';
 
 export class SimulatorHistory extends UserService
 {    

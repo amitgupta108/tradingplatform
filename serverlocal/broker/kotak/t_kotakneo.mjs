@@ -1,28 +1,17 @@
-import { ConfigService } from '../../service/.config/configservice.mjs';
+import { ConfigService } from '../../service/config/configservice.mjs';
 import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
-import { EXCHANGES } from '../../utils/constants.mjs';
+import { EXCHANGES } from '../../utils/constants.js';
+import { KotakAdapter } from '../clients/KotakAdapter.js';
 
-export class KotakNeoTradeService extends BrokerTradeServiceImpl 
-{
+export class KotakNeoTradeService extends BrokerTradeServiceImpl {
     constructor(name) {
         super(name);
     }
 
-    addListeners() {
-        this.es = ConfigService.getServiceByName('EVENTSERVICE');
-        this.es.addListener('kotak_auth', (data) => {
-            this.onAuthData(data);
-            this.ordermanager.register(this.trade_mode, 'HSICLIENT');
-        });
-        
-        this.af = ConfigService.getServiceByName('ADAPTERFACTORY');
-        this.adapter = this.af.getAdapter('KOTAKADAPTER');
-    }
-
-    onAuthData(authData){
-        this.authData = authData;
-        this.adapter.initiateConnect(this.authData);
-        this.initialized = true;
+    async addListeners() {
+        this.adapter = await KotakAdapter.getInstance();
+        this.ordermanager.register(this.trade_mode, 'HSICLIENT');
+        return true;
     }
 
     async placeOrder(appid, order, modify = false) {
@@ -48,30 +37,29 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
         return { state: 'NOT_OK', error: `${response.status}-${response.statusText}` };
     }
 
-    toKotakOrder(order) 
-    {
+    toKotakOrder(order) {
         const scripstore = ConfigService.getServiceByName('SCRIPSTORE');
 
-        const new_order = {};
-        new_order.am = 'NO',
-        new_order.dq = '0',
-        new_order.mp = '6',
-        new_order.pf = 'N',
-        new_order.rt = 'DAY',
-        new_order.tp = '0',
-        new_order.es = EXCHANGES[order.stockCode]
-        new_order.pc = order.product;
-        new_order.pr = String(order.price);
-        new_order.pt = order.ordertype === 'MARKET' ? 'MKT' : 'L';
-        new_order.qt = String(order.quantity);
-        new_order.tt = order.action;
-        new_order.ts = scripstore.findScripByRefKey(order.symbol).tradingSymbol;
-        new_order.si = '1111111';
-        new_order.sy = 'category';
-        new_order.sn = '2222222';
-        new_order.sc = 'default';
-        if(order.type === 'modify')
-        {
+        const new_order = {
+            am: 'NO',
+            dq: '0',
+            mp: '6',
+            pf: 'N',
+            rt: 'DAY',
+            tp: '0',
+            es: EXCHANGES[order.stockCode],
+            pc: order.product,
+            pr: String(order.price),
+            pt: order.ordertype === 'MARKET' ? 'MKT' : 'L',
+            qt: String(order.quantity),
+            tt: order.action,
+            ts: scripstore.findScripByRefKey(order.symbol).tradingSymbol,
+            si: '1111111',
+            sy: 'category',
+            sn: '2222222',
+            sc: 'default'
+        }
+        if (order.type === 'modify') {
             new_order.no = order.orderid;
             new_order.vd = 'DAY';
             new_order.tk = scripstore.findScripByRefKey(order.symbol).token;
@@ -89,26 +77,26 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
 
     async orderbook(appid, stockCode) {
         const response = await this.adapter.get('orderbook');
-        let orders;
-        if (response.ok) {
-            const order_json = (await response.json());
+        if (!response.ok) {
+            this.log('error calling orderbook api ' + response.status + ' ' + response.statusText);
+            return { status: 'error', reason: 'error calling orderbook api ' + response.status + ' ' + response.statusText };
+        }
 
-            if (order_json.stat !== 'Not_Ok') {
-                orders = order_json.data;
-                return orders.map((order) => {
-                    const odr = this.ordermanager.formatLiveOrder(order);
-                    odr.trade_mode === this.trade_mode;
-                    this.ordermanager.addOrders(odr);
-                    return odr;
-                })
-                .filter((order) => order.stockCode === stockCode)
-                .sort((a, b) => a.orderid - b.orderid);
-            }
-            this.log('error fetching orders ' + order_json.status + ' ' + order_json.statusText);
+        const order_json = (await response.json());
+        if (order_json.stat === 'Not_Ok') {
+            this.log('error fetching orders ' + JSON.stringify(order_json));
             return [];
         }
-        this.log('error fetching orders ' + response.status + ' ' + response.statusText);
-        return [];
+
+        const orders = order_json.data;
+        return orders.map((order) => {
+            const odr = this.ordermanager.formatLiveOrder(order);
+            odr.trade_mode === this.trade_mode;
+            this.ordermanager.addOrders(odr);
+            return odr;
+        }).filter((odr) => {
+            return odr.stockCode === stockCode;
+        }).sort((a, b) => a.orderid - b.orderid);
     }
 
     async positions(appid, stockCode, cf = true) {
@@ -121,10 +109,10 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl
                 positions = position_json.data;
                 return this.ordermanager.formatPositionRecords(positions, stockCode, cf);
             }
-            this.log('error fetching positions ' + position_json.status + ' ' + position_json.statusText);
+            this.log('error fetching positions ' + JSON.stringify(position_json));
             return [];
         }
-        this.log('error fetching positions ' + response.status + ' ' + response.statusText);
+        this.log('error calling positions api' + response.status + ' ' + response.statusText);
         return [];
     }
 }
