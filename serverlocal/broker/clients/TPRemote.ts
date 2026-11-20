@@ -35,41 +35,40 @@ export class TPRemoteAdapter extends TPAdapter {
             this.registerHandlers();
         }
         this.isAuthenticated = true;
+        this.log(`status: [${this.provider}-${this.isAuthenticated}]`);
         return this.isAuthenticated;
     }
 
     async getScrips(filters: any): Promise<any> {
         let resp = await this.post('scrips', { filters: filters });
         if (resp.ok)
-            return await resp.json();
+            return { status: 'success', scrips: await resp.json() };
         else
-            this.error('Failed to get scrips: ' + resp.statusText);
-
-        return;
+            return { status: 'error', reason: resp.statusText };
     }
 
     async getExpiries(stockCode: string): Promise<any> {
         let resp = await this.post('expiries', { stockCode: stockCode });
-        if (resp.ok) {
-            resp = await resp.json();
-        }
-        return resp;
+        if (resp.ok)
+            return { status: 'success', expiries: await resp.json() };
+        else
+            return { status: 'error', reason: resp.statusText };
     }
 
     async getValues(provider: string): Promise<any> {
         let resp = await this.post('values', { provider: provider });
-        if (resp.ok) {
-            resp = await resp.json();
-        }
-        return resp;
+        if (resp.ok)
+            return { status: 'success', values: await resp.json() };
+        else
+            return { status: 'error', reason: resp.statusText };
     }
 
     async getHistory(request: any): Promise<any> {
         let resp = await this.post('history', { request: request });
-        if (resp.ok) {
-            resp = (await resp.json());
-        }
-        return resp;
+        if (resp.ok)
+            return { status: 'success', history: await resp.json() };
+        else
+            return { status: 'error', reason: resp.statusText };
     }
 
     post(endpt: string, body: any) {
