@@ -1,52 +1,32 @@
-import { Worker, parentPort } from 'node:worker_threads';
+import { Worker } from 'node:worker_threads';
 import path from 'path';
+import fs from 'fs';
 
-type MessageType = "action" | "inputdata" | "outputdata";
-type Message = { type: MessageType, value: string };
-
-export class SubProcess {
-    private processfile: string;
-    private self?: Worker;
-    private parent?: typeof parentPort;
-
-    constructor(file: string) {
-        this.processfile = file;
-        this.parent = parentPort;
+const processes = ['ALGO']
+export class SubProcessLauncher {
+    private processMap: Map<string, Worker> = new Map();
+    private processdir = process.env.WORKSPACE_PATH + '/' + process.env.PROCESSES_PATH!;
+    constructor() {
     }
 
-    init(): void {
-        const filedir = process.env.PROCESSES + '/';
-        this.self = new Worker(path.join(filedir, this.processfile));
+    async start() {
+        for (const p of processes) {
+            const filePath = path.join(this.processdir, process.env[`${p}_FILE`]!)!;
+            if (!filePath || !fs.existsSync(filePath))
+                continue;
 
-        this.parent?.on('message', (message: Message) => {
-            if (message.type === 'action')
-                this.actionMessage(message);
-            else if (message.type === 'inputdata')
-                this.handleData(message);
-        });
+            const child = new Worker(filePath);
+            this.processMap.set(p, child);
+
+            child.on('error', (err) => {
+                console.error(`${p} Worker encountered an unhandled error:`, err);
+            });
+
+            child.once('exit', (code) => {
+                if (code !== 0) {
+                    console.error(`${p} Worker stopped unexpectedly with exit code ${code}`);
+                }
+            });
+        }
     }
-
-    actionMessage(message: Message) {
-        if (message.value == "start")
-            this.start();
-        else if (message.value == "stop")
-            this.stop();
-    }
-
-    handleData(message: Message) {
-
-    }
-
-    start(): void {
-        this.sendMessage({ type: 'outputdata', value: 'history' });
-    }
-
-    stop(): void {
-        this.sendMessage({ type: 'outputdata', value: 'stop' });
-    }
-
-    sendMessage(message: Message) {
-        this.self?.postMessage(message);
-    }
-
 }

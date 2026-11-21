@@ -1,5 +1,7 @@
 import { SystemService } from "../serverlocal/service/system/service.js";
 import { DataApi } from "../serverlocal/api/data.js";
+import { Socket } from "socket.io";
+import WebSocket from "ws";
 
 export abstract class App extends SystemService {
     dataApi: DataApi;
@@ -10,9 +12,9 @@ export abstract class App extends SystemService {
     }
 
     abstract startServices(): void;
-    abstract connect(s: Socket): void;
-    abstract send(s: Socket, type: string, data: any): void;
-    abstract registerHandlers(s: Socket, appid: string, mode: string): void;
+    abstract connect(s: Socket | WebSocket): void;
+    abstract send(s: Socket | WebSocket, type: string, data: any): void;
+    abstract registerHandlers(s: Socket | WebSocket, appid: string, mode: string): void;
 
     catchAsync(requestName: string, fn: (...args: any[]) => Promise<any>) {
         return (...args: any[]) => {
@@ -25,7 +27,6 @@ export abstract class App extends SystemService {
 import { ConfigService } from "../serverlocal/service/config/configservice.mjs";
 import { apiserver } from "../serverlocal/apiserver.mjs";
 import { streamer } from "../serverlocal/stream.js";
-import { Socket } from "socket.io";
 
 export class WebApp extends App {
     constructor() {

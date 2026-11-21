@@ -120,6 +120,10 @@ export class BreezeMarketDataHist extends BreezeMarketData {
             st.trimIndex = -1;
             st.state = 'load requested';
             setImmediate(() => {
+                if (new Date(time).getHours() === 15 && new Date(time).getMinutes() > 40) {
+                    this.clear(appid);
+                    return;
+                }
                 this.log('load requested symbol: ' + st.symbol + ' ' + [st.quotes?.length, idx, st.trimIndex]);
                 this.qw(st, instrument, st.quotes[st.quotes.length - 1]?.ltt + 1000 || time + reloadThreshold * 1000);
             });

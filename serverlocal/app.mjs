@@ -14,6 +14,7 @@ class ClientManager extends SystemService {
     connect(s) { }
     send() { }
     registerHandlers(s, appid, mode) { }
+    async tearDown() { return true; }
 
     catchAsync(requestName, fn) {
         return (...args) => {
@@ -104,6 +105,13 @@ export class AppClientManager extends ClientManager {
             next();
         });
     }
+
+    async tearDown() {
+        this.log("Shutting down .....................");
+        await ConfigService.getServiceByName('EVENTSERVICE').triggerImmediate('TEARDOWN');
+
+        return true;
+    }
 }
 
 export class ServerClientManager extends ClientManager {
@@ -158,5 +166,11 @@ export class ServerClientManager extends ClientManager {
     send(appid, type, data) {
         const s = this.socketmap.get(appid);
         s?.send(JSON.stringify({ type: type, data: data }));
+    }
+
+    async tearDown() {
+        this.log("Shutting down .....................");
+
+        return true;
     }
 }
