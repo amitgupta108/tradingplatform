@@ -2,33 +2,35 @@ import { EventEmitter } from "node:events";
 import type { AuthData } from '../../utils/types.js'
 import { WebSocket } from "ws";
 import { ConfigService } from "../../service/config/configservice.mjs";
+import type { NetworkProxy } from "../../utils/networkproxy.js";
 
 abstract class BasicAdapter extends EventEmitter {
     logEnabled: boolean = true;
     name: string;
     provider: string;
     authData?: AuthData;
+    isConnecting: boolean = false;
+    isConnected: boolean = false;
 
     constructor(name: string, provider: string) {
         super();
         this.name = name;
         this.provider = provider;
     }
+    abstract onAuthData(authData: AuthData): Promise<boolean>;
 
     private async init() {
         const es = ConfigService.getServiceByName('EVENTSERVICE');
         es.addListener(`${this.provider}_auth`, async (authData: AuthData) => {
-            await this.onAuthData(authData as AuthData);
+            if (!this.isConnected)
+                await this.onAuthData(authData as AuthData);
         });
 
-        var authData: AuthData;
-        if (this.provider !== 'tpapp') {
-            const authservice = ConfigService.getServiceByName('AUTHSERVICE');
-            authData = await authservice.authdata(this.provider);
-        }
+        const authservice = ConfigService.getServiceByName('AUTHSERVICE');
+        const authData = await authservice.authdata(this.provider);
+
         await this.onAuthData(authData!);
     }
-    abstract onAuthData(authData: AuthData): Promise<boolean>;
 
     log(...args: string[]) {
         if (this.logEnabled) {
@@ -45,8 +47,6 @@ abstract class BasicAdapter extends EventEmitter {
 
 export abstract class TPAdapter extends BasicAdapter {
     static instance?: typeof TPAdapter;
-
-    isAuthenticated: boolean = false;
 
     constructor(name: string, provider: string) {
         super(name, provider);
@@ -74,6 +74,7 @@ export abstract class TPSocket extends BasicAdapter {
 
     abstract onOpen(): void;
     abstract handleMessage(data: any): void;
+    abstract subscribe(symbols: string[], action: string, ...args: any[]): void;
     autoReconnect: boolean = true;
     maxRetries: number = 5;
     retryDelay: number = 3000;
@@ -81,10 +82,8 @@ export abstract class TPSocket extends BasicAdapter {
     reconnectTimer: any = null;
     heartbeatInterval: number = 30000;
     heartbeatTimer: any = null;
-    isConnecting: boolean = false;
-    isConnected: boolean = false;
     url?: string;
-    ws?: WebSocket
+    ws?: WebSocket | NetworkProxy;
 
     constructor(name: string, provider: string) {
         super(name, provider);
@@ -157,7 +156,7 @@ export abstract class TPSocket extends BasicAdapter {
         });
     }
 
-    sendMessage(data) {
+    sendMessage(data: any) {
         if (!this.ws || !this.isConnected) {
             this.log('Cannot send message: not connected');
             return;

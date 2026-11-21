@@ -1,4 +1,4 @@
-import { OpenAlgoClient } from '../../broker/clients/OpenAlgoClient.mjs';
+/*import { OpenAlgoClient } from '../../broker/clients/OpenAlgoClient.mjs';
 import { TPSocket } from '../../broker/clients/TPClient.mjs';
 import { KMDClient } from '../../broker/clients/KMDClient.mjs';
 import { KotakHSISocket } from '../../broker/clients/HSIClient.mjs';
@@ -54,4 +54,4 @@ export class AdapterFactory extends InfraService {
         else if (key === 'TPCLIENT')
             return new TPSocket();
     }
-}
+}*/
