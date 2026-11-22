@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-export class Service extends EventEmitter {
+export abstract class Service extends EventEmitter {
     name: string;
     initialized: boolean;
     logEnabled: boolean;
@@ -13,6 +13,8 @@ export class Service extends EventEmitter {
         this.initialized = false;
         this.logEnabled = true;
     }
+
+    abstract tearDown(): Promise<any>;
 
     async init() {
         if (!this.initialized) {
@@ -38,25 +40,25 @@ export class Service extends EventEmitter {
     }
 }
 
-export class SystemService extends Service {
+export abstract class SystemService extends Service {
     constructor(name: string) {
         super(name);
     }
 }
 
-export class InfraService extends Service {
+export abstract class InfraService extends Service {
     constructor(name: string) {
         super(name);
     }
 }
 
-export class BrokerService extends Service {
+export abstract class BrokerService extends Service {
     constructor(name: string) {
         super(name);
     }
 }
 
-export class UserService extends Service {
+export abstract class UserService extends Service {
     constructor(name: string) {
         super(name);
     }

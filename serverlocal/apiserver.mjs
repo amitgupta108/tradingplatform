@@ -153,6 +153,10 @@ class APIServer extends SystemService {
             this.log("socket disconnected  " + reason);
         });
     }
+
+    async tearDown() {
+        return true;
+    }
 }
 
 export const apiserver = new APIServer();

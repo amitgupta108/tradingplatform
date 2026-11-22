@@ -102,6 +102,12 @@
             "filepath": "../../broker/tpapp/m_tpapp_replay.js",
             "type": "broker"
         },
+        "ICICILIVEVIEW": {
+            "init": "N",
+            "classdef": "BreezeMarketDataLive",
+            "filepath": "../../broker/icici/m_breeze_live.mjs",
+            "type": "broker"
+        },
         "OPENALGOVIEW": {
             "init": "N",
             "classdef": "OpenAlgoMarketData",

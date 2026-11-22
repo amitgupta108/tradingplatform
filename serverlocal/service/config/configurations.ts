@@ -65,4 +65,8 @@ export class Configurations extends UserService {
         else
             return this.expiries[stockCode] as any;
     }
+
+    async tearDown(): Promise<any> {
+        return true;
+    }
 }

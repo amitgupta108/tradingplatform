@@ -30,7 +30,15 @@ abstract class BasicAdapter extends EventEmitter {
         const authData = await authservice.authdata(this.provider);
 
         await this.onAuthData(authData!);
+
+        es.addListener('ENDOFDAY', () => {
+        })
+
+        es.addListener('ENDOFSESSION', async () => {
+        })
     }
+
+    abstract onAuthData(authData: AuthData): Promise<boolean>;
 
     log(...args: string[]) {
         if (this.logEnabled) {

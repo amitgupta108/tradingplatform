@@ -11,21 +11,24 @@ interface IEvent {
 
 export class EventService extends SystemService {
 
-    eod: Date;
+    eod: Date = new Date();
+    eos: Date = new Date();
     events: {
         OC_UNSUB: IEvent;
         ENDOFDAY: IEvent;
+        ENDOFSESSION: IEvent;
         TEARDOWN: IEvent;
     };
 
     constructor(name: string) {
         super(name);
-        this.eod = new Date();
         this.eod.setHours(23, 59, 59);
+        this.eos.setHours(15, 45, 0);
         this.events = {
-            'OC_UNSUB': { active: true, ref: undefined, type: 'interval', interval: 1 }, //minutes
+            'OC_UNSUB': { active: true, ref: undefined, type: 'interval', interval: 10 }, //minutes
             'ENDOFDAY': { active: true, ref: undefined, type: 'timeout', timeout: this.eod.getTime() - Date.now() },
-            'TEARDOWN': { active: false, ref: undefined, type: 'immediate' },
+            'ENDOFSESSION': { active: true, ref: undefined, type: 'timeout', timeout: this.eos.getTime() - Date.now() },
+            'TEARDOWN': { active: true, ref: undefined, type: 'immediate' },
         };
         this.log(this.eod.toLocaleString());
     }
@@ -38,8 +41,6 @@ export class EventService extends SystemService {
                     this.setIntervalEvent(name);
                 else if (type === 'timeout')
                     this.setTimeoutEvent(name);
-                else if (type === 'immediate')
-                    this.setImmediateEvent(name);
             }
         }
         return true;
@@ -52,9 +53,12 @@ export class EventService extends SystemService {
     }
 
     setTimeoutEvent(name: string) {
-        this.events[name].ref = setTimeout(() => {
-            this.emit('EOD', this.eod);
-        }, this.events[name].timeout);
+        if (this.events[name].timeout > 0) {
+            this.events[name].ref = setTimeout(() => {
+                this.log(`setTimeoutEvent ${name}`);
+                this.emit(name, {});
+            }, this.events[name].timeout);
+        }
     }
 
     setImmediateEvent(name: string) {
@@ -63,5 +67,20 @@ export class EventService extends SystemService {
 
     clearEvent(name: string) {
 
+    }
+
+    activateEvent(name: string) {
+        this.events[name].active = true;
+    }
+
+    triggerImmediate(name: string) {
+        if (this.events[name].active && this.events[name].type === 'immediate') {
+            this.log(`triggerImmediate ${name}`);
+            this.emit(name, {});
+        }
+    }
+
+    async tearDown(): Promise<any> {
+        return true;
     }
 }

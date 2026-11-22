@@ -28,34 +28,51 @@ methods.forEach((method) => {
         original.apply(console, [timestamp, formattedMessage]);
     };
 });
-
-process.on('uncaughtException', (error: Error) => {
+process.on('uncaughtException', (error) => {
     console.error('FATAL: Uncaught Exception ' + error.stack);
-    //setTimeout(() => process.exit(1), 5000); 
 });
 
-process.on('unhandledRejection', (error: Error) => {
-    console.error('Unhandled promise, reason ' + error.stack);
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled promise, reason ' + error);
 });
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-async function startServers() {
-    const { SocketIO } = await import('./serverapps/socketio.js');
-    await (new SocketIO()).start();
+const apps: any[] = [];
 
-    const { WSServer } = await import('./serverapps/socketws.js',);
-    await (new WSServer()).start();
+async function startServers() {
+    if (process.env.WEBAPP === 'Y') {
+        const { SocketIO } = await import('./serverapps/socketio.js');
+        apps.push(await (new SocketIO() as any).start());
+    }
+
+    if (process.env.SERVERAPP === 'Y') {
+        const { WSServer } = await import('./serverapps/socketws.js');
+        apps.push(await (new WSServer() as any).start());
+    }
+
+    if (process.env.SUBPROCESSES === 'Y') {
+        const { SubProcessLauncher } = await import('./serverapps/process.js');
+        apps.push(await (new SubProcessLauncher() as any).start());
+    }
 }
 
 await startServers();
 
-function shutdown(signal: string) {
+async function shutdown(signal) {
     setTimeout(() => {
         console.error("Forced shutdown due to timeout.");
         process.exit(1);
     }, 5000);
+
+    try {
+        for (const app of apps) {
+            await app.tearDown();
+        }
+    } catch (exception) {
+        console.error('Failed to tear down app ' + exception);
+    }
 
     console.log("All Socket.IO connections cleared and HTTP server closed.");
     process.exit(0);

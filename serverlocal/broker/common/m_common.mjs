@@ -39,13 +39,12 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     async history(request, appid) {
-        //Object.assign(request, this.getScrip(request.symbol));
         if (EXCHANGES[request.stockCode] === 'mcx_fo')
             return;
 
         let response;
         if (process.env.PTFETCH_HISTORY === 'Y')
-            response = await this.historyRemote(request);
+            response = (await this.tpHistory(request)).history;
         else
             response = await this.historyLocal(request, appid);
 
@@ -57,16 +56,6 @@ export class CommonService extends BrokerMarketDataImpl {
             streamer.emitHistQs(appid, request.symbol, response);
 
         return { status: 'success' };
-    }
-
-    async historyRemote(request) {
-        const response = await this.tpHistory(request);
-        if (response.ok)
-            return data = await response.json();
-        else
-            this.log(`historyRemote error ${response.statusText}`);
-
-        return [];
     }
 
     async historyLocal(request, appid) {
