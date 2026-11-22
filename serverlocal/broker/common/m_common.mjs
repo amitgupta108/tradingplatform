@@ -1,5 +1,5 @@
 import { streamer } from '../../stream.js';
-import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
+import { BrokerMarketDataImpl } from './m_broker_interface.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
 import { EXCHANGES } from '../../utils/constants.js';
 import { TPRemoteAdapter } from '../clients/TPRemote.js';
@@ -10,10 +10,8 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     async addListeners() {
-        if (process.env.PASSTHROUGH === 'Y') {
-            this.adapter = await TPRemoteAdapter.getInstance();
-            this.adapter.addListener('quote', (arg) => this.onQuotes(arg));
-        }
+        this.adapter = await TPRemoteAdapter.getInstance();
+        this.adapter.addListener('quote', (arg) => this.onQuotes(arg));
     }
 
     async tpExpiries(stockCode) {
@@ -41,26 +39,45 @@ export class CommonService extends BrokerMarketDataImpl {
     }
 
     async history(request, appid) {
-        Object.assign(request, this.getScrip(request.symbol));
+        //Object.assign(request, this.getScrip(request.symbol));
         if (EXCHANGES[request.stockCode] === 'mcx_fo')
             return;
 
         let response;
         if (process.env.PTFETCH_HISTORY === 'Y')
-            response = await this.tpHistory(request);
-        else {
-            const s = ConfigService.getServiceByName('ICICIHISTVIEW');
-            response = await s.getHistory(appid, request);
-        }
-
-        if (response.Error)
-            return { status: 'error', reason: 'history fetch error ' + response.Error };
-        else if (appid === undefined)
-            return response.Success;
+            response = await this.historyRemote(request);
         else
-            streamer.emitHistQs(appid, request.symbol, response.Success);
+            response = await this.historyLocal(request, appid);
+
+        if (response.length === 0)
+            return { status: 'error', reason: 'history fetch error' };
+        else if (appid === undefined)
+            return response;
+        else
+            streamer.emitHistQs(appid, request.symbol, response);
 
         return { status: 'success' };
+    }
+
+    async historyRemote(request) {
+        const response = await this.tpHistory(request);
+        if (response.ok)
+            return data = await response.json();
+        else
+            this.log(`historyRemote error ${response.statusText}`);
+
+        return [];
+    }
+
+    async historyLocal(request, appid) {
+        const s = ConfigService.getServiceByName('ICICIHISTVIEW');
+        const response = await s.getHistory(appid, request);
+        if (!response.Error)
+            return response.Success;
+        else
+            this.log(`historyLocal error ${response.Error}`);
+
+        return [];
     }
 
     onVix(q) {

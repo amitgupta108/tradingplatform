@@ -1,4 +1,4 @@
-import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
+import { BrokerMarketDataImpl } from '../common/m_broker_interface.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
 
 export class OpenAlgoMarketData extends BrokerMarketDataImpl {
@@ -47,7 +47,7 @@ export class OpenAlgoMarketData extends BrokerMarketDataImpl {
         }, 5000);
     }
 
-    subscribe(appid, list, action) {
+    subscribe(appid, list, action, ...args) {
         this.my_subs.addRequests(appid, list);
         const requests = this.buildRequests(list);
 

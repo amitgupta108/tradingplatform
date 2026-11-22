@@ -1,5 +1,5 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
+import { BrokerTradeServiceImpl } from '../common/m_broker_interface.js';
 
 export class OpenAlgoTradeService extends BrokerTradeServiceImpl {
     constructor(name) {

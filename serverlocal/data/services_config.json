@@ -41,13 +41,6 @@
             "filepath": "../subscription/serverstream.mjs",
             "type": "infra"
         },
-        "ADAPTERFACTORY": {
-            "init": "N",
-            "classdef": "AdapterFactory",
-            "filepath": "./adapterfactory.mjs",
-            "type": "infra",
-            "seq": "6"
-        },
         "SUBSMANAGER": {
             "init": "N",
             "classdef": "SubsManager",
@@ -91,16 +84,22 @@
             "filepath": "../../broker/kotak/t_kotakneo.mjs",
             "type": "broker"
         },
-        "ICICIHISTVIEW": {
+        "HISTORYSIMULATOR": {
             "init": "Y",
-            "classdef": "BreezeMarketDataHist",
-            "filepath": "../../broker/icici/m_breeze_hist.mjs",
+            "classdef": "HistorySimulator",
+            "filepath": "../simulation/historysim.js",
             "type": "broker"
         },
-        "ICICILIVEVIEW": {
+        "ICICIMARKETDATA": {
             "init": "Y",
-            "classdef": "BreezeMarketDataLive",
-            "filepath": "../../broker/icici/m_breeze_live.mjs",
+            "classdef": "ICICIMarketData",
+            "filepath": "../../broker/r_icici/m_icici.js",
+            "type": "broker"
+        },
+        "TPMARKETREPLAY": {
+            "init": "Y",
+            "classdef": "TPMarketReplay",
+            "filepath": "../../broker/tpapp/m_tpapp_replay.js",
             "type": "broker"
         },
         "OPENALGOVIEW": {

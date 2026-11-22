@@ -1,54 +1,53 @@
 import { streamer } from '../../stream.js';
-import { Subscriptions } from '../../service/subscription/subscription.mjs';
+import { Subscriptions, SubsTemplate } from '../../service/subscription/subscription.js';
 import { BrokerService } from '../../service/system/service.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { EXCHANGES } from '../../utils/constants.js';
+import { OrderManager } from './ordermanager.mjs';
+import { toScrip } from '../../utils/constants.js';
+import type { Scrip } from '../../utils/types.js';
+import type { EventService } from '../../service/system/eventservice.js';
+import type { SubsItem } from '../../service/subscription/subscription.js';
 
 class BrokerImpl extends BrokerService {
-    constructor(name) {
+    adapter?: any;
+    symbol_cache: Map<string, any>;
+    constructor(name: string) {
         super(name);
-        this.adapter;
         this.symbol_cache = new Map();
     }
 
-    getScrip(symbol) {
-        const t = { symbol: symbol } //template
-        const regex = /[0-9]/;
-        const idx = symbol.search(regex);
-        t.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
-        t.exchange = ['NIFTY', 'INDVIX'].includes(symbol) ? 'nse_cm' : EXCHANGES[t.stockCode];
-        t.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
-        if (idx !== -1) {
-            t.expiry = symbol.slice(idx, idx + 7);
-            if (!symbol.endsWith('FUT')) {
-                t.strike = symbol.slice(idx + 7, -2);
-                t.right = symbol.slice(-2);
-            }
-        }
-        return t;
+    getScrip(symbol: string): Scrip {
+        return toScrip(symbol);
     }
 }
 
-export class BrokerMarketDataImpl extends BrokerImpl {
-    constructor(name) {
+export abstract class BrokerMarketDataImpl extends BrokerImpl {
+    view_mode?: string;
+    simpricefeed?: boolean = false;
+    subscriptions: Subscriptions;
+    es: EventService;
+
+    abstract addListeners(): Promise<boolean>;
+    abstract subscribe(appid: string, sc: any[], action: string, ...args: any[]): void;
+    abstract subscribeIndices(appid: string, sc: string): void;
+    abstract standardize(qt: any): any;
+
+    constructor(name: string) {
         super(name);
-        this.view_mode;
-        this.simpricefeed = false;
-        this.subscriptions;
+        this.subscriptions = new Subscriptions(this.name);
+        this.es = ConfigService.getServiceByName('EVENTSERVICE') as EventService;
     }
 
     async init() {
         if (!this.initialized) {
             this.view_mode = ConfigService.getKeyByFeature(this.name, 'view');
 
-            this.es = ConfigService.getServiceByName('EVENTSERVICE');
             this.es.addListener(`${this.name}_unsub`, (appid, list) => {
                 this.subscribe(appid, list, 'unsub');
             });
             this.es.addListener('oc_unsub', (count) => {
                 this.subscriptions.autoUnsub(count);
             });
-            this.subscriptions = new Subscriptions(this.name);
 
             await this.addListeners();
             this.initialized = true;
@@ -57,27 +56,28 @@ export class BrokerMarketDataImpl extends BrokerImpl {
         return { status: 'already initialized' };
     }
 
-    startv2(appid, p) {
-        const stock_subs = this.subscriptions.addNewSubscriptions(appid, p);
-        const requests = stock_subs.getSubsItems(['futures']); //st_item
-        this.subscribe(appid, requests, 'start');
+    startv2(appid: string, p) {
+        const stock_subs = this.subscriptions.addNewSubscriptions(appid, p) as SubsTemplate;
+        const request = stock_subs.getSubsItemByKey('futures') as SubsItem; //st_item
+
+        this.subscribe(appid, [request.symbol], 'start', p.simStartTime, p.speed ?? 1);
         this.subscribeIndices(appid, p.stockCode);
 
         if (stock_subs.atm !== 0) {
-            const strikesset = stock_subs.reloadStrikes({ ltp: stock_subs.atm });
-            strikesset.forEach((s) => {
+            const strikesset = stock_subs.reloadStrikes(stock_subs.atm);
+            strikesset.forEach((s: any) => {
                 this.subscribe(appid, s, 'subs');
             });
         }
     }
 
-    atmReview(qt) {
+    atmReview(qt: any) {
         const t = this.subscriptions.getSubscriptionsForStockCode(qt.stockCode);
         t.forEach((ss) => {
             const response = ss.getNotified(qt);
             if (response !== undefined && response.load === true) {
-                const strikesset = ss.reloadStrikes(response.uq);
-                strikesset.forEach((set) => {
+                const strikesset = ss.reloadStrikes(response.uq.ltp);
+                strikesset.forEach((set: any) => {
                     this.subscribe(ss.appid, set, 'subs');
                 });
             }
@@ -85,18 +85,18 @@ export class BrokerMarketDataImpl extends BrokerImpl {
     }
 
     /** deprecated **/
-    option_chain(appid, expiry, action) {
-        const stock_subs = this.subscriptions.getSubscriptions(appid);
+    option_chain(appid: any, expiry: any, action: any) {
+        const stock_subs = this.subscriptions.getSubscriptions(appid) as SubsTemplate;
 
         const response = stock_subs.option_chain(expiry, action.value);
         if (response !== undefined && response.status === 'success')
             this.subscribe(appid, response.strikes, response.action);
     }
 
-    optionchainAction(appid, expiry, action) {
-        const subs = this.subscriptions.getSubscriptions(appid);
+    optionchainAction(appid: string, expiry: string, action: any) {
+        const subs = this.subscriptions.getSubscriptions(appid) as SubsTemplate;
         if (subs !== undefined) {
-            const response = subs.optionchainAction(expiry, action);
+            const response = subs.optionChainAction(expiry, action);
             if (response.status === 'success') {
                 if (action.key === 'strikes') {
                     this.subscribe(appid, response.oldstrikes, 'unsub');
@@ -112,7 +112,7 @@ export class BrokerMarketDataImpl extends BrokerImpl {
         }
     }
 
-    onQuotes(q, appid) {
+    onQuotes(q: any, appid: string) {
         const qt = this.standardize(q);
         if (qt !== undefined) {
             this.emitQuotes(qt, appid);
@@ -120,11 +120,11 @@ export class BrokerMarketDataImpl extends BrokerImpl {
             if (qt.key === 'futures')
                 this.atmReview(qt);
             else if (this.simpricefeed && qt.key === 'strikex')
-                this.es.emit(this.view_mode, qt);
+                this.es.emit(this.view_mode as string, qt);
         }
     }
 
-    emitQuotes(qt, appid) {
+    emitQuotes(qt: any, appid?: string) {
         qt.view_mode = this.view_mode;
         if (appid !== undefined) {
             qt.appid = appid;
@@ -144,32 +144,38 @@ export class BrokerMarketDataImpl extends BrokerImpl {
         return this.view_mode;
     }
 
-    stream(appid, action) {
+    stream(appid: string, action: string) {
         if (action === 'pause')
             this.subscriptions.pauseStream(appid);
         else if (action === 'resume')
             this.subscriptions.resumeStream(appid);
     }
 
-    exit(appid) {
+    exit(appid: string) {
         this.subscriptions.removeRequests(appid);
         this.subscriptions.removeSubscriptions(appid);
     }
 }
 
-export class BrokerTradeServiceImpl extends BrokerImpl {
-    constructor(name) {
+export abstract class BrokerTradeServiceImpl extends BrokerImpl {
+    trade_mode?: string;
+    mytradename: string;
+    ordermanager?: OrderManager;
+
+    abstract placeOrder(appid: string, order: any, modify?: boolean): any;
+    abstract addListeners(): Promise<boolean>;
+
+    constructor(name: string) {
         super(name);
         this.trade_mode;
         this.mytradename = name;
-        this.authData;
+        this.ordermanager = ConfigService.getServiceByName('ORDERMANAGER');
     }
 
     async init() {
         if (!this.initialized) {
             this.trade_mode = ConfigService.getKeyByFeature(this.name, 'trade');
 
-            this.ordermanager = ConfigService.getServiceByName('ORDERMANAGER');
             if (await this.addListeners()) {
                 this.initialized = true;
                 return { status: 'success' };
@@ -179,8 +185,8 @@ export class BrokerTradeServiceImpl extends BrokerImpl {
         return { status: 'already initialized' };
     }
 
-    modifyOrder(appid, order) {
-        const open_order = ordermanager.getOpenOrder(this.trade_mode, order.orderid);
+    modifyOrder(appid: string, order: any) {
+        const open_order = this.ordermanager?.getOpenOrder(this.trade_mode, order.orderid);
         if (open_order !== undefined)
             return this.placeOrder(appid, order, true);
 

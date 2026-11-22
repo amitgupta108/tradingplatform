@@ -1,6 +1,6 @@
 window.addEventListener('unhandledrejection', function (event) {
-	console.log(event.reason); 
-	console.log(event.promise); 
+	console.log(event.reason);
+	console.log(event.promise);
 	if (event.reason && event.reason.stack) {
 		console.log(event.reason.stack);
 	}
@@ -9,7 +9,7 @@ window.addEventListener('unhandledrejection', function (event) {
 const LOT_SIZE = {
 	NIFTY: 65,
 	CRUDEOIL: 100,
-	BANKNIFTY: 25 
+	BANKNIFTY: 25
 };
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -23,11 +23,11 @@ async function getAppid(id) {
 	if (response.ok) {
 		instrument = await response.json();
 
-		const simDate = new Date(instrument.simStartTime ?? Date.now());
+		const simDate = new Date(instrument.simStartTime) ?? new Date();
 		date_label.textContent = simDate.toDateString();
 		expiry_btn_1.textContent = instrument.oExpiries[0];
 		expiry_btn_2.textContent = instrument.oExpiries[1];
-		
+
 		if (optionChains.findIndex((oc) => oc.expiry === instrument.oExpiries[0]) === -1)
 			var c_option_chain = new OptionChain(instrument.oExpiries[0], 'c_oc_div');
 

@@ -42,10 +42,10 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 async function startServers() {
-    const { SocketIO } = await import('./serverapps/socketio.mjs');
+    const { SocketIO } = await import('./serverapps/socketio.js');
     await (new SocketIO()).start();
 
-    const { WSServer } = await import('./serverapps/socketws.mjs',);
+    const { WSServer } = await import('./serverapps/socketws.js',);
     await (new WSServer()).start();
 }
 

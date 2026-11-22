@@ -1,5 +1,4 @@
-import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
-import { BreezeAdapter } from '../clients/BreezeAdapter.mjs';
+import { BrokerMarketDataImpl } from '../common/m_broker_interface.js';
 
 export class BreezeMarketData extends BrokerMarketDataImpl {
     constructor(name) {
