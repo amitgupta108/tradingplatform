@@ -47,7 +47,7 @@ export class Configurations extends UserService {
 
     private async fetchExpiries(stockCode: string, type: string): Promise<string[]> {
         const adapter = await KotakAdapter.getInstance() as any as KotakAdapter;
-        if (adapter.isAuthenticated) {
+        if (adapter.isConnected) {
             const response = await adapter.get('expiries', {
                 exchange: EXCHANGES[stockCode], underlying: stockCode,
                 instrument_type: type === 'FUTURES' ? 'fut' : 'option'
@@ -64,5 +64,9 @@ export class Configurations extends UserService {
             return this.expiries[stockCode][type] as string[];
         else
             return this.expiries[stockCode] as any;
+    }
+
+    async tearDown(): Promise<any> {
+        return true;
     }
 }

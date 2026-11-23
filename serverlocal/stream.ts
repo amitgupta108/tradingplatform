@@ -90,6 +90,9 @@ class StreamingService extends SystemService {
         return this.usermap.entries();
     }
 
+    async tearDown(): Promise<any> {
+        return true;
+    }
 }
 
 export const streamer = new StreamingService('STREAMSERVICE');

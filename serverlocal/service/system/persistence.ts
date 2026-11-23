@@ -32,4 +32,8 @@ export class PersistenceService extends SystemService {
     async setData(key: string, value: any) {
         return await this.store.put(key, JSON.stringify(value));
     }
+
+    async tearDown(): Promise<any> {
+        return true;
+    }
 }

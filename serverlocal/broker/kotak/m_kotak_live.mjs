@@ -1,5 +1,5 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { BrokerMarketDataImpl } from '../common/m_broker_interface.mjs';
+import { BrokerMarketDataImpl } from '../common/m_broker_interface.js';
 import { KMDClient } from '../clients/KMDClient.mjs';
 import { streamer } from '../../stream.js';
 
@@ -15,7 +15,7 @@ export class KotakMarketDataLive extends BrokerMarketDataImpl {
         this.adapter.addListener('snapshot', (arg) => this.onSnapshot(arg));
     }
 
-    subscribe(appid, list, action) {
+    subscribe(appid, list, action, ...args) {
         action = action === 'start' ? 'subs' : action === 'stop' ? 'unsub' : action;
         this.subscriptions.addRequests(appid, list);
         const requests = this.buildRequests(list);

@@ -11,13 +11,13 @@ export class KotakAdapter extends TPAdapter {
     }
 
     async onAuthData(authData: AuthData) {
-        if (authData.date === new Date().toDateString() && !this.isAuthenticated) {
+        if (authData.date === new Date().toDateString() && !this.isConnected) {
             this.authData = authData;
             this.cache_url();
-            this.isAuthenticated = true;
+            this.isConnected = true;
         }
-        this.log(`status: [${this.provider}-${this.isAuthenticated}]`);
-        return this.isAuthenticated;
+        this.log(`status: [${this.provider}-${this.isConnected}]`);
+        return this.isConnected;
     }
 
     cache_url() {
