@@ -16,7 +16,7 @@ export abstract class Service extends EventEmitter {
 
     abstract tearDown(): Promise<any>;
 
-    async init() {
+    async init(): Promise<any> {
         if (!this.initialized) {
             if (typeof (this as any).cInit === 'function')
                 (this as any).cInit();

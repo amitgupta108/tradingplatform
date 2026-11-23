@@ -14,7 +14,7 @@ export class NetworkProxy extends EventEmitter {
 
     send(json: string) {
         const msg = JSON.parse(json);
-        this.emit(msg.type as string, msg.data)
+        this.emit(msg.type as string, msg.data, msg.appid)
     }
 
     close() {

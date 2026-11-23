@@ -31,7 +31,7 @@ function appendOrderRow(order) {
 	const action_btn = tr.querySelector('#ow_action_btn');
 	action_btn.textContent = order.action;
 	const selectbox = tr.querySelector('select');
-	selectbox.value = order.quantity / LOT_SIZE[instrument.stockCode];
+	selectbox.value = order.quantity / LOT_SIZE[profile.stockCode];
 
 	if (order.type === 'modify')
 		tr.title = order.orderid;

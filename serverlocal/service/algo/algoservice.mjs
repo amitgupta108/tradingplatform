@@ -1,5 +1,5 @@
 import { eventservice } from './eventservice.mjs'
-import { ConfigService as config, ConfigService } from './config/configservice.mjs';
+import { ConfigService as config, ConfigService } from '../config/configservice.mjs';
 
 class AlgoService {
     constructor(name, market_service, trade_service) {

@@ -81,4 +81,8 @@ export class HistorySimulator extends UserService {
     exit(appid: string): { status: string } {
         return this.clear(appid);
     }
+
+    async tearDown(): Promise<any> {
+
+    }
 }

@@ -8,7 +8,7 @@ import type { Scrip } from '../../utils/types.js';
 import type { EventService } from '../../service/system/eventservice.js';
 import type { SubsItem } from '../../service/subscription/subscription.js';
 
-class BrokerImpl extends BrokerService {
+abstract class BrokerImpl extends BrokerService {
     adapter?: any;
     symbol_cache: Map<string, any>;
     constructor(name: string) {
@@ -17,7 +17,12 @@ class BrokerImpl extends BrokerService {
     }
 
     getScrip(symbol: string): Scrip {
-        return toScrip(symbol);
+        let qt = this.symbol_cache.get(symbol);
+        if (!qt) {
+            qt = toScrip(symbol as string);
+            this.symbol_cache.set(symbol, qt)
+        }
+        return qt as Scrip;
     }
 }
 

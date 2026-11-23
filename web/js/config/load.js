@@ -1,10 +1,10 @@
 let futures_ltp;
 const positions = new Map();
-const pNL_all = {booked: 0.00, unbooked: 0.00}
+const pNL_all = { booked: 0.00, unbooked: 0.00 }
 const decimal2 = ['bookedPL', 'averageP', 'LTP', 'unbookedPL', 'totalPL'];
 let in_prep_orders = {};
 const optionChains = new Array(0);
-const sOrderSubmit =  new Audio('./ordersubmit.wav');
+const sOrderSubmit = new Audio('./ordersubmit.wav');
 let data_reload = false;
 
 const c_oc_container = document.getElementById('c_oc_div');
@@ -42,14 +42,14 @@ const expiry_btn_2 = document.getElementById('expiry_btn_2');
 
 let spot_title = ' | S: ';
 let fut_title = 'F: ';
-let gtotal_booked =  document.getElementById("vBookedPL");
-let gtotal_unbooked =  document.getElementById("vUnbookedPL");
-let gtotal_pnl =  document.getElementById("vTotalPL");
+let gtotal_booked = document.getElementById("vBookedPL");
+let gtotal_unbooked = document.getElementById("vUnbookedPL");
+let gtotal_pnl = document.getElementById("vTotalPL");
 /*--Custom Tags------------------------------------------------------------------------------------------------------------------------------*/
 
 class TradeButtons extends HTMLElement {
 	connectedCallback() {
-	this.innerHTML = `
+		this.innerHTML = `
 		<div class="hover-content">
 			<button  id="div_trans_btn" class="smallbutton buy">B</button>
 			<button  id="row_attn_btn" class="smallbutton order">!</button>
@@ -80,17 +80,16 @@ qBox.addEventListener('futures', (event) => {
 	document.title = fut_title + spot_title;
 	spot_label.textContent = fut_title + spot_title;
 
-	time_label.textContent = (instrument.mode === 'HISTORY' ?
+	time_label.textContent = (['HISTORY', 'REPLAY'].includes(profile.mode) ?
 		new Date(q.ltt) : new Date()).toLocaleTimeString();
 });
 
 qBox.addEventListener('strikex', (event) => {
-	if(positions.size > 0 && positions.get(event.detail.symbol) !== undefined)
-	{
+	if (positions.size > 0 && positions.get(event.detail.symbol) !== undefined) {
 		const pos = positions.get(event.detail.symbol);
 
 		const unbookedPL = (event.detail.ltp - pos.booked.avgP) * pos.psize;
-		const pnlchange = {change_unb: unbookedPL - pos.value('unbookedPL'), change_b: 0};
+		const pnlchange = { change_unb: unbookedPL - pos.value('unbookedPL'), change_b: 0 };
 		pNL.dispatchEvent(generateEvent('change', pnlchange));
 
 		pos.value('LTP', event.detail.ltp);
@@ -99,21 +98,20 @@ qBox.addEventListener('strikex', (event) => {
 	}
 });
 
-qBox.addEventListener('strikex', (event) => 
-{
+qBox.addEventListener('strikex', (event) => {
 	const n_rows = order_rows_tbody.rows.length;
-	if(n_rows === 0)
+	if (n_rows === 0)
 		return;
 
 	var rows = Array.from(order_rows_tbody.rows);
 	rows.forEach((r) => {
-		if(event.detail.symbol === r.querySelector("#owsymbol").textContent) {
+		if (event.detail.symbol === r.querySelector("#owsymbol").textContent) {
 			r.querySelector("#owprice").textContent = event.detail.ltp.toFixed(2);
-			
+
 			const lmt_price_tb = qSel(r, 'lmtprice', 'id');
 			const price_type_lb = qSel(r, 'ordertype', 'id');
-			if(lmt_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
-			lmt_price_tb.value = event.detail.ltp.toFixed(2);
+			if (lmt_price_tb.value === '' && price_type_lb.innerText === 'LIMIT')
+				lmt_price_tb.value = event.detail.ltp.toFixed(2);
 		}
 	});
 });
@@ -137,13 +135,13 @@ pos_all_cb.addEventListener('change', (event) => {
 
 exit_pos_btn.onclick = (event) => {
 	const checkboxes = Array.from(positions_tBody.querySelectorAll('input[type="checkbox"]:checked'));
-	
+
 	checkboxes.forEach((cb) => {
 		const symbol = cb.parentNode.parentNode.title;
 		const p = Position.findPosition(symbol, false);
 		const action = Math.sign(p.psize) === 1 ? 'S' : 'B';
 		const quantity = Math.abs(p.psize);
-		
+
 		const order = new Order(symbol, action, quantity);
 
 		appendOrderRow(order);

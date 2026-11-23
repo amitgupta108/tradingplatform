@@ -31,10 +31,14 @@ class APIServer extends SystemService {
 
         s.on('history', this.catchAsync(async (request) => {
             this.log("history request " + request.symbols.length);
-            for (const s of request.symbols) {
-                const resp = await util_service.history({ ...request, symbol: s }, appid);
-
+            let response = '';
+            for (const symbol of request.symbols) {
+                const history = await util_service.history({ ...request, symbol });
+                s.emit('history', { symbol: symbol, qA: history });
+                response += `${symbol} ${history?.length} `;
             }
+            return response;
+
         }, 'history'));
 
         s.on('subscribe', (list) => {

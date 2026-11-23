@@ -14,8 +14,8 @@ export class ReplaySocket extends TPSocket {
         const simulator = ConfigService.getServiceByName('HISTORYSIMULATOR');
         simulator.connect(this.ws);
 
-        this.ws.on('quote', (data: Quote) => {
-            this.handleMessage(data);
+        this.ws.on('quote', (data: Quote, appid: string) => {
+            this.handleMessage(data, appid);
         });
 
         this.isConnected = true;
@@ -24,16 +24,16 @@ export class ReplaySocket extends TPSocket {
 
     subscribe(symbols: string[], action: string, ...args: any[]) {
         if (action === 'start')
-            this.ws?.send(JSON.stringify({ type: 'session', data: { action: action, symbols: symbols, simStartTime: args[0], speed: args[1] } }));
+            this.ws?.send(JSON.stringify({ type: 'session', data: { appid: args[0], action: action, symbols: symbols, simStartTime: args[1], speed: args[2] } }));
         if (action === 'subs' || action === 'unsub')
-            this.ws?.send(JSON.stringify({ type: 'subscription', data: { action: action, symbols: symbols } }));
+            this.ws?.send(JSON.stringify({ type: 'subscription', data: { appid: args[0], action: action, symbols: symbols } }));
     }
 
     onOpen(): void {
 
     }
 
-    handleMessage(q: Quote): void {
-        this.emit('quote', q);
+    handleMessage(q: Quote, appid: string): void {
+        this.emit('quote', q, appid);
     }
 }

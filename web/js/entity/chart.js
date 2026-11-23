@@ -82,7 +82,7 @@ function updateCandle(q, curCandle) {
 }
 
 function lookbackPeriod() {
-	const endTime = instrument.mode === 'HISTORY' ? instrument.simStartTime : Date.now();
+	const endTime = profile.mode === 'HISTORY' ? profile.simStartTime : Date.now();
 	const startTime = endTime - 1 * 24 * 60 * 60 * 1000; // 4 days back
 
 	return { startTime: startTime, endTime: endTime, interval: '5minute' };
@@ -213,7 +213,7 @@ class Chart {
 		const p = lookbackPeriod();
 		for (const s of symbols) {
 			const r = structuredClone(p);
-			r.symbol = s === 'index' ? instrument.stockCode : s;
+			r.symbol = s === 'index' ? profile.stockCode : s;
 			requests.push(r);
 		}
 		socket.emit('history', requests);

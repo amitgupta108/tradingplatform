@@ -38,8 +38,6 @@ abstract class BasicAdapter extends EventEmitter {
         })
     }
 
-    abstract onAuthData(authData: AuthData): Promise<boolean>;
-
     log(...args: string[]) {
         if (this.logEnabled) {
             console.log(`[${this.name}]`, ...args);
@@ -81,7 +79,7 @@ export abstract class TPSocket extends BasicAdapter {
     static instance?: typeof TPSocket;
 
     abstract onOpen(): void;
-    abstract handleMessage(data: any): void;
+    abstract handleMessage(data: any, ...args: any[]): void;
     abstract subscribe(symbols: string[], action: string, ...args: any[]): void;
     autoReconnect: boolean = true;
     maxRetries: number = 5;

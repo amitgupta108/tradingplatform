@@ -73,7 +73,7 @@ export class BreezeAdapter extends TPAdapter {
 
         return {
             exchangeCode: scrip.exchange === 'nse_cm' ? 'NSE' : scrip.exchange === 'nse_fo' ? 'NFO' : 'MCX',
-            stockCode: scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : scrip.stockCode,
+            stockCode: scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : symbol === 'VIX' ? 'INDVIX' : scrip.stockCode,
             strikePrice: scrip.strike,
             right: scrip.key === 'OPT' && scrip.call ? 'Call' : 'Put',
             productType: scrip.key === 'OPT' ? 'options' : 'futures',
@@ -82,7 +82,7 @@ export class BreezeAdapter extends TPAdapter {
     }
 
     private ISODate(datetime: number): string {
-        return (new Date(Math.round((datetime) / 1000) * 1000 + (330 * 60 * 1000))).toISOString();
+        return new Date(datetime).toISOString();
     }
 
     private formatExpiry(expiry: string, type: string): string | undefined {

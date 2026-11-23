@@ -20,17 +20,17 @@ export class UserQuotes extends Generic {
         this.appid = appid;
         this.adapter = adapter;
         this.client = client;
+        this.qCollection = new Map<string, { currentIdx: number, quotes: Quote[] }>();
+        this.client.addListener('subscription', (msg: MessageObject) => {
+            this.subscribe(msg.symbols!, msg.action!);
+        });
     }
 
     init(startMsg: MessageObject) {
         this.startTime = startMsg.simStartTime!;
         this.currentTime = this.startTime;
         this.symbols = startMsg.symbols!;
-        this.qCollection = new Map<string, { currentIdx: number, quotes: Quote[] }>();
-        this.addRequests(this.symbols);
-        this.client.addListener('subscription', (msg: MessageObject) => {
-            this.subscribe(msg.symbols!, msg.action!);
-        });
+        this.subscribe(this.symbols, 'subs');
     }
 
     subscribe(symbols: string[], action: string) {
@@ -44,10 +44,8 @@ export class UserQuotes extends Generic {
         this.symbols.push(...symbols);
         this.symbols = [...new Set(this.symbols)];
         for (const s of symbols) {
-            if (this.qCollection!.has(s))
-                continue;
-            this.qCollection!.set(s, { currentIdx: 0, quotes: new Array<Quote>() });
-            this.loadQuotes(s, this.startTime);
+            if (!this.qCollection!.has(s))
+                this.qCollection!.set(s, { currentIdx: 0, quotes: new Array<Quote>() });
         }
     }
 
@@ -60,43 +58,25 @@ export class UserQuotes extends Generic {
     }
 
     private q(symbol: string, time: number): Quote | undefined {
-        const qs = this.qCollection!.get(symbol);
-        if (!qs || qs.quotes.length === 0)
-            return;
-
-        let idx = qs.currentIdx;
-        for (let i = qs.currentIdx; i < qs.quotes.length; i++) {
-            if (qs.quotes[i].ltt === time) {
-                idx = i;
-                qs.currentIdx = idx + 1;
-                break;
-            }
-        }
         const reloadthreshold = 80;
-        if (qs.quotes.length - idx > reloadthreshold)
+        const qs = this.qCollection!.get(symbol);
+        if (qs!.quotes.length - qs!.currentIdx < reloadthreshold)
             this.loadQuotes(symbol, this.currentTime);
 
-        return idx >= 0 ? qs.quotes[idx] : undefined;
-    }
-
-    private processResults(symbol: string, qs: any[]) {
-        const quotes: Quote[] = new Array(qs.length);
-        for (const [q, i] of qs) {
-            const { close: ltp, datetime: ltt, ...rest } = q;
-            quotes[i] = Object.assign({ symbol }, { ltp, ltt: this.parseDate(ltt) } as Quote);
+        for (let i = qs!.currentIdx; i < qs!.quotes.length; i++) {
+            if (qs!.quotes[i].ltt === time) {
+                qs!.currentIdx = i + 1;
+                return qs!.quotes[i];
+            }
         }
-        this.qCollection!.get(symbol)?.quotes.push(...quotes);
+        return undefined;
     }
 
     private async loadQuotes(symbol: string, time: number): Promise<void> {
         try {
             const response = await this.adapter.getHistory(symbol, time, this.nextTime(time), '1second');
-            if (response.Error === null) {
-                const qs = response.Success as { close: number, datetime: string }[];
-                if (qs!.length !== 0)
-                    this.processResults(symbol, qs);
-                this.log('historical records fetched count: ' + qs!.length);
-            }
+            if (response.Error === null)
+                this.processResults(symbol, response.Success as any[]);
             else
                 this.log('load failed for: ' + symbol + ' ' + response.Error);
         } catch (exception: any) {
@@ -104,23 +84,30 @@ export class UserQuotes extends Generic {
         }
     }
 
-    private nextTime(startTime: number) {
-        const today = new Date(startTime);
+    private processResults(symbol: string, qs: any[]) {
+        const quotes = qs.map((q: any) => {
+            const { close: ltp, datetime: ltt, ...rest } = q;
+            return Object.assign({ symbol, ltp, ltt: this.parseDate(ltt) } as Quote);
+        })
+        this.qCollection!.get(symbol)?.quotes.push(...quotes);
+    }
+
+    private nextTime(currentTime: number) {
+        const today = new Date(currentTime);
         if (!(today.getHours() >= 15 && today.getMinutes() > 35))
-            return startTime += 16 * 60 * 1000;
+            return currentTime += 16 * 60 * 1000;
         else if (today.getDay() !== 5)
-            return startTime += (17 * 60 + 35) * 60 * 1000;
+            return currentTime += (17 * 60 + 35) * 60 * 1000;
         else
-            return startTime += ((2 * 24 * 60) + (17 * 60 + 35)) * 60 * 1000;
+            return currentTime += ((2 * 24 * 60) + (17 * 60 + 35)) * 60 * 1000;
     }
 
     private processEvent(event: string, value: any) {
-        const processedEvents = ['tick', 'pause', 'resume'];
-        if (!processedEvents.includes(event))
-            return;
         if (event === 'tick') {
             for (const symbol of this.symbols) {
-                this.client?.send(JSON.stringify({ type: 'quote', data: this.q(symbol, this.currentTime) }));
+                let q = this.q(symbol, this.currentTime);
+                if (q !== undefined)
+                    this.client?.send(JSON.stringify({ type: 'quote', data: q, appid: this.appid }));
             }
             this.currentTime += 1000;
         }
@@ -138,8 +125,7 @@ export class UserQuotes extends Generic {
         const min = (str.charCodeAt(14) - 48) * 10 + (str.charCodeAt(15) - 48);
         const sec = (str.charCodeAt(17) - 48) * 10 + (str.charCodeAt(18) - 48);
 
-        // Returns a raw epoch timestamp (number) - skips creating heavy Date objects
+        // Returns a raw epoch timestamp (number)
         return Date.UTC(year, month, day, hour, min, sec);
     }
-
 }

@@ -1,7 +1,8 @@
+import WebSocket from "ws";
+import { Socket } from "socket.io";
+import { MessagePort } from "node:worker_threads";
 import { SystemService } from "../serverlocal/service/system/service.js";
 import { DataApi } from "../serverlocal/api/data.js";
-import { Socket } from "socket.io";
-import WebSocket from "ws";
 
 export abstract class App extends SystemService {
     dataApi: DataApi;
@@ -11,10 +12,10 @@ export abstract class App extends SystemService {
         this.dataApi = new DataApi();
     }
 
-    abstract startServices(): void;
-    abstract connect(s: Socket | WebSocket): void;
-    abstract send(s: Socket | WebSocket, type: string, data: any): void;
-    abstract registerHandlers(s: Socket | WebSocket, appid: string, mode: string): void;
+    abstract startServices(names?: string[]): Promise<any>;
+    abstract connect(s: Socket | WebSocket | MessagePort, id?: string): void;
+    abstract send(s: Socket | WebSocket | MessagePort, type: string, data: any): void;
+    abstract registerHandlers(s: Socket | WebSocket | MessagePort, appid: string, mode: string): void;
 
     catchAsync(requestName: string, fn: (...args: any[]) => Promise<any>) {
         return (...args: any[]) => {
