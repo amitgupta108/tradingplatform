@@ -1,6 +1,6 @@
 import { BrokerMarketDataImpl } from '../common/m_broker_interface.js';
-import { BreezeAdapter } from '../clients/BreezeAdapter.js';
-import { streamer } from '../../stream.js';
+import { BreezeAdapter } from '../clients/breezeadapter.js';
+import { toScrip } from '../../utils/constants.js';
 
 export class ICICIMarketData extends BrokerMarketDataImpl {
     constructor(name: string) {
@@ -26,21 +26,19 @@ export class ICICIMarketData extends BrokerMarketDataImpl {
     }
 
     standardize(q: any) {
+        let qt = this.symbol_cache.get(q.symbol);
+        if (!qt) {
+            qt = toScrip(q.symbol);
+            this.symbol_cache.set(q.symbol, qt)
+        }
+        return { ...qt, ...q };
     }
 
-    async history(request: any, appid?: string) {
+    async history(request: any) {
         if (request.symbol.startsWith('CRUDE'))
             return;
 
-        let response = await this.historyLocal(request.symbol, request.startTime, request.endTime, request.interval);
-        if (response.length === 0)
-            return { status: 'error', reason: 'history fetch error' };
-        else if (appid === undefined)
-            return response;
-        else
-            streamer.emitHistQs(appid, request.symbol, response);
-
-        return { status: 'success' };
+        return await this.historyLocal(request.symbol, request.startTime, request.endTime, request.interval);
     }
 
     async historyLocal(symbol: string, start: number, end: number, interval: string = '5minute') {
@@ -51,6 +49,10 @@ export class ICICIMarketData extends BrokerMarketDataImpl {
             this.log(`historyLocal error ${response.Error}`);
 
         return [];
+    }
+
+    async tearDown(): Promise<any> {
+
     }
 
 }

@@ -12,7 +12,7 @@ class OptionChain {
 
 	constructor(expiry, v_oc_id) {
 		this.expiry = expiry;
-		this.interval = STRIKE_SIZE[instrument.stockCode];
+		this.interval = STRIKE_SIZE[profile.stockCode];
 		this.OTMRange = v_oc_id.startsWith('c') ? this.OTMRanges[0] : this.OTMRanges[1];
 
 		const h_oc_div = document.getElementById(v_oc_id);
@@ -53,13 +53,13 @@ class OptionChain {
 				let ce_strike = this.atm + (this.OTMRange.low + i) * this.interval;
 				let pe_strike = this.atm - (this.OTMRange.high - i) * this.interval
 
-				let symbol = instrument.stockCode + this.expiry + ce_strike + 'CE';
+				let symbol = profile.stockCode + this.expiry + ce_strike + 'CE';
 				call_rows[i].cells[2].childNodes[3].textContent = ce_strike;
 				call_rows[i].title = symbol
 				this.row_map.set(symbol, { row: call_rows[i] });
 				this.applyDecorations(symbol, call_rows[i]);
 
-				symbol = instrument.stockCode + this.expiry + pe_strike + 'PE';
+				symbol = profile.stockCode + this.expiry + pe_strike + 'PE';
 				put_rows[i].cells[2].childNodes[3].textContent = pe_strike;
 				put_rows[i].title = symbol
 				this.row_map.set(symbol, { row: put_rows[i] });

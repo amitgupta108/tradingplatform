@@ -2,14 +2,14 @@ class Order {
 	static ordermap = new Map();
 
 	constructor(symbol, action, quantity, orderid) {
-		this.stockCode = instrument.stockCode;
-		this.appid = instrument.appid;
+		this.stockCode = profile.stockCode;
+		this.appid = profile.appid;
 		this.ordertype = 'MARKET';
 		this.product = 'NRML';
 		this.price = 0;
 		this.symbol = symbol;
 		this.action = action;
-		this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[instrument.stockCode];
+		this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[profile.stockCode];
 		this.orderid = orderid;
 		this.type = orderid === undefined ? 'create' : 'modify';
 		this.strategy = 'default';
@@ -48,7 +48,7 @@ function validate(clickedBtn) {
 		if (order !== undefined) {
 			const neworder = structuredClone(order);
 			neworder.action = r.querySelector('#ow_action_btn').innerText;
-			neworder.quantity = r.querySelector('select').value * LOT_SIZE[instrument.stockCode];
+			neworder.quantity = r.querySelector('select').value * LOT_SIZE[profile.stockCode];
 			neworder.ordertype = r.querySelector('#ordertype').textContent;
 
 			if (neworder.ordertype === 'LIMIT') {

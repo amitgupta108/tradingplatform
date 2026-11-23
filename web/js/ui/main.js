@@ -2,13 +2,17 @@ function emit(event, arg1, arg2) {
 	socket.emit(event, arg1, arg2);
 }
 
-function getHistory(symbols) {
-	const endTime = instrument.simStartTime ?? Date.now();
+function requestHistory() {
+	const futures = profile.stockCode + profile.fExpiry + 'FUT';
+	const symbols = [futures, profile.stockCode, 'VIX'];
+
+	const historyEnd = profile.simStartTime;
+	const historyStart = historyEnd - 3 * 24 * 60 * 60 * 1000;
 
 	emit('history', {
 		symbols: symbols,
-		startTime: endTime - 3 * 24 * 60 * 60 * 1000,
-		endTime: endTime - 1000,
+		startTime: historyStart,
+		endTime: historyEnd,
 		interval: '5minute',
 	});
 }
@@ -19,9 +23,8 @@ function changeSpeed() {
 }
 
 function start() {
-	const futures = instrument.stockCode + instrument.fExpiry + 'FUT';
-	getHistory([futures, instrument.stockCode, 'INDVIX']);
-	emit('startv2', instrument);
+	requestHistory();
+	emit('startv2', profile);
 }
 
 function pauseResume() {
@@ -36,13 +39,13 @@ function exit() {
 }
 
 function listOrders() {
-	emit('orderbook', instrument.stockCode);
+	emit('orderbook', profile.stockCode);
 }
 
 function streamOptionChain(event) {
 	event.stopPropagation();
 	const idx = document.getElementById('expiry_btn_1').disabled ? 0 : 1;
-	emit('option_chain', { expiry: instrument.oExpiries[idx], action: { key: 'stream', value: 'toggle' } });
+	emit('option_chain', { expiry: profile.oExpiries[idx], action: { key: 'stream', value: 'toggle' } });
 }
 
 function auth(action) {

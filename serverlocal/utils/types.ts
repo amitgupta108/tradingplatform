@@ -61,3 +61,35 @@ export interface QuoteRequest {
     appid: string;
     symbol: string;
 }
+
+export type ORDERTYPE = 'LIMIT' | 'MARKET' | 'SL' | 'SLM';
+export type PRODUCT = 'NRML' | 'MIS' | 'CNC';
+export type ACTION = 'BUY' | 'SELL';
+export type ORDERSTATE = 'OPENED' | 'COMPLETED' | 'CANCELLED' | 'REJECTED';
+export type ORDERMODE = 'LIVE' | 'SIM';
+export type SOURCE = 'WEB' | 'API' | 'ALGO';
+export type ORDERACTION = 'CREATE' | 'MODIFY' | 'DELETE';
+export type VIEWMODE = 'HISTORY' | 'REPLAY' | 'LIVE_5';
+
+export interface Order {
+    view_mode: VIEWMODE;
+    appid: string;
+    orderid: number;
+    pricedAt: number;
+    price: number;
+    product: PRODUCT;
+    action: ACTION;
+    filled_q: number;
+    quantity: number;
+    state: ORDERSTATE;
+    ordertype: ORDERTYPE;
+    symbol: string;
+    stockCode: (typeof STOCKCODES)[number];
+    mode: ORDERMODE;
+    submit_t: number;
+    exec_t: number;
+    source: SOURCE;
+    strategy: string;
+    algocategory: string;
+    algoid: string;
+}

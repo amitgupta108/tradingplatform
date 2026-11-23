@@ -3,8 +3,8 @@ let socket;
 function connect() {
 	socket = io(`${window.location.origin}`, {
 		auth: {
-			appid: instrument.appid,
-			mode: instrument.mode
+			appid: profile.appid,
+			mode: profile.mode
 		},
 		reconnection: false,
 		timeout: 10000
@@ -15,19 +15,19 @@ function connect() {
 function rh(socket) {
 	try {
 		socket.on("connect", () => {
-			console.log('socket connected for appid' + socket.id + '-' + instrument.appid + '-' + socket.recovered);
+			console.log('socket connected for appid' + socket.id + '-' + profile.appid + '-' + socket.recovered);
 			bottom_btns[0].disabled = true;
 			bottom_btns[1].disabled = false;
 			bottom_btns[2].disabled = false;
 			bottom_btns[3].disabled = false;
 			bottom_btns[4].disabled = false;
 
-			if (instrument.mode === 'HISTORY')
+			if (profile.mode === 'HISTORY')
 				document.getElementById('optionSpeed').disabled = false;
 		});
 
 		socket.on("connect_error", (error) => {
-			console.log('connection error for appid' + socket.id + '-' + instrument.appid + '-' + error.message);
+			console.log('connection error for appid' + socket.id + '-' + profile.appid + '-' + error.message);
 			if (socket.active) {
 				console.log('connection error reconnection to be tried ' + socket.id);
 			} else {
@@ -39,7 +39,7 @@ function rh(socket) {
 
 		socket.on("disconnect", (reason) => {
 			bottom_btns[0].disabled = false;
-			console.log('disconnected for socketid-appid ' + socket.id + '-' + instrument.appid + '-' + reason);
+			console.log('disconnected for socketid-appid ' + socket.id + '-' + profile.appid + '-' + reason);
 		});
 
 		socket.on('history', (data) => {
@@ -72,7 +72,7 @@ function rh(socket) {
 		});
 
 		socket.on('order', (exorder) => {
-			if (exorder.appid !== instrument.appid)
+			if (exorder.appid !== profile.appid)
 				return;
 
 			var p = Position.findPosition(exorder.symbol, true);
@@ -81,7 +81,7 @@ function rh(socket) {
 
 		socket.on('orderbook', (orders) => {
 			orders.forEach((order) => {
-				if (getScrip(order.symbol).stockCode === instrument.stockCode) {
+				if (getScrip(order.symbol).stockCode === profile.stockCode) {
 					const p = Position.findPosition(order.symbol, true);
 					p.orders.set(order.orderid, order);
 				}

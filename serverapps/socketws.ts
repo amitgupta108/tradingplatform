@@ -1,5 +1,4 @@
 import { WebSocketServer } from 'ws';
-import type { App } from '../apps/webapp.js';
 
 export class WSServer {
     wss: WebSocketServer;
@@ -10,9 +9,12 @@ export class WSServer {
         console.log('WebSocket server is running on ws://localhost:' + process.env.PORT3);
     }
 
-    async start(app: App) {
+    async start() {
+        const { WebApp } = await import('../apps/webapp.js');
+        const app = new WebApp();
+        await app.startServices();
 
-        this.wss.on('connection', (s) => {
+        this.wss.on('connection', (s: any) => {
             app.connect(s);
         });
     }
