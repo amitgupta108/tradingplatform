@@ -12,10 +12,18 @@ process.on('unhandledRejection', (error: Error) => {
 
 async function startServers() {
     const { AlgoApp } = await import('../apps/algoapp.js');
-    const algoapp = new AlgoApp(parentPort!);
+    const algoapp = new AlgoApp('ALGOTHREAD');
+    algoapp.initport = parentPort!;
+
+    parentPort!.on('message', (message: any) => {
+        if (message.type === 'connection') {
+            algoapp.connect(message.port, message.id);
+        }
+    });
+    await algoapp.startServices(['TSCONFIG']);
 
     const { WSServer } = await import('../serverapps/socketws.js');
-    await (new WSServer()).start(algoapp);
+    await (new WSServer()).start();
 }
 
 await startServers();

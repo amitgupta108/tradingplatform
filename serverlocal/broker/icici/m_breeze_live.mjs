@@ -5,7 +5,7 @@ export class BreezeMarketDataLive extends BreezeMarketData {
         super(name);
     }
 
-    subscribe(appid, list, action) {
+    subscribe(appid, list, action, ...args) {
         this.subscriptions.addRequests(appid, list);
         const requests = this.buildRequests(appid, list);
         this.adapter.subscribeQuotes(requests, action);

@@ -1,5 +1,5 @@
 import { streamer } from '../../stream.js';
-import { BrokerMarketDataImpl } from './m_broker_interface.mjs';
+import { BrokerMarketDataImpl } from './m_broker_interface.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
 import { EXCHANGES } from '../../utils/constants.js';
 import { TPRemoteAdapter } from '../clients/TPRemote.js';

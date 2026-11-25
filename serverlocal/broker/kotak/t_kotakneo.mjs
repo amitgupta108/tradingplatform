@@ -1,5 +1,5 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { BrokerTradeServiceImpl } from '../common/m_broker_interface.mjs';
+import { BrokerTradeServiceImpl } from '../common/m_broker_interface.js';
 import { EXCHANGES } from '../../utils/constants.js';
 import { KotakAdapter } from '../clients/KotakAdapter.js';
 

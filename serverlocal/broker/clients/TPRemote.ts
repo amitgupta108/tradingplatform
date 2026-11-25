@@ -18,25 +18,26 @@ export class TPRemoteAdapter extends TPAdapter {
     }
 
     async onAuthData(authData: AuthData) {
-        this.authData = {
-            provider: this.provider, date: new Date().toDateString(),
-            sid: process.env.tp_appKey, token: process.env.tp_mode,
-        } as AuthData;
+        if (!this.isConnected) {
+            this.authData = {
+                provider: this.provider, date: new Date().toDateString(),
+                sid: process.env.tp_appKey, token: process.env.tp_mode,
+            } as AuthData;
 
-        if (this.connectSocket) {
-            this.socket = io(this.URL, {
-                auth: {
-                    appid: this.authData.sid,
-                    mode: this.authData.token,
-                },
-                reconnection: true,
-                timeout: 5000
-            });
-            this.registerHandlers();
+            if (this.connectSocket) {
+                this.socket = io(this.URL, {
+                    auth: {
+                        appid: this.authData.sid,
+                        mode: this.authData.token,
+                    },
+                    reconnection: true,
+                    timeout: 5000
+                });
+                this.registerHandlers();
+            }
+            this.isConnected = true;
         }
-        this.isAuthenticated = true;
-        this.log(`status: [${this.provider}-${this.isAuthenticated}]`);
-        return this.isAuthenticated;
+        return this.isConnected;
     }
 
     async getScrips(filters: any): Promise<any> {

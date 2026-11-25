@@ -23,10 +23,10 @@ export class SocketIO {
         });
     }
 
-    async start() {
+    async start(stockCode = 'CRUDEOIL') {
         const { AppClientManager } = await import('../serverlocal/app.mjs');
         const app = new AppClientManager();
-        await app.startServices();
+        await app.startServices(stockCode);
 
         this.sio?.on('connection', (s) => {
             app.connect(s);

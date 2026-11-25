@@ -2,28 +2,19 @@ function emit(event, arg1, arg2) {
 	socket.emit(event, arg1, arg2);
 }
 
-function historyParams() {
-	const endTime = instrument.mode === 'HISTORY' ? instrument.simStartTime : Date.now();
-	const startTime = endTime - 3 * 24 * 60 * 60 * 1000; // 4 days back
+function requestHistory() {
+	const futures = profile.stockCode + profile.fExpiry + 'FUT';
+	const symbols = [futures, profile.stockCode, 'VIX'];
 
-	const p = {
-		stockCode: instrument.stockCode,
-		fExpiry: instrument.fExpiry,
-		startTime: startTime,
-		endTime: endTime - 1000,
-		interval: '5minute'
-	}
-	return p;
-}
+	const historyEnd = profile.simStartTime;
+	const historyStart = historyEnd - 3 * 24 * 60 * 60 * 1000;
 
-function getHistory(symbols) {
-	const requests = new Array();
-	symbols.forEach((s) => {
-		const p = historyParams();
-		p.symbol = s;
-		requests.push(p);
+	emit('history', {
+		symbols: symbols,
+		startTime: historyStart,
+		endTime: historyEnd,
+		interval: '5minute',
 	});
-	emit('history', requests);
 }
 
 function changeSpeed() {
@@ -32,9 +23,8 @@ function changeSpeed() {
 }
 
 function start() {
-	const futures = instrument.stockCode + instrument.fExpiry + 'FUT';
-	getHistory([futures, instrument.stockCode, 'INDVIX']);
-	emit('startv2', instrument);
+	requestHistory();
+	emit('startv2', profile);
 }
 
 function pauseResume() {
@@ -49,13 +39,13 @@ function exit() {
 }
 
 function listOrders() {
-	emit('orderbook', instrument.stockCode);
+	emit('orderbook', profile.stockCode);
 }
 
 function streamOptionChain(event) {
 	event.stopPropagation();
 	const idx = document.getElementById('expiry_btn_1').disabled ? 0 : 1;
-	emit('option_chain', { expiry: instrument.oExpiries[idx], action: { key: 'stream', value: 'toggle' } });
+	emit('option_chain', { expiry: profile.oExpiries[idx], action: { key: 'stream', value: 'toggle' } });
 }
 
 function auth(action) {

@@ -94,8 +94,8 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         const qArray = this.qs_store.get(appid);
         const st = qArray.find((q) => q.symbol === instrument.symbol);
 
+        let idx = -1;
         try {
-            let idx = -1;
             if (st?.quotes !== undefined && st.quotes.length > 0) {
                 if (st.trimIndex === undefined || st.trimIndex <= 0) {
                     idx = st.quotes.findIndex((q) => q.ltt === time);
@@ -210,9 +210,8 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         });
     }
 
-
     async loadHistoricalData(st, instrument, sTime) {
-        var resp = await this.adapter.getHistory(instrument, sTime, sTime + ((1000) * 1000), '1second')
+        var resp = await this.adapter.getHistory(instrument.symbol, sTime, this.nextTime(sTime), '1second')
             .catch((error) => {
                 this.error("loadHistoricalDatav2 failed, ", error.message);
                 return Promise.reject(error);
@@ -230,11 +229,21 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         }
         return st;
     }
+
+    nextTime(startTime) {
+        const today = new Date(startTime);
+        if (!(today.getHours() >= 15 && today.getMinutes() > 35))
+            return startTime += 16 * 60 * 1000;
+        else if (today.getDay() !== 5)
+            return startTime += (17 * 60 + 35) * 60 * 1000;
+        else
+            return startTime += ((2 * 24 * 60) + (17 * 60 + 35)) * 60 * 1000;
+    }
     /*---------------------------------------------------------External APIs------------------------------------------------------------------------*/
 
     getHistory(appid, request) {
         const endtime = this.clocks.get(appid) !== undefined ? this.clocks.get(appid).currentTime : request.endTime;
-        return this.adapter.getHistory(request, request.startTime, endtime, request.interval);
+        return this.adapter.getHistory(request.symbol, request.startTime, endtime, request.interval);
     }
 
     clientConfigure(appid, simStartTime, speed = '1x') {
@@ -266,7 +275,7 @@ export class BreezeMarketDataHist extends BreezeMarketData {
         return c.state;
     }
 
-    subscribe(appid, list, action) {
+    subscribe(appid, list, action, ...args) {
         const requests = this.buildRequests(appid, list);
 
         if (action === 'subs')

@@ -19,21 +19,26 @@ class APIServer extends SystemService {
     };
 
     registerDataRequests(s, appid, mode) {
-        const util_service = ConfigService.getServiceByName('COMMONSERVICE');
+        const util_service = ConfigService.getServiceByName('ICICIMARKETDATA');
         const market_service = ConfigService.getActiveServiceByMode('view', mode);
 
         s.on('startv2', (msg) => {
-            if (mode.startsWith('HISTORY'))
-                market_service.clientConfigure(appid, msg.simStartTime, '1x');
+            //if (mode.startsWith('HISTORY'))
+            //  market_service.clientConfigure(appid, msg.simStartTime, '1x');
 
             market_service.startv2(appid, msg);
         });
 
-        s.on('history', this.catchAsync(async (requests) => {
-            this.log("history request " + requests.length);
-            for (const r of requests) {
-                const resp = util_service.history(r, appid);
+        s.on('history', this.catchAsync(async (request) => {
+            this.log("history request " + request.symbols.length);
+            let response = '';
+            for (const symbol of request.symbols) {
+                const history = await util_service.history({ ...request, symbol });
+                s.emit('history', { symbol: symbol, qA: history });
+                response += `${symbol} ${history?.length} `;
             }
+            return response;
+
         }, 'history'));
 
         s.on('subscribe', (list) => {

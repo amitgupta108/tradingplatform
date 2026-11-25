@@ -1,10 +1,10 @@
 import { ConfigService } from './service/config/configservice.mjs';
 import { streamer } from './stream.js';
 import { apiserver } from './apiserver.mjs';
-import { SystemService } from './service/system/service.js';
 import { DataApi } from './api/data.js';
+import { Generic } from '../generic.js';
 
-class ClientManager extends SystemService {
+class ClientManager extends Generic {
     constructor(name) {
         super(name);
         this.dataApi = new DataApi();
@@ -29,12 +29,19 @@ export class AppClientManager extends ClientManager {
         super('APPCLIENTMANAGER');
     }
 
-    async startServices() {
+    async startServices(stockCode, autorun = false) {
         const responses = await ConfigService.initializeAll();
         //await ConfigService.getServiceByName('CONFIGURATIONS').configLoad();
         streamer.init();
 
         return responses;
+        if (autorun)
+            this.run(stockCode);
+    }
+
+    run(stockCode) {
+        const s = ConfigService.getServiceByName('KOTAKLIVEVIEW');
+        s.startv2('APPCLIENT', { stockCode: stockCode, simStartTime: Date.now() });
     }
 
     connect(s) {
@@ -42,8 +49,8 @@ export class AppClientManager extends ClientManager {
         const mode = s.handshake.auth.mode;
 
         const as = ConfigService.getServiceByName('AUTHSERVICE');
-        const matches = as.validate(appid, mode)
-        if (matches.length === 1) {
+        const match = as.validate(appid, mode);
+        if (match === undefined || match.length === 0) {
             console.log('app not authenticated');
             return;
         }

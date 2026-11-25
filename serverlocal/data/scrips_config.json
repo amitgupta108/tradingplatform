@@ -46,7 +46,7 @@
     "EXCHANGES": {
         "NIFTY": "nse_fo",
         "CRUDEOIL": "mcx_fo",
-        "INDVIX": "nse_cm"
+        "VIX": "nse_cm"
     },
     "STRIKE_SIZE": {
         "NIFTY": 50,
