@@ -102,6 +102,12 @@
             "filepath": "../../broker/tpapp/m_tpapp_replay.js",
             "type": "broker"
         },
+        "ICICIHISTVIEW": {
+            "init": "Y",
+            "classdef": "BreezeMarketDataHist",
+            "filepath": "../../broker/icici/m_breeze_hist.mjs",
+            "type": "broker"
+        },
         "ICICILIVEVIEW": {
             "init": "N",
             "classdef": "BreezeMarketDataLive",

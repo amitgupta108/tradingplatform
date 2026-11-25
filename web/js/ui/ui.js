@@ -185,7 +185,10 @@ function handleClickEvent(e) {
 
 function flipOrderType(c, p) {
 	submitOWinBtn.disabled = true;
-	c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
+	const ordertypes = ['MARKET', 'LIMIT', 'SL-LIMIT', 'SL-MKT'];
+	const idx = ordertypes.indexOf(c.textContent);
+	const nIdx = idx + 1 > ordertypes.length ? 0 : idx + 1;
+	c.textContent = ordertypes[nIdx];
 	const limitp = qSel(p, 'lmtprice', 'id');
 	limitp.disabled = c.textContent === 'MARKET' ? true : false;
 	if (c.textContent === 'MARKET')
@@ -198,6 +201,7 @@ function hl_row(c, p) {
 }
 
 function removeOrderRow(c, p) {
+	submitOWinBtn.disabled = true;
 	p.remove();
 }
 
