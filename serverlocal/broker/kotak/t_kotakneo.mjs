@@ -46,20 +46,20 @@ export class KotakNeoTradeService extends BrokerTradeServiceImpl {
             mp: '6',
             pf: 'N',
             rt: 'DAY',
-            tp: '0',
             es: EXCHANGES[order.stockCode],
             pc: order.product,
-            pr: String(order.price),
-            pt: order.ordertype === 'MARKET' ? 'MKT' : 'L',
+            pr: String(order.lmt_price),
+            pt: order.ordertype == 'MKT' ? 'MKT' : order.ordertype === 'LMT' ? 'L' : order.ordertype === 'SL-MKT' ? 'SL-M' : 'SL',
             qt: String(order.quantity),
             tt: order.action,
+            tp: String(order.trg_price),
             ts: scripstore.findScripByRefKey(order.symbol).tradingSymbol,
-            si: '1111111',
-            sy: 'category',
-            sn: '2222222',
-            sc: 'default'
+            //si: '1111111',
+            //sy: 'category',
+            //sn: '2222222',
+            //sc: 'default'
         }
-        if (order.type === 'modify') {
+        if (order.isModify === true) {
             new_order.no = order.orderid;
             new_order.vd = 'DAY';
             new_order.tk = scripstore.findScripByRefKey(order.symbol).token;

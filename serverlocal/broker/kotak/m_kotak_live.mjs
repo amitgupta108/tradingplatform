@@ -47,7 +47,7 @@ export class KotakMarketDataLive extends BrokerMarketDataImpl {
             }
 
             if (e.token && e.exchange && this.symbol_cache.get(e.token) === undefined)
-                this.symbol_cache.set(e.token, e);
+                this.symbol_cache.set(e.token, this.getScrip(e.symbol)); //2 cache entries, one with token and one with symbol.
         });
         return scrips;
     }

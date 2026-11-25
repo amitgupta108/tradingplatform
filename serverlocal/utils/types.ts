@@ -49,8 +49,9 @@ export interface Scrip {
     stockCode: string;
     expiry?: string;
     strike?: string;
-    call: boolean;
-    key?: 'OPT' | 'FUT' | 'IDX' | 'EQ';
+    right?: string;
+    //key?: 'OPT' | 'FUT' | 'IDX' | 'EQ';
+    key?: 'futures' | 'optionchain' | 'strikex' | 'index';
 }
 
 export type TScripSet = {

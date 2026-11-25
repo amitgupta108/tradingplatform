@@ -1,6 +1,5 @@
-import { ConfigService } from '../../service/config/configservice.mjs';
 import { streamer } from '../../stream.js';
-import { TPSocket } from './adapter.js';
+import { TPSocket } from "./adapter.js";
 
 export class KotakHSISocket extends TPSocket {
     constructor() {
@@ -18,7 +17,7 @@ export class KotakHSISocket extends TPSocket {
 
     onOpen() {
         this.authenticate();
-        this.ws.on('pong', () => {
+        this.ws?.on('pong', () => {
             streamer.broadcast('hb', { order_socket: this.ws?.readyState });
         });
     }
@@ -29,14 +28,9 @@ export class KotakHSISocket extends TPSocket {
     }
 
     authenticate() {
-        const payload = `{type:cn,Authorization:${this.authData.token},Sid:${this.authData.sid},src:WEB}`;
+        const payload = `{type:cn,Authorization:${this.authData?.token},Sid:${this.authData?.sid},src:WEB}`;
         this.sendMessage(payload);
         this.log('On open hsi ');
-    }
-
-    onError(error) {
-        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
-        this.error(error);
     }
 
     handleMessage(event) {
@@ -46,5 +40,9 @@ export class KotakHSISocket extends TPSocket {
             this.emit(message.type, this.name, message.data);
         else if (message.msg === 'connected')
             this.startHeartbeat();
+    }
+
+    subscribe(types, action) {
+        this.ws?.send(JSON.stringify({ types: types, action: action }));
     }
 }

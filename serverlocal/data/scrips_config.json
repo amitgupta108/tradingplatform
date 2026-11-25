@@ -1,24 +1,28 @@
 {
     "OPT_EXPIRIES": {
         "NIFTY": {
-            "FIRST": "09NOV26",
-            "SECOND": "17NOV26"
+            "FIRST": "01DEC26",
+            "SECOND": "08DEC26"
         },
         "CRUDEOIL": {
-            "FIRST": "17NOV26",
-            "SECOND": "16DEC26"
+            "FIRST": "16DEC26",
+            "SECOND": "15JAN27",
+            "THIRD": "17FEB27"
         },
         "BANKNIFTY": {
-            "FIRST": "27OCT26"
+            "FIRST": "29DEC26"
         }
     },
     "FUT_EXPIRIES": {
         "NIFTY": {
-            "FIRST": "27OCT26"
+            "FIRST": "29DEC26"
         },
         "CRUDEOIL": {
-            "FIRST": "19NOV26",
-            "SECOND": "18DEC26"
+            "FIRST": "18DEC26",
+            "SECOND": "19JAN27",
+            "THIRD": "19FEB27",
+            "FOURTH": "19MAR27",
+            "FIFTH": "19APR27"
         }
     },
     "OPT_CONFIG": {
@@ -70,11 +74,12 @@
     ],
     "filters": {
         "expiryDate": [
-            "1479393000",
-            "1479911400",
-            "1792454399",
-            "1794959999",
-            "1795132799"
+            "1480602600",
+            "1481207400",
+            "1481812200",
+            "1483021800",
+            "1797465599",
+            "1797638399"
         ],
         "underlying": [
             "NIFTY",
@@ -83,11 +88,14 @@
     },
     "tp_filters": {
         "expiryDate": [
-            "1479393000",
-            "1479911400",
-            "1792454399",
-            "1794959999",
-            "1795132799"
+            "1480602600",
+            "1481207400",
+            "1481812200",
+            "1482417000",
+            "1483021800",
+            "1483626600",
+            "1800057599",
+            "1800403199"
         ],
         "underlying": [
             "NIFTY",

@@ -65,7 +65,7 @@ export abstract class BrokerMarketDataImpl extends BrokerImpl {
         const stock_subs = this.subscriptions.addNewSubscriptions(appid, p) as SubsTemplate;
         const request = stock_subs.getSubsItemByKey('futures') as SubsItem; //st_item
 
-        this.subscribe(appid, [request.symbol], 'start', p.simStartTime, p.speed ?? 1);
+        this.subscribe(appid, [request], 'start', p.simStartTime, p.speed ?? 1);
         this.subscribeIndices(appid, p.stockCode);
 
         if (stock_subs.atm !== 0) {

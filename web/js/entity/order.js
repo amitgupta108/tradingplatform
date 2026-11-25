@@ -4,14 +4,15 @@ class Order {
 	constructor(symbol, action, quantity, orderid) {
 		this.stockCode = profile.stockCode;
 		this.appid = profile.appid;
-		this.ordertype = 'MARKET';
+		this.ordertype = 'MKT';
 		this.product = 'NRML';
-		this.price = 0;
+		this.lmt_price = 0;
+		this.trg_price = 0;
 		this.symbol = symbol;
 		this.action = action;
 		this.quantity = (quantity !== undefined) ? quantity : LOT_SIZE[profile.stockCode];
 		this.orderid = orderid;
-		this.type = orderid === undefined ? 'create' : 'modify';
+		this.isModify = orderid !== undefined;
 		this.strategy = 'default';
 
 		Order.ordermap.set(symbol, this);
@@ -38,35 +39,61 @@ class Order {
 }
 
 function validate(clickedBtn) {
-	var isError = false;
 	const rows = Array.from(order_rows_tbody.rows);
+	in_prep_orders.isError = false;
 
 	const neworders = rows.map((r) => {
-
-		const symbol = qSel(r, 'owsymbol', 'id').textContent;
+		const symbol = r.querySelector('#owsymbol').innerText;
 		const order = Order.findOpenOrder(symbol, r.title) ?? Order.getUIOrder(symbol);
+
+		const neworder = structuredClone(order);
 		if (order !== undefined) {
-			const neworder = structuredClone(order);
 			neworder.action = r.querySelector('#ow_action_btn').innerText;
 			neworder.quantity = r.querySelector('select').value * LOT_SIZE[profile.stockCode];
 			neworder.ordertype = r.querySelector('#ordertype').textContent;
 
-			if (neworder.ordertype === 'LIMIT') {
-				const h_price = qSel(r, 'lmtprice', 'id');
-				if (h_price.value === "") {
-					h_price.style.border = '1px solid red';
-					isError = true;
-				}
-				else
-					neworder.price = Number(h_price.value);
-			}
-			return neworder;
-		}
-	});
+			const lmt_price_tb = r.querySelector('#lmt_price_tb');
+			const trg_price_tb = r.querySelector('#trg_price_tb');
+			const cur_price = Number(r.querySelector('#owprice').textContent);
 
-	in_prep_orders.isError = isError;
+			if (lmt_price_tb.disabled === false && Number(lmt_price_tb.value) === 0) {
+				lmt_price_tb.style.border = '1px solid red';
+				in_prep_orders.isError = true;
+			}
+			else neworder.lmt_price = Number(lmt_price_tb.value);
+
+			if (trg_price_tb.disabled === false && Number(trg_price_tb.value) === 0) {
+				trg_price_tb.style.border = '1px solid red';
+				in_prep_orders.isError = true;
+			}
+			else neworder.trg_price = Number(trg_price_tb.value);
+
+			if (neworder.isModify && !order.orderid) {
+				r.style.border = '1px solid red';
+				in_prep_orders.isError = true;
+			}
+			if (in_prep_orders.isError === false) {
+				if (neworder.ordertype.includes('LMT')) {
+					if (neworder.action === 'BUY' && Number(neworder.lmt_price) > cur_price)
+						in_prep_orders.isError = true;
+					else if (neworder.action === 'SELL' && Number(neworder.lmt_price) < cur_price)
+						in_prep_orders.isError = true;
+				}
+
+				if (neworder.ordertype.includes('SL')) {
+					if (neworder.action === 'BUY' && Number(neworder.trg_price) < cur_price)
+						in_prep_orders.isError = true;
+					else if (neworder.action === 'SELL' && Number(neworder.trg_price) > cur_price)
+						in_prep_orders.isError = true;
+				}
+				if (in_prep_orders.isError === true)
+					clickedBtn.style.border = '1px solid red';
+			}
+		}
+		return neworder;
+	});
 	in_prep_orders.orders = neworders;
-	submitOWinBtn.disabled = isError;
+	submitOWinBtn.disabled = in_prep_orders.isError;
 }
 
 function submitOrder(clickedBtn) {
