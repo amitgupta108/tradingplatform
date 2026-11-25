@@ -34,12 +34,13 @@ export const toScrip = (symbol: string): Scrip => {
 
     s.stockCode = idx === -1 ? symbol : symbol.slice(0, idx);
     s.exchange = ['NIFTY', 'INDVIX'].includes(symbol) ? 'nse_cm' : EXCHANGES[s.stockCode].toLowerCase();
-    s.key = symbol.endsWith('FUT') ? 'FUT' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'OPT' : 'IDX';
+    //s.key = symbol.endsWith('FUT') ? 'FUT' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'OPT' : 'IDX';
+    s.key = symbol.endsWith('FUT') ? 'futures' : symbol.endsWith('PE') || symbol.endsWith('CE') ? 'strikex' : 'index';
     if (idx !== -1) {
         s.expiry = symbol.slice(idx, idx + 7);
-        if (s.key === 'OPT') {
+        if (s.key === 'strikex') {
             s.strike = symbol.slice(idx + 7, -2);
-            s.call = symbol.slice(-2) === 'CE';
+            s.right = symbol.slice(-2);
         }
     }
     return s;

@@ -83,7 +83,7 @@ class APIServer extends SystemService {
             this.log('order received at apiserver');
             orders.forEach(async (order) => {
                 let updated;
-                if (order.type === 'modify')
+                if (order.isModify)
                     updated = await trading_service.modifyOrder(appid, order);
                 else
                     updated = await trading_service.placeOrder(appid, order);

@@ -24,17 +24,16 @@ function appendOrderRow(order) {
 
 	const ordertype = tr.querySelector('#ordertype');
 	ordertype.textContent = order.ordertype;
-	if (ordertype.textContent === 'LIMIT') {
-		tr.querySelector('#lmtprice').disabled = false;
-		tr.querySelector('#lmtprice').value = order.price;
-	}
+
 	const action_btn = tr.querySelector('#ow_action_btn');
 	action_btn.textContent = order.action;
 	const selectbox = tr.querySelector('select');
 	selectbox.value = order.quantity / LOT_SIZE[profile.stockCode];
 
-	if (order.type === 'modify')
+	if (order.isModify) {
 		tr.title = order.orderid;
+		tr.classList.add('order-row-modify');
+	}
 
 	if (!basket.checked)
 		tr.classList.remove('hover-row');
@@ -160,7 +159,7 @@ function handleClickEvent(e) {
 	const pn_el = e.currentTarget;
 
 	if (cl_el.id === 'ordertype')
-		flipOrderType(cl_el, pn_el);
+		changeOrderType(cl_el, pn_el);
 	else if (cl_el.id === 'div_trans_btn')
 		createOrder(cl_el, pn_el);
 	else if (cl_el.id === 'row_attn_btn')
@@ -183,16 +182,23 @@ function handleClickEvent(e) {
 		return;
 }
 
-function flipOrderType(c, p) {
+function changeOrderType(c, p) {
 	submitOWinBtn.disabled = true;
-	const ordertypes = ['MARKET', 'LIMIT', 'SL-LIMIT', 'SL-MKT'];
+	const ordertypes = ['MKT', 'LMT', 'SL-MKT', 'SL-LMT'];
 	const idx = ordertypes.indexOf(c.textContent);
-	const nIdx = idx + 1 > ordertypes.length ? 0 : idx + 1;
+	const nIdx = idx + 1 === ordertypes.length ? 0 : idx + 1;
 	c.textContent = ordertypes[nIdx];
-	const limitp = qSel(p, 'lmtprice', 'id');
-	limitp.disabled = c.textContent === 'MARKET' ? true : false;
-	if (c.textContent === 'MARKET')
-		limitp.value = "";
+
+	const lmt_price_tb = qSel(p, 'lmt_price_tb', 'id');
+	lmt_price_tb.disabled = c.textContent.includes('MKT');
+	if (lmt_price_tb.disabled)
+		lmt_price_tb.value = "";
+
+	const trg_price_tb = qSel(p, 'trg_price_tb', 'id');
+	trg_price_tb.disabled = !c.textContent.includes('SL');
+	if (trg_price_tb.disabled)
+		trg_price_tb.value = "";
+
 }
 
 function hl_row(c, p) {
@@ -225,8 +231,10 @@ function modifyOrder(c, p_row) {
 	const symbol = list_head.title;
 
 	const order = Order.findOpenOrder(symbol, p_row.title);
-	order.type = 'modify';
-	newOrder(order);
+	if (order !== undefined) {
+		order.isModify = true;
+		newOrder(order);
+	}
 	orderlistDiv.style.display = 'none';
 }
 

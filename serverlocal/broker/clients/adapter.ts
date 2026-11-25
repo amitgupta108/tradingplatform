@@ -19,7 +19,7 @@ abstract class BasicAdapter extends EventEmitter {
     }
     abstract onAuthData(authData: AuthData): Promise<boolean>;
 
-    private async init() {
+    async init() {
         const es = ConfigService.getServiceByName('EVENTSERVICE');
         es.addListener(`${this.provider}_auth`, async (authData: AuthData) => {
             if (!this.isConnected)
@@ -30,12 +30,6 @@ abstract class BasicAdapter extends EventEmitter {
         const authData = await authservice.authdata(this.provider);
 
         await this.onAuthData(authData!);
-
-        es.addListener('ENDOFDAY', () => {
-        })
-
-        es.addListener('ENDOFSESSION', async () => {
-        })
     }
 
     log(...args: string[]) {
@@ -140,10 +134,7 @@ export abstract class TPSocket extends BasicAdapter {
                     this.log('WebSocket error:', JSON.stringify(error));
                     this.emit('error', error);
                     this.onError(error);
-                    if (!this.isConnected) {
-                        this.isConnecting = false;
-                        reject(error);
-                    }
+                    this.isConnecting = false;
                 });
 
                 this.ws.addEventListener('close', (event: any) => {

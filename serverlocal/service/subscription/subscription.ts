@@ -6,6 +6,8 @@ import { EventService } from '../system/eventservice.js';
 
 export interface SubsItem {
     key: 'index' | 'futures' | 'vix' | 'optionchain' | 'strikex',
+    stockCode?: string,
+    exchange?: string,
     symbol: string,
     toStream?: boolean,
     expiry?: string,
@@ -147,7 +149,8 @@ export class SubsTemplate {
         this.atm_check_counter = -1;
         this.atm = 0;
         this.st = [{
-            key: 'futures', toStream: true, expiry: this.fExpiry, symbol: this.stockCode.concat(this.fExpiry).concat('FUT')
+            key: 'futures', toStream: true, expiry: this.fExpiry, symbol: this.stockCode.concat(this.fExpiry).concat('FUT'),
+            stockCode: this.stockCode, exchange: EXCHANGES[this.stockCode]
         }];
 
         session.oExpiries.forEach((expiry: string, index: number) => {

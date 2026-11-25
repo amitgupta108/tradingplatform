@@ -186,8 +186,8 @@
                 </tbody>
                 <tbody id="tbody-submit-panel">
                     <tr>
-                        <td colspan="6" style="text-align: right;padding: 3px; border-radius: 4px; gap: 10px">
-                            <button type="button" onclick="validate(this)">Validate</button>
+                        <td colspan="7" style="text-align: right;padding: 3px; border-radius: 4px; gap: 10px">
+                            <button type="button" id="ow_validate_btn" onclick="validate(this)">Validate</button>
                             <button type="button" id="ow_submit_btn" onclick="submitOrder(this)" disabled>Order</button>
                         </td>
                     </tr>
@@ -236,14 +236,14 @@
                     <label id="ow_row_rm_btn" class="clickable">X</label>
                 </div>
             </td>
-            <td style='width:32%'>
+            <td style='width:30%'>
                 <label id='owsymbol' hidden></label>
                 <label id='scripName'></label>
             </td>
-            <td style='width:14%'>
+            <td style='width:12%'>
                 <label id="owprice"></label>
             </td>
-            <td style='width:14%'>
+            <td style='width:12%'>
                 <select id="ow_lot_size" class="buy">
                     <option value="1" selected>1</option>
                     <option value="2">2</option>
@@ -251,12 +251,16 @@
                     <option value="4">4</option>
                 </select>
             </td>
-            <td style='width:17%'>
-                <label class="clickable" id="ordertype">MARKET</label>
+            <td style='width:13%'>
+                <input type="text" inputmode="numeric" id="lmt_price_tb"
+                    style="width: 40px;border-radius: 3px;border: 0px" disabled>
             </td>
-            <td style='width:17%'>
-                <input type="text" inputmode="numeric" id="lmtprice" style="width: 50px;border-radius: 3px;border: 0px"
-                    disabled>
+            <td style='width:14%'>
+                <label class="clickable" id="ordertype">MKT</label>
+            </td>
+            <td style='width:13%'>
+                <input type="text" inputmode="numeric" id="trg_price_tb"
+                    style="width: 40px;border-radius: 3px;border: 0px" disabled>
             </td>
         </tr>
     </template>

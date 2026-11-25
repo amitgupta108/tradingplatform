@@ -75,8 +75,8 @@ export class BreezeAdapter extends TPAdapter {
             exchangeCode: scrip.exchange === 'nse_cm' ? 'NSE' : scrip.exchange === 'nse_fo' ? 'NFO' : 'MCX',
             stockCode: scrip.stockCode === 'CRUDEOIL' ? scrip.stockCode.slice(0, 5) : symbol === 'VIX' ? 'INDVIX' : scrip.stockCode,
             strikePrice: scrip.strike,
-            right: scrip.key === 'OPT' && scrip.call ? 'Call' : 'Put',
-            productType: scrip.key === 'OPT' ? 'options' : 'futures',
+            right: scrip.key === 'strikex' && scrip.symbol.endsWith('CE') ? 'Call' : 'Put',
+            productType: scrip.key === 'strikex' ? 'options' : 'futures',
             expiryDate: this.formatExpiry(scrip.expiry!, type)
         }
     }

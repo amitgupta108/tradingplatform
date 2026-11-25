@@ -4,6 +4,7 @@ import { UserService } from '../../service/system/service.js';
 import { KotakHSISocket } from '../clients/HSIClient.mjs';
 
 export class OrderManager extends UserService {
+    adapter;
     constructor(name) {
         super(name);
         this.order_generators = new Map();
@@ -11,14 +12,15 @@ export class OrderManager extends UserService {
         this.counter = 10000;
     }
 
-    init() {
+    async init() {
         this.initialized = true;
         return { status: 'success' };
     }
 
     async register(service_key, notifier) {
         if (notifier === 'HSICLIENT') {
-            (await KotakHSISocket.getInstance()).addListener('order', (notifier_name, order) => {
+            this.adapter = await KotakHSISocket.getInstance();
+            this.adapter.addListener('order', (notifier_name, order) => {
                 const services = Array.from(this.order_generators.entries());
                 const service_keys = services.filter(([k, v]) => {
                     if (v === notifier_name)
@@ -151,4 +153,9 @@ export class OrderManager extends UserService {
         return { account, ts, ex_segment, product_type, buyq, sellq, buyAmt, sellAmt, positionFlag, squareoffFlag, lot_size, multiplier, updateTime };
     }
 
+    async tearDown() {
+        this.live_order_map.clear();
+        this.order_generators.clear();
+        return true;
+    }
 }
