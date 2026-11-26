@@ -63,7 +63,7 @@ export interface QuoteRequest {
     symbol: string;
 }
 
-export type ORDERTYPE = 'LIMIT' | 'MARKET' | 'SL' | 'SLM';
+export type ORDERTYPE = 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
 export type PRODUCT = 'NRML' | 'MIS' | 'CNC';
 export type ACTION = 'BUY' | 'SELL';
 export type ORDERSTATE = 'OPENED' | 'COMPLETED' | 'CANCELLED' | 'REJECTED';
@@ -77,7 +77,8 @@ export interface Order {
     appid: string;
     orderid: number;
     pricedAt: number;
-    price: number;
+    lmt_price: number;
+    trg_price: number;
     product: PRODUCT;
     action: ACTION;
     filled_q: number;

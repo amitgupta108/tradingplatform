@@ -137,7 +137,7 @@ function tRow(template, withListener = true) {
 		new_row.addEventListener('input', (e) => {
 			e.stopPropagation();
 
-			if (e.target.id === 'lmtprice' && e.target !== new_row)
+			if (e.target.id === 'lmt_price_tb' && e.target !== new_row)
 				submitOWinBtn.disabled = true;
 		}, true);
 	}

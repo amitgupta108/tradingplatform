@@ -33,6 +33,10 @@ export class ReplaySocket extends TPSocket {
 
     }
 
+    onClose(event) {
+        this.log('close', JSON.stringify({ error: event.reason, code: event.code }));
+    }
+
     handleMessage(q: Quote, appid: string): void {
         this.emit('quote', q, appid);
     }

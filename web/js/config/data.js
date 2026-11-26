@@ -23,11 +23,10 @@ async function loadProfile() {
 	});
 
 	if (response.ok) {
-		profile = await response.json()
+		profile = await response.json();
 
-		profile.simStartTime = !profile.simStartTime ?
-			Math.round(Date.now() / 1000) * 1000 :
-			new Date(profile.simStartTime).getTime() + 5.5 * 60 * 60 * 1000;
+		profile.simStartTime = ((profile.simStartTime ?
+			new Date(profile.simStartTime).getTime() : Math.round(Date.now() / 1000) * 1000)) + 5.5 * 60 * 60 * 1000;
 
 		date_label.textContent = new Date(profile.simStartTime).toDateString();
 		expiry_btn_1.textContent = profile.oExpiries[0];

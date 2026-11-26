@@ -27,6 +27,11 @@ export class KotakHSISocket extends TPSocket {
         this.emit('error', this.name, JSON.stringify({ error: error, code: 401 }));
     }
 
+    onClose(event) {
+        streamer.broadcast('hb', { order_socket: this.ws?.readyState });
+        this.emit('close', this.name, JSON.stringify({ error: event.reason, code: event.code }));
+    }
+
     authenticate() {
         const payload = `{type:cn,Authorization:${this.authData?.token},Sid:${this.authData?.sid},src:WEB}`;
         this.sendMessage(payload);

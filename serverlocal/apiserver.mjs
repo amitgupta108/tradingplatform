@@ -23,8 +23,8 @@ class APIServer extends SystemService {
         const market_service = ConfigService.getActiveServiceByMode('view', mode);
 
         s.on('startv2', (msg) => {
-            //if (mode.startsWith('HISTORY'))
-            //  market_service.clientConfigure(appid, msg.simStartTime, '1x');
+            if (mode.startsWith('HISTORY'))
+                market_service.clientConfigure(appid, msg.simStartTime, '1x');
 
             market_service.startv2(appid, msg);
         });

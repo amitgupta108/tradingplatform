@@ -60,18 +60,24 @@ function validate(clickedBtn) {
 				lmt_price_tb.style.border = '1px solid red';
 				in_prep_orders.isError = true;
 			}
-			else neworder.lmt_price = Number(lmt_price_tb.value);
+			else {
+				neworder.lmt_price = Number(lmt_price_tb.value);
+				lmt_price_tb.style.border = 'none';
+			}
 
 			if (trg_price_tb.disabled === false && Number(trg_price_tb.value) === 0) {
 				trg_price_tb.style.border = '1px solid red';
 				in_prep_orders.isError = true;
 			}
-			else neworder.trg_price = Number(trg_price_tb.value);
-
+			else {
+				neworder.trg_price = Number(trg_price_tb.value);
+				trg_price_tb.style.border = 'none';
+			}
 			if (neworder.isModify && !order.orderid) {
 				r.style.border = '1px solid red';
 				in_prep_orders.isError = true;
 			}
+
 			if (in_prep_orders.isError === false) {
 				if (neworder.ordertype.includes('LMT')) {
 					if (neworder.action === 'BUY' && Number(neworder.lmt_price) > cur_price)
@@ -130,7 +136,7 @@ function displayOrderList(btn, parent) {
 			newtr.childNodes[5].textContent = o.filled_q + ' / ' + o.quantity;
 			newtr.childNodes[7].textContent = o.ordertype.slice(0, 1);
 			newtr.childNodes[9].textContent = tqty;
-			newtr.childNodes[11].textContent = (o.state === 'opened' ? o.price : o.state === 'cancelled' ? 0 : o.pricedAt);
+			newtr.childNodes[11].textContent = (o.state === 'opened' ? o.lmt_price : o.state === 'cancelled' ? 0 : o.pricedAt);
 			newtr.childNodes[13].textContent = o.state;
 			newtr.childNodes[15].childNodes[1].innerText = (o.state === 'opened' ? 'X' : '');
 			newtr.childNodes[15].childNodes[1].disabled = (o.state === 'opened' ? false : true);
