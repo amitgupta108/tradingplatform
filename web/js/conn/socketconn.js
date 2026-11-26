@@ -92,10 +92,9 @@ function rh(socket) {
 	});
 
 	socket.on('hb', (resp) => {
-		console.log('hb', resp?.order_socket);
 		if (resp?.order_socket === 1)
-			socn.style.backgroundColor = '#4CAF50';
+			socn.style.backgroundColor = '#2b8946';
 		else
-			socn.style.backgroundColor = '#f44336';
+			socn.style.backgroundColor = '#c7372c';
 	});
 }

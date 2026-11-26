@@ -1,3 +1,9 @@
+const isPositiveNumber = (value) => {
+	if (typeof value === "number") return Number.isFinite(value) && value > 0;
+	if (typeof value !== "string" || value.trim() === "") return false;
+	return Number.isFinite(Number(value)) && Number(value) > 0;
+};
+
 class Order {
 	static ordermap = new Map();
 
@@ -44,7 +50,7 @@ function validate(clickedBtn) {
 
 	const neworders = rows.map((r) => {
 		const symbol = r.querySelector('#owsymbol').innerText;
-		const order = Order.findOpenOrder(symbol, r.title) ?? Order.getUIOrder(symbol);
+		const order = Order.findOpenOrder(symbol, Number(r.title)) ?? Order.getUIOrder(symbol);
 
 		const neworder = structuredClone(order);
 		if (order !== undefined) {
@@ -56,7 +62,7 @@ function validate(clickedBtn) {
 			const trg_price_tb = r.querySelector('#trg_price_tb');
 			const cur_price = Number(r.querySelector('#owprice').textContent);
 
-			if (lmt_price_tb.disabled === false && Number(lmt_price_tb.value) === 0) {
+			if (lmt_price_tb.disabled === false && !isPositiveNumber(lmt_price_tb.value)) {
 				lmt_price_tb.style.border = '1px solid red';
 				in_prep_orders.isError = true;
 			}
@@ -65,7 +71,7 @@ function validate(clickedBtn) {
 				lmt_price_tb.style.border = 'none';
 			}
 
-			if (trg_price_tb.disabled === false && Number(trg_price_tb.value) === 0) {
+			if (trg_price_tb.disabled === false && !isPositiveNumber(trg_price_tb.value)) {
 				trg_price_tb.style.border = '1px solid red';
 				in_prep_orders.isError = true;
 			}
@@ -80,20 +86,19 @@ function validate(clickedBtn) {
 
 			if (in_prep_orders.isError === false) {
 				if (neworder.ordertype.includes('LMT')) {
-					if (neworder.action === 'BUY' && Number(neworder.lmt_price) > cur_price)
+					if (neworder.action === 'B' && Number(neworder.lmt_price) > cur_price)
 						in_prep_orders.isError = true;
-					else if (neworder.action === 'SELL' && Number(neworder.lmt_price) < cur_price)
+					else if (neworder.action === 'S' && Number(neworder.lmt_price) < cur_price)
 						in_prep_orders.isError = true;
 				}
 
 				if (neworder.ordertype.includes('SL')) {
-					if (neworder.action === 'BUY' && Number(neworder.trg_price) < cur_price)
+					if (neworder.action === 'B' && Number(neworder.trg_price) < cur_price)
 						in_prep_orders.isError = true;
-					else if (neworder.action === 'SELL' && Number(neworder.trg_price) > cur_price)
+					else if (neworder.action === 'S' && Number(neworder.trg_price) > cur_price)
 						in_prep_orders.isError = true;
 				}
-				if (in_prep_orders.isError === true)
-					clickedBtn.style.border = '1px solid red';
+				clickedBtn.style.border = in_prep_orders.isError ? '1px solid red' : 'none';
 			}
 		}
 		return neworder;

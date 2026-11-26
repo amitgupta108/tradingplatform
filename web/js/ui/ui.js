@@ -25,15 +25,23 @@ function appendOrderRow(order) {
 	const ordertype = tr.querySelector('#ordertype');
 	ordertype.textContent = order.ordertype;
 
+	const lmt_price_tb = tr.querySelector('#lmt_price_tb');
+	if (order.isModify && order.ordertype.includes('LMT')) {
+		lmt_price_tb.value = order.lmt_price;
+		lmt_price_tb.disabled = false;
+		const trg_price_tb = tr.querySelector('#trg_price_tb');
+		if (order.isModify && order.ordertype.includes('SL')) {
+			trg_price_tb.value = order.trg_price;
+			trg_price_tb.disabled = false;
+		}
+		tr.title = order.orderid;
+		tr.classList.add('order-row-modify');
+	}
+
 	const action_btn = tr.querySelector('#ow_action_btn');
 	action_btn.textContent = order.action;
 	const selectbox = tr.querySelector('select');
 	selectbox.value = order.quantity / LOT_SIZE[profile.stockCode];
-
-	if (order.isModify) {
-		tr.title = order.orderid;
-		tr.classList.add('order-row-modify');
-	}
 
 	if (!basket.checked)
 		tr.classList.remove('hover-row');
@@ -230,7 +238,7 @@ function modifyOrder(c, p_row) {
 	const list_head = order_list_thead.querySelector('td');
 	const symbol = list_head.title;
 
-	const order = Order.findOpenOrder(symbol, p_row.title);
+	const order = Order.findOpenOrder(symbol, Number(p_row.title));
 	if (order !== undefined) {
 		order.isModify = true;
 		newOrder(order);

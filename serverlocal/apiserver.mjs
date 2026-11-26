@@ -11,10 +11,10 @@ class APIServer extends SystemService {
         return (...args) => {
             const rv = handler(...args);
             if (rv instanceof Promise)
-                rv.then((response) => this.log(eventName + ' ' + JSON.stringify(response)))
-                    .catch((error) => this.error(eventName + ' ' + JSON.stringify(error)));
+                rv.then((response) => this.log(eventName + ' ' + (response?.status ?? response)))
+                    .catch((error) => this.error(eventName + ' ' + error));
             else
-                this.log(eventName + ' ' + JSON.stringify(rv));
+                this.log(eventName + ' ' + rv);
         };
     };
 
