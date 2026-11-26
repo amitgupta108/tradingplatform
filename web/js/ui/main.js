@@ -2,19 +2,16 @@ function emit(event, arg1, arg2) {
 	socket.emit(event, arg1, arg2);
 }
 
+function lookbackPeriod() {
+	const historyEnd = profile.simStartTime;
+	const historyStart = historyEnd - 3 * 24 * 60 * 60 * 1000;
+	return { startTime: historyStart, endTime: historyEnd, interval: '5minute' };
+}
+
 function requestHistory() {
 	const futures = profile.stockCode + profile.fExpiry + 'FUT';
 	const symbols = [futures, profile.stockCode, 'VIX'];
-
-	const historyEnd = profile.simStartTime;
-	const historyStart = historyEnd - 3 * 24 * 60 * 60 * 1000;
-
-	emit('history', {
-		symbols: symbols,
-		startTime: historyStart,
-		endTime: historyEnd,
-		interval: '5minute',
-	});
+	emit('history', { symbols: symbols, ...lookbackPeriod() });
 }
 
 function changeSpeed() {

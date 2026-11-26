@@ -52,12 +52,12 @@ export class OrderSimulator extends UserService {
         if (openorders.length !== 0) {
             openorders.forEach((order) => {
                 var executed = false;
-                if (order.ordertype === 'MARKET')
+                if (order.ordertype === 'MKT')
                     executed = true;
-                else if (order.ordertype === 'LIMIT')
-                    if (order.action === 'B' && q.ltp <= order.price)
+                else if (order.ordertype === 'LMT')
+                    if (order.action === 'B' && q.ltp <= order.lmt_price)
                         executed = true;
-                    else if (order.action === 'S' && q.ltp >= order.price)
+                    else if (order.action === 'S' && q.ltp >= order.lmt_price)
                         executed = true;
 
                 if (executed) {

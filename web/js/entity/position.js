@@ -24,7 +24,7 @@ class Position {
 		this.#pRow = tRow(t_position_table_row);
 		this.#pRow.title = symbol;
 		this.#pRow.querySelector('#orderdisplay-btn').title = symbol;
-		this.#pRow.querySelector('#profile').textContent = getScrip(symbol).name;
+		this.#pRow.querySelector('#Instrument').textContent = getScrip(symbol).name;
 
 		document.getElementById('positions_tbody').append(this.#pRow);
 	}

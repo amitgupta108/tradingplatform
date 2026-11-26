@@ -73,6 +73,7 @@ export abstract class TPSocket extends BasicAdapter {
     static instance?: typeof TPSocket;
 
     abstract onOpen(): void;
+    abstract onClose(event: any): void;
     abstract handleMessage(data: any, ...args: any[]): void;
     abstract subscribe(symbols: string[], action: string, ...args: any[]): void;
     autoReconnect: boolean = true;
@@ -142,6 +143,7 @@ export abstract class TPSocket extends BasicAdapter {
                     this.isConnected = false;
                     this.isConnecting = false;
                     this.emit('close', event);
+                    this.onClose(event);
                     this.handleReconnect();
                 });
             }
