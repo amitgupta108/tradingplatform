@@ -1,14 +1,29 @@
-import { Service } from "../system/service.js";
-import { SystemService } from "../system/service.js";
-import { services, modes, providers } from '../../utils/constants.js';
+import { Service } from "../../../common/service.js";
+import { SystemService } from "../../../common/service.js";
+import { algo_services, modes, providers } from '../../utils/constants.js';
 
 export class TSConfigService extends SystemService {
-    services = services;
+    static instance: TSConfigService;
+    services = algo_services;
     modes = modes;
     providers = providers;
 
+    static getInstance() {
+        if (!this.instance) {
+            this.instance = new TSConfigService();
+        }
+        return this.instance;
+    }
+
     constructor() {
-        super('TSCONFIG')
+        super('TSCONFIG');
+        if (this.constructor.name !== 'TSConfigService') {
+            throw new Error('use getInstacne() for creating/accessing singleton instance');
+        }
+    }
+
+    async init() {
+
     }
 
     async initialize(names: string[]) {

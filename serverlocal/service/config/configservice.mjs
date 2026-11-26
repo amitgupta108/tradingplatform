@@ -1,10 +1,10 @@
-import { services, modes, providers } from '../../utils/constants.js';
+import { tp_services, modes, providers } from '../../utils/constants.js';
 
 export class ConfigService {
 
     static className = 'CONFIGSERVICE';
     static logEnabled = true;
-    static services = services;
+    static services = tp_services;
     static modes = modes;
     static providers = providers;
     static initialized = false;
@@ -55,7 +55,7 @@ export class ConfigService {
     }
 
     static getServiceByName(name) {
-        return this.services[name].ref;
+        return this.services[name]?.ref;
     }
 
     static getKeyByFeature(name, feature) {

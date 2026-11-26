@@ -1,3 +1,4 @@
+import { Logger } from "./logger.js";
 export abstract class Generic {
 
     logEnabled: boolean;
@@ -10,13 +11,13 @@ export abstract class Generic {
 
     log(...args: string[]) {
         if (this.logEnabled) {
-            console.log(`[${this.name}]`, ...args);
+            Logger.log(`[${this.name}]`, ...args);
         }
     }
 
     error(...args: string[]) {
         if (this.logEnabled) {
-            console.log(`[${this.name}]`, ...args);
+            Logger.error(`[${this.name}]`, ...args);
         }
     }
 }

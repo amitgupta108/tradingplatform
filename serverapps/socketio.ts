@@ -1,13 +1,12 @@
-import { WebServer } from './httpsserver.js';
+import { HTTPServer } from './httpsserver.js';
 import { Server } from "socket.io";
 
 export class SocketIO {
-    webServer: WebServer | null = null;
+    webServer: HTTPServer | null = null;
     sio: Server | null = null;
-    constructor() {
 
-        this.webServer = new WebServer();
-        this.webServer.init();
+    constructor(options?: any) {
+        this.webServer = new HTTPServer(options);
 
         this.sio = new Server(this.webServer.hServer as any, {
             cors: {
@@ -20,16 +19,6 @@ export class SocketIO {
             },
             pingInterval: 30000,
             pingTimeout: 60000
-        });
-    }
-
-    async start(stockCode = 'CRUDEOIL') {
-        const { AppClientManager } = await import('../serverlocal/app.mjs');
-        const app = new AppClientManager();
-        await app.startServices(stockCode);
-
-        this.sio?.on('connection', (s) => {
-            app.connect(s);
         });
     }
 }

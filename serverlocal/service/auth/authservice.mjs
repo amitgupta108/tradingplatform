@@ -1,4 +1,4 @@
-import { SystemService } from '../system/service.js';
+import { SystemService } from '../../../common/service.js';
 import { Connector, KotakConnector, ICICIConnector } from './connector.mjs';
 import { ConfigService } from '../config/configservice.mjs';
 import { webclients, serverclients, modes, access } from '../../utils/constants.js';

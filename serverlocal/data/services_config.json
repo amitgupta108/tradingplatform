@@ -1,5 +1,5 @@
 {
-    "services": {
+    "tp_services": {
         "EVENTSERVICE": {
             "init": "Y",
             "classdef": "EventService",
@@ -108,6 +108,12 @@
             "filepath": "../../broker/icici/m_breeze_live.mjs",
             "type": "broker"
         },
+        "ICICIHISTVIEW": {
+            "init": "Y",
+            "classdef": "BreezeMarketDataHist",
+            "filepath": "../../broker/icici/m_breeze_hist.mjs",
+            "type": "broker"
+        },
         "OPENALGOVIEW": {
             "init": "N",
             "classdef": "OpenAlgoMarketData",
@@ -120,6 +126,29 @@
             "filepath": "./configurations.js",
             "type": "user",
             "seq": "21"
+        },
+        "ALGOINTERFACE": {
+            "init": "Y",
+            "classdef": "AlgoInterface",
+            "filepath": "../algo/algointerface.js",
+            "type": "user",
+            "seq": "22"
+        }
+    },
+    "algo_services": {
+        "EVENTSERVICE": {
+            "init": "Y",
+            "classdef": "EventService",
+            "filepath": "../system/eventservice.js",
+            "type": "system",
+            "seq": "2"
+        },
+        "ALGOINTERFACE": {
+            "init": "Y",
+            "classdef": "AlgoInterface",
+            "filepath": "../algo/algointerface.mjs",
+            "type": "user",
+            "seq": "3"
         }
     }
 }

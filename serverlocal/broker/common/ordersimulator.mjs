@@ -1,5 +1,5 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { UserService } from '../../service/system/service.js';
+import { UserService } from '../../../common/service.js';
 
 export class OrderSimulator extends UserService {
     constructor(name) {
@@ -92,5 +92,9 @@ export class OrderSimulator extends UserService {
 
     positions(appid, stockCode) {
         return [];
+    }
+
+    async teardown() {
+        console.log('teardown');
     }
 }

@@ -1,6 +1,18 @@
-import { UserService } from "../system/service.js";
+import { UserService } from "../../../common/service.js";
 import { ConfigService } from "../config/configservice.mjs";
 import { EventService } from "../system/eventservice.js";
+
+type MessageTypes = 'init' | 'connect' | 'disconnect' | 'addlistener' | 'removelistener';
+type ListenerType = 'order' | 'quote' | 'pnl';
+type DataType = {
+    key: string;
+    value: any;
+}
+
+interface TMessage {
+    type: MessageTypes;
+    data: DataType[];
+}
 
 export class AlgoInterface extends UserService {
     es: EventService | null = null;
@@ -9,30 +21,30 @@ export class AlgoInterface extends UserService {
 
     constructor(name: string) {
         super(name);
-        this.algonames = ['SLORDER'];
+        this.algonames = ['ORDERSL'];
     }
 
     async init() {
         if (!this.initialized) {
             this.es = ConfigService.getServiceByName('EVENTSERVICE');
-            this.es?.addListener('algo_connect', (name: string, algoport: Worker) => {
-                this.handleConnection(name, algoport);
+            this.es?.addListener('algo_connect', (name: string, port: MessagePort) => {
+                this.handleConnection(name, port);
             });
             this.initialized = true;
         }
         return { status: 'already initialized' }
     }
 
-    async handleConnection(name: string, algoport: Worker) {
+    async handleConnection(name: string, port: MessagePort) {
         if (this.algonames.includes(name)) {
-            algoport.addEventListener('message', (msg: any) => {
+            port.addEventListener('message', (msg: any) => {
                 if (msg.data === 'Y') {
-                    const algo = new AlgoInstance(name, algoport);
+                    const algo = new AlgoInstance(name, port);
                     algo.init();
                     this.algos?.set(name, algo);
                 }
             });
-            algoport.postMessage({ type: 'init', data: {} });
+            port.postMessage({ type: 'init', data: {} });
         }
     }
 
@@ -43,10 +55,10 @@ export class AlgoInterface extends UserService {
 
 export class AlgoInstance {
     name: string;
-    port: Worker;
+    port: MessagePort;
     state: string = 'disconnected';
 
-    constructor(name: string, port: Worker) {
+    constructor(name: string, port: MessagePort) {
         this.name = name;
         this.port = port;
     }

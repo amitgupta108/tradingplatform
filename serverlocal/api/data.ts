@@ -1,6 +1,5 @@
 import { ConfigService } from "../service/config/configservice.mjs";
 import { Configurations } from "../service/config/configurations.js";
-import type { IExpiries } from "../utils/types.js";
 
 export class DataApi {
     passthrough: boolean = false;

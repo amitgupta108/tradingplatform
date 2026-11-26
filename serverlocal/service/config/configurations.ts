@@ -2,7 +2,7 @@ import { ConfigService } from "./configservice.mjs";
 import type { IExpiries, TExpiriesSet } from '../../utils/types.js';
 import { EXCHANGES, STOCKCODES } from "../../utils/constants.js";
 import { KotakAdapter } from "../../broker/clients/KotakAdapter.js";
-import { UserService } from "../system/service.js";
+import { UserService } from "../../../common/service.js";
 
 export class Configurations extends UserService {
     expiries: TExpiriesSet = {
@@ -15,15 +15,19 @@ export class Configurations extends UserService {
         super('CONFIGURATIONS');
     }
 
-    async cInit(): Promise<boolean> {
+    async init(): Promise<{ status: string }> {
         return await new Promise(async (resolve, reject) => {
-            this.ps = ConfigService.getServiceByName('PERSISTSERVICE');
-            for (const stock of STOCKCODES) {
-                for (const type of ['FUTURES', 'OPTIONS']) {
-                    this.expiries[stock][type] = await this.loadExpiries(stock, type);
+            try {
+                this.ps = ConfigService.getServiceByName('PERSISTSERVICE');
+                for (const stock of STOCKCODES) {
+                    for (const type of ['FUTURES', 'OPTIONS']) {
+                        this.expiries[stock][type] = await this.loadExpiries(stock, type);
+                    }
                 }
+                resolve({ status: 'success' });
+            } catch (e) {
+                reject(e);
             }
-            resolve(true);
         });
     }
 

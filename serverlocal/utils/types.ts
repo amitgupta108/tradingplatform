@@ -1,5 +1,11 @@
 import { STOCKCODES } from "./constants.js";
 
+export interface Profile {
+    appid?: string;
+    mode: string;
+    socket?: any;
+}
+
 export interface AuthHeaders {
     'Authorization'?: string;
     'Content-Type'?: string;

@@ -16,7 +16,8 @@ export const {
 } = scrips_config;
 
 export const {
-    services,
+    tp_services,
+    algo_services
 } = services_config;
 
 export const {

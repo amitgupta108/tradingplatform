@@ -1,16 +1,10 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import https from 'node:https';
 import http from 'node:http';
-import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
-
-import { ConfigService } from '../serverlocal/service/config/configservice.mjs';
-import type { AuthData } from '../serverlocal/utils/types.js';
-import { DataApi } from '../serverlocal/api/data.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { Generic } from '../common/generic.js';
+import { WEB_ROOT_PATH, CERTS_PATH } from '../common/path.js';
 
 const mimeTypes = {
     html: 'text/html',
@@ -19,19 +13,13 @@ const mimeTypes = {
     json: 'application/json',
     png: 'image/png'
 };
-const options = {
-    key: fs.readFileSync(path.resolve(import.meta.dirname, process.env.ssl_key!)),
-    cert: fs.readFileSync(path.resolve(import.meta.dirname, process.env.ssl_cert!)),
+
+const httpsOptions = {
+    key: fs.readFileSync(path.join(CERTS_PATH, process.env.ssl_key!)),
+    cert: fs.readFileSync(path.join(CERTS_PATH, process.env.ssl_cert!)),
     minVersion: 'TLSv1.2',
     maxVersion: 'TLSv1.3'
 };
-
-const args = process.argv;
-let port = args[2] === undefined ? 80 : Number(args[2]);
-if (port === undefined || port === 0 || port < 1025)
-    port = Number(process.env.PORT1);
-
-const host = process.env.HOST;
 
 const allowedOrigins = [
     'http://localhost:1025', // Your live production frontend domain  
@@ -39,31 +27,34 @@ const allowedOrigins = [
     'https://localhost:1029'
 ];
 
-export class WebServer {
+export class HTTPServer extends Generic {
 
+    host: string;
+    port: number;
     hServer: http.Server | https.Server | null = null;
-    dataApi: DataApi | null = null;
     protocol: string | null = null;
+    apiReqHandler?: (req: IncomingMessage, res: ServerResponse) => void;
 
-    constructor() {
-        this.protocol = process.env.HTTP === 'Y' ? 'http' : 'https';
+    constructor(options?: any) {
+        super('HTTPServer');
+        this.host = options.host;
+        this.port = options.port;
+        this.protocol = options.protocol;
+
+        this.hServer = this.protocol === 'http' ?
+            http.createServer({}, (req, res) => {
+                this.handleRequests(req, res)
+            })
+            : https.createServer(httpsOptions as any, (req, res) => {
+                this.handleRequests(req, res)
+            });
+
+        this.hServer?.listen(this.port, this.host, () => {
+            this.log(`Server running at ${this.protocol}://${this.host}:${this.port}/`);
+        });
     }
 
-    init() {
-        this.hServer = this.protocol === 'http' ? http.createServer((req, res) => {
-            this.handleRequests(req, res);
-        }) : https.createServer(options as any, (req, res) => {
-            this.handleRequests(req, res);
-        });
-
-        this.hServer?.listen(port, host, () => {
-            console.log(`Server running at ${this.protocol}://${host}:${port}/`);
-        });
-
-        this.dataApi = new DataApi()
-    }
-
-    handleRequests(req: IncomingMessage, res: ServerResponse) {
+    private handleRequests(req: IncomingMessage, res: ServerResponse) {
         const origin = req.headers.origin;
 
         if (origin && allowedOrigins.includes(origin)) {
@@ -80,27 +71,28 @@ export class WebServer {
             res.setHeader('Access-Control-Max-Age', '600');
         }
 
-        // Prevent directory traversal attacks
         const parsedUrl = new URL(req.url as string, `https://${req.headers.host}`);
         let pathname = parsedUrl.pathname;
 
         if (req.method === 'OPTIONS')
-            this.handleOptionsRequest(req, res)
+            this.handleOptionsRequest(res)
+        else if (pathname.startsWith('/v1/'))
+            this.handleWebResRequest(pathname, res);
         else if (pathname.startsWith('/redirect'))
-            this.handleAuthRequest(parsedUrl, res);
+            this.apiReqHandler?.(req, res);
         else if (pathname.startsWith('/api'))
-            this.handleAPIRequest(req, res);
+            this.apiReqHandler?.(req, res);
         else
-            this.handleStaticRequest(pathname, res);
+            this.errorResponse(res)
     }
 
-    handleOptionsRequest(req: IncomingMessage, res: ServerResponse) {
+    handleOptionsRequest(res: ServerResponse) {
         res.writeHead(204); // 204 No Content confirms parameters are accepted
         res.end();
     }
 
-    handleStaticRequest(pathname: string, res: ServerResponse) {
-        let filePath = path.join(__dirname, '../web/', pathname);
+    handleWebResRequest(pathname: string, res: ServerResponse) {
+        let filePath = path.join(WEB_ROOT_PATH, pathname.replace('/v1/', ''));
         const ext = path.extname(filePath).toLowerCase().slice(1) as string;
         const contentType = mimeTypes[ext] || 'application/octet-stream';
 
@@ -120,63 +112,12 @@ export class WebServer {
         });
     }
 
-    handleAuthRequest(parsedUrl: URL, res: ServerResponse) {
-
-        if (parsedUrl.pathname.endsWith('/icici.html')) {
-            const authcode = parsedUrl.searchParams.get('apisession') as string;
-            const es = ConfigService.getServiceByName('EVENTSERVICE');
-            es.emit('ext_auth', { provider: 'icici', authcode: authcode });
-        }
-
-        const responseType = 'text/html';
-        res.writeHead(200, { 'Content-Type': responseType });
-        res.end('<!DOCTYPE html><title>Redirect</title><label onclick="window.close()">X</label>', 'utf-8');
+    setHandler(handlerFn: any) {
+        this.apiReqHandler = handlerFn;
     }
 
-    async handleAPIRequest(req: IncomingMessage, res: ServerResponse) {
-        res.setHeader('Content-Type', 'application/json');
-        const as = ConfigService.getServiceByName('AUTHSERVICE');
-        const headers = req.headers;
-        const profile = as.validate(headers['sid'], headers['token']);
-
-        if (profile === undefined) {
-            res.writeHead(401);
-            res.end(JSON.stringify({ error: 'Unauthorized' }));
-        }
-        else {
-            let wrapper: any;
-            if (req.url === '/api/value' && req.method === 'POST') {
-                const jsonbody = await this.getRequestBody(req) as { provider: string };
-                wrapper = await this.dataApi?.getValues(jsonbody?.provider);
-            }
-            else if (req.url === '/api/scrips' && req.method === 'POST') {
-                const jsonbody = await this.getRequestBody(req) as { filters: any };
-                wrapper = await this.dataApi?.getScrips(jsonbody?.filters);
-            }
-            else if (req.url === '/api/history' && req.method === 'POST') {
-                const jsonbody = await this.getRequestBody(req) as { request: any };
-                wrapper = await this.dataApi?.getHistory(jsonbody?.request, undefined);
-            }
-            else if (req.url === '/api/expiries' && req.method === 'POST') {
-                const jsonbody = await this.getRequestBody(req) as { options: any };
-                wrapper = await this.dataApi?.getExpiries(jsonbody?.options);
-            }
-            res.writeHead(200);
-            res.end(JSON.stringify(wrapper));
-        }
-    }
-
-    getRequestBody(req: IncomingMessage) {
-        return new Promise((resolve, reject) => {
-            let body = '';
-            req.on('data', chunk => { body += chunk.toString(); });
-            req.on('end', () => {
-                try {
-                    resolve(body ? JSON.parse(body) : {});
-                } catch (err) {
-                    reject(err);
-                }
-            });
-        });
+    private errorResponse(res: ServerResponse) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('404 Not Found');
     }
 }

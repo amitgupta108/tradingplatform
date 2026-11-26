@@ -1,4 +1,4 @@
-import { Generic } from '../../../generic.js';
+import { Generic } from '../../../common/generic.js';
 import { EXCHANGES, STOCKCODES, STRIKE_SIZE, OPT_CONFIG } from '../../utils/constants.js';
 import { ConfigService } from '../config/configservice.mjs';
 import type { Quote } from '../../utils/types.js';

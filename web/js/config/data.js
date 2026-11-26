@@ -26,7 +26,7 @@ async function loadProfile() {
 		profile = await response.json()
 
 		profile.simStartTime = !profile.simStartTime ?
-			Date.now() :
+			Math.round(Date.now() / 1000) * 1000 :
 			new Date(profile.simStartTime).getTime() + 5.5 * 60 * 60 * 1000;
 
 		date_label.textContent = new Date(profile.simStartTime).toDateString();

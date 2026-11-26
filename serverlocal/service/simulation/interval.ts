@@ -1,4 +1,4 @@
-import { Generic } from "../../../generic.js";
+import { Generic } from "../../../common/generic.js";
 import { Task } from "./task.js"
 
 export class IntervalClock extends Generic {

@@ -1,11 +1,11 @@
-import { Logger } from '../utils/logger.js';
-import { App } from "./webapp.js";
+import { Logger } from '../common/logger.js';
+import { App } from "../common/app.js";
 import { TSConfigService } from '../serverlocal/service/config/config.js';
 import type { EventService } from '../serverlocal/service/system/eventservice.js';
 import { MessagePort } from "node:worker_threads";
 import { isMainThread } from 'node:worker_threads';
 
-export class AlgoApp extends App {
+export class ProcessApp extends App {
     parent: boolean;
     initport: MessagePort | null = null;
     socketMap = new Map<string, MessagePort>();
@@ -16,15 +16,16 @@ export class AlgoApp extends App {
         this.parent = isMainThread;
     }
 
+    async init() {
+    }
+
     parentNotification(msg: any) {
         Logger.log(`message: ${msg} from parent`);
     }
 
     async startServices(names: string[]): Promise<any> {
-        this.tsconfig = new TSConfigService();
-        await this.tsconfig.init();
-
-        this.tsconfig.initialize(names);
+        this.tsconfig = TSConfigService.getInstance();
+        await this.tsconfig.initialize(names);
     }
 
     connect(port: MessagePort, id: string) {

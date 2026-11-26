@@ -1,7 +1,5 @@
-
 import { PacketParser } from '../../utils/PacketParser.mjs';
 import { TPSocket } from './adapter.js';
-import { ConfigService } from '../../service/config/configservice.mjs';
 
 export class KMDClient extends TPSocket {
     constructor() {

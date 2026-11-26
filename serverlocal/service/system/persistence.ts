@@ -1,6 +1,6 @@
 import { open } from 'lmdb';
-
-import { SystemService } from "./service.js";
+import { SystemService } from "../../../common/service.js";
+import { DIST_PATH } from '../../../common/path.js';
 
 export class PersistenceService extends SystemService {
     store: any;
@@ -10,7 +10,7 @@ export class PersistenceService extends SystemService {
     }
 
     async init() {
-        this.store = open(process.env.WORKSPACE_PATH + '/' + process.env.DB_PATH, {});
+        this.store = open(DIST_PATH + '/' + process.env.DB_RELATIVE_FILEPATH, {});
         this.initialized = true;
         return { status: 'success' };
     }

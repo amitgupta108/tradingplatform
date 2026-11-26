@@ -1,4 +1,4 @@
-import { Generic } from '../../../generic.js';
+import { Generic } from '../../../common/generic.js';
 import { NetworkProxy } from '../../utils/networkproxy.js';
 import { BreezeAdapter } from '../../broker/clients/breezeadapter.js';
 import type { MessageObject } from './historysim.js';

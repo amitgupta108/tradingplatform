@@ -1,4 +1,4 @@
-import { UserService } from "../system/service.js";
+import { UserService } from "../../../common/service.js";
 import { IntervalClock } from "./interval.js";
 import { UserQuotes } from "./userquotes.js";
 import { NetworkProxy } from "../../utils/networkproxy.js";
@@ -22,16 +22,17 @@ export class HistorySimulator extends UserService {
         super(name);
     }
 
+    async init(): Promise<{ status: string }> {
+        this.historyadapter = await BreezeAdapter.getInstance() as any as BreezeAdapter;
+        this.initialized = true;
+        return { status: 'success' };
+    }
+
     connect(proxy: NetworkProxy) {
         proxy.responder = this.name;
         proxy.readyState = 1;
         this.clients.set(proxy.requestor, proxy);
         this.setupListeners(proxy);
-    }
-
-    async cInit() {
-        this.historyadapter = await BreezeAdapter.getInstance() as any as BreezeAdapter;
-        return true;
     }
 
     setupListeners(client: NetworkProxy) {

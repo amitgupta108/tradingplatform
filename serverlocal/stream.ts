@@ -1,4 +1,4 @@
-import { SystemService } from './service/system/service.js';
+import { SystemService } from '../common/service.js';
 import { ConfigService } from './service/config/configservice.mjs';
 import { EventService } from './service/system/eventservice.js';
 

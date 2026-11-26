@@ -7,8 +7,8 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { ConfigService } from './config/configservice.mjs';
 import { filePaths, filters, tp_filters } from '../utils/constants.js';
-import { BrokerService } from './system/service.js';
-
+import { BrokerService } from '../../common/service.js';
+import { STATIC_DATA_PATH } from '../../../dist/common/path.js';
 const FIELD_MAP = {
 	pSymbol: 'token',
 	pExchSeg: 'exchangeSegment',
@@ -21,10 +21,9 @@ const FIELD_MAP = {
 
 const keys_kept = new Set(Object.keys(FIELD_MAP));
 const todayStr = new Date().toISOString().split('T')[0];
-const wd = path.join(process.env.WORKSPACE_PATH, process.env.STATIC_DATA_PATH);
 const PREFIX = 'scrips_';
 const EXTENSION = '.ndjson';
-const cacheFilePath = path.join(wd, `${PREFIX}${todayStr}${EXTENSION}`);
+const cacheFilePath = path.join(STATIC_DATA_PATH, `${PREFIX}${todayStr}${EXTENSION}`);
 
 function getUpdatedUrl(url) {
 	const dateRegex = /\d{4}-\d{2}-\d{2}/;
@@ -45,11 +44,11 @@ async function clearStaleCacheFiles() {
 	console.log('Running background garbage collection on stale disk caches...');
 
 	try {
-		const files = await fsp.readdir(wd);
+		const files = await fsp.readdir(STATIC_DATA_PATH);
 
 		for (const file of files) {
 			if (file.endsWith(EXTENSION) && !file.includes(todayStr)) {
-				await fsp.unlink(path.join(wd, file));
+				await fsp.unlink(path.join(STATIC_DATA_PATH, file));
 				console.log(`[GC] Deleted stale cache file from disk: ${file}`);
 			}
 		}
@@ -104,6 +103,7 @@ export class ScripStore extends BrokerService {
 		clearStaleCacheFiles();
 		this.log('Checking for local persistent file cache...');
 		this.addIndicesToStore(['NIFTY']);
+
 		if (fs.existsSync(cacheFilePath) || reload === true) {
 			const jsonfile = fs.createReadStream(cacheFilePath, { encoding: 'utf8' });
 

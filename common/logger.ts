@@ -21,8 +21,7 @@ errorstream.on("error", (err) => {
     console.error("Failed to write to error stream", err);
 });
 
-export class Logger {
-    constructor() { }
+export class FileLogger {
 
     static log(message?: any, ...optionalParams: any[]) {
         const formattedMessage = util.format(message, ...optionalParams);
@@ -32,5 +31,34 @@ export class Logger {
     static error(message?: any, ...optionalParams: any[]) {
         const formattedMessage = util.format(message, ...optionalParams);
         errorstream.write(`${getTimestamp()} ${formattedMessage}\n`);
+    }
+}
+
+const methods = ["log", "error", "warn", "info", "debug"];
+
+methods.forEach((method) => {
+    // Capture the native machine logging method
+    const original = console[method];
+
+    console[method] = (message?: any, ...optionalParams: any[]) => {
+        // 1. Format arguments exactly like standard Node.js console.log
+        const formattedMessage = util.format(message, ...optionalParams);
+
+        // 2. Prepend the simple H:M:S:ms timestamp
+        const timestamp = getTimestamp();
+
+        // 3. Send it out to the raw stream, preserving actual \n line breaks
+        original.apply(console, [timestamp, formattedMessage]);
+    };
+});
+
+export class Logger {
+
+    static log(...args: string[]) {
+        console.log(...args);
+    }
+
+    static error(...args: string[]) {
+        console.error(...args);
     }
 }

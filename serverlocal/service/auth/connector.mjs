@@ -1,4 +1,4 @@
-import { Generic } from '../../../generic.js'
+import { Generic } from '../../../common/generic.js'
 import { ConfigService } from '../config/configservice.mjs';
 import { getPassword, setPassword } from 'cross-keychain';
 

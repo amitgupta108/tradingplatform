@@ -1,5 +1,5 @@
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { UserService } from '../../service/system/service.js';
+import { UserService } from '../../../common/service.js';
 import type { Quote, Order } from '../../utils/types.js';
 
 export class TradeSimulator extends UserService {

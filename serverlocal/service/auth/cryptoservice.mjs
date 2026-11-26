@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { SystemService } from '../system/service.js';
+import { SystemService } from '../../../common/service.js';
 
 export class CryptoService extends SystemService {
     constructor(name) {

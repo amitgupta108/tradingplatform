@@ -1,4 +1,3 @@
-import { ConfigService } from '../../service/config/configservice.mjs';
 import { streamer } from '../../stream.js';
 import { TPSocket } from './adapter.js';
 

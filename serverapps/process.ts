@@ -1,10 +1,11 @@
 import { Worker } from 'node:worker_threads';
 import path from 'path';
 import fs from 'fs';
-import { AlgoApp } from '../apps/algoapp.js';
+import { ProcessApp } from '../apps/workerapp.js';
 import { MessagePort } from 'node:worker_threads';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'events';
+import { PROCESS_PATH } from '../common/path.js';
 
 const processes = [{ type: 'ALGO', name: 'ORDERBASED' }]
 
@@ -35,10 +36,10 @@ export class SubProcessManager extends EventEmitter {
     }
 }
 
-export class SubProcessLauncher {
+export class ProcessLauncher {
     private processMap: Map<string, SubProcessManager> = new Map();
-    private processdir = process.env.WORKSPACE_PATH + '/' + process.env.PROCESSES_PATH!;
-    private algoAppManager?: AlgoApp;
+    private processdir = PROCESS_PATH;
+    private processAppManager?: ProcessApp;
 
     constructor() {
         for (const p of processes) {
@@ -73,14 +74,14 @@ export class SubProcessLauncher {
 
         for (const [k, v] of this.processMap) {
             if (k === 'ORDERBASED') {
-                if (!this.algoAppManager)
-                    this.algoAppManager = new AlgoApp('ALGOAPPMANAGER');
+                if (!this.processAppManager)
+                    this.processAppManager = new ProcessApp('PROCESSAPPMANAGER');
 
-                await this.algoAppManager.startServices(['TSCONFIG']);
+                await this.processAppManager.startServices(['EVENTSERVICE', 'ALGOINTERFACE']);
             }
 
             v.on('connection', (id: string, port: MessagePort) => {
-                this.algoAppManager!.connect(port as MessagePort, id);
+                this.processAppManager!.connect(port as MessagePort, id);
             })
         }
     }

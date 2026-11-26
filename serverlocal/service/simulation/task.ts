@@ -1,4 +1,4 @@
-import { Generic } from "../../../generic.js";
+import { Generic } from "../../../common/generic.js";
 import { UserQuotes } from "./userquotes.js";
 
 export class Task extends Generic {

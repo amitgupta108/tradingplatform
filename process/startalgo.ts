@@ -1,5 +1,9 @@
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../common/logger.js';
 import { parentPort } from "node:worker_threads";
+
+export const algotype = 'ORDERBASED';
+export const algoname = 'ORDERSL';
+export const instance = 1;
 
 process.on('uncaughtException', (error: Error) => {
     console.error('FATAL: Uncaught Exception ' + error.stack);
@@ -11,8 +15,8 @@ process.on('unhandledRejection', (error: Error) => {
 });
 
 async function startServers() {
-    const { AlgoApp } = await import('../apps/algoapp.js');
-    const algoapp = new AlgoApp('ALGOTHREAD');
+    const { ProcessApp } = await import('../apps/workerapp.js');
+    const algoapp = new ProcessApp('ALGOTHREAD');
     algoapp.initport = parentPort!;
 
     parentPort!.on('message', (message: any) => {
@@ -20,10 +24,10 @@ async function startServers() {
             algoapp.connect(message.port, message.id);
         }
     });
-    await algoapp.startServices(['TSCONFIG']);
+    await algoapp.startServices(['EVENTSERVICE', 'ALGOINTERFACE']);
 
-    const { WSServer } = await import('../serverapps/socketws.js');
-    await (new WSServer()).start();
+    const { ServerApp } = await import('../apps/serverapp.js');
+    await (new ServerApp('algo')).init();
 }
 
 await startServers();

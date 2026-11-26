@@ -1,6 +1,6 @@
 import { streamer } from '../../stream.js';
 import { ConfigService } from '../../service/config/configservice.mjs';
-import { UserService } from '../../service/system/service.js';
+import { UserService } from '../../../common/service.js'
 import { KotakHSISocket } from '../clients/HSIClient.mjs';
 
 export class OrderManager extends UserService {
