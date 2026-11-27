@@ -1,5 +1,5 @@
 import { ConfigService } from './service/config/configservice.mjs';
-import { SystemService } from './service/system/service.js';
+import { SystemService } from '../common/service.js';
 import { streamer } from './stream.js';
 
 class APIServer extends SystemService {
@@ -8,15 +8,16 @@ class APIServer extends SystemService {
     }
 
     catchAsync(handler, eventName) {
-        return (...args) => {
-            const rv = handler(...args);
-            if (rv instanceof Promise)
-                rv.then((response) => this.log(eventName + ' ' + JSON.stringify(response)))
+        return ({ ...args }) => {
+            try {
+                handler(args)
+                    .then((response) => this.log(eventName + ' ' + JSON.stringify(response)))
                     .catch((error) => this.error(eventName + ' ' + JSON.stringify(error)));
-            else
-                this.log(eventName + ' ' + JSON.stringify(rv));
-        };
-    };
+            } catch (e) {
+                this.error(eventName + ' ' + JSON.stringify(e));
+            }
+        }
+    }
 
     registerDataRequests(s, appid, mode) {
         const util_service = ConfigService.getServiceByName('ICICIMARKETDATA');
@@ -29,7 +30,7 @@ class APIServer extends SystemService {
             market_service.startv2(appid, msg);
         });
 
-        s.on('history', this.catchAsync(async (request) => {
+        s.on('history', async (request) => {
             this.log("history request " + request.symbols.length);
             let response = '';
             for (const symbol of request.symbols) {
@@ -39,7 +40,7 @@ class APIServer extends SystemService {
             }
             return response;
 
-        }, 'history'));
+        });
 
         s.on('subscribe', (list) => {
             market_service.subscribe(appid, list, 'subs');
@@ -119,7 +120,7 @@ class APIServer extends SystemService {
             s.emit('scrips', scrips);
         });
 
-        s.on('authenticate', this.catchAsync((authcode) => {
+        s.on('authenticate', (authcode) => {
 
             const provider = (authcode.length === 6 || authcode === 'tp-kotak-p') ? 'kotak' :
                 (authcode.length === 8 || authcode === 'tp-icici-p') ? 'icici' : null;
@@ -128,7 +129,7 @@ class APIServer extends SystemService {
                 const service = ConfigService.getAdminService(mode, 'BROKER_AUTH');
                 return service.authenticate(provider, authcode);
             }
-        }, 'authenticate'));
+        });
 
         /*
         s.on('subscribe', (list, provider) => {
@@ -150,10 +151,6 @@ class APIServer extends SystemService {
 
     registerDisconnectionHandler(s, appid, mode) {
         s.on("disconnect", (reason) => {
-            /*const market_service = ConfigService.getActiveServiceByMode('view', mode);
-            market_service.exit(appid);
-            streamer.deleteFromUserMap(appid);
-            */
             this.log("socket disconnected  " + reason);
         });
     }

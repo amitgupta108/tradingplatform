@@ -1,4 +1,4 @@
-import { ConfigService } from './service/config/configservice.mjs';
+/*import { ConfigService } from './service/config/configservice.mjs';
 import { streamer } from './stream.js';
 import { apiserver } from './apiserver.mjs';
 import { DataApi } from './api/data.js';
@@ -180,4 +180,4 @@ export class ServerClientManager extends ClientManager {
 
         return true;
     }
-}
+}*/

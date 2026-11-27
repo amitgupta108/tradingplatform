@@ -4,6 +4,6 @@ import { MessagePort } from "worker_threads";
 
 import { SocketIO } from '../serverapps/socketio.js';
 import { WSServer } from '../serverapps/wsserver.js';
-import { ProcessLauncher } from '../serverapps/process.js';
+import { SubProcessLauncher } from '../serverapps/process.js';
 
-export { Socket, WebSocket, MessagePort, SocketIO, WSServer, ProcessLauncher };
+export { Socket, WebSocket, MessagePort, SocketIO, WSServer, SubProcessLauncher };

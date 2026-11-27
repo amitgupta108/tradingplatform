@@ -1,5 +1,6 @@
 import { Logger } from '../common/logger.js';
 import { parentPort } from "node:worker_threads";
+import { SubProcessManager } from '../serverapps/process.js';
 
 export const algotype = 'ORDERBASED';
 export const algoname = 'ORDERSL';
@@ -15,17 +16,12 @@ process.on('unhandledRejection', (error: Error) => {
 });
 
 async function startServers() {
-    const { ProcessApp } = await import('../apps/workerapp.js');
-    const algoapp = new ProcessApp('ALGOTHREAD');
-    algoapp.initport = parentPort!;
+
 
     parentPort!.on('message', (message: any) => {
         if (message.type === 'connection') {
-            algoapp.connect(message.port, message.id);
         }
     });
-    await algoapp.startServices(['EVENTSERVICE', 'ALGOINTERFACE']);
-
     const { ServerApp } = await import('../apps/serverapp.js');
     await (new ServerApp('algo')).init();
 }

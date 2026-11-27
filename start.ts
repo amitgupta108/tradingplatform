@@ -48,13 +48,8 @@ async function startServers() {
     }
 
     if (process.env.SERVERAPP === 'Y') {
-        const { WSServer } = await import('./serverapps/socketws.js');
+        const { WSServer } = await import('./serverapps/wsserver.js');
         apps.push(await (new WSServer() as any).start());
-    }
-
-    if (process.env.SUBPROCESSES === 'Y') {
-        const { SubProcessLauncher } = await import('./serverapps/process.js');
-        apps.push(await (new SubProcessLauncher() as any).start());
     }
 }
 

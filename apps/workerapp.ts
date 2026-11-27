@@ -1,58 +1,53 @@
-import { Logger } from '../common/logger.js';
 import { App } from "../common/app.js";
-import { TSConfigService } from '../serverlocal/service/config/config.js';
-import type { EventService } from '../serverlocal/service/system/eventservice.js';
-import { MessagePort } from "node:worker_threads";
-import { isMainThread } from 'node:worker_threads';
+import { SubProcessLauncher } from '../serverapps/process.js';
+import { MessagePort } from 'worker_threads';
+
+const processes = [
+    { type: 'ALGO', name: 'ORDERBASED', active: true, file: 'ORDER_ALGO_FILE' },
+    { type: 'ALGO', name: 'PRICEBASED', active: false, file: 'PRICE_ALGO_FILE' },
+    { type: 'SERVER', name: 'ORDERSERVER', active: false, file: 'ORDER_SERVER_FILE' },
+    { type: 'SERVER', name: 'INDICATORSERVER', active: false, file: 'INDICATOR_SERVER_FILE' }
+]
 
 export class ProcessApp extends App {
-    parent: boolean;
-    initport: MessagePort | null = null;
-    socketMap = new Map<string, MessagePort>();
-    tsconfig!: TSConfigService;
+    private processList: Map<string, SubProcessLauncher> = new Map();
 
     constructor(name: string) {
         super(name);
-        this.parent = isMainThread;
     }
 
     async init() {
-    }
+        for (const p of processes) {
+            if (p.active) {
+                const launcher = new SubProcessLauncher(p.name, p.file!);
+                processes[p.name].ref = launcher;
+                this.processList.set(p.name, launcher);
 
-    parentNotification(msg: any) {
-        Logger.log(`message: ${msg} from parent`);
-    }
-
-    async startServices(names: string[]): Promise<any> {
-        this.tsconfig = TSConfigService.getInstance();
-        await this.tsconfig.initialize(names);
-    }
-
-    connect(port: MessagePort, id: string) {
-        this.socketMap.set(id, port);
-
-        const es = this.tsconfig.getServiceByName('EVENTSERVICE') as EventService;
-        es.emit('algo_connect', this.name, port);
-    }
-
-
-    registerHandlers(port: MessagePort) {
-        port.on("message", (msg: any) => {
-            this.handleMessage(msg)
-        });
-    }
-
-    handleMessage(msg: any) {
-        switch (msg.type) {
-            case "history":
-                break;
+                launcher.process?.on('connection', (id: string, port: MessagePort) => {
+                    this.connect(port as MessagePort, id);
+                })
+                await launcher.init();
+            }
         }
     }
 
-    send(port: any, type: string, msg: any) {
+    async startServices() {
     }
 
-    async tearDown(): Promise<any> {
+    connect(port: MessagePort, id: string) {
+
+        this.registerhandlers(port, id);
+    }
+
+    registerhandlers(port: MessagePort, id: string): void {
+
+    }
+
+    send(s: MessagePort, type: string, data: any): void {
+        s.postMessage({ type, data });
+    }
+
+    async tearDown() {
 
     }
 }

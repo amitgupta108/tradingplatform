@@ -1,5 +1,5 @@
 import { Logger } from './common/logger.js';
-import { SocketIO, WSServer, ProcessLauncher } from './common/import.js';
+import { SocketIO, WSServer, SubProcessLauncher } from './common/import.js';
 
 process.on('uncaughtException', (error) => {
     Logger.error('FATAL: Uncaught Exception ' + error.stack);

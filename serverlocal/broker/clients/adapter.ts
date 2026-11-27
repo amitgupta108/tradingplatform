@@ -19,7 +19,7 @@ abstract class BasicAdapter extends EventEmitter {
     }
     abstract onAuthData(authData: AuthData): Promise<boolean>;
 
-    private async init() {
+    async init() {
         const es = ConfigService.getServiceByName('EVENTSERVICE');
         es.addListener(`${this.provider}_auth`, async (authData: AuthData) => {
             if (!this.isConnected)
