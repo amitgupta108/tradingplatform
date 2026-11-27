@@ -8,24 +8,23 @@ class APIServer extends SystemService {
     }
 
     catchAsync(handler, eventName) {
-        return ({ ...args }) => {
-            try {
-                handler(args)
-                    .then((response) => this.log(eventName + ' ' + JSON.stringify(response)))
-                    .catch((error) => this.error(eventName + ' ' + JSON.stringify(error)));
-            } catch (e) {
-                this.error(eventName + ' ' + JSON.stringify(e));
-            }
-        }
-    }
+        return (...args) => {
+            const rv = handler(...args);
+            if (rv instanceof Promise)
+                rv.then((response) => this.log(eventName + ' ' + (response?.status ?? response)))
+                    .catch((error) => this.error(eventName + ' ' + error));
+            else
+                this.log(eventName + ' ' + rv);
+        };
+    };
 
     registerDataRequests(s, appid, mode) {
         const util_service = ConfigService.getServiceByName('ICICIMARKETDATA');
         const market_service = ConfigService.getActiveServiceByMode('view', mode);
 
         s.on('startv2', (msg) => {
-            //if (mode.startsWith('HISTORY'))
-            //  market_service.clientConfigure(appid, msg.simStartTime, '1x');
+            if (mode.startsWith('HISTORY'))
+                market_service.clientConfigure(appid, msg.simStartTime, '1x');
 
             market_service.startv2(appid, msg);
         });
@@ -84,7 +83,7 @@ class APIServer extends SystemService {
             this.log('order received at apiserver');
             orders.forEach(async (order) => {
                 let updated;
-                if (order.type === 'modify')
+                if (order.isModify)
                     updated = await trading_service.modifyOrder(appid, order);
                 else
                     updated = await trading_service.placeOrder(appid, order);

@@ -81,13 +81,6 @@ function updateCandle(q, curCandle) {
 	return curCandle;
 }
 
-function lookbackPeriod() {
-	const endTime = profile.mode === 'HISTORY' ? profile.simStartTime : Date.now();
-	const startTime = endTime - 1 * 24 * 60 * 60 * 1000; // 4 days back
-
-	return { startTime: startTime, endTime: endTime, interval: '5minute' };
-}
-
 class Chart {
 	constructor(panel, options) {
 		this.currentcount = 0;
@@ -209,14 +202,7 @@ class Chart {
 	}
 
 	requestHistory(symbols) {
-		const requests = [];
-		const p = lookbackPeriod();
-		for (const s of symbols) {
-			const r = structuredClone(p);
-			r.symbol = s === 'index' ? profile.stockCode : s;
-			requests.push(r);
-		}
-		socket.emit('history', requests);
+		socket.emit('history', { symbols: symbols, ...lookbackPeriod() });
 	}
 }
 

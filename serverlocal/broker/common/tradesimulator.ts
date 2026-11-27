@@ -54,12 +54,22 @@ export class TradeSimulator extends UserService {
         if (openorders.length > 0) {
             openorders.forEach((order) => {
                 var executed = false;
-                if (order.ordertype === 'MARKET')
+                if (order.ordertype === 'MKT')
                     executed = true;
-                else if (order.ordertype === 'LIMIT')
-                    if (order.action === 'BUY' && q.ltp <= order.price)
+                else if (order.ordertype === 'LMT')
+                    if (order.action === 'BUY' && q.ltp <= order.lmt_price)
                         executed = true;
-                    else if (order.action === 'SELL' && q.ltp >= order.price)
+                    else if (order.action === 'SELL' && q.ltp >= order.lmt_price)
+                        executed = true;
+                if (order.ordertype === 'SL-LMT')
+                    if (order.action === 'BUY' && q.ltp <= order.lmt_price && q.ltp <= order.trg_price)
+                        executed = true;
+                    else if (order.action === 'SELL' && q.ltp >= order.lmt_price && q.ltp >= order.trg_price)
+                        executed = true;
+                if (order.ordertype === 'SL-MKT')
+                    if (order.action === 'BUY' && q.ltp <= order.trg_price)
+                        executed = true;
+                    else if (order.action === 'SELL' && q.ltp >= order.trg_price)
                         executed = true;
 
                 if (executed) {

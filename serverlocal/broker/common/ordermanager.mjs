@@ -4,6 +4,7 @@ import { UserService } from '../../../common/service.js'
 import { KotakHSISocket } from '../clients/HSIClient.mjs';
 
 export class OrderManager extends UserService {
+    adapter;
     constructor(name) {
         super(name);
         this.order_generators = new Map();
@@ -11,14 +12,15 @@ export class OrderManager extends UserService {
         this.counter = 10000;
     }
 
-    init() {
+    async init() {
         this.initialized = true;
         return { status: 'success' };
     }
 
     async register(service_key, notifier) {
         if (notifier === 'HSICLIENT') {
-            (await KotakHSISocket.getInstance()).addListener('order', (notifier_name, order) => {
+            this.adapter = await KotakHSISocket.getInstance();
+            this.adapter.addListener('order', (notifier_name, order) => {
                 const services = Array.from(this.order_generators.entries());
                 const service_keys = services.filter(([k, v]) => {
                     if (v === notifier_name)
@@ -82,7 +84,7 @@ export class OrderManager extends UserService {
                 && order.symbol === live_order.symbol
                 && order.action === live_order.action
                 && order.ordertype === live_order.ordertype
-                && order.price === live_order.price
+                && order.lmt_price === live_order.lmt_price
                 && order.quantity === live_order.quantity
                 && order.quantity >= live_order.filled_q
                 && ((order.state === 'submitted' && ['opened', 'rejected'].includes(live_order.state))
@@ -91,16 +93,16 @@ export class OrderManager extends UserService {
     }
 
     formatLiveOrder(order) {
-        let { nOrdNo: orderid, avgPrc: pricedAt, prc: price, prod: product, sym: stockCode, trnsTp: action,
+        let { nOrdNo: orderid, avgPrc: pricedAt, prc: lmt_price, prod: product, sym: stockCode, trnsTp: action,
             fldQty: filled_q, qty: quantity, ordSrc: source, strategyCode: strategy, algid: algoid,
             algCat: algocategory, ...rest } = order;
 
         let fOrder = {
-            orderid, pricedAt, price, product, stockCode, action, filled_q, quantity, source, strategy, algocategory, algoid
+            orderid, pricedAt, lmt_price, product, stockCode, action, filled_q, quantity, source, strategy, algocategory, algoid
         };
 
         fOrder.state = (order.ordSt === 'open' ? 'opened' : order.ordSt === 'complete' ? 'completed' : order.ordSt);
-        fOrder.ordertype = order.prcTp === 'MKT' ? 'MARKET' : 'LIMIT';
+        fOrder.ordertype = order.prcTp === 'L' ? 'LMT' : 'MKT';
         fOrder.expiry_date = order.expDt.replaceAll(', 20', '').replaceAll(' ', '').toUpperCase();
         fOrder.strike_price = order.stkPrc.replace('.00', '');
         fOrder.symbol = stockCode + fOrder.expiry_date + fOrder.strike_price + order.optTp;
@@ -121,7 +123,7 @@ export class OrderManager extends UserService {
                 fp.pricedAt = fp.cfBuyAmt !== 0 ? fp.cfBuyAmt / fp.cfBuyQty : fp.cfSellAmt / fp.cfSellQty;
                 fp.filled_q = fp.cfBuyQty !== 0 ? fp.cfBuyQty : fp.cfSellQty;
                 fp.action = fp.cfBuyQty > 0 ? 'BUY' : 'SELL';
-                fp.ordertype = 'MARKET';
+                fp.ordertype = 'MKT';
                 fp.state = 'completed';
                 fp.orderid = -1;
 
@@ -151,4 +153,9 @@ export class OrderManager extends UserService {
         return { account, ts, ex_segment, product_type, buyq, sellq, buyAmt, sellAmt, positionFlag, squareoffFlag, lot_size, multiplier, updateTime };
     }
 
+    async tearDown() {
+        this.live_order_map.clear();
+        this.order_generators.clear();
+        return true;
+    }
 }

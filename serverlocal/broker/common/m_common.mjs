@@ -16,25 +16,25 @@ export class CommonService extends BrokerMarketDataImpl {
 
     async tpExpiries(stockCode) {
         this.adapter = await TPRemoteAdapter.getInstance();
-        if (this.adapter.isAuthenticated)
+        if (this.adapter.isConnected)
             return await this.adapter.getExpiries(stockCode);
     }
 
     async tpScrips(filters) {
         this.adapter = await TPRemoteAdapter.getInstance();
-        if (this.adapter.isAuthenticated)
+        if (this.adapter.isConnected)
             return await this.adapter.getScrips(filters);
     }
 
     async tpValues(provider) {
         this.adapter = await TPRemoteAdapter.getInstance();
-        if (this.adapter.isAuthenticated)
+        if (this.adapter.isConnected)
             return await this.adapter.getValues(provider);
     }
 
     async tpHistory(request) {
         this.adapter = await TPRemoteAdapter.getInstance();
-        if (this.adapter.isAuthenticated)
+        if (this.adapter.isConnected)
             return await this.adapter.getHistory(request);
     }
 

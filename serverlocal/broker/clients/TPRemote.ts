@@ -58,10 +58,9 @@ export class TPRemoteAdapter extends TPAdapter {
 
     async getValues(provider: string): Promise<any> {
         let resp = await this.post('values', { provider: provider });
-        if (resp.ok)
-            return { status: 'success', values: await resp.json() };
-        else
-            return { status: 'error', reason: resp.statusText };
+        if (!resp.ok)
+            throw Error(`Values call failed for ${provider}: ${await resp.json()}`);
+        return await resp.json();
     }
 
     async getHistory(request: any): Promise<any> {

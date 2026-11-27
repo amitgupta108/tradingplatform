@@ -30,12 +30,6 @@ abstract class BasicAdapter extends EventEmitter {
         const authData = await authservice.authdata(this.provider);
 
         await this.onAuthData(authData!);
-
-        es.addListener('ENDOFDAY', () => {
-        })
-
-        es.addListener('ENDOFSESSION', async () => {
-        })
     }
 
     log(...args: string[]) {
@@ -79,6 +73,7 @@ export abstract class TPSocket extends BasicAdapter {
     static instance?: typeof TPSocket;
 
     abstract onOpen(): void;
+    abstract onClose(event: any): void;
     abstract handleMessage(data: any, ...args: any[]): void;
     abstract subscribe(symbols: string[], action: string, ...args: any[]): void;
     autoReconnect: boolean = true;
@@ -140,10 +135,7 @@ export abstract class TPSocket extends BasicAdapter {
                     this.log('WebSocket error:', JSON.stringify(error));
                     this.emit('error', error);
                     this.onError(error);
-                    if (!this.isConnected) {
-                        this.isConnecting = false;
-                        reject(error);
-                    }
+                    this.isConnecting = false;
                 });
 
                 this.ws.addEventListener('close', (event: any) => {
@@ -151,6 +143,7 @@ export abstract class TPSocket extends BasicAdapter {
                     this.isConnected = false;
                     this.isConnecting = false;
                     this.emit('close', event);
+                    this.onClose(event);
                     this.handleReconnect();
                 });
             }

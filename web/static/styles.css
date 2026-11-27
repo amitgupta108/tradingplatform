@@ -6,7 +6,7 @@
     --body-hover: #141313;
     --element-forecolor: #f4f0f0;
     --color-red: #c7372c;
-    --color-green: #00897b;
+    --color-green: #2b8946;
     --border-radius: 5px;
 }
 
@@ -343,9 +343,9 @@ select:hover {
 .orderwindow {
     position: fixed;
     font-size: 12px;
-    top: 40px;
-    left: 425px;
-    width: 400px;
+    top: 24px;
+    left: 450px;
+    width: 430px;
     z-index: 200;
     display: none;
     border-radius: var(--border-radius);
@@ -363,6 +363,10 @@ select:hover {
 
 .orderwindow.multi {
     background-color: rgb(91, 90, 90);
+}
+
+.order-row-modify {
+    background-color: var(--body-hover) !important;
 }
 
 .close-btn {

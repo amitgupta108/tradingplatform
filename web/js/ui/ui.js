@@ -24,17 +24,24 @@ function appendOrderRow(order) {
 
 	const ordertype = tr.querySelector('#ordertype');
 	ordertype.textContent = order.ordertype;
-	if (ordertype.textContent === 'LIMIT') {
-		tr.querySelector('#lmtprice').disabled = false;
-		tr.querySelector('#lmtprice').value = order.price;
+
+	const lmt_price_tb = tr.querySelector('#lmt_price_tb');
+	if (order.isModify && order.ordertype.includes('LMT')) {
+		lmt_price_tb.value = order.lmt_price;
+		lmt_price_tb.disabled = false;
+		const trg_price_tb = tr.querySelector('#trg_price_tb');
+		if (order.isModify && order.ordertype.includes('SL')) {
+			trg_price_tb.value = order.trg_price;
+			trg_price_tb.disabled = false;
+		}
+		tr.title = order.orderid;
+		tr.classList.add('order-row-modify');
 	}
+
 	const action_btn = tr.querySelector('#ow_action_btn');
 	action_btn.textContent = order.action;
 	const selectbox = tr.querySelector('select');
 	selectbox.value = order.quantity / LOT_SIZE[profile.stockCode];
-
-	if (order.type === 'modify')
-		tr.title = order.orderid;
 
 	if (!basket.checked)
 		tr.classList.remove('hover-row');
@@ -138,7 +145,7 @@ function tRow(template, withListener = true) {
 		new_row.addEventListener('input', (e) => {
 			e.stopPropagation();
 
-			if (e.target.id === 'lmtprice' && e.target !== new_row)
+			if (e.target.id === 'lmt_price_tb' && e.target !== new_row)
 				submitOWinBtn.disabled = true;
 		}, true);
 	}
@@ -160,7 +167,7 @@ function handleClickEvent(e) {
 	const pn_el = e.currentTarget;
 
 	if (cl_el.id === 'ordertype')
-		flipOrderType(cl_el, pn_el);
+		changeOrderType(cl_el, pn_el);
 	else if (cl_el.id === 'div_trans_btn')
 		createOrder(cl_el, pn_el);
 	else if (cl_el.id === 'row_attn_btn')
@@ -183,13 +190,23 @@ function handleClickEvent(e) {
 		return;
 }
 
-function flipOrderType(c, p) {
+function changeOrderType(c, p) {
 	submitOWinBtn.disabled = true;
-	c.textContent = c.textContent === 'MARKET' ? 'LIMIT' : 'MARKET';
-	const limitp = qSel(p, 'lmtprice', 'id');
-	limitp.disabled = c.textContent === 'MARKET' ? true : false;
-	if (c.textContent === 'MARKET')
-		limitp.value = "";
+	const ordertypes = ['MKT', 'LMT', 'SL-MKT', 'SL-LMT'];
+	const idx = ordertypes.indexOf(c.textContent);
+	const nIdx = idx + 1 === ordertypes.length ? 0 : idx + 1;
+	c.textContent = ordertypes[nIdx];
+
+	const lmt_price_tb = qSel(p, 'lmt_price_tb', 'id');
+	lmt_price_tb.disabled = c.textContent.includes('MKT');
+	if (lmt_price_tb.disabled)
+		lmt_price_tb.value = "";
+
+	const trg_price_tb = qSel(p, 'trg_price_tb', 'id');
+	trg_price_tb.disabled = !c.textContent.includes('SL');
+	if (trg_price_tb.disabled)
+		trg_price_tb.value = "";
+
 }
 
 function hl_row(c, p) {
@@ -198,6 +215,7 @@ function hl_row(c, p) {
 }
 
 function removeOrderRow(c, p) {
+	submitOWinBtn.disabled = true;
 	p.remove();
 }
 
@@ -220,9 +238,11 @@ function modifyOrder(c, p_row) {
 	const list_head = order_list_thead.querySelector('td');
 	const symbol = list_head.title;
 
-	const order = Order.findOpenOrder(symbol, p_row.title);
-	order.type = 'modify';
-	newOrder(order);
+	const order = Order.findOpenOrder(symbol, Number(p_row.title));
+	if (order !== undefined) {
+		order.isModify = true;
+		newOrder(order);
+	}
 	orderlistDiv.style.display = 'none';
 }
 
